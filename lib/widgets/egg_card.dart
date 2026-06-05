@@ -3,18 +3,23 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/egg.dart';
+import '../utils/format_utils.dart';
 
 /// A shop card for buying an egg.
 class EggCard extends StatelessWidget {
   const EggCard({
     super.key,
     required this.egg,
+    required this.isUnlocked,
     required this.canAfford,
+    required this.lifetimeCoinsEarned,
     required this.onBuy,
   });
 
   final Egg egg;
+  final bool isUnlocked;
   final bool canAfford;
+  final int lifetimeCoinsEarned;
   final VoidCallback onBuy;
 
   @override
@@ -26,6 +31,7 @@ class EggCard extends StatelessWidget {
 
     return Card(
       elevation: 4,
+      color: isUnlocked ? null : Colors.grey.shade100,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -34,7 +40,13 @@ class EggCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(egg.emoji, style: const TextStyle(fontSize: 48)),
+                Text(
+                  isUnlocked ? egg.emoji : '🔒',
+                  style: TextStyle(
+                    fontSize: 48,
+                    color: isUnlocked ? null : Colors.grey,
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -42,9 +54,10 @@ class EggCard extends StatelessWidget {
                     children: [
                       Text(
                         egg.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: isUnlocked ? null : Colors.grey.shade700,
                         ),
                       ),
                       if (egg.description.isNotEmpty)
@@ -68,6 +81,25 @@ class EggCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (!isUnlocked) ...[
+              const SizedBox(height: 12),
+              Text(
+                egg.unlockMessage,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red.shade700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Progress: ${formatCoins(lifetimeCoinsEarned)} / ${formatCoins(egg.unlockLifetimeCoins)} total coins earned',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
               'Possible animals:',
@@ -96,15 +128,24 @@ class EggCard extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: FilledButton(
-                onPressed: onBuy,
+                onPressed: isUnlocked ? onBuy : null,
                 style: FilledButton.styleFrom(
-                  backgroundColor: canAfford ? Colors.teal : Colors.grey,
+                  backgroundColor: !isUnlocked
+                      ? Colors.grey.shade500
+                      : canAfford
+                          ? Colors.teal
+                          : Colors.grey,
+                  disabledBackgroundColor: Colors.grey.shade500,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: Text(
-                  canAfford ? 'Buy & Hatch 🐣' : 'Not enough coins',
+                  !isUnlocked
+                      ? 'Locked 🔒'
+                      : canAfford
+                          ? 'Buy & Hatch 🐣'
+                          : 'Not enough coins',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

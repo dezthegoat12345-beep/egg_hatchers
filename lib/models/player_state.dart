@@ -6,17 +6,20 @@ class PlayerState {
     required this.coins,
     required this.ownedAnimals,
     required this.lastSavedTime,
+    required this.lifetimeCoinsEarned,
   });
 
   final int coins;
   final List<OwnedAnimal> ownedAnimals;
   final DateTime lastSavedTime;
+  final int lifetimeCoinsEarned;
 
   static PlayerState initial() {
     return PlayerState(
       coins: 250,
       ownedAnimals: const [],
       lastSavedTime: DateTime.now(),
+      lifetimeCoinsEarned: 0,
     );
   }
 
@@ -24,11 +27,13 @@ class PlayerState {
     int? coins,
     List<OwnedAnimal>? ownedAnimals,
     DateTime? lastSavedTime,
+    int? lifetimeCoinsEarned,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
       ownedAnimals: ownedAnimals ?? this.ownedAnimals,
       lastSavedTime: lastSavedTime ?? this.lastSavedTime,
+      lifetimeCoinsEarned: lifetimeCoinsEarned ?? this.lifetimeCoinsEarned,
     );
   }
 
@@ -36,15 +41,19 @@ class PlayerState {
         'coins': coins,
         'ownedAnimals': ownedAnimals.map((a) => a.toJson()).toList(),
         'lastSavedTime': lastSavedTime.toIso8601String(),
+        'lifetimeCoinsEarned': lifetimeCoinsEarned,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
+    final coins = json['coins'] as int;
     return PlayerState(
-      coins: json['coins'] as int,
+      coins: coins,
       ownedAnimals: (json['ownedAnimals'] as List<dynamic>)
           .map((item) => OwnedAnimal.fromJson(item as Map<String, dynamic>))
           .toList(),
       lastSavedTime: DateTime.parse(json['lastSavedTime'] as String),
+      // Older saves may not have lifetime coins — use current coins as estimate.
+      lifetimeCoinsEarned: json['lifetimeCoinsEarned'] as int? ?? coins,
     );
   }
 }

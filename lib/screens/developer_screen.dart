@@ -16,6 +16,7 @@ class DeveloperScreen extends StatefulWidget {
 
 class _DeveloperScreenState extends State<DeveloperScreen> {
   final _coinController = TextEditingController();
+  final _lifetimeController = TextEditingController();
   late String _selectedAnimalId;
   late String _selectedMutationId;
 
@@ -25,6 +26,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   void initState() {
     super.initState();
     _coinController.text = '${game.coins}';
+    _lifetimeController.text = '${game.lifetimeCoinsEarned}';
     _selectedAnimalId = GameData.animals.first.id;
     _selectedMutationId = GameData.mutations.first.id;
   }
@@ -32,6 +34,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   @override
   void dispose() {
     _coinController.dispose();
+    _lifetimeController.dispose();
     super.dispose();
   }
 
@@ -145,6 +148,68 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             label: 'Reset to 250 coins',
             color: Colors.orange,
             onPressed: _resetCoins,
+          ),
+          const SizedBox(height: 32),
+          _SectionTitle('Lifetime Coins (Unlock Testing)'),
+          Text('Current: ${game.lifetimeCoinsEarned} lifetime coins'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _lifetimeController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(
+              labelText: 'Lifetime coins earned',
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Set Lifetime Coins Earned',
+            color: Colors.teal,
+            onPressed: () {
+              final value = int.tryParse(_lifetimeController.text.trim());
+              if (value == null) {
+                _showMessage('Enter a valid number.');
+                return;
+              }
+              game.setLifetimeCoinsEarned(value);
+              _showMessage('Lifetime coins set to $value.');
+            },
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickCoinButton(
+                label: '+500 lifetime',
+                onPressed: () {
+                  game.addLifetimeCoinsEarned(500);
+                  _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+                  _showMessage('Added 500 lifetime coins.');
+                },
+              ),
+              _QuickCoinButton(
+                label: '+5,000 lifetime',
+                onPressed: () {
+                  game.addLifetimeCoinsEarned(5000);
+                  _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+                  _showMessage('Added 5,000 lifetime coins.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Reset lifetime coins to 0',
+            color: Colors.orange,
+            onPressed: () {
+              game.resetLifetimeCoinsEarned();
+              _lifetimeController.text = '0';
+              _showMessage('Lifetime coins reset to 0.');
+            },
           ),
           const SizedBox(height: 32),
           _SectionTitle('Force Next Hatch'),

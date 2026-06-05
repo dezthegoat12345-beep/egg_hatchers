@@ -14,6 +14,18 @@ class ShopScreen extends StatelessWidget {
   final GameService game;
 
   Future<void> _buyAndHatch(BuildContext context, Egg egg) async {
+    if (!game.isEggUnlocked(egg)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(egg.unlockMessage),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
     if (!game.canAfford(egg)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -78,7 +90,9 @@ class ShopScreen extends StatelessWidget {
                             final egg = GameData.eggs[index];
                             return EggCard(
                               egg: egg,
+                              isUnlocked: game.isEggUnlocked(egg),
                               canAfford: game.canAfford(egg),
+                              lifetimeCoinsEarned: game.lifetimeCoinsEarned,
                               onBuy: () => _buyAndHatch(context, egg),
                             );
                           },

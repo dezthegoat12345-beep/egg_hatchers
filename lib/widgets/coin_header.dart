@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../utils/format_utils.dart';
+
 /// Shows the player's coin balance and income rate at the top of a screen.
 class CoinHeader extends StatelessWidget {
   const CoinHeader({
     super.key,
     required this.coins,
     required this.coinsPerSecond,
+    this.lifetimeCoinsEarned,
     this.onCoinTap,
   });
 
   final int coins;
   final int coinsPerSecond;
+  final int? lifetimeCoinsEarned;
   final VoidCallback? onCoinTap;
 
   @override
@@ -65,6 +69,17 @@ class CoinHeader extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (lifetimeCoinsEarned != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Lifetime Coins Earned: ${formatCoins(lifetimeCoinsEarned!)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.brown.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -7,6 +7,7 @@ class Egg {
     required this.possibleAnimalIds,
     required this.emoji,
     this.description = '',
+    this.unlockLifetimeCoins = 0,
   });
 
   final String id;
@@ -15,4 +16,15 @@ class Egg {
   final List<String> possibleAnimalIds;
   final String emoji;
   final String description;
+
+  /// Lifetime coins needed to unlock. 0 means always unlocked.
+  final int unlockLifetimeCoins;
+
+  bool isUnlocked(int lifetimeCoinsEarned) =>
+      unlockLifetimeCoins <= 0 || lifetimeCoinsEarned >= unlockLifetimeCoins;
+
+  String get unlockMessage {
+    if (unlockLifetimeCoins <= 0) return '';
+    return 'Unlocks after earning $unlockLifetimeCoins total coins.';
+  }
 }

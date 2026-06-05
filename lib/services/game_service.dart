@@ -63,6 +63,7 @@ class GameService extends ChangeNotifier {
   }
 
   int get coins => _state.coins;
+  int get lifetimeCoinsEarned => _state.lifetimeCoinsEarned;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
   List<OwnedAnimal> get normalAnimals =>
@@ -99,10 +100,7 @@ class GameService extends ChangeNotifier {
 
     final earned = (coinsPerSecond * elapsed.inSeconds).floor();
     if (earned > 0) {
-      _state = _state.copyWith(
-        coins: _state.coins + earned,
-        lastSavedTime: now,
-      );
+      _addEarnedCoins(earned, lastSavedTime: now);
     }
   }
 
@@ -117,12 +115,19 @@ class GameService extends ChangeNotifier {
     final income = coinsPerSecond;
     if (income <= 0) return;
 
-    _state = _state.copyWith(
-      coins: _state.coins + income,
-      lastSavedTime: DateTime.now(),
-    );
+    _addEarnedCoins(income);
     notifyListeners();
     _saveQuietly();
+  }
+
+  /// Adds coins from animal income and tracks lifetime earnings.
+  void _addEarnedCoins(int amount, {DateTime? lastSavedTime}) {
+    if (amount <= 0) return;
+    _state = _state.copyWith(
+      coins: _state.coins + amount,
+      lifetimeCoinsEarned: _state.lifetimeCoinsEarned + amount,
+      lastSavedTime: lastSavedTime ?? DateTime.now(),
+    );
   }
 
   Future<void> _saveQuietly() async {
@@ -134,10 +139,15 @@ class GameService extends ChangeNotifier {
     await _saveService.save(_state);
   }
 
+  bool isEggUnlocked(Egg egg) =>
+      egg.isUnlocked(_state.lifetimeCoinsEarned);
+
   bool canAfford(Egg egg) => _state.coins >= egg.cost;
 
+  bool canBuyEgg(Egg egg) => isEggUnlocked(egg) && canAfford(egg);
+
   bool buyEgg(Egg egg) {
-    if (!canAfford(egg)) return false;
+    if (!canBuyEgg(egg)) return false;
 
     _state = _state.copyWith(coins: _state.coins - egg.cost);
     notifyListeners();
@@ -157,6 +167,22 @@ class GameService extends ChangeNotifier {
 
   void resetCoins() {
     setCoins(GameData.startingPlayerState().coins);
+  }
+
+  void setLifetimeCoinsEarned(int amount) {
+    _state = _state.copyWith(
+      lifetimeCoinsEarned: amount < 0 ? 0 : amount,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void addLifetimeCoinsEarned(int amount) {
+    setLifetimeCoinsEarned(_state.lifetimeCoinsEarned + amount);
+  }
+
+  void resetLifetimeCoinsEarned() {
+    setLifetimeCoinsEarned(0);
   }
 
   void setForcedNextHatch(String animalId, String mutationId) {

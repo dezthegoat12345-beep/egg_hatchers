@@ -124,6 +124,7 @@ class GameData {
       possibleAnimalIds: ['fox', 'deer', 'bear'],
       emoji: '🌲🥚',
       description: 'Woodland creatures',
+      unlockLifetimeCoins: 500,
     ),
     Egg(
       id: 'magic',
@@ -132,6 +133,7 @@ class GameData {
       possibleAnimalIds: ['tiger', 'dragon', 'unicorn'],
       emoji: '✨🥚',
       description: 'Legendary wonders',
+      unlockLifetimeCoins: 5000,
     ),
   ];
 
@@ -169,7 +171,4 @@ class GameData {
     return mutations.first;
   }
 }
-
-/// Type alias helper to avoid importing owned_animal in game_data callers.
-typedef OwnedAnimalRef = String;
 

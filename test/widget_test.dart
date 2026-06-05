@@ -15,6 +15,7 @@ void main() {
   test('starting player has 250 coins and no animals', () {
     final state = GameData.startingPlayerState();
     expect(state.coins, 250);
+    expect(state.lifetimeCoinsEarned, 0);
     expect(state.ownedAnimals, isEmpty);
   });
 
@@ -55,13 +56,24 @@ void main() {
         ),
       ],
       lastSavedTime: DateTime(2025, 1, 1),
+      lifetimeCoinsEarned: 1200,
     );
 
     final restored = PlayerState.fromJson(state.toJson());
     expect(restored.coins, 500);
+    expect(restored.lifetimeCoinsEarned, 1200);
     expect(restored.ownedAnimals.first.quantity, 2);
     expect(restored.ownedAnimals.first.level, 3);
     expect(restored.ownedAnimals.first.mutationId, 'golden');
+  });
+
+  test('old saves without lifetimeCoinsEarned default to current coins', () {
+    final restored = PlayerState.fromJson({
+      'coins': 750,
+      'ownedAnimals': [],
+      'lastSavedTime': '2025-01-01T00:00:00.000',
+    });
+    expect(restored.lifetimeCoinsEarned, 750);
   });
 
   test('old saves without level or mutation default correctly', () {
@@ -280,6 +292,58 @@ void main() {
     expect(result.animal.id, 'dragon');
     expect(result.mutation.id, 'shadow');
     expect(game.hasForcedNextHatch, isFalse);
+
+    game.dispose();
+  });
+
+  test('egg unlocks based on lifetime coins earned', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    final basic = GameData.eggs[0];
+    final forest = GameData.eggs[1];
+    final magic = GameData.eggs[2];
+
+    expect(game.isEggUnlocked(basic), isTrue);
+    expect(game.isEggUnlocked(forest), isFalse);
+    expect(game.isEggUnlocked(magic), isFalse);
+
+    game.setLifetimeCoinsEarned(500);
+    expect(game.isEggUnlocked(forest), isTrue);
+    expect(game.isEggUnlocked(magic), isFalse);
+
+    game.setLifetimeCoinsEarned(5000);
+    expect(game.isEggUnlocked(magic), isTrue);
+
+    game.dispose();
+  });
+
+  test('spending coins does not reduce lifetime coins earned', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setLifetimeCoinsEarned(1000);
+    game.setCoins(1000);
+    game.buyEgg(GameData.eggs.first);
+
+    expect(game.lifetimeCoinsEarned, 1000);
+    expect(game.coins, 900);
+
+    game.dispose();
+  });
+
+  test('setCoins does not change lifetime coins earned', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setLifetimeCoinsEarned(500);
+    game.setCoins(9999);
+
+    expect(game.lifetimeCoinsEarned, 500);
+    expect(game.coins, 9999);
 
     game.dispose();
   });

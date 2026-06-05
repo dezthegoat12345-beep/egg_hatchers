@@ -93,6 +93,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                       CoinHeader(
                         coins: game.coins,
                         coinsPerSecond: game.coinsPerSecond,
+                        lifetimeCoinsEarned: game.lifetimeCoinsEarned,
                         onCoinTap: _onCoinTap,
                       ),
                       const SizedBox(height: 16),
