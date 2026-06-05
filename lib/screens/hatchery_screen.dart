@@ -45,7 +45,10 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => DeveloperScreen(game: game),
+          builder: (_) => DeveloperScreen(
+            game: game,
+            customSprites: customSprites,
+          ),
         ),
       );
     }

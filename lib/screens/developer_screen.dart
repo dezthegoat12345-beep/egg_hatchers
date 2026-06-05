@@ -3,15 +3,23 @@ import 'package:flutter/services.dart';
 
 import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/mutation.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/game_sprite.dart';
 
 /// Hidden developer tools — always green-on-black, never follows player theme.
 class DeveloperScreen extends StatefulWidget {
-  const DeveloperScreen({super.key, required this.game});
+  const DeveloperScreen({
+    super.key,
+    required this.game,
+    required this.customSprites,
+  });
 
   final GameService game;
+  final CustomSpriteService customSprites;
 
   @override
   State<DeveloperScreen> createState() => _DeveloperScreenState();
@@ -97,14 +105,21 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final forcedAnimal = game.forcedNextAnimalId != null
-        ? GameData.animalById(game.forcedNextAnimalId!)
-        : null;
-    final forcedMutation = game.forcedNextMutationId != null
-        ? GameData.mutationById(game.forcedNextMutationId!)
-        : null;
+    return ListenableBuilder(
+      listenable: Listenable.merge([game, widget.customSprites]),
+      builder: (context, _) {
+        final forcedAnimal = game.forcedNextAnimalId != null
+            ? GameData.animalById(game.forcedNextAnimalId!)
+            : null;
+        final forcedMutation = game.forcedNextMutationId != null
+            ? GameData.mutationById(game.forcedNextMutationId!)
+            : null;
+        final selectedAnimal = GameData.animalById(_selectedAnimalId)!;
+        final selectedMutation =
+            GameData.mutationById(_selectedMutationId) ??
+                GameData.mutations.first;
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: DevToolsTheme.background,
       appBar: AppBar(
         title: Text(
@@ -269,6 +284,12 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _DevAnimalPreview(
+            animal: selectedAnimal,
+            mutation: selectedMutation,
+            customSprites: widget.customSprites,
+          ),
+          const SizedBox(height: 16),
           _LabeledDropdown<String>(
             label: 'Animal',
             value: _selectedAnimalId,
@@ -276,9 +297,9 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
               for (final animal in _sortedAnimals)
                 DropdownMenuItem(
                   value: animal.id,
-                  child: Text(
-                    '${animal.emoji} ${animal.name} (${animal.coinsPerSecond}/s)',
-                    style: DevToolsTheme.bodyText(),
+                  child: _DevAnimalDropdownRow(
+                    animal: animal,
+                    customSprites: widget.customSprites,
                   ),
                 ),
             ],
@@ -319,6 +340,88 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           ),
         ],
       ),
+        );
+      },
+    );
+  }
+}
+
+class _DevAnimalPreview extends StatelessWidget {
+  const _DevAnimalPreview({
+    required this.animal,
+    required this.mutation,
+    required this.customSprites,
+  });
+
+  final Animal animal;
+  final Mutation mutation;
+  final CustomSpriteService customSprites;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: DevToolsTheme.panelDecoration(),
+      child: Column(
+        children: [
+          Text('Preview', style: DevToolsTheme.bodyText(muted: true)),
+          const SizedBox(height: 12),
+          GameAnimalPortrait(
+            customSprite: customSprites.getDisplaySprite(animal.id),
+            spritePath: animal.spritePath,
+            fallbackEmoji: animal.emoji,
+            size: 72,
+            mutation: mutation,
+            semanticLabel: mutation.fullName(animal),
+            emojiFontSize: 48,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            mutation.fullName(animal),
+            style: DevToolsTheme.bodyText().copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DevAnimalDropdownRow extends StatelessWidget {
+  const _DevAnimalDropdownRow({
+    required this.animal,
+    required this.customSprites,
+  });
+
+  final Animal animal;
+  final CustomSpriteService customSprites;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: GameSprite(
+            customSprite: customSprites.getDisplaySprite(animal.id),
+            spritePath: animal.spritePath,
+            fallbackEmoji: animal.emoji,
+            size: 28,
+            emojiFontSize: 20,
+            semanticLabel: animal.name,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            '${animal.name} (${animal.coinsPerSecond}/s)',
+            style: DevToolsTheme.bodyText(),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }
