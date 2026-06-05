@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../services/game_service.dart';
+import '../utils/snackbar_utils.dart';
 
 /// Hidden developer tools for testing coins and forced hatches.
 class DeveloperScreen extends StatefulWidget {
@@ -86,12 +87,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   }
 
   void _showMessage(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(text),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showGameSnackBar(context, message: text);
   }
 
   @override

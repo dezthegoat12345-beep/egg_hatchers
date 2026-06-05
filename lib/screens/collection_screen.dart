@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/game_service.dart';
+import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/owned_animal_list.dart';
 
@@ -18,22 +19,16 @@ class CollectionScreen extends StatelessWidget {
   ) {
     final newLevel = game.upgradeAnimal(animalId, mutationId);
     if (newLevel != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$displayName upgraded to Level $newLevel!'),
-          backgroundColor: Colors.teal.shade400,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      showGameSnackBar(
+        context,
+        message: '$displayName upgraded to Level $newLevel!',
+        backgroundColor: Colors.teal.shade400,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Not enough coins to upgrade $displayName.'),
-          backgroundColor: Colors.red.shade400,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      showGameSnackBar(
+        context,
+        message: 'Not enough coins to upgrade $displayName.',
+        backgroundColor: Colors.red.shade400,
       );
     }
   }
