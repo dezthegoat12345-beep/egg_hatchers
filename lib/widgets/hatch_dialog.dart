@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../models/hatch_result.dart';
 import '../models/egg.dart';
+import '../models/hatch_result.dart';
 import 'animal_card.dart';
+
+/// Stages of the egg cracking hatch reveal animation.
+enum _HatchStage {
+  gentleShake,
+  cracking,
+  pop,
+  revealed,
+}
 
 /// Animated dialog shown after buying an egg to reveal the hatched animal.
 class HatchDialog extends StatefulWidget {
@@ -32,102 +40,195 @@ class HatchDialog extends StatefulWidget {
 }
 
 class _HatchDialogState extends State<HatchDialog>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scaleAnimation;
+    with TickerProviderStateMixin {
+  _HatchStage _stage = _HatchStage.gentleShake;
+
+  late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
-  bool _revealed = false;
+  late final AnimationController _popController;
+  late final Animation<double> _popScale;
+  late final AnimationController _revealController;
+  late final Animation<double> _revealScale;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _setupAnimations();
+    _runHatchSequence();
+  }
+
+  void _setupAnimations() {
+    _shakeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 350),
     );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _shakeAnimation = Tween<double>(begin: -1, end: 1).animate(
+      CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
     );
+    _shakeController.repeat(reverse: true);
 
-    _shakeAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 8.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 8.0, end: -8.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -8.0, end: 6.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 6.0, end: -6.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -6.0, end: 0.0), weight: 1),
-    ]).animate(_controller);
+    _popController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _popScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 35),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 0.85), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 40),
+    ]).animate(CurvedAnimation(parent: _popController, curve: Curves.easeOut));
 
-    _controller.forward().then((_) {
-      if (mounted) {
-        setState(() => _revealed = true);
-      }
+    _revealController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _revealScale = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _revealController, curve: Curves.elasticOut),
+    );
+  }
+
+  Future<void> _runHatchSequence() async {
+    // Stage 1: gentle shake
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
+
+    // Stage 2: harder shake + cracks
+    setState(() {
+      _stage = _HatchStage.cracking;
+      _shakeController.duration = const Duration(milliseconds: 120);
     });
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    if (!mounted) return;
+
+    // Stage 3: pop
+    setState(() => _stage = _HatchStage.pop);
+    _shakeController.stop();
+    await _popController.forward();
+    if (!mounted) return;
+
+    // Stage 4: reveal result
+    setState(() => _stage = _HatchStage.revealed);
+    await _revealController.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _shakeController.dispose();
+    _popController.dispose();
+    _revealController.dispose();
     super.dispose();
+  }
+
+  double get _shakeAmount {
+    switch (_stage) {
+      case _HatchStage.gentleShake:
+        return 6 * _shakeAnimation.value;
+      case _HatchStage.cracking:
+        return 14 * _shakeAnimation.value;
+      case _HatchStage.pop:
+      case _HatchStage.revealed:
+        return 0;
+    }
+  }
+
+  String get _stageTitle {
+    switch (_stage) {
+      case _HatchStage.gentleShake:
+        return 'Hatching...';
+      case _HatchStage.cracking:
+        return 'Crack...';
+      case _HatchStage.pop:
+        return 'Pop!';
+      case _HatchStage.revealed:
+        final isMutated = !widget.result.mutation.isNormal;
+        if (isMutated) return 'Mutation!';
+        return 'It hatched!';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final message = widget.result.mutation.hatchMessage(widget.result.animal);
     final isMutated = !widget.result.mutation.isNormal;
+    final revealed = _stage == _HatchStage.revealed;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: revealed && isMutated
+          ? Colors.deepPurple.shade50
+          : null,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              _revealed ? (isMutated ? 'Mutation!' : 'It hatched!') : 'Hatching...',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: isMutated && _revealed
-                    ? Colors.deepPurple
-                    : null,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Text(
+                _stageTitle,
+                key: ValueKey(_stageTitle),
+                style: TextStyle(
+                  fontSize: isMutated && revealed ? 30 : 26,
+                  fontWeight: FontWeight.bold,
+                  color: isMutated && revealed ? Colors.deepPurple : null,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            if (_revealed)
+            if (revealed) ...[
+              const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: isMutated ? 17 : 16,
                   fontWeight: isMutated ? FontWeight.bold : FontWeight.normal,
-                  color: isMutated ? Colors.deepPurple.shade700 : Colors.grey.shade700,
+                  color: isMutated
+                      ? Colors.deepPurple.shade700
+                      : Colors.grey.shade700,
                   height: 1.4,
                 ),
               ),
+            ],
             const SizedBox(height: 20),
-            if (!_revealed)
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(_shakeAnimation.value, 0),
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value.clamp(0.8, 1.3),
-                      child: child,
-                    ),
-                  );
-                },
-                child: Text(
-                  widget.egg.emoji,
-                  style: const TextStyle(fontSize: 80),
-                ),
-              )
-            else ...[
-              Text(
-                widget.result.mutation.displayEmoji(widget.result.animal),
-                style: const TextStyle(fontSize: 80),
+            SizedBox(
+              height: 120,
+              child: Center(
+                child: revealed
+                    ? ScaleTransition(
+                        scale: _revealScale,
+                        child: _buildRevealedContent(isMutated),
+                      )
+                    : _stage == _HatchStage.pop
+                        ? ScaleTransition(
+                            scale: _popScale,
+                            child: _buildEggVisual(showCracks: true),
+                          )
+                        : AnimatedBuilder(
+                            animation: _shakeController,
+                            builder: (context, child) {
+                              return Transform.translate(
+                                offset: Offset(_shakeAmount, 0),
+                                child: child,
+                              );
+                            },
+                            child: _buildEggVisual(
+                              showCracks: _stage == _HatchStage.cracking,
+                            ),
+                          ),
               ),
+            ),
+            if (_stage == _HatchStage.cracking)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'crack...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.brown.shade600,
+                  ),
+                ),
+              ),
+            if (revealed) ...[
               const SizedBox(height: 12),
               AnimalCard(
                 animal: widget.result.animal,
@@ -136,14 +237,15 @@ class _HatchDialogState extends State<HatchDialog>
               ),
             ],
             const SizedBox(height: 20),
-            if (_revealed)
+            if (revealed)
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isMutated ? Colors.deepPurple : Colors.teal,
+                    backgroundColor:
+                        isMutated ? Colors.deepPurple : Colors.teal,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -162,4 +264,68 @@ class _HatchDialogState extends State<HatchDialog>
       ),
     );
   }
+
+  Widget _buildEggVisual({required bool showCracks}) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          widget.egg.emoji,
+          style: const TextStyle(fontSize: 88),
+        ),
+        if (showCracks) const _CrackMarks(),
+      ],
+    );
+  }
+
+  Widget _buildRevealedContent(bool isMutated) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.result.mutation.displayEmoji(widget.result.animal),
+          style: TextStyle(
+            fontSize: isMutated ? 92 : 80,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Simple crack lines drawn over the egg emoji.
+class _CrackMarks extends StatelessWidget {
+  const _CrackMarks();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 88,
+      height: 88,
+      child: CustomPaint(
+        painter: _CrackPainter(),
+      ),
+    );
+  }
+}
+
+class _CrackPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.brown.shade700
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+
+    canvas.drawLine(Offset(cx - 8, cy - 20), Offset(cx + 4, cy + 2), paint);
+    canvas.drawLine(Offset(cx + 6, cy - 18), Offset(cx - 6, cy + 6), paint);
+    canvas.drawLine(Offset(cx - 2, cy + 4), Offset(cx + 10, cy + 18), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
