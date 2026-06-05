@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../theme/game_theme.dart';
 
@@ -10,6 +11,7 @@ class AnimalCard extends StatelessWidget {
   const AnimalCard({
     super.key,
     required this.animal,
+    required this.theme,
     this.mutation,
     this.quantity,
     this.level,
@@ -19,10 +21,10 @@ class AnimalCard extends StatelessWidget {
     this.canAffordUpgrade = false,
     this.onUpgrade,
     this.compact = false,
-    this.isDark = false,
   });
 
   final Animal animal;
+  final BackgroundTheme theme;
   final Mutation? mutation;
   final int? quantity;
   final int? level;
@@ -32,7 +34,6 @@ class AnimalCard extends StatelessWidget {
   final bool canAffordUpgrade;
   final VoidCallback? onUpgrade;
   final bool compact;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +44,17 @@ class AnimalCard extends StatelessWidget {
     final rarityColor = GameTheme.rarityAccent(animal.rarity);
     final mutationColor = GameTheme.mutationAccent(activeMutation.id);
     final borderColor = activeMutation.isNormal ? rarityColor : mutationColor;
+    final textPrimary = activeMutation.isNormal
+        ? theme.cardTextPrimaryColor
+        : const Color(0xFF5D4037);
+    final textSecondary = activeMutation.isNormal
+        ? theme.cardTextSecondaryColor
+        : const Color(0xFF795548);
 
     return Container(
       decoration: GameTheme.cardDecoration(
+        theme,
         borderColor: borderColor,
-        isDark: isDark,
         backgroundColor: activeMutation.isNormal
             ? null
             : GameTheme.mutationTint(activeMutation.id),
@@ -90,7 +97,7 @@ class AnimalCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: compact ? 17 : 21,
                           fontWeight: FontWeight.bold,
-                          color: GameTheme.textDark,
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -109,6 +116,9 @@ class AnimalCard extends StatelessWidget {
                           icon: '📦',
                           label: 'Owned: $quantity  •  Level $level',
                           compact: compact,
+                          color: activeMutation.isNormal
+                              ? theme.primaryColor
+                              : const Color(0xFF4DB6AC),
                         ),
                         const SizedBox(height: 4),
                         _InfoRow(
@@ -116,12 +126,16 @@ class AnimalCard extends StatelessWidget {
                           label: 'Income: $typeIncome / sec',
                           compact: compact,
                           highlight: true,
+                          color: activeMutation.isNormal
+                              ? theme.secondaryColor
+                              : const Color(0xFFE65100),
                         ),
                       ] else
                         _InfoRow(
                           icon: '💰',
                           label: 'Base: ${animal.coinsPerSecond} / sec',
                           compact: compact,
+                          color: textSecondary,
                         ),
                     ],
                   ),
@@ -133,10 +147,10 @@ class AnimalCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: GameTheme.cream.withValues(alpha: 0.8),
+                  color: theme.primaryColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: Colors.brown.withValues(alpha: 0.1),
+                    color: theme.cardBorderColor.withValues(alpha: 0.35),
                   ),
                 ),
                 child: Row(
@@ -147,30 +161,34 @@ class AnimalCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: compact ? 14 : 16,
                           fontWeight: FontWeight.w700,
-                          color: GameTheme.textDark,
+                          color: textPrimary,
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     FilledButton(
                       onPressed: onUpgrade,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: canAffordUpgrade
-                            ? const Color(0xFF4DB6AC)
-                            : Colors.grey.shade500,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: compact ? 14 : 18,
-                          vertical: compact ? 10 : 12,
+                      style: GameTheme.filledButton(
+                        theme,
+                        color: canAffordUpgrade
+                            ? theme.primaryColor
+                            : theme.disabledColor,
+                        height: compact ? 44 : 48,
+                      ).copyWith(
+                        padding: WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(
+                            horizontal: compact ? 14 : 18,
+                            vertical: compact ? 10 : 12,
+                          ),
                         ),
-                        minimumSize: Size(0, compact ? 44 : 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(GameTheme.buttonRadius),
+                        minimumSize: WidgetStatePropertyAll(
+                          Size(0, compact ? 44 : 48),
                         ),
-                        textStyle: TextStyle(
-                          fontSize: compact ? 14 : 16,
-                          fontWeight: FontWeight.bold,
+                        textStyle: WidgetStatePropertyAll(
+                          TextStyle(
+                            fontSize: compact ? 14 : 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       child: const Text('Upgrade ⬆️'),
@@ -191,12 +209,14 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.compact,
+    required this.color,
     this.highlight = false,
   });
 
   final String icon;
   final String label;
   final bool compact;
+  final Color color;
   final bool highlight;
 
   @override
@@ -211,9 +231,7 @@ class _InfoRow extends StatelessWidget {
             style: TextStyle(
               fontSize: compact ? 13 : 15,
               fontWeight: highlight ? FontWeight.bold : FontWeight.w600,
-              color: highlight
-                  ? const Color(0xFFE65100)
-                  : const Color(0xFF4DB6AC),
+              color: color,
             ),
           ),
         ),

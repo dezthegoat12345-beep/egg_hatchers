@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/background_theme.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
@@ -40,10 +41,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => DeveloperScreen(
-            game: game,
-            preferences: preferences,
-          ),
+          builder: (_) => DeveloperScreen(game: game),
         ),
       );
     }
@@ -77,10 +75,9 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       listenable: preferences,
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final isDark = bg.isDark;
 
         return Scaffold(
-          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
+          backgroundColor: bg.scaffoldColor,
           extendBody: true,
           appBar: AppBar(
             title: const Text(
@@ -88,8 +85,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             centerTitle: true,
-            backgroundColor:
-                GameTheme.appBarColorFor(GameBackgroundStyle.hatchery),
+            backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
             elevation: 0,
             actions: [
@@ -128,12 +124,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                               coinsPerSecond: game.coinsPerSecond,
                               lifetimeCoinsEarned: game.lifetimeCoinsEarned,
                               onCoinTap: _onCoinTap,
-                              isDark: isDark,
+                              theme: bg,
                             ),
                             const SizedBox(height: 18),
                             _NavButton(
                               label: '🛒 Shop',
-                              color: const Color(0xFFFFB74D),
+                              theme: bg,
+                              color: bg.secondaryColor,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -147,7 +144,8 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                             const SizedBox(height: 12),
                             _NavButton(
                               label: '📚 Collection',
-                              color: const Color(0xFFBA68C8),
+                              theme: bg,
+                              color: bg.primaryColor,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -161,16 +159,16 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                             const SizedBox(height: 22),
                             Text(
                               'Your Animals',
-                              style: GameTheme.sectionTitle(isDark: isDark),
+                              style: GameTheme.sectionTitle(bg),
                             ),
                             const SizedBox(height: 10),
                             Expanded(
                               child: game.ownedAnimals.isEmpty
-                                  ? _EmptyHatchery(isDark: isDark)
+                                  ? _EmptyHatchery(theme: bg)
                                   : OwnedAnimalList(
                                       game: game,
+                                      theme: bg,
                                       compact: true,
-                                      isDark: isDark,
                                       onUpgrade: (animalId, mutationId, name) =>
                                           _handleUpgrade(
                                         context,
@@ -198,11 +196,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
 class _NavButton extends StatelessWidget {
   const _NavButton({
     required this.label,
+    required this.theme,
     required this.color,
     required this.onTap,
   });
 
   final String label;
+  final BackgroundTheme theme;
   final Color color;
   final VoidCallback onTap;
 
@@ -210,16 +210,16 @@ class _NavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onTap,
-      style: GameTheme.filledButton(color, height: 56),
+      style: GameTheme.filledButton(theme, color: color, height: 56),
       child: Text(label, style: const TextStyle(fontSize: 20)),
     );
   }
 }
 
 class _EmptyHatchery extends StatelessWidget {
-  const _EmptyHatchery({required this.isDark});
+  const _EmptyHatchery({required this.theme});
 
-  final bool isDark;
+  final BackgroundTheme theme;
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +227,7 @@ class _EmptyHatchery extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 12),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-        decoration: GameTheme.cardDecoration(isDark: isDark),
+        decoration: GameTheme.cardDecoration(theme),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -236,7 +236,7 @@ class _EmptyHatchery extends StatelessWidget {
             Text(
               'No animals yet.\nHatch your first egg!',
               textAlign: TextAlign.center,
-              style: GameTheme.emptyStateTitle(isDark: isDark),
+              style: GameTheme.emptyStateTitle(theme),
             ),
             const SizedBox(height: 8),
             Text(
@@ -244,7 +244,7 @@ class _EmptyHatchery extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: GameTheme.textSecondary(isDark),
+                color: theme.cardTextSecondaryColor,
               ),
             ),
           ],

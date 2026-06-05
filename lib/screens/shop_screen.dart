@@ -4,7 +4,6 @@ import '../data/game_data.dart';
 import '../models/egg.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
-import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/egg_card.dart';
@@ -23,6 +22,8 @@ class ShopScreen extends StatelessWidget {
   final PreferencesService preferences;
 
   Future<void> _buyAndHatch(BuildContext context, Egg egg) async {
+    final bg = preferences.selectedTheme;
+
     if (!game.isEggUnlocked(egg)) {
       showGameSnackBar(
         context,
@@ -50,6 +51,7 @@ class ShopScreen extends StatelessWidget {
         context,
         egg: egg,
         result: result,
+        theme: bg,
       );
     }
   }
@@ -60,18 +62,16 @@ class ShopScreen extends StatelessWidget {
       listenable: preferences,
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final isDark = bg.isDark;
 
         return Scaffold(
-          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
+          backgroundColor: bg.scaffoldColor,
           appBar: AppBar(
             title: const Text(
               '🛒 Egg Shop',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             centerTitle: true,
-            backgroundColor:
-                GameTheme.appBarColorFor(GameBackgroundStyle.shop),
+            backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
             elevation: 0,
           ),
@@ -93,7 +93,7 @@ class ShopScreen extends StatelessWidget {
                             CoinHeader(
                               coins: game.coins,
                               coinsPerSecond: game.coinsPerSecond,
-                              isDark: isDark,
+                              theme: bg,
                             ),
                             const SizedBox(height: 18),
                             Expanded(
@@ -105,11 +105,11 @@ class ShopScreen extends StatelessWidget {
                                   final egg = GameData.eggs[index];
                                   return EggCard(
                                     egg: egg,
+                                    theme: bg,
                                     isUnlocked: game.isEggUnlocked(egg),
                                     canAfford: game.canAfford(egg),
                                     lifetimeCoinsEarned:
                                         game.lifetimeCoinsEarned,
-                                    isDark: isDark,
                                     onBuy: () => _buyAndHatch(context, egg),
                                   );
                                 },

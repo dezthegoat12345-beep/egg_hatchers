@@ -4,7 +4,6 @@ import 'models/background_theme.dart';
 import 'screens/hatchery_screen.dart';
 import 'services/game_service.dart';
 import 'services/preferences_service.dart';
-import 'theme/game_theme.dart';
 import 'widgets/game_background.dart';
 
 void main() {
@@ -74,12 +73,9 @@ class _EggHatchersAppState extends State<EggHatchersApp>
           seedColor: const Color(0xFF4DB6AC),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: GameTheme.cream,
+        scaffoldBackgroundColor: BackgroundThemes.defaultTheme.scaffoldColor,
         useMaterial3: true,
         fontFamily: 'Roboto',
-        filledButtonTheme: FilledButtonThemeData(
-          style: GameTheme.filledButton(const Color(0xFF4DB6AC)),
-        ),
       ),
       home: _isReady
           ? HatcheryScreen(game: _game, preferences: _preferences)
@@ -93,26 +89,28 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = BackgroundThemes.defaultTheme;
+
     return Scaffold(
-      backgroundColor: GameTheme.cream,
+      backgroundColor: theme.scaffoldColor,
       body: GameBackground(
-        theme: BackgroundThemes.defaultTheme,
-        child: const Center(
+        theme: theme,
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('🐣', style: TextStyle(fontSize: 72)),
-              SizedBox(height: 16),
+              const Text('🐣', style: TextStyle(fontSize: 72)),
+              const SizedBox(height: 16),
               Text(
                 'Egg Hatchers',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: GameTheme.textDark,
+                  color: theme.textPrimaryColor,
                 ),
               ),
-              SizedBox(height: 24),
-              CircularProgressIndicator(color: Color(0xFF4DB6AC)),
+              const SizedBox(height: 24),
+              CircularProgressIndicator(color: theme.primaryColor),
             ],
           ),
         ),

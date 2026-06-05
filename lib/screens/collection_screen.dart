@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/background_theme.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
@@ -47,18 +48,16 @@ class CollectionScreen extends StatelessWidget {
       listenable: preferences,
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final isDark = bg.isDark;
 
         return Scaffold(
-          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
+          backgroundColor: bg.scaffoldColor,
           appBar: AppBar(
             title: const Text(
               '📚 Collection',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
             centerTitle: true,
-            backgroundColor:
-                GameTheme.appBarColorFor(GameBackgroundStyle.collection),
+            backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
             elevation: 0,
           ),
@@ -80,16 +79,16 @@ class CollectionScreen extends StatelessWidget {
                             CoinHeader(
                               coins: game.coins,
                               coinsPerSecond: game.coinsPerSecond,
-                              isDark: isDark,
+                              theme: bg,
                             ),
                             const SizedBox(height: 18),
                             Expanded(
                               child: game.ownedAnimals.isEmpty
-                                  ? _EmptyCollection(isDark: isDark)
+                                  ? _EmptyCollection(theme: bg)
                                   : OwnedAnimalList(
                                       game: game,
+                                      theme: bg,
                                       separatorHeight: 12,
-                                      isDark: isDark,
                                       onUpgrade: (animalId, mutationId, name) =>
                                           _handleUpgrade(
                                         context,
@@ -115,9 +114,9 @@ class CollectionScreen extends StatelessWidget {
 }
 
 class _EmptyCollection extends StatelessWidget {
-  const _EmptyCollection({required this.isDark});
+  const _EmptyCollection({required this.theme});
 
-  final bool isDark;
+  final BackgroundTheme theme;
 
   @override
   Widget build(BuildContext context) {
@@ -126,8 +125,8 @@ class _EmptyCollection extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 12),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
         decoration: GameTheme.cardDecoration(
-          borderColor: const Color(0xFFBA68C8),
-          isDark: isDark,
+          theme,
+          borderColor: theme.primaryColor,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -137,7 +136,7 @@ class _EmptyCollection extends StatelessWidget {
             Text(
               'Your collection is empty.\nHatch some eggs first!',
               textAlign: TextAlign.center,
-              style: GameTheme.emptyStateTitle(isDark: isDark),
+              style: GameTheme.emptyStateTitle(theme),
             ),
           ],
         ),

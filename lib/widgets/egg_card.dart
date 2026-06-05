@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
@@ -15,7 +16,7 @@ class EggCard extends StatelessWidget {
     required this.canAfford,
     required this.lifetimeCoinsEarned,
     required this.onBuy,
-    this.isDark = false,
+    required this.theme,
   });
 
   final Egg egg;
@@ -23,7 +24,7 @@ class EggCard extends StatelessWidget {
   final bool canAfford;
   final int lifetimeCoinsEarned;
   final VoidCallback onBuy;
-  final bool isDark;
+  final BackgroundTheme theme;
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +38,7 @@ class EggCard extends StatelessWidget {
         : 1.0;
 
     return Container(
-      decoration: GameTheme.cardDecoration(
-        locked: !isUnlocked,
-        isDark: isDark,
-      ),
+      decoration: GameTheme.cardDecoration(theme, locked: !isUnlocked),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -55,20 +53,20 @@ class EggCard extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isUnlocked
-                        ? GameTheme.softYellow.withValues(alpha: 0.6)
-                        : Colors.grey.shade200,
+                        ? theme.secondaryColor.withValues(alpha: 0.18)
+                        : theme.disabledColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isUnlocked
-                          ? const Color(0xFFFFB74D).withValues(alpha: 0.4)
-                          : Colors.grey.shade400,
+                          ? theme.secondaryColor.withValues(alpha: 0.45)
+                          : theme.disabledColor,
                     ),
                   ),
                   child: Text(
                     isUnlocked ? egg.emoji : '🔒',
                     style: TextStyle(
                       fontSize: 40,
-                      color: isUnlocked ? null : Colors.grey,
+                      color: isUnlocked ? null : theme.disabledColor,
                     ),
                   ),
                 ),
@@ -83,8 +81,8 @@ class EggCard extends StatelessWidget {
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: isUnlocked
-                              ? GameTheme.textDark
-                              : Colors.grey.shade700,
+                              ? theme.cardTextPrimaryColor
+                              : theme.disabledColor,
                         ),
                       ),
                       if (egg.description.isNotEmpty) ...[
@@ -93,7 +91,7 @@ class EggCard extends StatelessWidget {
                           egg.description,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: theme.cardTextSecondaryColor,
                             height: 1.3,
                           ),
                         ),
@@ -105,18 +103,18 @@ class EggCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFB300).withValues(alpha: 0.15),
+                    color: theme.panelAccentColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFFFFB300).withValues(alpha: 0.5),
+                      color: theme.panelAccentColor.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Text(
                     '🪙 ${formatCoins(egg.cost)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: GameTheme.textDark,
+                      color: theme.cardTextPrimaryColor,
                     ),
                   ),
                 ),
@@ -129,7 +127,7 @@ class EggCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.deepOrange.shade700,
+                  color: theme.secondaryColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -138,8 +136,9 @@ class EggCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: unlockProgress,
                   minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
-                  color: const Color(0xFFFFB74D),
+                  backgroundColor:
+                      theme.disabledColor.withValues(alpha: 0.2),
+                  color: theme.secondaryColor,
                 ),
               ),
               const SizedBox(height: 6),
@@ -148,14 +147,16 @@ class EggCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade700,
+                  color: theme.cardTextSecondaryColor,
                 ),
               ),
             ],
             const SizedBox(height: 14),
             Text(
               'Possible animals:',
-              style: GameTheme.sectionTitle(size: 14),
+              style: GameTheme.sectionTitle(theme, size: 14).copyWith(
+                color: theme.cardTextPrimaryColor,
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -164,10 +165,11 @@ class EggCard extends StatelessWidget {
               children: [
                 for (final animal in possibleAnimals)
                   Chip(
-                    avatar: Text(animal.emoji, style: const TextStyle(fontSize: 16)),
+                    avatar:
+                        Text(animal.emoji, style: const TextStyle(fontSize: 16)),
                     label: Text(animal.name),
-                    backgroundColor:
-                        GameTheme.rarityAccent(animal.rarity).withValues(alpha: 0.12),
+                    backgroundColor: GameTheme.rarityAccent(animal.rarity)
+                        .withValues(alpha: 0.12),
                     side: BorderSide(
                       color: GameTheme.rarityAccent(animal.rarity),
                       width: 1.5,
@@ -183,11 +185,10 @@ class EggCard extends StatelessWidget {
             FilledButton(
               onPressed: onBuy,
               style: GameTheme.filledButton(
-                !isUnlocked
-                    ? Colors.grey.shade500
-                    : canAfford
-                        ? const Color(0xFF4DB6AC)
-                        : Colors.grey.shade500,
+                theme,
+                color: !isUnlocked || !canAfford
+                    ? theme.disabledColor
+                    : theme.primaryColor,
               ),
               child: Text(
                 !isUnlocked

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
 import '../theme/game_theme.dart';
@@ -19,20 +20,27 @@ class HatchDialog extends StatefulWidget {
     super.key,
     required this.egg,
     required this.result,
+    required this.theme,
   });
 
   final Egg egg;
   final HatchResult result;
+  final BackgroundTheme theme;
 
   static Future<void> show(
     BuildContext context, {
     required Egg egg,
     required HatchResult result,
+    required BackgroundTheme theme,
   }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => HatchDialog(egg: egg, result: result),
+      builder: (context) => HatchDialog(
+        egg: egg,
+        result: result,
+        theme: theme,
+      ),
     );
   }
 
@@ -157,10 +165,15 @@ class _HatchDialogState extends State<HatchDialog>
     final mutationColor = GameTheme.mutationAccent(widget.result.mutation.id);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(
+          color: widget.theme.cardBorderColor.withValues(alpha: 0.5),
+        ),
+      ),
       backgroundColor: revealed && isMutated
           ? GameTheme.mutationTint(widget.result.mutation.id)
-          : GameTheme.cream,
+          : widget.theme.cardColor,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 420,
@@ -182,7 +195,7 @@ class _HatchDialogState extends State<HatchDialog>
                     fontWeight: FontWeight.bold,
                     color: isMutated && revealed
                         ? mutationColor
-                        : GameTheme.textDark,
+                        : widget.theme.cardTextPrimaryColor,
                   ),
                 ),
               ),
@@ -197,7 +210,7 @@ class _HatchDialogState extends State<HatchDialog>
                         isMutated ? FontWeight.bold : FontWeight.normal,
                     color: isMutated
                         ? mutationColor
-                        : GameTheme.textMuted,
+                        : widget.theme.cardTextSecondaryColor,
                     height: 1.35,
                   ),
                 ),
@@ -240,7 +253,7 @@ class _HatchDialogState extends State<HatchDialog>
                     style: TextStyle(
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
-                      color: Colors.brown.shade600,
+                      color: widget.theme.cardTextSecondaryColor,
                     ),
                   ),
                 ),
@@ -248,6 +261,7 @@ class _HatchDialogState extends State<HatchDialog>
                 const SizedBox(height: 10),
                 AnimalCard(
                   animal: widget.result.animal,
+                  theme: widget.theme,
                   mutation: widget.result.mutation,
                   compact: true,
                 ),
@@ -258,9 +272,10 @@ class _HatchDialogState extends State<HatchDialog>
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: GameTheme.filledButton(
-                      isMutated
+                      widget.theme,
+                      color: isMutated
                           ? mutationColor
-                          : const Color(0xFF4DB6AC),
+                          : widget.theme.primaryColor,
                     ),
                     child: Text(
                       isMutated ? 'Amazing!' : 'Awesome!',

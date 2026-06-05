@@ -4,21 +4,14 @@ import 'package:flutter/services.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../services/game_service.dart';
-import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
-import '../widgets/game_background.dart';
 
-/// Hidden developer tools for testing coins and forced hatches.
+/// Hidden developer tools — always green-on-black, never follows player theme.
 class DeveloperScreen extends StatefulWidget {
-  const DeveloperScreen({
-    super.key,
-    required this.game,
-    required this.preferences,
-  });
+  const DeveloperScreen({super.key, required this.game});
 
   final GameService game;
-  final PreferencesService preferences;
 
   @override
   State<DeveloperScreen> createState() => _DeveloperScreenState();
@@ -31,7 +24,6 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   late String _selectedMutationId;
 
   GameService get game => widget.game;
-  PreferencesService get preferences => widget.preferences;
 
   List<Animal> get _sortedAnimals {
     final list = List<Animal>.from(GameData.animals);
@@ -96,7 +88,11 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   }
 
   void _showMessage(String text) {
-    showGameSnackBar(context, message: text);
+    showGameSnackBar(
+      context,
+      message: text,
+      backgroundColor: DevToolsTheme.primaryDim,
+    );
   }
 
   @override
@@ -108,67 +104,54 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         ? GameData.mutationById(game.forcedNextMutationId!)
         : null;
 
-    return ListenableBuilder(
-      listenable: preferences,
-      builder: (context, _) {
-        final bg = preferences.selectedTheme;
-        final isDark = bg.isDark;
-
-        return Scaffold(
-          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
-          appBar: AppBar(
-            title: const Text(
-              'Developer Tools',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor:
-                GameTheme.appBarColorFor(GameBackgroundStyle.developer),
-            foregroundColor: Colors.white,
-            elevation: 0,
+    return Scaffold(
+      backgroundColor: DevToolsTheme.background,
+      appBar: AppBar(
+        title: Text(
+          '> Developer Tools',
+          style: DevToolsTheme.sectionTitle(size: 18),
+        ),
+        backgroundColor: DevToolsTheme.surface,
+        foregroundColor: DevToolsTheme.text,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SectionTitle('Coins'),
+          Text(
+            'Current: ${game.coins} coins',
+            style: DevToolsTheme.bodyText(),
           ),
-          body: GameBackground(
-            theme: bg,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _SectionTitle('Coins', isDark: isDark),
-          Text('Current: ${game.coins} coins'),
           const SizedBox(height: 12),
           TextField(
             controller: _coinController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Coin amount',
-              border: OutlineInputBorder(),
-              filled: true,
-              fillColor: Colors.white,
-            ),
+            style: DevToolsTheme.bodyText(),
+            cursorColor: DevToolsTheme.primary,
+            decoration: DevToolsTheme.inputDecoration('Coin amount'),
           ),
           const SizedBox(height: 12),
-          _BigButton(
-            label: 'Set Coins',
-            color: Colors.teal,
-            onPressed: _setCoinsFromField,
-          ),
+          _BigButton(label: 'Set Coins', onPressed: _setCoinsFromField),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+1,000',
                 onPressed: () => _addCoins(1000),
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+10,000',
                 onPressed: () => _addCoins(10000),
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+100,000',
                 onPressed: () => _addCoins(100000),
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+1,000,000',
                 onPressed: () => _addCoins(1000000),
               ),
@@ -177,28 +160,27 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           const SizedBox(height: 12),
           _BigButton(
             label: 'Reset to 250 coins',
-            color: Colors.orange,
+            color: DevToolsTheme.warning,
             onPressed: _resetCoins,
           ),
           const SizedBox(height: 32),
-          _SectionTitle('Lifetime Coins (Unlock Testing)', isDark: isDark),
-          Text('Current: ${game.lifetimeCoinsEarned} lifetime coins'),
+          _SectionTitle('Lifetime Coins (Unlock Testing)'),
+          Text(
+            'Current: ${game.lifetimeCoinsEarned} lifetime coins',
+            style: DevToolsTheme.bodyText(),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _lifetimeController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Lifetime coins earned',
-              border: OutlineInputBorder(),
-              filled: true,
-              fillColor: Colors.white,
-            ),
+            style: DevToolsTheme.bodyText(),
+            cursorColor: DevToolsTheme.primary,
+            decoration: DevToolsTheme.inputDecoration('Lifetime coins earned'),
           ),
           const SizedBox(height: 12),
           _BigButton(
             label: 'Set Lifetime Coins Earned',
-            color: Colors.teal,
             onPressed: () {
               final value = int.tryParse(_lifetimeController.text.trim());
               if (value == null) {
@@ -214,7 +196,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+500 lifetime',
                 onPressed: () {
                   game.addLifetimeCoinsEarned(500);
@@ -222,7 +204,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Added 500 lifetime coins.');
                 },
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+5,000 lifetime',
                 onPressed: () {
                   game.addLifetimeCoinsEarned(5000);
@@ -230,7 +212,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Added 5,000 lifetime coins.');
                 },
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+50,000 lifetime',
                 onPressed: () {
                   game.addLifetimeCoinsEarned(50000);
@@ -238,7 +220,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Added 50,000 lifetime coins.');
                 },
               ),
-              _QuickCoinButton(
+              _QuickButton(
                 label: '+1M lifetime',
                 onPressed: () {
                   game.addLifetimeCoinsEarned(1000000);
@@ -251,7 +233,6 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           const SizedBox(height: 12),
           _BigButton(
             label: 'Unlock all eggs (750K lifetime)',
-            color: Colors.indigo,
             onPressed: () {
               game.setLifetimeCoinsEarned(750000);
               _lifetimeController.text = '${game.lifetimeCoinsEarned}';
@@ -261,7 +242,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           const SizedBox(height: 12),
           _BigButton(
             label: 'Reset lifetime coins to 0',
-            color: Colors.orange,
+            color: DevToolsTheme.warning,
             onPressed: () {
               game.resetLifetimeCoinsEarned();
               _lifetimeController.text = '0';
@@ -269,31 +250,22 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             },
           ),
           const SizedBox(height: 32),
-          _SectionTitle('Force Next Hatch', isDark: isDark),
+          _SectionTitle('Force Next Hatch'),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: game.hasForcedNextHatch
-                  ? Colors.green.shade50
-                  : Colors.white,
-              border: Border.all(
-                color: game.hasForcedNextHatch
-                    ? Colors.green
-                    : Colors.grey.shade400,
-              ),
-              borderRadius: BorderRadius.circular(12),
+            decoration: DevToolsTheme.panelDecoration(
+              active: game.hasForcedNextHatch,
             ),
             child: Text(
-              game.hasForcedNextHatch && forcedAnimal != null && forcedMutation != null
+              game.hasForcedNextHatch &&
+                      forcedAnimal != null &&
+                      forcedMutation != null
                   ? 'ACTIVE: ${forcedMutation.fullName(forcedAnimal)}'
                   : 'No forced hatch active',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: game.hasForcedNextHatch
-                    ? Colors.green.shade800
-                    : Colors.grey.shade700,
-              ),
+              style: DevToolsTheme.bodyText(
+                muted: !game.hasForcedNextHatch,
+              ).copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 16),
@@ -306,6 +278,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   value: animal.id,
                   child: Text(
                     '${animal.emoji} ${animal.name} (${animal.coinsPerSecond}/s)',
+                    style: DevToolsTheme.bodyText(),
                   ),
                 ),
             ],
@@ -325,6 +298,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                     mutation.isNormal
                         ? 'Normal (none)'
                         : '${mutation.icon} ${mutation.displayName}',
+                    style: DevToolsTheme.bodyText(),
                   ),
                 ),
             ],
@@ -335,38 +309,30 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           const SizedBox(height: 16),
           _BigButton(
             label: 'Set Forced Next Hatch',
-            color: Colors.deepPurple,
             onPressed: _applyForcedHatch,
           ),
           const SizedBox(height: 12),
           _BigButton(
             label: 'Clear Forced Hatch',
-            color: Colors.red.shade400,
+            color: DevToolsTheme.danger,
             onPressed: _clearForcedHatch,
           ),
-              ],
-            ),
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text, {required this.isDark});
+  const _SectionTitle(this.text);
 
   final String text;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        text,
-        style: GameTheme.sectionTitle(size: 22, isDark: isDark),
-      ),
+      child: Text(text, style: DevToolsTheme.sectionTitle(size: 22)),
     );
   }
 }
@@ -374,19 +340,19 @@ class _SectionTitle extends StatelessWidget {
 class _BigButton extends StatelessWidget {
   const _BigButton({
     required this.label,
-    required this.color,
     required this.onPressed,
+    this.color,
   });
 
   final String label;
-  final Color color;
   final VoidCallback onPressed;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
-      style: GameTheme.filledButton(color),
+      style: DevToolsTheme.filledButton(color: color),
       child: Text(label),
     );
   }
@@ -408,16 +374,12 @@ class _LabeledDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.white,
-      ),
+      decoration: DevToolsTheme.inputDecoration(label),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           isExpanded: true,
           value: value,
+          dropdownColor: DevToolsTheme.surface,
           items: items,
           onChanged: onChanged,
         ),
@@ -426,8 +388,8 @@ class _LabeledDropdown<T> extends StatelessWidget {
   }
 }
 
-class _QuickCoinButton extends StatelessWidget {
-  const _QuickCoinButton({required this.label, required this.onPressed});
+class _QuickButton extends StatelessWidget {
+  const _QuickButton({required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;
@@ -436,7 +398,7 @@ class _QuickCoinButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
-      style: FilledButton.styleFrom(backgroundColor: Colors.blueGrey),
+      style: DevToolsTheme.filledButton(color: DevToolsTheme.primaryDim),
       child: Text(label),
     );
   }

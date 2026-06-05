@@ -1,46 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../models/animal.dart';
+import '../models/background_theme.dart';
 
-/// Shared colors, gradients, and styling for the Egg Hatchers UI.
+/// Shared styling helpers for the Egg Hatchers UI.
 class GameTheme {
   GameTheme._();
-
-  // Pastel palette
-  static const cream = Color(0xFFFFF8F0);
-  static const softYellow = Color(0xFFFFF3C4);
-  static const paleBlue = Color(0xFFE3F2FD);
-  static const softPink = Color(0xFFFCE4EC);
-  static const lightGreen = Color(0xFFE8F5E9);
-  static const softPeach = Color(0xFFFFE8D6);
-
-  static const textDark = Color(0xFF5D4037);
-  static const textMuted = Color(0xFF795548);
-  static const textLight = Color(0xFFFFF8E1);
-  static const textLightMuted = Color(0xFFE0E0E0);
 
   static const cardRadius = 24.0;
   static const buttonRadius = 16.0;
   static const panelRadius = 22.0;
-
-  static Color textPrimary(bool isDark) =>
-      isDark ? textLight : textDark;
-
-  static Color textSecondary(bool isDark) =>
-      isDark ? textLightMuted : textMuted;
-
-  static Color appBarColorFor(GameBackgroundStyle style) {
-    switch (style) {
-      case GameBackgroundStyle.hatchery:
-        return const Color(0xFF4DB6AC);
-      case GameBackgroundStyle.shop:
-        return const Color(0xFFFFB74D);
-      case GameBackgroundStyle.collection:
-        return const Color(0xFFBA68C8);
-      case GameBackgroundStyle.developer:
-        return const Color(0xFF78909C);
-    }
-  }
 
   /// Richer display colors for rarity badges and card borders.
   static Color rarityAccent(Rarity rarity) {
@@ -86,17 +55,17 @@ class GameTheme {
     }
   }
 
-  static BoxDecoration panelDecoration({Color? accent, bool isDark = false}) {
+  static BoxDecoration panelDecoration(BackgroundTheme theme) {
     return BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.92),
+      color: theme.panelColor.withValues(alpha: theme.isDark ? 0.95 : 0.92),
       borderRadius: BorderRadius.circular(panelRadius),
       border: Border.all(
-        color: (accent ?? const Color(0xFFFFB74D)).withValues(alpha: 0.35),
+        color: theme.panelAccentColor.withValues(alpha: 0.45),
         width: 2,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.brown.withValues(alpha: 0.08),
+          color: theme.primaryColor.withValues(alpha: 0.12),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -104,29 +73,30 @@ class GameTheme {
     );
   }
 
-  static BoxDecoration cardDecoration({
+  static BoxDecoration cardDecoration(
+    BackgroundTheme theme, {
     Color? borderColor,
     bool locked = false,
     Color? backgroundColor,
-    bool isDark = false,
   }) {
-    final defaultCardColor = isDark
-        ? Colors.white.withValues(alpha: locked ? 0.82 : 0.92)
-        : Colors.white.withValues(alpha: locked ? 0.65 : 0.95);
+    final baseColor = backgroundColor ?? theme.cardColor;
+    final cardFill = locked
+        ? baseColor.withValues(alpha: theme.isDark ? 0.75 : 0.82)
+        : baseColor.withValues(alpha: theme.isDark ? 0.92 : 0.96);
 
     return BoxDecoration(
-      color: backgroundColor ?? defaultCardColor,
+      color: cardFill,
       borderRadius: BorderRadius.circular(cardRadius),
       border: Border.all(
         color: locked
-            ? Colors.grey.shade400
-            : (borderColor ?? Colors.white)
-                .withValues(alpha: borderColor != null ? 0.9 : 0.0),
-        width: locked ? 2 : (borderColor != null ? 2.5 : 0),
+            ? theme.disabledColor
+            : (borderColor ?? theme.cardBorderColor)
+                .withValues(alpha: borderColor != null ? 0.9 : 0.55),
+        width: locked ? 2 : 2,
       ),
       boxShadow: [
         BoxShadow(
-          color: (borderColor ?? Colors.brown).withValues(alpha: locked ? 0.06 : 0.1),
+          color: theme.primaryColor.withValues(alpha: locked ? 0.06 : 0.14),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
@@ -134,10 +104,16 @@ class GameTheme {
     );
   }
 
-  static ButtonStyle filledButton(Color color, {double height = 52}) {
+  static ButtonStyle filledButton(
+    BackgroundTheme theme, {
+    Color? color,
+    double height = 52,
+  }) {
+    final buttonColor = color ?? theme.primaryColor;
     return FilledButton.styleFrom(
-      backgroundColor: color,
+      backgroundColor: buttonColor,
       foregroundColor: Colors.white,
+      disabledBackgroundColor: theme.disabledColor,
       minimumSize: Size(double.infinity, height),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       shape: RoundedRectangleBorder(
@@ -147,29 +123,109 @@ class GameTheme {
     );
   }
 
-  static TextStyle sectionTitle({double size = 20, bool isDark = false}) {
+  static TextStyle sectionTitle(BackgroundTheme theme, {double size = 20}) {
     return TextStyle(
       fontSize: size,
       fontWeight: FontWeight.bold,
-      color: textPrimary(isDark),
+      color: theme.textPrimaryColor,
       letterSpacing: 0.2,
     );
   }
 
-  static TextStyle emptyStateTitle({bool isDark = false}) {
+  static TextStyle emptyStateTitle(BackgroundTheme theme) {
     return TextStyle(
       fontSize: 17,
       fontWeight: FontWeight.w600,
-      color: isDark ? textLightMuted : textMuted,
+      color: theme.cardTextSecondaryColor,
       height: 1.5,
     );
   }
 }
 
-/// Which screen gradient to use for [GameBackground].
-enum GameBackgroundStyle {
-  hatchery,
-  shop,
-  collection,
-  developer,
+/// Fixed terminal-style colors for Developer Tools (never follows player theme).
+class DevToolsTheme {
+  DevToolsTheme._();
+
+  static const background = Color(0xFF050505);
+  static const surface = Color(0xFF101010);
+  static const border = Color(0xFF00AA44);
+  static const primary = Color(0xFF00FF66);
+  static const primaryDim = Color(0xFF00CC55);
+  static const text = Color(0xFF00FF66);
+  static const textMuted = Color(0xFF66FF99);
+  static const warning = Color(0xFFFFAA00);
+  static const danger = Color(0xFFFF4444);
+
+  static BoxDecoration panelDecoration({bool active = false}) {
+    return BoxDecoration(
+      color: surface,
+      borderRadius: BorderRadius.circular(GameTheme.panelRadius),
+      border: Border.all(
+        color: active ? primary : border.withValues(alpha: 0.6),
+        width: 1.5,
+      ),
+    );
+  }
+
+  static BoxDecoration cardDecoration() {
+    return BoxDecoration(
+      color: surface,
+      borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+      border: Border.all(color: border.withValues(alpha: 0.5)),
+    );
+  }
+
+  static ButtonStyle filledButton({Color? color, double height = 52}) {
+    final buttonColor = color ?? primaryDim;
+    return FilledButton.styleFrom(
+      backgroundColor: buttonColor.withValues(alpha: 0.2),
+      foregroundColor: text,
+      minimumSize: Size(double.infinity, height),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      side: BorderSide(color: buttonColor),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GameTheme.buttonRadius),
+      ),
+      textStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        fontFamily: 'monospace',
+      ),
+    );
+  }
+
+  static TextStyle sectionTitle({double size = 20}) {
+    return TextStyle(
+      fontSize: size,
+      fontWeight: FontWeight.bold,
+      color: text,
+      fontFamily: 'monospace',
+    );
+  }
+
+  static TextStyle bodyText({bool muted = false}) {
+    return TextStyle(
+      fontSize: 14,
+      color: muted ? textMuted : text,
+      fontFamily: 'monospace',
+    );
+  }
+
+  static InputDecoration inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: textMuted, fontFamily: 'monospace'),
+      border: OutlineInputBorder(
+        borderSide: BorderSide(color: border.withValues(alpha: 0.6)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: border.withValues(alpha: 0.6)),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: primary),
+      ),
+      filled: true,
+      fillColor: surface,
+    );
+  }
 }
