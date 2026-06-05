@@ -8,6 +8,7 @@ class Egg {
     required this.emoji,
     this.description = '',
     this.unlockLifetimeCoins = 0,
+    this.spritePath,
   });
 
   final String id;
@@ -16,6 +17,9 @@ class Egg {
   final List<String> possibleAnimalIds;
   final String emoji;
   final String description;
+
+  /// Optional sprite asset path. Emoji is used when null or if load fails.
+  final String? spritePath;
 
   /// Lifetime coins needed to unlock. 0 means always unlocked.
   final int unlockLifetimeCoins;

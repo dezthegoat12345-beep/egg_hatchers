@@ -5,6 +5,7 @@ import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../theme/game_theme.dart';
+import 'game_sprite.dart';
 
 /// A rounded card showing one animal, mutation, stats, and an upgrade button.
 class AnimalCard extends StatelessWidget {
@@ -40,7 +41,6 @@ class AnimalCard extends StatelessWidget {
     final isOwned = quantity != null;
     final activeMutation = mutation ?? GameData.mutations.first;
     final displayName = activeMutation.fullName(animal);
-    final displayEmoji = activeMutation.displayEmoji(animal);
     final rarityColor = GameTheme.rarityAccent(animal.rarity);
     final mutationColor = GameTheme.mutationAccent(activeMutation.id);
     final borderColor = activeMutation.isNormal ? rarityColor : mutationColor;
@@ -79,12 +79,12 @@ class AnimalCard extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: Text(
-                    displayEmoji,
-                    style: TextStyle(
-                      fontSize: compact ? 34 : 42,
-                      height: 1.1,
-                    ),
+                  child: GameSprite(
+                    spritePath: animal.spritePath,
+                    fallbackEmoji: animal.emoji,
+                    size: compact ? 48 : 58,
+                    semanticLabel: displayName,
+                    emojiFontSize: compact ? 34 : 42,
                   ),
                 ),
                 const SizedBox(width: 14),

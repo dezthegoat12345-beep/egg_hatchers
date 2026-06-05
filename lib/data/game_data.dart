@@ -17,6 +17,7 @@ class GameData {
       rarity: Rarity.common,
       coinsPerSecond: 1,
       emoji: '🐔',
+      spritePath: 'assets/images/animals/chicken.png',
     ),
     Animal(
       id: 'mouse',
@@ -24,6 +25,7 @@ class GameData {
       rarity: Rarity.common,
       coinsPerSecond: 2,
       emoji: '🐭',
+      spritePath: 'assets/images/animals/mouse.png',
     ),
     Animal(
       id: 'rabbit',
@@ -31,6 +33,7 @@ class GameData {
       rarity: Rarity.common,
       coinsPerSecond: 3,
       emoji: '🐰',
+      spritePath: 'assets/images/animals/rabbit.png',
     ),
     // Forest Egg
     Animal(
@@ -39,6 +42,7 @@ class GameData {
       rarity: Rarity.uncommon,
       coinsPerSecond: 8,
       emoji: '🦊',
+      spritePath: 'assets/images/animals/fox.png',
     ),
     Animal(
       id: 'deer',
@@ -68,6 +72,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 100,
       emoji: '🐉',
+      spritePath: 'assets/images/animals/dragon.png',
     ),
     Animal(
       id: 'unicorn',
@@ -75,6 +80,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 120,
       emoji: '🦄',
+      spritePath: 'assets/images/animals/unicorn.png',
     ),
     // Farm Egg
     Animal(
@@ -83,6 +89,7 @@ class GameData {
       rarity: Rarity.uncommon,
       coinsPerSecond: 15,
       emoji: '🐮',
+      spritePath: 'assets/images/animals/cow.png',
     ),
     Animal(
       id: 'pig',
@@ -294,6 +301,7 @@ class GameData {
       possibleAnimalIds: ['chicken', 'mouse', 'rabbit'],
       emoji: '🥚',
       description: 'Common farm friends',
+      spritePath: 'assets/images/eggs/basic_egg.png',
     ),
     Egg(
       id: 'forest',
@@ -303,6 +311,7 @@ class GameData {
       emoji: '🌲🥚',
       description: 'Woodland creatures',
       unlockLifetimeCoins: 300,
+      spritePath: 'assets/images/eggs/forest_egg.png',
     ),
     Egg(
       id: 'farm',
@@ -312,6 +321,7 @@ class GameData {
       emoji: '🚜🥚',
       description: 'Barnyard beasts',
       unlockLifetimeCoins: 750,
+      spritePath: 'assets/images/eggs/farm_egg.png',
     ),
     Egg(
       id: 'magic',
@@ -321,6 +331,7 @@ class GameData {
       emoji: '✨🥚',
       description: 'Legendary wonders',
       unlockLifetimeCoins: 2500,
+      spritePath: 'assets/images/eggs/magic_egg.png',
     ),
     Egg(
       id: 'jungle',

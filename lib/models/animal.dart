@@ -71,6 +71,7 @@ class Animal {
     required this.rarity,
     required this.coinsPerSecond,
     required this.emoji,
+    this.spritePath,
   });
 
   final String id;
@@ -78,4 +79,7 @@ class Animal {
   final Rarity rarity;
   final int coinsPerSecond;
   final String emoji;
+
+  /// Optional sprite asset path. Emoji is used when null or if load fails.
+  final String? spritePath;
 }

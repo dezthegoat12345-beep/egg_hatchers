@@ -5,6 +5,7 @@ import '../models/egg.dart';
 import '../models/hatch_result.dart';
 import '../theme/game_theme.dart';
 import 'animal_card.dart';
+import 'game_sprite.dart';
 
 /// Stages of the egg cracking hatch reveal animation.
 enum _HatchStage {
@@ -298,9 +299,12 @@ class _HatchDialogState extends State<HatchDialog>
     return Stack(
       alignment: Alignment.center,
       children: [
-        Text(
-          widget.egg.emoji,
-          style: const TextStyle(fontSize: 88),
+        GameSprite(
+          spritePath: widget.egg.spritePath,
+          fallbackEmoji: widget.egg.emoji,
+          size: 88,
+          semanticLabel: widget.egg.name,
+          emojiFontSize: 88,
         ),
         if (showCracks) const _CrackMarks(),
       ],
@@ -308,13 +312,13 @@ class _HatchDialogState extends State<HatchDialog>
   }
 
   Widget _buildRevealedContent(bool isMutated) {
-    return Text(
-      widget.result.mutation.displayEmoji(widget.result.animal),
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: isMutated ? 76 : 68,
-        height: 1.0,
-      ),
+    return GameAnimalPortrait(
+      spritePath: widget.result.animal.spritePath,
+      fallbackEmoji: widget.result.animal.emoji,
+      size: isMutated ? 84 : 76,
+      mutation: widget.result.mutation,
+      semanticLabel: widget.result.mutation.fullName(widget.result.animal),
+      emojiFontSize: isMutated ? 76 : 68,
     );
   }
 }

@@ -9,6 +9,7 @@ class Mutation {
     required this.incomeMultiplier,
     this.icon = '',
     this.prefix = '',
+    this.overlayPath,
   });
 
   final String id;
@@ -17,6 +18,9 @@ class Mutation {
   final int incomeMultiplier;
   final String icon;
   final String prefix;
+
+  /// Optional future overlay sprite path (not required for display yet).
+  final String? overlayPath;
 
   bool get isNormal => id == 'none';
 

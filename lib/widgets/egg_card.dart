@@ -6,6 +6,7 @@ import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
+import 'game_sprite.dart';
 
 /// A shop card for buying an egg.
 class EggCard extends StatelessWidget {
@@ -62,13 +63,21 @@ class EggCard extends StatelessWidget {
                           : theme.disabledColor,
                     ),
                   ),
-                  child: Text(
-                    isUnlocked ? egg.emoji : '🔒',
-                    style: TextStyle(
-                      fontSize: 40,
-                      color: isUnlocked ? null : theme.disabledColor,
-                    ),
-                  ),
+                  child: isUnlocked
+                      ? GameSprite(
+                          spritePath: egg.spritePath,
+                          fallbackEmoji: egg.emoji,
+                          size: 56,
+                          semanticLabel: egg.name,
+                          emojiFontSize: 40,
+                        )
+                      : Text(
+                          '🔒',
+                          style: TextStyle(
+                            fontSize: 40,
+                            color: theme.disabledColor,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -165,8 +174,16 @@ class EggCard extends StatelessWidget {
               children: [
                 for (final animal in possibleAnimals)
                   Chip(
-                    avatar:
-                        Text(animal.emoji, style: const TextStyle(fontSize: 16)),
+                    avatar: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: GameSprite(
+                        spritePath: animal.spritePath,
+                        fallbackEmoji: animal.emoji,
+                        size: 24,
+                        emojiFontSize: 16,
+                      ),
+                    ),
                     label: Text(animal.name),
                     backgroundColor: GameTheme.rarityAccent(animal.rarity)
                         .withValues(alpha: 0.12),
