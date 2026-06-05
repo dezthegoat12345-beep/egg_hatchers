@@ -228,10 +228,10 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           ),
           const SizedBox(height: 12),
           _BigButton(
-            label: 'Unlock all eggs (2M lifetime)',
+            label: 'Unlock all eggs (750K lifetime)',
             color: Colors.indigo,
             onPressed: () {
-              game.setLifetimeCoinsEarned(2000000);
+              game.setLifetimeCoinsEarned(750000);
               _lifetimeController.text = '${game.lifetimeCoinsEarned}';
               _showMessage('All eggs unlocked.');
             },

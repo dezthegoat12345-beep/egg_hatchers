@@ -256,13 +256,13 @@ class GameData {
     Mutation(
       id: 'none',
       displayName: 'Normal',
-      chance: 85,
+      chance: 70,
       incomeMultiplier: 1,
     ),
     Mutation(
       id: 'golden',
       displayName: 'Golden',
-      chance: 10,
+      chance: 20,
       incomeMultiplier: 2,
       icon: '✨',
       prefix: 'Golden',
@@ -270,7 +270,7 @@ class GameData {
     Mutation(
       id: 'rainbow',
       displayName: 'Rainbow',
-      chance: 4,
+      chance: 8,
       incomeMultiplier: 5,
       icon: '🌈',
       prefix: 'Rainbow',
@@ -278,7 +278,7 @@ class GameData {
     Mutation(
       id: 'shadow',
       displayName: 'Shadow',
-      chance: 1,
+      chance: 2,
       incomeMultiplier: 10,
       icon: '🌑',
       prefix: 'Shadow',
@@ -298,74 +298,74 @@ class GameData {
     Egg(
       id: 'forest',
       name: 'Forest Egg',
-      cost: 500,
+      cost: 400,
       possibleAnimalIds: ['fox', 'deer', 'bear'],
       emoji: '🌲🥚',
       description: 'Woodland creatures',
-      unlockLifetimeCoins: 500,
+      unlockLifetimeCoins: 300,
     ),
     Egg(
       id: 'magic',
       name: 'Magic Egg',
-      cost: 2000,
+      cost: 1500,
       possibleAnimalIds: ['tiger', 'dragon', 'unicorn'],
       emoji: '✨🥚',
       description: 'Legendary wonders',
-      unlockLifetimeCoins: 5000,
+      unlockLifetimeCoins: 2500,
     ),
     Egg(
       id: 'farm',
       name: 'Farm Egg',
-      cost: 1000,
+      cost: 800,
       possibleAnimalIds: ['cow', 'pig', 'sheep', 'horse'],
       emoji: '🚜🥚',
       description: 'Barnyard beasts',
-      unlockLifetimeCoins: 1000,
+      unlockLifetimeCoins: 750,
     ),
     Egg(
       id: 'jungle',
       name: 'Jungle Egg',
-      cost: 5000,
+      cost: 3500,
       possibleAnimalIds: ['monkey', 'parrot', 'snake', 'gorilla'],
       emoji: '🌴🥚',
       description: 'Wild jungle hunters',
-      unlockLifetimeCoins: 10000,
+      unlockLifetimeCoins: 5000,
     ),
     Egg(
       id: 'ocean',
       name: 'Ocean Egg',
-      cost: 20000,
+      cost: 12000,
       possibleAnimalIds: ['fish', 'turtle', 'dolphin', 'shark'],
       emoji: '🌊🥚',
       description: 'Deep sea legends',
-      unlockLifetimeCoins: 50000,
+      unlockLifetimeCoins: 20000,
     ),
     Egg(
       id: 'arctic',
       name: 'Arctic Egg',
-      cost: 75000,
+      cost: 40000,
       possibleAnimalIds: ['penguin', 'seal', 'polar_bear', 'snow_owl'],
       emoji: '❄️🥚',
       description: 'Frozen frontier friends',
-      unlockLifetimeCoins: 150000,
+      unlockLifetimeCoins: 75000,
     ),
     Egg(
       id: 'dino',
       name: 'Dino Egg',
-      cost: 250000,
+      cost: 125000,
       possibleAnimalIds: ['raptor', 'triceratops', 't_rex', 'fossil_dragon'],
       emoji: '🦖🥚',
       description: 'Prehistoric power',
-      unlockLifetimeCoins: 500000,
+      unlockLifetimeCoins: 200000,
     ),
     Egg(
       id: 'space',
       name: 'Space Egg',
-      cost: 1000000,
+      cost: 500000,
       possibleAnimalIds: ['moon_cat', 'star_fox', 'alien_slime', 'galaxy_dragon'],
       emoji: '🚀🥚',
       description: 'Cosmic creatures',
-      unlockLifetimeCoins: 2000000,
+      unlockLifetimeCoins: 750000,
     ),
   ];
 
@@ -392,7 +392,7 @@ class GameData {
     return null;
   }
 
-  /// Roll a mutation using weighted chances (85/10/4/1).
+  /// Roll a mutation using weighted chances (70/20/8/2).
   static Mutation rollMutation(Random random) {
     final roll = random.nextInt(100);
     var cumulative = 0;

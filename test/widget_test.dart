@@ -102,7 +102,7 @@ void main() {
     expect(GameService.incomeFor(animal, owned), 12);
   });
 
-  test('upgrade cost uses base x level x 50 without mutation multiplier', () {
+  test('upgrade cost uses base x level x 30 without mutation multiplier', () {
     const animal = Animal(
       id: 'rabbit',
       name: 'Rabbit',
@@ -122,8 +122,8 @@ void main() {
       level: 1,
       mutationId: 'none',
     );
-    expect(GameService.upgradeCostFor(animal, rainbowRabbit), 150);
-    expect(GameService.upgradeCostFor(animal, normalRabbit), 150);
+    expect(GameService.upgradeCostFor(animal, rainbowRabbit), 90);
+    expect(GameService.upgradeCostFor(animal, normalRabbit), 90);
   });
 
   test('mutated and normal animals share the same upgrade cost at same level', () {
@@ -148,9 +148,9 @@ void main() {
       mutationId: 'shadow',
     );
 
-    expect(GameService.upgradeCostFor(animal, normal), 100);
-    expect(GameService.upgradeCostFor(animal, golden), 100);
-    expect(GameService.upgradeCostFor(animal, shadow), 100);
+    expect(GameService.upgradeCostFor(animal, normal), 60);
+    expect(GameService.upgradeCostFor(animal, golden), 60);
+    expect(GameService.upgradeCostFor(animal, shadow), 60);
   });
 
   test('upgrading increases level and subtracts coins', () async {
@@ -323,7 +323,7 @@ void main() {
     expect(game.isEggUnlocked(forest), isFalse);
     expect(game.isEggUnlocked(magic), isFalse);
 
-    game.setLifetimeCoinsEarned(500);
+    game.setLifetimeCoinsEarned(300);
     expect(game.isEggUnlocked(forest), isTrue);
     expect(game.isEggUnlocked(magic), isFalse);
 
@@ -331,13 +331,13 @@ void main() {
     final space = GameData.eggs[8];
     expect(game.isEggUnlocked(farm), isFalse);
 
-    game.setLifetimeCoinsEarned(1000);
+    game.setLifetimeCoinsEarned(750);
     expect(game.isEggUnlocked(farm), isTrue);
 
-    game.setLifetimeCoinsEarned(5000);
+    game.setLifetimeCoinsEarned(2500);
     expect(game.isEggUnlocked(magic), isTrue);
 
-    game.setLifetimeCoinsEarned(2000000);
+    game.setLifetimeCoinsEarned(750000);
     expect(game.isEggUnlocked(space), isTrue);
 
     game.dispose();
