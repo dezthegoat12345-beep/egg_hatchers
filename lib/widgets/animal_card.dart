@@ -19,6 +19,7 @@ class AnimalCard extends StatelessWidget {
     this.canAffordUpgrade = false,
     this.onUpgrade,
     this.compact = false,
+    this.isDark = false,
   });
 
   final Animal animal;
@@ -31,6 +32,7 @@ class AnimalCard extends StatelessWidget {
   final bool canAffordUpgrade;
   final VoidCallback? onUpgrade;
   final bool compact;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +47,9 @@ class AnimalCard extends StatelessWidget {
     return Container(
       decoration: GameTheme.cardDecoration(
         borderColor: borderColor,
+        isDark: isDark,
         backgroundColor: activeMutation.isNormal
-            ? Colors.white.withValues(alpha: 0.95)
+            ? null
             : GameTheme.mutationTint(activeMutation.id),
       ),
       child: Padding(

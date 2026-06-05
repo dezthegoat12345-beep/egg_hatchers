@@ -11,19 +11,24 @@ class CoinHeader extends StatelessWidget {
     required this.coinsPerSecond,
     this.lifetimeCoinsEarned,
     this.onCoinTap,
+    this.isDark = false,
   });
 
   final int coins;
   final int coinsPerSecond;
   final int? lifetimeCoinsEarned;
   final VoidCallback? onCoinTap;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: GameTheme.panelDecoration(accent: const Color(0xFFFFB300)),
+      decoration: GameTheme.panelDecoration(
+        accent: const Color(0xFFFFB300),
+        isDark: isDark,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

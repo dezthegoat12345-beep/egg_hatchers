@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../theme/game_theme.dart';
+import '../models/background_theme.dart';
 
-/// Soft pastel gradient background for game screens.
+/// Soft gradient background using the player's selected theme.
 class GameBackground extends StatelessWidget {
   const GameBackground({
     super.key,
-    required this.style,
+    required this.theme,
     required this.child,
   });
 
-  final GameBackgroundStyle style;
+  final BackgroundTheme theme;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: GameTheme.gradientFor(style),
-      ),
+      decoration: BoxDecoration(gradient: theme.gradient),
       child: child,
     );
   }

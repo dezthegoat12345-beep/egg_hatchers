@@ -4,15 +4,21 @@ import 'package:flutter/services.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../services/game_service.dart';
+import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 
 /// Hidden developer tools for testing coins and forced hatches.
 class DeveloperScreen extends StatefulWidget {
-  const DeveloperScreen({super.key, required this.game});
+  const DeveloperScreen({
+    super.key,
+    required this.game,
+    required this.preferences,
+  });
 
   final GameService game;
+  final PreferencesService preferences;
 
   @override
   State<DeveloperScreen> createState() => _DeveloperScreenState();
@@ -25,6 +31,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   late String _selectedMutationId;
 
   GameService get game => widget.game;
+  PreferencesService get preferences => widget.preferences;
 
   List<Animal> get _sortedAnimals {
     final list = List<Animal>.from(GameData.animals);
@@ -101,24 +108,30 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         ? GameData.mutationById(game.forcedNextMutationId!)
         : null;
 
-    return Scaffold(
-      backgroundColor: GameTheme.cream,
-      appBar: AppBar(
-        title: const Text(
-          'Developer Tools',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor:
-            GameTheme.appBarColorFor(GameBackgroundStyle.developer),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: GameBackground(
-        style: GameBackgroundStyle.developer,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _SectionTitle('Coins'),
+    return ListenableBuilder(
+      listenable: preferences,
+      builder: (context, _) {
+        final bg = preferences.selectedTheme;
+        final isDark = bg.isDark;
+
+        return Scaffold(
+          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
+          appBar: AppBar(
+            title: const Text(
+              'Developer Tools',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor:
+                GameTheme.appBarColorFor(GameBackgroundStyle.developer),
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          body: GameBackground(
+            theme: bg,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _SectionTitle('Coins', isDark: isDark),
           Text('Current: ${game.coins} coins'),
           const SizedBox(height: 12),
           TextField(
@@ -168,7 +181,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             onPressed: _resetCoins,
           ),
           const SizedBox(height: 32),
-          _SectionTitle('Lifetime Coins (Unlock Testing)'),
+          _SectionTitle('Lifetime Coins (Unlock Testing)', isDark: isDark),
           Text('Current: ${game.lifetimeCoinsEarned} lifetime coins'),
           const SizedBox(height: 12),
           TextField(
@@ -256,7 +269,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             },
           ),
           const SizedBox(height: 32),
-          _SectionTitle('Force Next Hatch'),
+          _SectionTitle('Force Next Hatch', isDark: isDark),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -331,23 +344,29 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             color: Colors.red.shade400,
             onPressed: _clearForcedHatch,
           ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
+  const _SectionTitle(this.text, {required this.isDark});
 
   final String text;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(text, style: GameTheme.sectionTitle(size: 22)),
+      child: Text(
+        text,
+        style: GameTheme.sectionTitle(size: 22, isDark: isDark),
+      ),
     );
   }
 }

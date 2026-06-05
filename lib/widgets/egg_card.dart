@@ -15,6 +15,7 @@ class EggCard extends StatelessWidget {
     required this.canAfford,
     required this.lifetimeCoinsEarned,
     required this.onBuy,
+    this.isDark = false,
   });
 
   final Egg egg;
@@ -22,6 +23,7 @@ class EggCard extends StatelessWidget {
   final bool canAfford;
   final int lifetimeCoinsEarned;
   final VoidCallback onBuy;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,10 @@ class EggCard extends StatelessWidget {
         : 1.0;
 
     return Container(
-      decoration: GameTheme.cardDecoration(locked: !isUnlocked),
+      decoration: GameTheme.cardDecoration(
+        locked: !isUnlocked,
+        isDark: isDark,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(

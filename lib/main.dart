@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'models/background_theme.dart';
 import 'screens/hatchery_screen.dart';
 import 'services/game_service.dart';
+import 'services/preferences_service.dart';
 import 'theme/game_theme.dart';
 import 'widgets/game_background.dart';
 
@@ -20,13 +22,23 @@ class EggHatchersApp extends StatefulWidget {
 class _EggHatchersAppState extends State<EggHatchersApp>
     with WidgetsBindingObserver {
   final GameService _game = GameService();
+  final PreferencesService _preferences = PreferencesService();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _game.initialize();
+    _initialize();
     _game.addListener(_onGameChanged);
+    _preferences.addListener(_onGameChanged);
+  }
+
+  Future<void> _initialize() async {
+    await Future.wait([
+      _game.initialize(),
+      _preferences.initialize(),
+    ]);
+    if (mounted) setState(() {});
   }
 
   void _onGameChanged() {
@@ -45,9 +57,12 @@ class _EggHatchersAppState extends State<EggHatchersApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _game.removeListener(_onGameChanged);
+    _preferences.removeListener(_onGameChanged);
     _game.dispose();
     super.dispose();
   }
+
+  bool get _isReady => _game.isInitialized && _preferences.isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -66,8 +81,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
           style: GameTheme.filledButton(const Color(0xFF4DB6AC)),
         ),
       ),
-      home: _game.isInitialized
-          ? HatcheryScreen(game: _game)
+      home: _isReady
+          ? HatcheryScreen(game: _game, preferences: _preferences)
           : const _LoadingScreen(),
     );
   }
@@ -81,7 +96,7 @@ class _LoadingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: GameTheme.cream,
       body: GameBackground(
-        style: GameBackgroundStyle.hatchery,
+        theme: BackgroundThemes.defaultTheme,
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

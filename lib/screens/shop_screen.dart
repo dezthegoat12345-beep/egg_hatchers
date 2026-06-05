@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/egg.dart';
 import '../services/game_service.dart';
+import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
@@ -12,9 +13,14 @@ import '../widgets/hatch_dialog.dart';
 
 /// Screen where the player buys eggs to hatch.
 class ShopScreen extends StatelessWidget {
-  const ShopScreen({super.key, required this.game});
+  const ShopScreen({
+    super.key,
+    required this.game,
+    required this.preferences,
+  });
 
   final GameService game;
+  final PreferencesService preferences;
 
   Future<void> _buyAndHatch(BuildContext context, Egg egg) async {
     if (!game.isEggUnlocked(egg)) {
@@ -50,64 +56,76 @@ class ShopScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: GameTheme.cream,
-      appBar: AppBar(
-        title: const Text(
-          '🛒 Egg Shop',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-        ),
-        centerTitle: true,
-        backgroundColor: GameTheme.appBarColorFor(GameBackgroundStyle.shop),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: GameBackground(
-        style: GameBackgroundStyle.shop,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth =
-                  constraints.maxWidth > 600 ? 600.0 : double.infinity;
+    return ListenableBuilder(
+      listenable: preferences,
+      builder: (context, _) {
+        final bg = preferences.selectedTheme;
+        final isDark = bg.isDark;
 
-              return Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: Column(
-                      children: [
-                        CoinHeader(
-                          coins: game.coins,
-                          coinsPerSecond: game.coinsPerSecond,
-                        ),
-                        const SizedBox(height: 18),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: GameData.eggs.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 14),
-                            itemBuilder: (context, index) {
-                              final egg = GameData.eggs[index];
-                              return EggCard(
-                                egg: egg,
-                                isUnlocked: game.isEggUnlocked(egg),
-                                canAfford: game.canAfford(egg),
-                                lifetimeCoinsEarned: game.lifetimeCoinsEarned,
-                                onBuy: () => _buyAndHatch(context, egg),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+        return Scaffold(
+          backgroundColor: isDark ? bg.colors.first : GameTheme.cream,
+          appBar: AppBar(
+            title: const Text(
+              '🛒 Egg Shop',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+            ),
+            centerTitle: true,
+            backgroundColor:
+                GameTheme.appBarColorFor(GameBackgroundStyle.shop),
+            foregroundColor: Colors.white,
+            elevation: 0,
           ),
-        ),
-      ),
+          body: GameBackground(
+            theme: bg,
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth =
+                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
+
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          children: [
+                            CoinHeader(
+                              coins: game.coins,
+                              coinsPerSecond: game.coinsPerSecond,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(height: 18),
+                            Expanded(
+                              child: ListView.separated(
+                                itemCount: GameData.eggs.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 14),
+                                itemBuilder: (context, index) {
+                                  final egg = GameData.eggs[index];
+                                  return EggCard(
+                                    egg: egg,
+                                    isUnlocked: game.isEggUnlocked(egg),
+                                    canAfford: game.canAfford(egg),
+                                    lifetimeCoinsEarned:
+                                        game.lifetimeCoinsEarned,
+                                    isDark: isDark,
+                                    onBuy: () => _buyAndHatch(context, egg),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

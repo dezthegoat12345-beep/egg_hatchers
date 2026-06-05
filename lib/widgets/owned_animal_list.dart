@@ -14,6 +14,7 @@ class OwnedAnimalList extends StatelessWidget {
     required this.onUpgrade,
     this.compact = false,
     this.separatorHeight = 8,
+    this.isDark = false,
   });
 
   final GameService game;
@@ -24,6 +25,7 @@ class OwnedAnimalList extends StatelessWidget {
   ) onUpgrade;
   final bool compact;
   final double separatorHeight;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -37,13 +39,21 @@ class OwnedAnimalList extends StatelessWidget {
     return ListView(
       children: [
         if (normal.isNotEmpty) ...[
-          _SectionHeader(title: '🐾 Normal Animals', compact: compact),
+          _SectionHeader(
+            title: '🐾 Normal Animals',
+            compact: compact,
+            isDark: isDark,
+          ),
           SizedBox(height: separatorHeight),
           ..._buildCards(normal),
         ],
         if (mutated.isNotEmpty) ...[
           SizedBox(height: separatorHeight * 2),
-          _SectionHeader(title: '✨ Mutated Animals', compact: compact),
+          _SectionHeader(
+            title: '✨ Mutated Animals',
+            compact: compact,
+            isDark: isDark,
+          ),
           SizedBox(height: separatorHeight),
           ..._buildCards(mutated),
         ],
@@ -88,21 +98,30 @@ class OwnedAnimalList extends StatelessWidget {
           game.canAffordUpgrade(animal.id, owned.mutationId),
       onUpgrade: () => onUpgrade(animal.id, owned.mutationId, displayName),
       compact: compact,
+      isDark: isDark,
     );
   }
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.compact});
+  const _SectionHeader({
+    required this.title,
+    required this.compact,
+    required this.isDark,
+  });
 
   final String title;
   final bool compact;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: GameTheme.sectionTitle(size: compact ? 16 : 18),
+      style: GameTheme.sectionTitle(
+        size: compact ? 16 : 18,
+        isDark: isDark,
+      ),
     );
   }
 }

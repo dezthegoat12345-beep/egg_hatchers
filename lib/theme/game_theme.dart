@@ -16,39 +16,18 @@ class GameTheme {
 
   static const textDark = Color(0xFF5D4037);
   static const textMuted = Color(0xFF795548);
+  static const textLight = Color(0xFFFFF8E1);
+  static const textLightMuted = Color(0xFFE0E0E0);
 
   static const cardRadius = 24.0;
   static const buttonRadius = 16.0;
   static const panelRadius = 22.0;
 
-  static LinearGradient gradientFor(GameBackgroundStyle style) {
-    switch (style) {
-      case GameBackgroundStyle.hatchery:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [softYellow, cream, softPeach],
-        );
-      case GameBackgroundStyle.shop:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [lightGreen, cream, paleBlue],
-        );
-      case GameBackgroundStyle.collection:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [softPink, cream, paleBlue],
-        );
-      case GameBackgroundStyle.developer:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [paleBlue, cream, Color(0xFFEEEEEE)],
-        );
-    }
-  }
+  static Color textPrimary(bool isDark) =>
+      isDark ? textLight : textDark;
+
+  static Color textSecondary(bool isDark) =>
+      isDark ? textLightMuted : textMuted;
 
   static Color appBarColorFor(GameBackgroundStyle style) {
     switch (style) {
@@ -107,7 +86,7 @@ class GameTheme {
     }
   }
 
-  static BoxDecoration panelDecoration({Color? accent}) {
+  static BoxDecoration panelDecoration({Color? accent, bool isDark = false}) {
     return BoxDecoration(
       color: Colors.white.withValues(alpha: 0.92),
       borderRadius: BorderRadius.circular(panelRadius),
@@ -129,12 +108,14 @@ class GameTheme {
     Color? borderColor,
     bool locked = false,
     Color? backgroundColor,
+    bool isDark = false,
   }) {
+    final defaultCardColor = isDark
+        ? Colors.white.withValues(alpha: locked ? 0.82 : 0.92)
+        : Colors.white.withValues(alpha: locked ? 0.65 : 0.95);
+
     return BoxDecoration(
-      color: backgroundColor ??
-          (locked
-              ? Colors.white.withValues(alpha: 0.65)
-              : Colors.white.withValues(alpha: 0.95)),
+      color: backgroundColor ?? defaultCardColor,
       borderRadius: BorderRadius.circular(cardRadius),
       border: Border.all(
         color: locked
@@ -166,20 +147,20 @@ class GameTheme {
     );
   }
 
-  static TextStyle sectionTitle({double size = 20}) {
+  static TextStyle sectionTitle({double size = 20, bool isDark = false}) {
     return TextStyle(
       fontSize: size,
       fontWeight: FontWeight.bold,
-      color: textDark,
+      color: textPrimary(isDark),
       letterSpacing: 0.2,
     );
   }
 
-  static TextStyle emptyStateTitle() {
-    return const TextStyle(
+  static TextStyle emptyStateTitle({bool isDark = false}) {
+    return TextStyle(
       fontSize: 17,
       fontWeight: FontWeight.w600,
-      color: textMuted,
+      color: isDark ? textLightMuted : textMuted,
       height: 1.5,
     );
   }
