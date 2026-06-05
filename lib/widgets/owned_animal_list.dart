@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/owned_animal.dart';
 import '../services/game_service.dart';
+import '../theme/game_theme.dart';
 import 'animal_card.dart';
 
 /// Lists owned animals in separate Normal and Mutated sections.
@@ -101,11 +102,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: compact ? 16 : 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.brown.shade700,
-      ),
+      style: GameTheme.sectionTitle(size: compact ? 16 : 18),
     );
   }
 }

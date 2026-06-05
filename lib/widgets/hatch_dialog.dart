@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
+import '../theme/game_theme.dart';
 import 'animal_card.dart';
 
 /// Stages of the egg cracking hatch reveal animation.
@@ -153,11 +154,13 @@ class _HatchDialogState extends State<HatchDialog>
 
     final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
 
+    final mutationColor = GameTheme.mutationAccent(widget.result.mutation.id);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       backgroundColor: revealed && isMutated
-          ? Colors.deepPurple.shade50
-          : null,
+          ? GameTheme.mutationTint(widget.result.mutation.id)
+          : GameTheme.cream,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 420,
@@ -177,7 +180,9 @@ class _HatchDialogState extends State<HatchDialog>
                   style: TextStyle(
                     fontSize: isMutated && revealed ? 28 : 24,
                     fontWeight: FontWeight.bold,
-                    color: isMutated && revealed ? Colors.deepPurple : null,
+                    color: isMutated && revealed
+                        ? mutationColor
+                        : GameTheme.textDark,
                   ),
                 ),
               ),
@@ -191,8 +196,8 @@ class _HatchDialogState extends State<HatchDialog>
                     fontWeight:
                         isMutated ? FontWeight.bold : FontWeight.normal,
                     color: isMutated
-                        ? Colors.deepPurple.shade700
-                        : Colors.grey.shade700,
+                        ? mutationColor
+                        : GameTheme.textMuted,
                     height: 1.35,
                   ),
                 ),
@@ -252,12 +257,10 @@ class _HatchDialogState extends State<HatchDialog>
                   height: 52,
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor:
-                          isMutated ? Colors.deepPurple : Colors.teal,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                    style: GameTheme.filledButton(
+                      isMutated
+                          ? mutationColor
+                          : const Color(0xFF4DB6AC),
                     ),
                     child: Text(
                       isMutated ? 'Amazing!' : 'Awesome!',

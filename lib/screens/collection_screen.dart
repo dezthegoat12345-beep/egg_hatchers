@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/game_service.dart';
+import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
+import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
 
 /// Shows every animal the player owns with quantities, levels, and income.
@@ -36,54 +38,60 @@ class CollectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3E5F5),
+      backgroundColor: GameTheme.cream,
       appBar: AppBar(
         title: const Text(
           '📚 Collection',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         centerTitle: true,
-        backgroundColor: Colors.purple.shade300,
+        backgroundColor:
+            GameTheme.appBarColorFor(GameBackgroundStyle.collection),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth > 600 ? 600.0 : double.infinity;
+      body: GameBackground(
+        style: GameBackgroundStyle.collection,
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth =
+                  constraints.maxWidth > 600 ? 600.0 : double.infinity;
 
-            return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      CoinHeader(
-                        coins: game.coins,
-                        coinsPerSecond: game.coinsPerSecond,
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: game.ownedAnimals.isEmpty
-                            ? _EmptyCollection()
-                            : OwnedAnimalList(
-                                game: game,
-                                separatorHeight: 10,
-                                onUpgrade: (animalId, mutationId, name) =>
-                                    _handleUpgrade(
-                                  context,
-                                  animalId,
-                                  mutationId,
-                                  name,
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Column(
+                      children: [
+                        CoinHeader(
+                          coins: game.coins,
+                          coinsPerSecond: game.coinsPerSecond,
+                        ),
+                        const SizedBox(height: 18),
+                        Expanded(
+                          child: game.ownedAnimals.isEmpty
+                              ? const _EmptyCollection()
+                              : OwnedAnimalList(
+                                  game: game,
+                                  separatorHeight: 12,
+                                  onUpgrade: (animalId, mutationId, name) =>
+                                      _handleUpgrade(
+                                    context,
+                                    animalId,
+                                    mutationId,
+                                    name,
+                                  ),
                                 ),
-                              ),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -91,24 +99,29 @@ class CollectionScreen extends StatelessWidget {
 }
 
 class _EmptyCollection extends StatelessWidget {
+  const _EmptyCollection();
+
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('📭', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: 12),
-          Text(
-            'Your collection is empty.\nHatch some eggs first!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-              height: 1.5,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+        decoration: GameTheme.cardDecoration(
+          borderColor: const Color(0xFFBA68C8),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('📭', style: TextStyle(fontSize: 72)),
+            const SizedBox(height: 14),
+            Text(
+              'Your collection is empty.\nHatch some eggs first!',
+              textAlign: TextAlign.center,
+              style: GameTheme.emptyStateTitle(),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

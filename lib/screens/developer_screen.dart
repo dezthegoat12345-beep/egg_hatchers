@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../services/game_service.dart';
+import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/game_background.dart';
 
 /// Hidden developer tools for testing coins and forced hatches.
 class DeveloperScreen extends StatefulWidget {
@@ -100,16 +102,23 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         : null;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: GameTheme.cream,
       appBar: AppBar(
-        title: const Text('Developer Tools'),
-        backgroundColor: Colors.grey.shade800,
+        title: const Text(
+          'Developer Tools',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor:
+            GameTheme.appBarColorFor(GameBackgroundStyle.developer),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionTitle('Coins'),
+      body: GameBackground(
+        style: GameBackgroundStyle.developer,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _SectionTitle('Coins'),
           Text('Current: ${game.coins} coins'),
           const SizedBox(height: 12),
           TextField(
@@ -322,7 +331,8 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             color: Colors.red.shade400,
             onPressed: _clearForcedHatch,
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -337,10 +347,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-      ),
+      child: Text(text, style: GameTheme.sectionTitle(size: 22)),
     );
   }
 }
@@ -358,17 +365,10 @@ class _BigButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(backgroundColor: color),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
+    return FilledButton(
+      onPressed: onPressed,
+      style: GameTheme.filledButton(color),
+      child: Text(label),
     );
   }
 }

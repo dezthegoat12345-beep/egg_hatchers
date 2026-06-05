@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/game_service.dart';
+import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
+import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
 import 'collection_screen.dart';
 import 'developer_screen.dart';
@@ -61,89 +63,87 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8E7),
+      backgroundColor: GameTheme.cream,
+      extendBody: true,
       appBar: AppBar(
         title: const Text(
           '🐣 Egg Hatchers',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         centerTitle: true,
-        backgroundColor: Colors.teal.shade300,
+        backgroundColor: GameTheme.appBarColorFor(GameBackgroundStyle.hatchery),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth > 600 ? 600.0 : double.infinity;
+      body: GameBackground(
+        style: GameBackgroundStyle.hatchery,
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth =
+                  constraints.maxWidth > 600 ? 600.0 : double.infinity;
 
-            return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CoinHeader(
-                        coins: game.coins,
-                        coinsPerSecond: game.coinsPerSecond,
-                        lifetimeCoinsEarned: game.lifetimeCoinsEarned,
-                        onCoinTap: _onCoinTap,
-                      ),
-                      const SizedBox(height: 16),
-                      _NavButton(
-                        label: '🛒 Shop',
-                        color: Colors.orange,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ShopScreen(game: game),
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        CoinHeader(
+                          coins: game.coins,
+                          coinsPerSecond: game.coinsPerSecond,
+                          lifetimeCoinsEarned: game.lifetimeCoinsEarned,
+                          onCoinTap: _onCoinTap,
+                        ),
+                        const SizedBox(height: 18),
+                        _NavButton(
+                          label: '🛒 Shop',
+                          color: const Color(0xFFFFB74D),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShopScreen(game: game),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _NavButton(
-                        label: '📚 Collection',
-                        color: Colors.purple,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CollectionScreen(game: game),
+                        const SizedBox(height: 12),
+                        _NavButton(
+                          label: '📚 Collection',
+                          color: const Color(0xFFBA68C8),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CollectionScreen(game: game),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Your Animals',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.brown.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: game.ownedAnimals.isEmpty
-                            ? _EmptyHatchery()
-                            : OwnedAnimalList(
-                                game: game,
-                                compact: true,
-                                onUpgrade: (animalId, mutationId, name) =>
-                                    _handleUpgrade(
-                                  context,
-                                  animalId,
-                                  mutationId,
-                                  name,
+                        const SizedBox(height: 22),
+                        Text('Your Animals', style: GameTheme.sectionTitle()),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: game.ownedAnimals.isEmpty
+                              ? const _EmptyHatchery()
+                              : OwnedAnimalList(
+                                  game: game,
+                                  compact: true,
+                                  onUpgrade: (animalId, mutationId, name) =>
+                                      _handleUpgrade(
+                                    context,
+                                    animalId,
+                                    mutationId,
+                                    name,
+                                  ),
                                 ),
-                              ),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -163,44 +163,45 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
-      child: FilledButton(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-      ),
+    return FilledButton(
+      onPressed: onTap,
+      style: GameTheme.filledButton(color, height: 56),
+      child: Text(label, style: const TextStyle(fontSize: 20)),
     );
   }
 }
 
 class _EmptyHatchery extends StatelessWidget {
+  const _EmptyHatchery();
+
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🥚', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: 12),
-          Text(
-            'No animals yet!\nVisit the Shop to buy an egg.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-              height: 1.5,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+        decoration: GameTheme.cardDecoration(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🥚', style: TextStyle(fontSize: 72)),
+            const SizedBox(height: 14),
+            Text(
+              'No animals yet.\nHatch your first egg!',
+              textAlign: TextAlign.center,
+              style: GameTheme.emptyStateTitle(),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Visit the Shop to get started 🐣',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

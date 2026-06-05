@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'screens/hatchery_screen.dart';
 import 'services/game_service.dart';
+import 'theme/game_theme.dart';
+import 'widgets/game_background.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,11 +56,15 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
+          seedColor: const Color(0xFF4DB6AC),
           brightness: Brightness.light,
         ),
+        scaffoldBackgroundColor: GameTheme.cream,
         useMaterial3: true,
         fontFamily: 'Roboto',
+        filledButtonTheme: FilledButtonThemeData(
+          style: GameTheme.filledButton(const Color(0xFF4DB6AC)),
+        ),
       ),
       home: _game.isInitialized
           ? HatcheryScreen(game: _game)
@@ -72,21 +78,28 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFFFF8E7),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('🐣', style: TextStyle(fontSize: 72)),
-            SizedBox(height: 16),
-            Text(
-              'Egg Hatchers',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 24),
-            CircularProgressIndicator(color: Colors.teal),
-          ],
+    return Scaffold(
+      backgroundColor: GameTheme.cream,
+      body: GameBackground(
+        style: GameBackgroundStyle.hatchery,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('🐣', style: TextStyle(fontSize: 72)),
+              SizedBox(height: 16),
+              Text(
+                'Egg Hatchers',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: GameTheme.textDark,
+                ),
+              ),
+              SizedBox(height: 24),
+              CircularProgressIndicator(color: Color(0xFF4DB6AC)),
+            ],
+          ),
         ),
       ),
     );
