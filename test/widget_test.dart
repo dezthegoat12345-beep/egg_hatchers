@@ -35,7 +35,10 @@ void main() {
     expect(game.ownedAnimals.length, 1);
     expect(game.ownedAnimals.first.quantity, 1);
     expect(game.ownedAnimals.first.level, 1);
-    expect(game.ownedAnimals.first.mutationId, 'none');
+    expect(
+      GameData.mutationById(game.ownedAnimals.first.mutationId),
+      isNotNull,
+    );
 
     game.dispose();
   });
@@ -87,7 +90,7 @@ void main() {
     expect(GameService.incomeFor(animal, owned), 12);
   });
 
-  test('upgrade cost uses base x mutation x level x 50', () {
+  test('upgrade cost uses base x level x 50 without mutation multiplier', () {
     const animal = Animal(
       id: 'rabbit',
       name: 'Rabbit',
@@ -95,13 +98,47 @@ void main() {
       coinsPerSecond: 3,
       emoji: '🐰',
     );
-    const owned = OwnedAnimal(
+    const rainbowRabbit = OwnedAnimal(
       animalId: 'rabbit',
       quantity: 1,
       level: 1,
       mutationId: 'rainbow',
     );
-    expect(GameService.upgradeCostFor(animal, owned), 750);
+    const normalRabbit = OwnedAnimal(
+      animalId: 'rabbit',
+      quantity: 1,
+      level: 1,
+      mutationId: 'none',
+    );
+    expect(GameService.upgradeCostFor(animal, rainbowRabbit), 150);
+    expect(GameService.upgradeCostFor(animal, normalRabbit), 150);
+  });
+
+  test('mutated and normal animals share the same upgrade cost at same level', () {
+    const animal = Animal(
+      id: 'chicken',
+      name: 'Chicken',
+      rarity: Rarity.common,
+      coinsPerSecond: 1,
+      emoji: '🐔',
+    );
+    const normal = OwnedAnimal(animalId: 'chicken', quantity: 1, level: 2);
+    const golden = OwnedAnimal(
+      animalId: 'chicken',
+      quantity: 1,
+      level: 2,
+      mutationId: 'golden',
+    );
+    const shadow = OwnedAnimal(
+      animalId: 'chicken',
+      quantity: 1,
+      level: 2,
+      mutationId: 'shadow',
+    );
+
+    expect(GameService.upgradeCostFor(animal, normal), 100);
+    expect(GameService.upgradeCostFor(animal, golden), 100);
+    expect(GameService.upgradeCostFor(animal, shadow), 100);
   });
 
   test('upgrading increases level and subtracts coins', () async {

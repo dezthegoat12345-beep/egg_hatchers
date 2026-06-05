@@ -41,13 +41,9 @@ class GameService extends ChangeNotifier {
         owned.level;
   }
 
-  /// Upgrade cost: base × mutationMultiplier × level × 50.
+  /// Upgrade cost: base × level × 50 (mutation does not affect cost).
   static int upgradeCostFor(Animal animal, OwnedAnimal owned) {
-    final mutation = _mutationFor(owned);
-    return animal.coinsPerSecond *
-        mutation.incomeMultiplier *
-        owned.level *
-        50;
+    return animal.coinsPerSecond * owned.level * 50;
   }
 
   /// Total coins earned per second from all owned animals.
