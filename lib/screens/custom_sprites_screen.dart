@@ -7,6 +7,7 @@ import '../models/custom_sprite_data.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/snackbar_utils.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
 import 'sprite_editor_screen.dart';
@@ -21,6 +22,62 @@ class CustomSpritesScreen extends StatelessWidget {
 
   final PreferencesService preferences;
   final CustomSpriteService customSprites;
+
+  Future<void> _confirmResetAll(BuildContext context, BackgroundTheme theme) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+        ),
+        title: Text(
+          'Reset All Custom Sprites?',
+          style: TextStyle(
+            color: theme.cardTextPrimaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'This will delete all custom animal sprites and restore the '
+          'original sprites. This cannot be undone.',
+          style: TextStyle(
+            color: theme.cardTextSecondaryColor,
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.cardTextSecondaryColor),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Reset All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    await customSprites.resetAllCustomSprites();
+    if (!context.mounted) return;
+
+    showGameSnackBar(
+      context,
+      message: 'All custom sprites reset.',
+      backgroundColor: Colors.red.shade400,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,10 +116,47 @@ class CustomSpritesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Custom art is saved on this device only.',
+                    'Custom sprites are saved only on this device and are '
+                    'not shared online.',
                     style: TextStyle(
                       fontSize: 13,
                       color: theme.cardTextSecondaryColor,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      decoration: GameTheme.cardDecoration(theme),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'Show Custom Sprites',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: theme.cardTextPrimaryColor,
+                          ),
+                        ),
+                        subtitle: Text(
+                          customSprites.showCustomSprites
+                              ? 'Custom art appears in the game'
+                              : 'Custom art is hidden (still saved)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.cardTextSecondaryColor,
+                          ),
+                        ),
+                        value: customSprites.showCustomSprites,
+                        activeThumbColor: theme.primaryColor,
+                        onChanged: (value) =>
+                            customSprites.setShowCustomSprites(value),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -85,6 +179,28 @@ class CustomSpritesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                   ],
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmResetAll(context, theme),
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red.shade700,
+                    ),
+                    label: Text(
+                      'Reset All Custom Sprites',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                      side: BorderSide(color: Colors.red.shade300),
+                      backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),

@@ -320,7 +320,7 @@ class _HatchDialogState extends State<HatchDialog>
   Widget _buildRevealedContent(bool isMutated) {
     return GameAnimalPortrait(
       customSprite:
-          widget.customSprites?.getSprite(widget.result.animal.id),
+          widget.customSprites?.getDisplaySprite(widget.result.animal.id),
       spritePath: widget.result.animal.spritePath,
       fallbackEmoji: widget.result.animal.emoji,
       size: isMutated ? 84 : 76,

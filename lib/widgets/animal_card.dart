@@ -83,7 +83,7 @@ class AnimalCard extends StatelessWidget {
                     ),
                   ),
                   child: GameSprite(
-                    customSprite: customSprites?.getSprite(animal.id),
+                    customSprite: customSprites?.getDisplaySprite(animal.id),
                     spritePath: animal.spritePath,
                     fallbackEmoji: animal.emoji,
                     size: compact ? 48 : 58,
