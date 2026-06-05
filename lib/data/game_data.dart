@@ -169,6 +169,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 1000,
       emoji: '🦈',
+      spritePath: 'assets/images/animals/shark.png',
     ),
     // Arctic Egg
     Animal(
@@ -191,6 +192,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 3000,
       emoji: '🐻‍❄️',
+      spritePath: 'assets/images/animals/polar_bear.png',
     ),
     Animal(
       id: 'snow_owl',
@@ -198,6 +200,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 4000,
       emoji: '🦉',
+      spritePath: 'assets/images/animals/snow_owl.png',
     ),
     // Dino Egg
     Animal(
@@ -213,6 +216,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 10000,
       emoji: '🦕',
+      spritePath: 'assets/images/animals/triceratops.png',
     ),
     Animal(
       id: 't_rex',
@@ -220,6 +224,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 15000,
       emoji: '🦖',
+      spritePath: 'assets/images/animals/t_rex.png',
     ),
     Animal(
       id: 'fossil_dragon',
@@ -227,6 +232,7 @@ class GameData {
       rarity: Rarity.mythic,
       coinsPerSecond: 25000,
       emoji: '🐉',
+      spritePath: 'assets/images/animals/fossil_dragon.png',
     ),
     // Space Egg
     Animal(
@@ -235,6 +241,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 50000,
       emoji: '🐱🌙',
+      spritePath: 'assets/images/animals/moon_cat.png',
     ),
     Animal(
       id: 'star_fox',
@@ -242,6 +249,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 75000,
       emoji: '🦊⭐',
+      spritePath: 'assets/images/animals/star_fox.png',
     ),
     Animal(
       id: 'alien_slime',
@@ -249,6 +257,7 @@ class GameData {
       rarity: Rarity.mythic,
       coinsPerSecond: 125000,
       emoji: '👽',
+      spritePath: 'assets/images/animals/alien_slime.png',
     ),
     Animal(
       id: 'galaxy_dragon',
@@ -256,6 +265,7 @@ class GameData {
       rarity: Rarity.mythic,
       coinsPerSecond: 250000,
       emoji: '🐉🌌',
+      spritePath: 'assets/images/animals/galaxy_dragon.png',
     ),
   ];
 
@@ -341,6 +351,7 @@ class GameData {
       emoji: '🌴🥚',
       description: 'Wild jungle hunters',
       unlockLifetimeCoins: 5000,
+      spritePath: 'assets/images/eggs/jungle_egg.png',
     ),
     Egg(
       id: 'ocean',
@@ -350,6 +361,7 @@ class GameData {
       emoji: '🌊🥚',
       description: 'Deep sea legends',
       unlockLifetimeCoins: 20000,
+      spritePath: 'assets/images/eggs/ocean_egg.png',
     ),
     Egg(
       id: 'arctic',
@@ -359,6 +371,7 @@ class GameData {
       emoji: '❄️🥚',
       description: 'Frozen frontier friends',
       unlockLifetimeCoins: 75000,
+      spritePath: 'assets/images/eggs/arctic_egg.png',
     ),
     Egg(
       id: 'dino',
@@ -368,6 +381,7 @@ class GameData {
       emoji: '🦖🥚',
       description: 'Prehistoric power',
       unlockLifetimeCoins: 200000,
+      spritePath: 'assets/images/eggs/dino_egg.png',
     ),
     Egg(
       id: 'space',
@@ -377,6 +391,7 @@ class GameData {
       emoji: '🚀🥚',
       description: 'Cosmic creatures',
       unlockLifetimeCoins: 750000,
+      spritePath: 'assets/images/eggs/space_egg.png',
     ),
   ];
 
