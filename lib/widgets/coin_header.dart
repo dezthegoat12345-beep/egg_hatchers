@@ -1,0 +1,66 @@
+import 'package:flutter/material.dart';
+
+/// Shows the player's coin balance and income rate at the top of a screen.
+class CoinHeader extends StatelessWidget {
+  const CoinHeader({
+    super.key,
+    required this.coins,
+    required this.coinsPerSecond,
+  });
+
+  final int coins;
+  final int coinsPerSecond;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber.shade300,
+            Colors.orange.shade200,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Text('🪙', style: TextStyle(fontSize: 36)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$coins coins',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
+                ),
+                Text(
+                  '+$coinsPerSecond / sec',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.brown.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,205 @@
+import 'package:flutter/material.dart';
+
+import '../data/game_data.dart';
+import '../services/game_service.dart';
+import '../widgets/animal_card.dart';
+import '../widgets/coin_header.dart';
+import 'collection_screen.dart';
+import 'shop_screen.dart';
+
+/// Main home screen: coins, income, owned animals, and navigation.
+class HatcheryScreen extends StatelessWidget {
+  const HatcheryScreen({super.key, required this.game});
+
+  final GameService game;
+
+  void _handleUpgrade(BuildContext context, String animalId, String name) {
+    final newLevel = game.upgradeAnimal(animalId);
+    if (newLevel != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name upgraded to Level $newLevel!'),
+          backgroundColor: Colors.teal.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Not enough coins to upgrade $name.'),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8E7),
+      appBar: AppBar(
+        title: const Text(
+          '🐣 Egg Hatchers',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.teal.shade300,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth > 600 ? 600.0 : double.infinity;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      CoinHeader(
+                        coins: game.coins,
+                        coinsPerSecond: game.coinsPerSecond,
+                      ),
+                      const SizedBox(height: 16),
+                      _NavButton(
+                        label: '🛒 Shop',
+                        color: Colors.orange,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShopScreen(game: game),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _NavButton(
+                        label: '📚 Collection',
+                        color: Colors.purple,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CollectionScreen(game: game),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Your Animals',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.brown.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: game.ownedAnimals.isEmpty
+                            ? _EmptyHatchery()
+                            : ListView.separated(
+                                itemCount: game.ownedAnimals.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final owned = game.ownedAnimals[index];
+                                  final animal =
+                                      GameData.animalById(owned.animalId);
+                                  if (animal == null) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return AnimalCard(
+                                    animal: animal,
+                                    quantity: owned.quantity,
+                                    level: owned.level,
+                                    typeIncome:
+                                        GameService.incomeFor(animal, owned),
+                                    upgradeCost: GameService.upgradeCostFor(
+                                      animal,
+                                      owned,
+                                    ),
+                                    showUpgradeButton: true,
+                                    canAffordUpgrade:
+                                        game.canAffordUpgrade(animal.id),
+                                    onUpgrade: () => _handleUpgrade(
+                                      context,
+                                      animal.id,
+                                      animal.name,
+                                    ),
+                                    compact: true,
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  const _NavButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyHatchery extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('🥚', style: TextStyle(fontSize: 64)),
+          const SizedBox(height: 12),
+          Text(
+            'No animals yet!\nVisit the Shop to buy an egg.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
