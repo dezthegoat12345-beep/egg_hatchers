@@ -317,17 +317,18 @@ void main() {
 
     final basic = GameData.eggs[0];
     final forest = GameData.eggs[1];
-    final magic = GameData.eggs[2];
+    final farm = GameData.eggs[2];
+    final magic = GameData.eggs[3];
 
     expect(game.isEggUnlocked(basic), isTrue);
     expect(game.isEggUnlocked(forest), isFalse);
+    expect(game.isEggUnlocked(farm), isFalse);
     expect(game.isEggUnlocked(magic), isFalse);
 
     game.setLifetimeCoinsEarned(300);
     expect(game.isEggUnlocked(forest), isTrue);
     expect(game.isEggUnlocked(magic), isFalse);
 
-    final farm = GameData.eggs[3];
     final space = GameData.eggs[8];
     expect(game.isEggUnlocked(farm), isFalse);
 

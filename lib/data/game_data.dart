@@ -305,15 +305,6 @@ class GameData {
       unlockLifetimeCoins: 300,
     ),
     Egg(
-      id: 'magic',
-      name: 'Magic Egg',
-      cost: 1500,
-      possibleAnimalIds: ['tiger', 'dragon', 'unicorn'],
-      emoji: '✨🥚',
-      description: 'Legendary wonders',
-      unlockLifetimeCoins: 2500,
-    ),
-    Egg(
       id: 'farm',
       name: 'Farm Egg',
       cost: 800,
@@ -321,6 +312,15 @@ class GameData {
       emoji: '🚜🥚',
       description: 'Barnyard beasts',
       unlockLifetimeCoins: 750,
+    ),
+    Egg(
+      id: 'magic',
+      name: 'Magic Egg',
+      cost: 1500,
+      possibleAnimalIds: ['tiger', 'dragon', 'unicorn'],
+      emoji: '✨🥚',
+      description: 'Legendary wonders',
+      unlockLifetimeCoins: 2500,
     ),
     Egg(
       id: 'jungle',
