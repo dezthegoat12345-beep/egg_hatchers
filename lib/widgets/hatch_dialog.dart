@@ -151,115 +151,126 @@ class _HatchDialogState extends State<HatchDialog>
     final isMutated = !widget.result.mutation.isNormal;
     final revealed = _stage == _HatchStage.revealed;
 
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       backgroundColor: revealed && isMutated
           ? Colors.deepPurple.shade50
           : null,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: Text(
-                _stageTitle,
-                key: ValueKey(_stageTitle),
-                style: TextStyle(
-                  fontSize: isMutated && revealed ? 30 : 26,
-                  fontWeight: FontWeight.bold,
-                  color: isMutated && revealed ? Colors.deepPurple : null,
-                ),
-              ),
-            ),
-            if (revealed) ...[
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isMutated ? 17 : 16,
-                  fontWeight: isMutated ? FontWeight.bold : FontWeight.normal,
-                  color: isMutated
-                      ? Colors.deepPurple.shade700
-                      : Colors.grey.shade700,
-                  height: 1.4,
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 120,
-              child: Center(
-                child: revealed
-                    ? ScaleTransition(
-                        scale: _revealScale,
-                        child: _buildRevealedContent(isMutated),
-                      )
-                    : _stage == _HatchStage.pop
-                        ? ScaleTransition(
-                            scale: _popScale,
-                            child: _buildEggVisual(showCracks: true),
-                          )
-                        : AnimatedBuilder(
-                            animation: _shakeController,
-                            builder: (context, child) {
-                              return Transform.translate(
-                                offset: Offset(_shakeAmount, 0),
-                                child: child,
-                              );
-                            },
-                            child: _buildEggVisual(
-                              showCracks: _stage == _HatchStage.cracking,
-                            ),
-                          ),
-              ),
-            ),
-            if (_stage == _HatchStage.cracking)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: maxHeight,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
                 child: Text(
-                  'crack...',
+                  _stageTitle,
+                  key: ValueKey(_stageTitle),
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.brown.shade600,
+                    fontSize: isMutated && revealed ? 28 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: isMutated && revealed ? Colors.deepPurple : null,
                   ),
                 ),
               ),
-            if (revealed) ...[
-              const SizedBox(height: 12),
-              AnimalCard(
-                animal: widget.result.animal,
-                mutation: widget.result.mutation,
-                compact: true,
-              ),
-            ],
-            const SizedBox(height: 20),
-            if (revealed)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        isMutated ? Colors.deepPurple : Colors.teal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+              if (revealed) ...[
+                const SizedBox(height: 10),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMutated ? 16 : 15,
+                    fontWeight:
+                        isMutated ? FontWeight.bold : FontWeight.normal,
+                    color: isMutated
+                        ? Colors.deepPurple.shade700
+                        : Colors.grey.shade700,
+                    height: 1.35,
                   ),
+                ),
+              ],
+              SizedBox(height: revealed ? 14 : 18),
+              ClipRect(
+                child: SizedBox(
+                  height: revealed ? 96 : 108,
+                  child: Center(
+                    child: revealed
+                        ? ScaleTransition(
+                            scale: _revealScale,
+                            child: _buildRevealedContent(isMutated),
+                          )
+                        : _stage == _HatchStage.pop
+                            ? ScaleTransition(
+                                scale: _popScale,
+                                child: _buildEggVisual(showCracks: true),
+                              )
+                            : AnimatedBuilder(
+                                animation: _shakeController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(_shakeAmount, 0),
+                                    child: child,
+                                  );
+                                },
+                                child: _buildEggVisual(
+                                  showCracks: _stage == _HatchStage.cracking,
+                                ),
+                              ),
+                  ),
+                ),
+              ),
+              if (_stage == _HatchStage.cracking)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: Text(
-                    isMutated ? 'Amazing!' : 'Awesome!',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    'crack...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.brown.shade600,
                     ),
                   ),
                 ),
-              ),
-          ],
+              if (revealed) ...[
+                const SizedBox(height: 10),
+                AnimalCard(
+                  animal: widget.result.animal,
+                  mutation: widget.result.mutation,
+                  compact: true,
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          isMutated ? Colors.deepPurple : Colors.teal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      isMutated ? 'Amazing!' : 'Awesome!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -285,7 +296,7 @@ class _HatchDialogState extends State<HatchDialog>
         Text(
           widget.result.mutation.displayEmoji(widget.result.animal),
           style: TextStyle(
-            fontSize: isMutated ? 92 : 80,
+            fontSize: isMutated ? 76 : 68,
           ),
         ),
       ],
