@@ -251,4 +251,54 @@ void main() {
 
     game.dispose();
   });
+
+  test('setCoins and resetCoins work', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setCoins(9999);
+    expect(game.coins, 9999);
+
+    game.resetCoins();
+    expect(game.coins, 250);
+
+    game.dispose();
+  });
+
+  test('forced next hatch overrides random then clears', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    game.setForcedNextHatch('dragon', 'shadow');
+    expect(game.hasForcedNextHatch, isTrue);
+
+    game.buyEgg(GameData.eggs.first);
+    final result = game.hatchEgg(GameData.eggs.first);
+
+    expect(result.animal.id, 'dragon');
+    expect(result.mutation.id, 'shadow');
+    expect(game.hasForcedNextHatch, isFalse);
+
+    game.dispose();
+  });
+
+  test('normal hatch is random when no forced override', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    expect(game.hasForcedNextHatch, isFalse);
+
+    game.buyEgg(GameData.eggs.first);
+    final result = game.hatchEgg(GameData.eggs.first);
+
+    expect(
+      GameData.eggs.first.possibleAnimalIds,
+      contains(result.animal.id),
+    );
+
+    game.dispose();
+  });
 }

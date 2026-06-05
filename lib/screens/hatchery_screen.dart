@@ -4,13 +4,36 @@ import '../services/game_service.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/owned_animal_list.dart';
 import 'collection_screen.dart';
+import 'developer_screen.dart';
 import 'shop_screen.dart';
 
 /// Main home screen: coins, income, owned animals, and navigation.
-class HatcheryScreen extends StatelessWidget {
+class HatcheryScreen extends StatefulWidget {
   const HatcheryScreen({super.key, required this.game});
 
   final GameService game;
+
+  @override
+  State<HatcheryScreen> createState() => _HatcheryScreenState();
+}
+
+class _HatcheryScreenState extends State<HatcheryScreen> {
+  int _coinTapCount = 0;
+
+  GameService get game => widget.game;
+
+  void _onCoinTap() {
+    _coinTapCount++;
+    if (_coinTapCount >= 3) {
+      _coinTapCount = 0;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeveloperScreen(game: game),
+        ),
+      );
+    }
+  }
 
   void _handleUpgrade(
     BuildContext context,
@@ -70,6 +93,7 @@ class HatcheryScreen extends StatelessWidget {
                       CoinHeader(
                         coins: game.coins,
                         coinsPerSecond: game.coinsPerSecond,
+                        onCoinTap: _onCoinTap,
                       ),
                       const SizedBox(height: 16),
                       _NavButton(

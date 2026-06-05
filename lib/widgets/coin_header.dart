@@ -6,10 +6,12 @@ class CoinHeader extends StatelessWidget {
     super.key,
     required this.coins,
     required this.coinsPerSecond,
+    this.onCoinTap,
   });
 
   final int coins;
   final int coinsPerSecond;
+  final VoidCallback? onCoinTap;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +36,14 @@ class CoinHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('🪙', style: TextStyle(fontSize: 36)),
+          GestureDetector(
+            onTap: onCoinTap,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Text('🪙', style: TextStyle(fontSize: 36)),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

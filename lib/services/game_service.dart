@@ -25,6 +25,10 @@ class GameService extends ChangeNotifier {
   Timer? _idleTimer;
   bool _isInitialized = false;
 
+  // In-memory only — for developer testing, not saved.
+  String? _forcedNextAnimalId;
+  String? _forcedNextMutationId;
+
   PlayerState get state => _state;
   bool get isInitialized => _isInitialized;
 
@@ -66,6 +70,12 @@ class GameService extends ChangeNotifier {
 
   List<OwnedAnimal> get mutatedAnimals =>
       _state.ownedAnimals.where((o) => o.mutationId != 'none').toList();
+
+  bool get hasForcedNextHatch =>
+      _forcedNextAnimalId != null && _forcedNextMutationId != null;
+
+  String? get forcedNextAnimalId => _forcedNextAnimalId;
+  String? get forcedNextMutationId => _forcedNextMutationId;
 
   /// Load saved progress, apply offline earnings, and start idle income.
   Future<void> initialize() async {
@@ -135,12 +145,48 @@ class GameService extends ChangeNotifier {
     return true;
   }
 
+  void setCoins(int amount) {
+    _state = _state.copyWith(coins: amount < 0 ? 0 : amount);
+    notifyListeners();
+    save();
+  }
+
+  void addCoins(int amount) {
+    setCoins(_state.coins + amount);
+  }
+
+  void resetCoins() {
+    setCoins(GameData.startingPlayerState().coins);
+  }
+
+  void setForcedNextHatch(String animalId, String mutationId) {
+    _forcedNextAnimalId = animalId;
+    _forcedNextMutationId = mutationId;
+    notifyListeners();
+  }
+
+  void clearForcedNextHatch() {
+    _forcedNextAnimalId = null;
+    _forcedNextMutationId = null;
+    notifyListeners();
+  }
+
   /// Hatch a purchased egg, roll for mutation, and add to the collection.
   HatchResult hatchEgg(Egg egg) {
-    final animalId =
-        egg.possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
-    final animal = GameData.animalById(animalId)!;
-    final mutation = GameData.rollMutation(_random);
+    final Animal animal;
+    final Mutation mutation;
+
+    if (hasForcedNextHatch) {
+      animal = GameData.animalById(_forcedNextAnimalId!)!;
+      mutation =
+          GameData.mutationById(_forcedNextMutationId!) ?? GameData.mutations.first;
+      clearForcedNextHatch();
+    } else {
+      final animalId = egg
+          .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
+      animal = GameData.animalById(animalId)!;
+      mutation = GameData.rollMutation(_random);
+    }
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
     final existingIndex = updatedAnimals.indexWhere(
