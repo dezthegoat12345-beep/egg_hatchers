@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/game_data.dart';
+import '../models/animal.dart';
 import '../services/game_service.dart';
 
 /// Hidden developer tools for testing coins and forced hatches.
@@ -21,6 +22,14 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   late String _selectedMutationId;
 
   GameService get game => widget.game;
+
+  List<Animal> get _sortedAnimals {
+    final list = List<Animal>.from(GameData.animals);
+    list.sort(
+      (a, b) => GameData.compareOwnedAnimals(a.id, b.id),
+    );
+    return list;
+  }
 
   @override
   void initState() {
@@ -141,6 +150,10 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 label: '+100,000',
                 onPressed: () => _addCoins(100000),
               ),
+              _QuickCoinButton(
+                label: '+1,000,000',
+                onPressed: () => _addCoins(1000000),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -199,7 +212,33 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Added 5,000 lifetime coins.');
                 },
               ),
+              _QuickCoinButton(
+                label: '+50,000 lifetime',
+                onPressed: () {
+                  game.addLifetimeCoinsEarned(50000);
+                  _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+                  _showMessage('Added 50,000 lifetime coins.');
+                },
+              ),
+              _QuickCoinButton(
+                label: '+1M lifetime',
+                onPressed: () {
+                  game.addLifetimeCoinsEarned(1000000);
+                  _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+                  _showMessage('Added 1,000,000 lifetime coins.');
+                },
+              ),
             ],
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Unlock all eggs (2M lifetime)',
+            color: Colors.indigo,
+            onPressed: () {
+              game.setLifetimeCoinsEarned(2000000);
+              _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+              _showMessage('All eggs unlocked.');
+            },
           ),
           const SizedBox(height: 12),
           _BigButton(
@@ -244,10 +283,12 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             label: 'Animal',
             value: _selectedAnimalId,
             items: [
-              for (final animal in GameData.animals)
+              for (final animal in _sortedAnimals)
                 DropdownMenuItem(
                   value: animal.id,
-                  child: Text('${animal.emoji} ${animal.name}'),
+                  child: Text(
+                    '${animal.emoji} ${animal.name} (${animal.coinsPerSecond}/s)',
+                  ),
                 ),
             ],
             onChanged: (value) {

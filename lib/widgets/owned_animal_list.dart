@@ -26,8 +26,8 @@ class OwnedAnimalList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normal = game.normalAnimals;
-    final mutated = game.mutatedAnimals;
+    final normal = _sorted(game.normalAnimals);
+    final mutated = _sorted(game.mutatedAnimals);
 
     if (normal.isEmpty && mutated.isEmpty) {
       return const SizedBox.shrink();
@@ -48,6 +48,14 @@ class OwnedAnimalList extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  List<OwnedAnimal> _sorted(List<OwnedAnimal> entries) {
+    final copy = List<OwnedAnimal>.from(entries);
+    copy.sort(
+      (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
+    );
+    return copy;
   }
 
   List<Widget> _buildCards(List<OwnedAnimal> entries) {

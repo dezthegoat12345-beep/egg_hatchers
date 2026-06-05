@@ -296,6 +296,20 @@ void main() {
     game.dispose();
   });
 
+  test('all eggs reference valid animals', () {
+    for (final egg in GameData.eggs) {
+      for (final id in egg.possibleAnimalIds) {
+        expect(
+          GameData.animalById(id),
+          isNotNull,
+          reason: 'Missing animal $id in ${egg.name}',
+        );
+      }
+    }
+    expect(GameData.animals.length, 33);
+    expect(GameData.eggs.length, 9);
+  });
+
   test('egg unlocks based on lifetime coins earned', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService();
@@ -313,8 +327,18 @@ void main() {
     expect(game.isEggUnlocked(forest), isTrue);
     expect(game.isEggUnlocked(magic), isFalse);
 
+    final farm = GameData.eggs[3];
+    final space = GameData.eggs[8];
+    expect(game.isEggUnlocked(farm), isFalse);
+
+    game.setLifetimeCoinsEarned(1000);
+    expect(game.isEggUnlocked(farm), isTrue);
+
     game.setLifetimeCoinsEarned(5000);
     expect(game.isEggUnlocked(magic), isTrue);
+
+    game.setLifetimeCoinsEarned(2000000);
+    expect(game.isEggUnlocked(space), isTrue);
 
     game.dispose();
   });

@@ -10,6 +10,7 @@ class GameData {
   GameData._();
 
   static const animals = <Animal>[
+    // Basic Egg
     Animal(
       id: 'chicken',
       name: 'Chicken',
@@ -31,6 +32,7 @@ class GameData {
       coinsPerSecond: 3,
       emoji: '🐰',
     ),
+    // Forest Egg
     Animal(
       id: 'fox',
       name: 'Fox',
@@ -52,6 +54,7 @@ class GameData {
       coinsPerSecond: 20,
       emoji: '🐻',
     ),
+    // Magic Egg
     Animal(
       id: 'tiger',
       name: 'Tiger',
@@ -72,6 +75,180 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 120,
       emoji: '🦄',
+    ),
+    // Farm Egg
+    Animal(
+      id: 'cow',
+      name: 'Cow',
+      rarity: Rarity.uncommon,
+      coinsPerSecond: 15,
+      emoji: '🐮',
+    ),
+    Animal(
+      id: 'pig',
+      name: 'Pig',
+      rarity: Rarity.uncommon,
+      coinsPerSecond: 18,
+      emoji: '🐷',
+    ),
+    Animal(
+      id: 'sheep',
+      name: 'Sheep',
+      rarity: Rarity.rare,
+      coinsPerSecond: 25,
+      emoji: '🐑',
+    ),
+    Animal(
+      id: 'horse',
+      name: 'Horse',
+      rarity: Rarity.rare,
+      coinsPerSecond: 35,
+      emoji: '🐴',
+    ),
+    // Jungle Egg
+    Animal(
+      id: 'monkey',
+      name: 'Monkey',
+      rarity: Rarity.rare,
+      coinsPerSecond: 75,
+      emoji: '🐵',
+    ),
+    Animal(
+      id: 'parrot',
+      name: 'Parrot',
+      rarity: Rarity.rare,
+      coinsPerSecond: 90,
+      emoji: '🦜',
+    ),
+    Animal(
+      id: 'snake',
+      name: 'Snake',
+      rarity: Rarity.epic,
+      coinsPerSecond: 140,
+      emoji: '🐍',
+    ),
+    Animal(
+      id: 'gorilla',
+      name: 'Gorilla',
+      rarity: Rarity.epic,
+      coinsPerSecond: 200,
+      emoji: '🦍',
+    ),
+    // Ocean Egg
+    Animal(
+      id: 'fish',
+      name: 'Fish',
+      rarity: Rarity.rare,
+      coinsPerSecond: 250,
+      emoji: '🐟',
+    ),
+    Animal(
+      id: 'turtle',
+      name: 'Turtle',
+      rarity: Rarity.epic,
+      coinsPerSecond: 400,
+      emoji: '🐢',
+    ),
+    Animal(
+      id: 'dolphin',
+      name: 'Dolphin',
+      rarity: Rarity.epic,
+      coinsPerSecond: 650,
+      emoji: '🐬',
+    ),
+    Animal(
+      id: 'shark',
+      name: 'Shark',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 1000,
+      emoji: '🦈',
+    ),
+    // Arctic Egg
+    Animal(
+      id: 'penguin',
+      name: 'Penguin',
+      rarity: Rarity.epic,
+      coinsPerSecond: 1500,
+      emoji: '🐧',
+    ),
+    Animal(
+      id: 'seal',
+      name: 'Seal',
+      rarity: Rarity.epic,
+      coinsPerSecond: 2000,
+      emoji: '🦭',
+    ),
+    Animal(
+      id: 'polar_bear',
+      name: 'Polar Bear',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 3000,
+      emoji: '🐻‍❄️',
+    ),
+    Animal(
+      id: 'snow_owl',
+      name: 'Snow Owl',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 4000,
+      emoji: '🦉',
+    ),
+    // Dino Egg
+    Animal(
+      id: 'raptor',
+      name: 'Raptor',
+      rarity: Rarity.epic,
+      coinsPerSecond: 6000,
+      emoji: '🦖',
+    ),
+    Animal(
+      id: 'triceratops',
+      name: 'Triceratops',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 10000,
+      emoji: '🦕',
+    ),
+    Animal(
+      id: 't_rex',
+      name: 'T-Rex',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 15000,
+      emoji: '🦖',
+    ),
+    Animal(
+      id: 'fossil_dragon',
+      name: 'Fossil Dragon',
+      rarity: Rarity.mythic,
+      coinsPerSecond: 25000,
+      emoji: '🐉',
+    ),
+    // Space Egg
+    Animal(
+      id: 'moon_cat',
+      name: 'Moon Cat',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 50000,
+      emoji: '🐱🌙',
+    ),
+    Animal(
+      id: 'star_fox',
+      name: 'Star Fox',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 75000,
+      emoji: '🦊⭐',
+    ),
+    Animal(
+      id: 'alien_slime',
+      name: 'Alien Slime',
+      rarity: Rarity.mythic,
+      coinsPerSecond: 125000,
+      emoji: '👽',
+    ),
+    Animal(
+      id: 'galaxy_dragon',
+      name: 'Galaxy Dragon',
+      rarity: Rarity.mythic,
+      coinsPerSecond: 250000,
+      emoji: '🐉🌌',
     ),
   ];
 
@@ -108,6 +285,7 @@ class GameData {
     ),
   ];
 
+  /// Eggs in progression order (basic → endgame).
   static const eggs = <Egg>[
     Egg(
       id: 'basic',
@@ -134,6 +312,60 @@ class GameData {
       emoji: '✨🥚',
       description: 'Legendary wonders',
       unlockLifetimeCoins: 5000,
+    ),
+    Egg(
+      id: 'farm',
+      name: 'Farm Egg',
+      cost: 1000,
+      possibleAnimalIds: ['cow', 'pig', 'sheep', 'horse'],
+      emoji: '🚜🥚',
+      description: 'Barnyard beasts',
+      unlockLifetimeCoins: 1000,
+    ),
+    Egg(
+      id: 'jungle',
+      name: 'Jungle Egg',
+      cost: 5000,
+      possibleAnimalIds: ['monkey', 'parrot', 'snake', 'gorilla'],
+      emoji: '🌴🥚',
+      description: 'Wild jungle hunters',
+      unlockLifetimeCoins: 10000,
+    ),
+    Egg(
+      id: 'ocean',
+      name: 'Ocean Egg',
+      cost: 20000,
+      possibleAnimalIds: ['fish', 'turtle', 'dolphin', 'shark'],
+      emoji: '🌊🥚',
+      description: 'Deep sea legends',
+      unlockLifetimeCoins: 50000,
+    ),
+    Egg(
+      id: 'arctic',
+      name: 'Arctic Egg',
+      cost: 75000,
+      possibleAnimalIds: ['penguin', 'seal', 'polar_bear', 'snow_owl'],
+      emoji: '❄️🥚',
+      description: 'Frozen frontier friends',
+      unlockLifetimeCoins: 150000,
+    ),
+    Egg(
+      id: 'dino',
+      name: 'Dino Egg',
+      cost: 250000,
+      possibleAnimalIds: ['raptor', 'triceratops', 't_rex', 'fossil_dragon'],
+      emoji: '🦖🥚',
+      description: 'Prehistoric power',
+      unlockLifetimeCoins: 500000,
+    ),
+    Egg(
+      id: 'space',
+      name: 'Space Egg',
+      cost: 1000000,
+      possibleAnimalIds: ['moon_cat', 'star_fox', 'alien_slime', 'galaxy_dragon'],
+      emoji: '🚀🥚',
+      description: 'Cosmic creatures',
+      unlockLifetimeCoins: 2000000,
     ),
   ];
 
@@ -170,5 +402,23 @@ class GameData {
     }
     return mutations.first;
   }
-}
 
+  /// Sort owned animals by rarity, then base income, then name.
+  static int compareOwnedAnimals(String animalIdA, String animalIdB) {
+    final animalA = animalById(animalIdA);
+    final animalB = animalById(animalIdB);
+    if (animalA == null || animalB == null) {
+      return animalIdA.compareTo(animalIdB);
+    }
+
+    final rarityCompare =
+        animalB.rarity.sortOrder.compareTo(animalA.rarity.sortOrder);
+    if (rarityCompare != 0) return rarityCompare;
+
+    final incomeCompare =
+        animalB.coinsPerSecond.compareTo(animalA.coinsPerSecond);
+    if (incomeCompare != 0) return incomeCompare;
+
+    return animalA.name.compareTo(animalB.name);
+  }
+}
