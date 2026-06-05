@@ -200,7 +200,7 @@ class _HatchDialogState extends State<HatchDialog>
               SizedBox(height: revealed ? 14 : 18),
               ClipRect(
                 child: SizedBox(
-                  height: revealed ? 96 : 108,
+                  height: revealed ? 104 : 108,
                   child: Center(
                     child: revealed
                         ? ScaleTransition(
@@ -290,16 +290,13 @@ class _HatchDialogState extends State<HatchDialog>
   }
 
   Widget _buildRevealedContent(bool isMutated) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          widget.result.mutation.displayEmoji(widget.result.animal),
-          style: TextStyle(
-            fontSize: isMutated ? 76 : 68,
-          ),
-        ),
-      ],
+    return Text(
+      widget.result.mutation.displayEmoji(widget.result.animal),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: isMutated ? 76 : 68,
+        height: 1.0,
+      ),
     );
   }
 }
