@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
+import 'custom_sprites_screen.dart';
 
 /// Lets the player pick and preview background themes.
 class BackgroundsScreen extends StatelessWidget {
-  const BackgroundsScreen({super.key, required this.preferences});
+  const BackgroundsScreen({
+    super.key,
+    required this.preferences,
+    required this.customSprites,
+  });
 
   final PreferencesService preferences;
+  final CustomSpriteService customSprites;
 
   Future<void> _selectTheme(BuildContext context, BackgroundTheme theme) async {
     await preferences.setBackgroundTheme(theme);
@@ -62,6 +69,31 @@ class BackgroundsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                   ],
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CustomSpritesScreen(
+                          preferences: preferences,
+                          customSprites: customSprites,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.brush_rounded),
+                    label: const Text(
+                      'Custom Animal Sprites',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: GameTheme.filledButton(
+                      selected,
+                      color: selected.secondaryColor,
+                      height: 52,
+                    ),
+                  ),
                 ],
               ),
             ),

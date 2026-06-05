@@ -4,6 +4,7 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/mutation.dart';
+import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
 import 'game_sprite.dart';
 
@@ -22,10 +23,12 @@ class AnimalCard extends StatelessWidget {
     this.canAffordUpgrade = false,
     this.onUpgrade,
     this.compact = false,
+    this.customSprites,
   });
 
   final Animal animal;
   final BackgroundTheme theme;
+  final CustomSpriteService? customSprites;
   final Mutation? mutation;
   final int? quantity;
   final int? level;
@@ -80,6 +83,7 @@ class AnimalCard extends StatelessWidget {
                     ),
                   ),
                   child: GameSprite(
+                    customSprite: customSprites?.getSprite(animal.id),
                     spritePath: animal.spritePath,
                     fallbackEmoji: animal.emoji,
                     size: compact ? 48 : 58,

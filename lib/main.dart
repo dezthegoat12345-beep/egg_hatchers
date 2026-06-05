@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'models/background_theme.dart';
 import 'screens/hatchery_screen.dart';
+import 'services/custom_sprite_service.dart';
 import 'services/game_service.dart';
 import 'services/preferences_service.dart';
 import 'widgets/game_background.dart';
@@ -22,6 +23,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     with WidgetsBindingObserver {
   final GameService _game = GameService();
   final PreferencesService _preferences = PreferencesService();
+  final CustomSpriteService _customSprites = CustomSpriteService();
 
   @override
   void initState() {
@@ -30,12 +32,14 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _initialize();
     _game.addListener(_onGameChanged);
     _preferences.addListener(_onGameChanged);
+    _customSprites.addListener(_onGameChanged);
   }
 
   Future<void> _initialize() async {
     await Future.wait([
       _game.initialize(),
       _preferences.initialize(),
+      _customSprites.initialize(),
     ]);
     if (mounted) setState(() {});
   }
@@ -57,11 +61,15 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     WidgetsBinding.instance.removeObserver(this);
     _game.removeListener(_onGameChanged);
     _preferences.removeListener(_onGameChanged);
+    _customSprites.removeListener(_onGameChanged);
     _game.dispose();
     super.dispose();
   }
 
-  bool get _isReady => _game.isInitialized && _preferences.isInitialized;
+  bool get _isReady =>
+      _game.isInitialized &&
+      _preferences.isInitialized &&
+      _customSprites.isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +86,11 @@ class _EggHatchersAppState extends State<EggHatchersApp>
         fontFamily: 'Roboto',
       ),
       home: _isReady
-          ? HatcheryScreen(game: _game, preferences: _preferences)
+          ? HatcheryScreen(
+              game: _game,
+              preferences: _preferences,
+              customSprites: _customSprites,
+            )
           : const _LoadingScreen(),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
@@ -15,10 +16,12 @@ class CollectionScreen extends StatelessWidget {
     super.key,
     required this.game,
     required this.preferences,
+    required this.customSprites,
   });
 
   final GameService game;
   final PreferencesService preferences;
+  final CustomSpriteService customSprites;
 
   void _handleUpgrade(
     BuildContext context,
@@ -45,7 +48,7 @@ class CollectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: preferences,
+      listenable: Listenable.merge([game, preferences, customSprites]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
@@ -89,6 +92,7 @@ class CollectionScreen extends StatelessWidget {
                                       game: game,
                                       theme: bg,
                                       separatorHeight: 12,
+                                      customSprites: customSprites,
                                       onUpgrade: (animalId, mutationId, name) =>
                                           _handleUpgrade(
                                         context,

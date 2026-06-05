@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../models/custom_sprite_data.dart';
 import '../models/mutation.dart';
 import '../theme/game_theme.dart';
+import 'pixel_sprite.dart';
 
-/// Shows a sprite image when available, otherwise falls back to an emoji.
+/// Shows custom pixel art, a sprite image, or emoji fallback (in that order).
 class GameSprite extends StatelessWidget {
   const GameSprite({
     super.key,
+    this.customSprite,
     this.spritePath,
     required this.fallbackEmoji,
     required this.size,
@@ -15,6 +18,7 @@ class GameSprite extends StatelessWidget {
     this.emojiFontSize,
   });
 
+  final CustomSpriteData? customSprite;
   final String? spritePath;
   final String fallbackEmoji;
   final double size;
@@ -25,6 +29,14 @@ class GameSprite extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final emojiSize = emojiFontSize ?? size * 0.58;
+
+    final custom = customSprite;
+    if (custom != null && custom.hasVisiblePixels) {
+      return Semantics(
+        label: semanticLabel,
+        child: PixelSprite(data: custom, size: size),
+      );
+    }
 
     if (spritePath == null || spritePath!.isEmpty) {
       return _emojiFallback(emojiSize);
@@ -63,6 +75,7 @@ class GameSprite extends StatelessWidget {
 class GameAnimalPortrait extends StatelessWidget {
   const GameAnimalPortrait({
     super.key,
+    this.customSprite,
     required this.spritePath,
     required this.fallbackEmoji,
     required this.size,
@@ -71,6 +84,7 @@ class GameAnimalPortrait extends StatelessWidget {
     this.emojiFontSize,
   });
 
+  final CustomSpriteData? customSprite;
   final String? spritePath;
   final String fallbackEmoji;
   final double size;
@@ -113,6 +127,7 @@ class GameAnimalPortrait extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           GameSprite(
+            customSprite: customSprite,
             spritePath: spritePath,
             fallbackEmoji: fallbackEmoji,
             size: size * 0.82,

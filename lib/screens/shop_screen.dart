@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_data.dart';
 import '../models/egg.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../utils/snackbar_utils.dart';
@@ -16,10 +17,12 @@ class ShopScreen extends StatelessWidget {
     super.key,
     required this.game,
     required this.preferences,
+    required this.customSprites,
   });
 
   final GameService game;
   final PreferencesService preferences;
+  final CustomSpriteService customSprites;
 
   Future<void> _buyAndHatch(BuildContext context, Egg egg) async {
     final bg = preferences.selectedTheme;
@@ -52,6 +55,7 @@ class ShopScreen extends StatelessWidget {
         egg: egg,
         result: result,
         theme: bg,
+        customSprites: customSprites,
       );
     }
   }

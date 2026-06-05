@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
+import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
 import 'animal_card.dart';
 import 'game_sprite.dart';
@@ -22,17 +23,20 @@ class HatchDialog extends StatefulWidget {
     required this.egg,
     required this.result,
     required this.theme,
+    this.customSprites,
   });
 
   final Egg egg;
   final HatchResult result;
   final BackgroundTheme theme;
+  final CustomSpriteService? customSprites;
 
   static Future<void> show(
     BuildContext context, {
     required Egg egg,
     required HatchResult result,
     required BackgroundTheme theme,
+    CustomSpriteService? customSprites,
   }) {
     return showDialog<void>(
       context: context,
@@ -41,6 +45,7 @@ class HatchDialog extends StatefulWidget {
         egg: egg,
         result: result,
         theme: theme,
+        customSprites: customSprites,
       ),
     );
   }
@@ -265,6 +270,7 @@ class _HatchDialogState extends State<HatchDialog>
                   theme: widget.theme,
                   mutation: widget.result.mutation,
                   compact: true,
+                  customSprites: widget.customSprites,
                 ),
                 const SizedBox(height: 14),
                 SizedBox(
@@ -313,6 +319,8 @@ class _HatchDialogState extends State<HatchDialog>
 
   Widget _buildRevealedContent(bool isMutated) {
     return GameAnimalPortrait(
+      customSprite:
+          widget.customSprites?.getSprite(widget.result.animal.id),
       spritePath: widget.result.animal.spritePath,
       fallbackEmoji: widget.result.animal.emoji,
       size: isMutated ? 84 : 76,

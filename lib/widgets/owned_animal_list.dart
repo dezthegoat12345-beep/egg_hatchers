@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../models/owned_animal.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import 'animal_card.dart';
@@ -16,10 +17,12 @@ class OwnedAnimalList extends StatelessWidget {
     required this.theme,
     this.compact = false,
     this.separatorHeight = 8,
+    this.customSprites,
   });
 
   final GameService game;
   final BackgroundTheme theme;
+  final CustomSpriteService? customSprites;
   final void Function(
     String animalId,
     String mutationId,
@@ -100,6 +103,7 @@ class OwnedAnimalList extends StatelessWidget {
           game.canAffordUpgrade(animal.id, owned.mutationId),
       onUpgrade: () => onUpgrade(animal.id, owned.mutationId, displayName),
       compact: compact,
+      customSprites: customSprites,
     );
   }
 }

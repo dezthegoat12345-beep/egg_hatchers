@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
@@ -19,10 +20,12 @@ class HatcheryScreen extends StatefulWidget {
     super.key,
     required this.game,
     required this.preferences,
+    required this.customSprites,
   });
 
   final GameService game;
   final PreferencesService preferences;
+  final CustomSpriteService customSprites;
 
   @override
   State<HatcheryScreen> createState() => _HatcheryScreenState();
@@ -33,6 +36,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
 
   GameService get game => widget.game;
   PreferencesService get preferences => widget.preferences;
+  CustomSpriteService get customSprites => widget.customSprites;
 
   void _onCoinTap() {
     _coinTapCount++;
@@ -72,7 +76,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: preferences,
+      listenable: Listenable.merge([game, preferences, customSprites]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
@@ -96,6 +100,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                   MaterialPageRoute(
                     builder: (_) => BackgroundsScreen(
                       preferences: preferences,
+                      customSprites: customSprites,
                     ),
                   ),
                 ),
@@ -137,6 +142,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                   builder: (_) => ShopScreen(
                                     game: game,
                                     preferences: preferences,
+                                    customSprites: customSprites,
                                   ),
                                 ),
                               ),
@@ -152,6 +158,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                   builder: (_) => CollectionScreen(
                                     game: game,
                                     preferences: preferences,
+                                    customSprites: customSprites,
                                   ),
                                 ),
                               ),
@@ -169,6 +176,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                       game: game,
                                       theme: bg,
                                       compact: true,
+                                      customSprites: customSprites,
                                       onUpgrade: (animalId, mutationId, name) =>
                                           _handleUpgrade(
                                         context,
