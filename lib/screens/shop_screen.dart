@@ -29,13 +29,13 @@ class ShopScreen extends StatelessWidget {
     }
 
     game.buyEgg(egg);
-    final hatchedAnimal = game.hatchEgg(egg);
+    final result = game.hatchEgg(egg);
 
     if (context.mounted) {
       await HatchDialog.show(
         context,
         egg: egg,
-        hatchedAnimal: hatchedAnimal,
+        result: result,
       );
     }
   }

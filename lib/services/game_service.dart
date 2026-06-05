@@ -6,11 +6,13 @@ import 'package:flutter/foundation.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/egg.dart';
+import '../models/hatch_result.dart';
+import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../models/player_state.dart';
 import 'save_service.dart';
 
-/// Central game logic: coins, hatching, idle income, and saving.
+/// Central game logic: coins, hatching, mutations, idle income, and saving.
 class GameService extends ChangeNotifier {
   GameService({SaveService? saveService, Random? random})
       : _saveService = saveService ?? SaveService(),
@@ -26,14 +28,26 @@ class GameService extends ChangeNotifier {
   PlayerState get state => _state;
   bool get isInitialized => _isInitialized;
 
-  /// Income for one owned animal type: base × quantity × level.
-  static int incomeFor(Animal animal, OwnedAnimal owned) {
-    return animal.coinsPerSecond * owned.quantity * owned.level;
+  static Mutation _mutationFor(OwnedAnimal owned) {
+    return GameData.mutationById(owned.mutationId) ?? GameData.mutations.first;
   }
 
-  /// Upgrade cost: baseCoinsPerSecond × current level × 50.
+  /// Income: base × mutationMultiplier × quantity × level.
+  static int incomeFor(Animal animal, OwnedAnimal owned) {
+    final mutation = _mutationFor(owned);
+    return animal.coinsPerSecond *
+        mutation.incomeMultiplier *
+        owned.quantity *
+        owned.level;
+  }
+
+  /// Upgrade cost: base × mutationMultiplier × level × 50.
   static int upgradeCostFor(Animal animal, OwnedAnimal owned) {
-    return animal.coinsPerSecond * owned.level * 50;
+    final mutation = _mutationFor(owned);
+    return animal.coinsPerSecond *
+        mutation.incomeMultiplier *
+        owned.level *
+        50;
   }
 
   /// Total coins earned per second from all owned animals.
@@ -51,6 +65,12 @@ class GameService extends ChangeNotifier {
   int get coins => _state.coins;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
+  List<OwnedAnimal> get normalAnimals =>
+      _state.ownedAnimals.where((o) => o.mutationId == 'none').toList();
+
+  List<OwnedAnimal> get mutatedAnimals =>
+      _state.ownedAnimals.where((o) => o.mutationId != 'none').toList();
+
   /// Load saved progress, apply offline earnings, and start idle income.
   Future<void> initialize() async {
     final saved = await _saveService.load();
@@ -66,7 +86,6 @@ class GameService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Apply coins earned while the app was closed.
   void _applyOfflineEarnings() {
     final now = DateTime.now();
     final elapsed = now.difference(_state.lastSavedTime);
@@ -104,7 +123,6 @@ class GameService extends ChangeNotifier {
     await _saveService.save(_state);
   }
 
-  /// Save progress when leaving the app or after important actions.
   Future<void> save() async {
     _state = _state.copyWith(lastSavedTime: DateTime.now());
     await _saveService.save(_state);
@@ -112,7 +130,6 @@ class GameService extends ChangeNotifier {
 
   bool canAfford(Egg egg) => _state.coins >= egg.cost;
 
-  /// Spend coins to buy an egg. Returns false if the player cannot afford it.
   bool buyEgg(Egg egg) {
     if (!canAfford(egg)) return false;
 
@@ -122,15 +139,18 @@ class GameService extends ChangeNotifier {
     return true;
   }
 
-  /// Hatch a purchased egg and add the random animal to the collection.
-  Animal hatchEgg(Egg egg) {
-    final animalId = egg.possibleAnimalIds[
-        _random.nextInt(egg.possibleAnimalIds.length)];
+  /// Hatch a purchased egg, roll for mutation, and add to the collection.
+  HatchResult hatchEgg(Egg egg) {
+    final animalId =
+        egg.possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
     final animal = GameData.animalById(animalId)!;
+    final mutation = GameData.rollMutation(_random);
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex =
-        updatedAnimals.indexWhere((owned) => owned.animalId == animal.id);
+    final existingIndex = updatedAnimals.indexWhere(
+      (owned) =>
+          owned.animalId == animal.id && owned.mutationId == mutation.id,
+    );
 
     if (existingIndex >= 0) {
       final existing = updatedAnimals[existingIndex];
@@ -138,33 +158,40 @@ class GameService extends ChangeNotifier {
           existing.copyWith(quantity: existing.quantity + 1);
     } else {
       updatedAnimals.add(
-        OwnedAnimal(animalId: animal.id, quantity: 1, level: 1),
+        OwnedAnimal(
+          animalId: animal.id,
+          quantity: 1,
+          level: 1,
+          mutationId: mutation.id,
+        ),
       );
     }
 
     _state = _state.copyWith(ownedAnimals: updatedAnimals);
     notifyListeners();
     save();
-    return animal;
+    return HatchResult(animal: animal, mutation: mutation);
   }
 
-  OwnedAnimal? ownedAnimal(String animalId) {
+  OwnedAnimal? ownedAnimal(String animalId, {String mutationId = 'none'}) {
     for (final owned in _state.ownedAnimals) {
-      if (owned.animalId == animalId) return owned;
+      if (owned.animalId == animalId && owned.mutationId == mutationId) {
+        return owned;
+      }
     }
     return null;
   }
 
-  bool canAffordUpgrade(String animalId) {
-    final owned = ownedAnimal(animalId);
+  bool canAffordUpgrade(String animalId, String mutationId) {
+    final owned = ownedAnimal(animalId, mutationId: mutationId);
     final animal = GameData.animalById(animalId);
     if (owned == null || animal == null) return false;
     return _state.coins >= upgradeCostFor(animal, owned);
   }
 
-  /// Upgrade an owned animal. Returns the new level, or null if it failed.
-  int? upgradeAnimal(String animalId) {
-    final owned = ownedAnimal(animalId);
+  /// Upgrade a specific animal/mutation combo. Returns new level or null.
+  int? upgradeAnimal(String animalId, String mutationId) {
+    final owned = ownedAnimal(animalId, mutationId: mutationId);
     final animal = GameData.animalById(animalId);
     if (owned == null || animal == null) return null;
 
@@ -172,8 +199,10 @@ class GameService extends ChangeNotifier {
     if (_state.coins < cost) return null;
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final index =
-        updatedAnimals.indexWhere((entry) => entry.animalId == animalId);
+    final index = updatedAnimals.indexWhere(
+      (entry) =>
+          entry.animalId == animalId && entry.mutationId == mutationId,
+    );
     if (index < 0) return null;
 
     final newLevel = owned.level + 1;
@@ -186,13 +215,6 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return newLevel;
-  }
-
-  int quantityOf(String animalId) {
-    for (final owned in _state.ownedAnimals) {
-      if (owned.animalId == animalId) return owned.quantity;
-    }
-    return 0;
   }
 
   @override

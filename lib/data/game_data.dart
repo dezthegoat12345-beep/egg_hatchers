@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import '../models/animal.dart';
 import '../models/egg.dart';
+import '../models/mutation.dart';
 import '../models/player_state.dart';
 
 /// Static game content: all animals, eggs, and helpers to look them up.
@@ -72,6 +75,39 @@ class GameData {
     ),
   ];
 
+  static const mutations = <Mutation>[
+    Mutation(
+      id: 'none',
+      displayName: 'Normal',
+      chance: 85,
+      incomeMultiplier: 1,
+    ),
+    Mutation(
+      id: 'golden',
+      displayName: 'Golden',
+      chance: 10,
+      incomeMultiplier: 2,
+      icon: '✨',
+      prefix: 'Golden',
+    ),
+    Mutation(
+      id: 'rainbow',
+      displayName: 'Rainbow',
+      chance: 4,
+      incomeMultiplier: 5,
+      icon: '🌈',
+      prefix: 'Rainbow',
+    ),
+    Mutation(
+      id: 'shadow',
+      displayName: 'Shadow',
+      chance: 1,
+      incomeMultiplier: 10,
+      icon: '🌑',
+      prefix: 'Shadow',
+    ),
+  ];
+
   static const eggs = <Egg>[
     Egg(
       id: 'basic',
@@ -114,4 +150,26 @@ class GameData {
     }
     return null;
   }
+
+  static Mutation? mutationById(String id) {
+    for (final mutation in mutations) {
+      if (mutation.id == id) return mutation;
+    }
+    return null;
+  }
+
+  /// Roll a mutation using weighted chances (85/10/4/1).
+  static Mutation rollMutation(Random random) {
+    final roll = random.nextInt(100);
+    var cumulative = 0;
+    for (final mutation in mutations) {
+      cumulative += mutation.chance;
+      if (roll < cumulative) return mutation;
+    }
+    return mutations.first;
+  }
 }
+
+/// Type alias helper to avoid importing owned_animal in game_data callers.
+typedef OwnedAnimalRef = String;
+

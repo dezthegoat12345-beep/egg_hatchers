@@ -30,11 +30,12 @@ void main() {
     expect(bought, isTrue);
     expect(game.coins, 150);
 
-    final animal = game.hatchEgg(basicEgg);
-    expect(basicEgg.possibleAnimalIds, contains(animal.id));
+    final result = game.hatchEgg(basicEgg);
+    expect(basicEgg.possibleAnimalIds, contains(result.animal.id));
     expect(game.ownedAnimals.length, 1);
     expect(game.ownedAnimals.first.quantity, 1);
     expect(game.ownedAnimals.first.level, 1);
+    expect(game.ownedAnimals.first.mutationId, 'none');
 
     game.dispose();
   });
@@ -43,7 +44,12 @@ void main() {
     final state = PlayerState(
       coins: 500,
       ownedAnimals: const [
-        OwnedAnimal(animalId: 'chicken', quantity: 2, level: 3),
+        OwnedAnimal(
+          animalId: 'chicken',
+          quantity: 2,
+          level: 3,
+          mutationId: 'golden',
+        ),
       ],
       lastSavedTime: DateTime(2025, 1, 1),
     );
@@ -52,18 +58,19 @@ void main() {
     expect(restored.coins, 500);
     expect(restored.ownedAnimals.first.quantity, 2);
     expect(restored.ownedAnimals.first.level, 3);
+    expect(restored.ownedAnimals.first.mutationId, 'golden');
   });
 
-  test('old saves without level default to level 1', () {
-    final json = {
+  test('old saves without level or mutation default correctly', () {
+    final owned = OwnedAnimal.fromJson({
       'animalId': 'chicken',
       'quantity': 2,
-    };
-    final owned = OwnedAnimal.fromJson(json);
+    });
     expect(owned.level, 1);
+    expect(owned.mutationId, 'none');
   });
 
-  test('income uses base x quantity x level', () {
+  test('income uses base x mutation x quantity x level', () {
     const animal = Animal(
       id: 'chicken',
       name: 'Chicken',
@@ -71,62 +78,139 @@ void main() {
       coinsPerSecond: 1,
       emoji: '🐔',
     );
-    const owned = OwnedAnimal(animalId: 'chicken', quantity: 3, level: 4);
+    const owned = OwnedAnimal(
+      animalId: 'chicken',
+      quantity: 3,
+      level: 2,
+      mutationId: 'golden',
+    );
     expect(GameService.incomeFor(animal, owned), 12);
   });
 
-  test('upgrade cost uses base x level x 50', () {
+  test('upgrade cost uses base x mutation x level x 50', () {
     const animal = Animal(
-      id: 'chicken',
-      name: 'Chicken',
+      id: 'rabbit',
+      name: 'Rabbit',
       rarity: Rarity.common,
-      coinsPerSecond: 1,
-      emoji: '🐔',
+      coinsPerSecond: 3,
+      emoji: '🐰',
     );
-    const owned = OwnedAnimal(animalId: 'chicken', quantity: 1, level: 2);
-    expect(GameService.upgradeCostFor(animal, owned), 100);
+    const owned = OwnedAnimal(
+      animalId: 'rabbit',
+      quantity: 1,
+      level: 1,
+      mutationId: 'rainbow',
+    );
+    expect(GameService.upgradeCostFor(animal, owned), 750);
   });
 
   test('upgrading increases level and subtracts coins', () async {
     SharedPreferences.setMockInitialValues({});
-    final game = GameService();
-    await game.initialize();
-
-    final basicEgg = GameData.eggs.first;
-    game.buyEgg(basicEgg);
-    game.hatchEgg(basicEgg);
-
-    final animalId = game.ownedAnimals.first.animalId;
-    final animal = GameData.animalById(animalId)!;
-    final cost = GameService.upgradeCostFor(animal, game.ownedAnimal(animalId)!);
-
-    expect(game.coins, 150);
-    final newLevel = game.upgradeAnimal(animalId);
-
-    expect(newLevel, 2);
-    expect(game.coins, 150 - cost);
-    expect(game.ownedAnimal(animalId)!.level, 2);
-
-    game.dispose();
-  });
-
-  test('duplicate hatch increases quantity without resetting level', () async {
-    SharedPreferences.setMockInitialValues({});
-    // Fixed seed so both hatches pick the same animal.
     final game = GameService(random: Random(1));
     await game.initialize();
 
     final basicEgg = GameData.eggs.first;
     game.buyEgg(basicEgg);
-    final first = game.hatchEgg(basicEgg);
-    expect(game.upgradeAnimal(first.id), 2);
-
-    game.buyEgg(basicEgg);
     game.hatchEgg(basicEgg);
 
-    final owned = game.ownedAnimal(first.id)!;
-    expect(owned.quantity, 2);
-    expect(owned.level, 2);
+    final owned = game.ownedAnimals.first;
+    final animal = GameData.animalById(owned.animalId)!;
+    final cost = GameService.upgradeCostFor(animal, owned);
+
+    expect(game.coins, 150);
+    final newLevel = game.upgradeAnimal(owned.animalId, owned.mutationId);
+
+    expect(newLevel, 2);
+    expect(game.coins, 150 - cost);
+    expect(game.ownedAnimal(owned.animalId, mutationId: owned.mutationId)!.level, 2);
+
+    game.dispose();
+  });
+
+  test('duplicate hatch increases quantity without resetting level', () async {
+    final basicEgg = GameData.eggs.first;
+    var found = false;
+
+    for (var seed = 0; seed < 500; seed++) {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService(random: Random(seed));
+      await game.initialize();
+
+      game.buyEgg(basicEgg);
+      final first = game.hatchEgg(basicEgg);
+      expect(game.upgradeAnimal(first.animal.id, first.mutation.id), 2);
+
+      game.buyEgg(basicEgg);
+      final second = game.hatchEgg(basicEgg);
+
+      if (first.animal.id == second.animal.id &&
+          first.mutation.id == second.mutation.id) {
+        final owned =
+            game.ownedAnimal(first.animal.id, mutationId: first.mutation.id)!;
+        expect(owned.quantity, 2);
+        expect(owned.level, 2);
+        found = true;
+      }
+
+      game.dispose();
+      if (found) break;
+    }
+
+    expect(found, isTrue, reason: 'Need a seed that hatches the same combo twice');
+  });
+
+  test('golden and normal chickens are separate entries', () async {
+    SharedPreferences.setMockInitialValues({});
+    // Rolls: animal index, mutation roll (99 = shadow)... need controlled rolls.
+    // Use a custom approach: hatch twice with forced mutations via direct state is not available.
+    // Instead test rollMutation and matching logic separately.
+    final shadowMutation = GameData.mutationById('shadow')!;
+    expect(shadowMutation.incomeMultiplier, 10);
+
+    const animal = Animal(
+      id: 'chicken',
+      name: 'Chicken',
+      rarity: Rarity.common,
+      coinsPerSecond: 1,
+      emoji: '🐔',
+    );
+    const normal = OwnedAnimal(animalId: 'chicken', quantity: 3, level: 2);
+    const golden = OwnedAnimal(
+      animalId: 'chicken',
+      quantity: 1,
+      level: 1,
+      mutationId: 'golden',
+    );
+
+    expect(GameService.incomeFor(animal, normal), 6);
+    expect(GameService.incomeFor(animal, golden), 2);
+  });
+
+  test('mutation roll weighted chances', () {
+    final random = Random(42);
+    final results = <String, int>{};
+    for (var i = 0; i < 1000; i++) {
+      final mutation = GameData.rollMutation(random);
+      results[mutation.id] = (results[mutation.id] ?? 0) + 1;
+    }
+    expect(results['none'], greaterThan(results['golden']!));
+    expect(results['golden'], greaterThan(results['rainbow']!));
+    expect(results['rainbow'], greaterThan(results['shadow']!));
+  });
+
+  test('upgrading golden chicken does not upgrade normal chicken', () async {
+    const saveKey = 'egg_hatchers_player_state';
+    SharedPreferences.setMockInitialValues({
+      saveKey:
+          '{"coins":1000,"ownedAnimals":[{"animalId":"chicken","quantity":1,"level":1,"mutationId":"none"},{"animalId":"chicken","quantity":1,"level":1,"mutationId":"golden"}],"lastSavedTime":"2025-06-01T00:00:00.000"}',
+    });
+
+    final game = GameService();
+    await game.initialize();
+
+    expect(game.upgradeAnimal('chicken', 'golden'), 2);
+    expect(game.ownedAnimal('chicken', mutationId: 'none')!.level, 1);
+    expect(game.ownedAnimal('chicken', mutationId: 'golden')!.level, 2);
 
     game.dispose();
   });

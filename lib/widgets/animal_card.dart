@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/mutation.dart';
 
-/// A rounded card showing one animal, its stats, and an optional upgrade button.
+/// A rounded card showing one animal, mutation, stats, and an upgrade button.
 class AnimalCard extends StatelessWidget {
   const AnimalCard({
     super.key,
     required this.animal,
+    this.mutation,
     this.quantity,
     this.level,
     this.typeIncome,
@@ -18,6 +21,7 @@ class AnimalCard extends StatelessWidget {
   });
 
   final Animal animal;
+  final Mutation? mutation;
   final int? quantity;
   final int? level;
   final int? typeIncome;
@@ -30,10 +34,14 @@ class AnimalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOwned = quantity != null;
+    final activeMutation = mutation ?? GameData.mutations.first;
+    final displayName = activeMutation.fullName(animal);
+    final displayEmoji = activeMutation.displayEmoji(animal);
 
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: activeMutation.isNormal ? null : _mutationTint(activeMutation),
       child: Padding(
         padding: EdgeInsets.all(compact ? 12 : 16),
         child: Column(
@@ -43,7 +51,7 @@ class AnimalCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  animal.emoji,
+                  displayEmoji,
                   style: TextStyle(fontSize: compact ? 36 : 48),
                 ),
                 const SizedBox(width: 12),
@@ -52,7 +60,7 @@ class AnimalCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        animal.name,
+                        displayName,
                         style: TextStyle(
                           fontSize: compact ? 16 : 20,
                           fontWeight: FontWeight.bold,
@@ -60,6 +68,10 @@ class AnimalCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       _RarityBadge(rarity: animal.rarity),
+                      if (!activeMutation.isNormal) ...[
+                        const SizedBox(height: 4),
+                        _MutationBadge(mutation: activeMutation),
+                      ],
                       const SizedBox(height: 4),
                       if (isOwned) ...[
                         Text(
@@ -136,6 +148,19 @@ class AnimalCard extends StatelessWidget {
       ),
     );
   }
+
+  Color? _mutationTint(Mutation mutation) {
+    switch (mutation.id) {
+      case 'golden':
+        return Colors.amber.shade50;
+      case 'rainbow':
+        return Colors.purple.shade50;
+      case 'shadow':
+        return Colors.grey.shade200;
+      default:
+        return null;
+    }
+  }
 }
 
 class _RarityBadge extends StatelessWidget {
@@ -156,6 +181,32 @@ class _RarityBadge extends StatelessWidget {
         rarity.label,
         style: TextStyle(
           color: rarity.color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _MutationBadge extends StatelessWidget {
+  const _MutationBadge({required this.mutation});
+
+  final Mutation mutation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.deepPurple, width: 1.5),
+      ),
+      child: Text(
+        '${mutation.icon} ${mutation.displayName}'.trim(),
+        style: const TextStyle(
+          color: Colors.deepPurple,
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),

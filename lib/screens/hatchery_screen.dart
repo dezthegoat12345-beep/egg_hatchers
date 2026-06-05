@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../data/game_data.dart';
 import '../services/game_service.dart';
-import '../widgets/animal_card.dart';
 import '../widgets/coin_header.dart';
+import '../widgets/owned_animal_list.dart';
 import 'collection_screen.dart';
 import 'shop_screen.dart';
 
@@ -13,12 +12,17 @@ class HatcheryScreen extends StatelessWidget {
 
   final GameService game;
 
-  void _handleUpgrade(BuildContext context, String animalId, String name) {
-    final newLevel = game.upgradeAnimal(animalId);
+  void _handleUpgrade(
+    BuildContext context,
+    String animalId,
+    String mutationId,
+    String displayName,
+  ) {
+    final newLevel = game.upgradeAnimal(animalId, mutationId);
     if (newLevel != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$name upgraded to Level $newLevel!'),
+          content: Text('$displayName upgraded to Level $newLevel!'),
           backgroundColor: Colors.teal.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -27,7 +31,7 @@ class HatcheryScreen extends StatelessWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Not enough coins to upgrade $name.'),
+          content: Text('Not enough coins to upgrade $displayName.'),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -102,38 +106,16 @@ class HatcheryScreen extends StatelessWidget {
                       Expanded(
                         child: game.ownedAnimals.isEmpty
                             ? _EmptyHatchery()
-                            : ListView.separated(
-                                itemCount: game.ownedAnimals.length,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final owned = game.ownedAnimals[index];
-                                  final animal =
-                                      GameData.animalById(owned.animalId);
-                                  if (animal == null) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return AnimalCard(
-                                    animal: animal,
-                                    quantity: owned.quantity,
-                                    level: owned.level,
-                                    typeIncome:
-                                        GameService.incomeFor(animal, owned),
-                                    upgradeCost: GameService.upgradeCostFor(
-                                      animal,
-                                      owned,
-                                    ),
-                                    showUpgradeButton: true,
-                                    canAffordUpgrade:
-                                        game.canAffordUpgrade(animal.id),
-                                    onUpgrade: () => _handleUpgrade(
-                                      context,
-                                      animal.id,
-                                      animal.name,
-                                    ),
-                                    compact: true,
-                                  );
-                                },
+                            : OwnedAnimalList(
+                                game: game,
+                                compact: true,
+                                onUpgrade: (animalId, mutationId, name) =>
+                                    _handleUpgrade(
+                                  context,
+                                  animalId,
+                                  mutationId,
+                                  name,
+                                ),
                               ),
                       ),
                     ],

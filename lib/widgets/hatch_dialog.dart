@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/animal.dart';
+import '../models/hatch_result.dart';
 import '../models/egg.dart';
 import 'animal_card.dart';
 
@@ -9,21 +9,21 @@ class HatchDialog extends StatefulWidget {
   const HatchDialog({
     super.key,
     required this.egg,
-    required this.hatchedAnimal,
+    required this.result,
   });
 
   final Egg egg;
-  final Animal hatchedAnimal;
+  final HatchResult result;
 
   static Future<void> show(
     BuildContext context, {
     required Egg egg,
-    required Animal hatchedAnimal,
+    required HatchResult result,
   }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => HatchDialog(egg: egg, hatchedAnimal: hatchedAnimal),
+      builder: (context) => HatchDialog(egg: egg, result: result),
     );
   }
 
@@ -73,6 +73,9 @@ class _HatchDialogState extends State<HatchDialog>
 
   @override
   Widget build(BuildContext context) {
+    final message = widget.result.mutation.hatchMessage(widget.result.animal);
+    final isMutated = !widget.result.mutation.isNormal;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
@@ -81,12 +84,27 @@ class _HatchDialogState extends State<HatchDialog>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _revealed ? 'It hatched!' : 'Hatching...',
-              style: const TextStyle(
+              _revealed ? (isMutated ? 'Mutation!' : 'It hatched!') : 'Hatching...',
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
+                color: isMutated && _revealed
+                    ? Colors.deepPurple
+                    : null,
               ),
             ),
+            const SizedBox(height: 12),
+            if (_revealed)
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isMutated ? FontWeight.bold : FontWeight.normal,
+                  color: isMutated ? Colors.deepPurple.shade700 : Colors.grey.shade700,
+                  height: 1.4,
+                ),
+              ),
             const SizedBox(height: 20),
             if (!_revealed)
               AnimatedBuilder(
@@ -107,11 +125,15 @@ class _HatchDialogState extends State<HatchDialog>
               )
             else ...[
               Text(
-                widget.hatchedAnimal.emoji,
+                widget.result.mutation.displayEmoji(widget.result.animal),
                 style: const TextStyle(fontSize: 80),
               ),
               const SizedBox(height: 12),
-              AnimalCard(animal: widget.hatchedAnimal, compact: true),
+              AnimalCard(
+                animal: widget.result.animal,
+                mutation: widget.result.mutation,
+                compact: true,
+              ),
             ],
             const SizedBox(height: 20),
             if (_revealed)
@@ -121,14 +143,17 @@ class _HatchDialogState extends State<HatchDialog>
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: isMutated ? Colors.deepPurple : Colors.teal,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Awesome!',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Text(
+                    isMutated ? 'Amazing!' : 'Awesome!',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
