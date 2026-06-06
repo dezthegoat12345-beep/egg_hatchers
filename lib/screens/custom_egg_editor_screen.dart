@@ -114,14 +114,89 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
   bool get _tooManyAnimals =>
       _selectedAnimalIds.length > CustomEgg.maxSelectedAnimals;
 
-  List<Animal> get _sortedAnimals {
-    final list = List<Animal>.from(GameData.animals);
-    list.sort((a, b) {
-      final rarity = b.rarity.sortOrder.compareTo(a.rarity.sortOrder);
-      if (rarity != 0) return rarity;
-      return a.name.compareTo(b.name);
-    });
-    return list;
+  List<Widget> _animalListWidgets(CustomEgg draft, BackgroundTheme theme) {
+    final widgets = <Widget>[];
+    final shown = <String>{};
+
+    for (final egg in GameData.eggs) {
+      final groupAnimals = <Animal>[];
+      for (final animalId in egg.possibleAnimalIds) {
+        if (!shown.add(animalId)) continue;
+        final animal = GameData.animalById(animalId);
+        if (animal != null) groupAnimals.add(animal);
+      }
+      if (groupAnimals.isEmpty) continue;
+
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            egg.name,
+            style: GameTheme.sectionTitle(theme, size: 13),
+          ),
+        ),
+      );
+      widgets.addAll(
+        groupAnimals.map((animal) => _animalWeightTile(animal, draft, theme)),
+      );
+    }
+
+    final remaining = GameData.animals
+        .where((animal) => !shown.contains(animal.id))
+        .toList();
+    if (remaining.isNotEmpty) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            'Other',
+            style: GameTheme.sectionTitle(theme, size: 13),
+          ),
+        ),
+      );
+      widgets.addAll(
+        remaining.map((animal) => _animalWeightTile(animal, draft, theme)),
+      );
+    }
+
+    return widgets;
+  }
+
+  Widget _animalWeightTile(
+    Animal animal,
+    CustomEgg draft,
+    BackgroundTheme theme,
+  ) {
+    final unlocked = CustomEggLogic.isAnimalUnlockedForCustomEgg(
+      animal.id,
+      _lifetimeCoins,
+    );
+    final selected = _selectedAnimalIds.contains(animal.id);
+    final lockedSelected = selected && !unlocked;
+
+    return _AnimalWeightTile(
+      animal: animal,
+      theme: theme,
+      selected: selected,
+      locked: !unlocked,
+      lockedSelected: lockedSelected,
+      lockMessage: unlocked
+          ? null
+          : CustomEggLogic.unlockMessageForAnimal(animal.id),
+      weight: _animalWeights[animal.id] ?? 1,
+      chancePercent: selected && unlocked
+          ? CustomEggLogic.chancePercentForAnimal(
+              draft,
+              animal.id,
+              lifetimeCoinsEarned: _lifetimeCoins,
+            ).round()
+          : null,
+      onToggle: (checked) => _toggleAnimal(animal.id, checked),
+      onLockedTap: () => _showError(
+        CustomEggLogic.unlockMessageForAnimal(animal.id),
+      ),
+      onWeightChange: (delta) => _changeWeight(animal.id, delta),
+    );
   }
 
   void _toggleAnimal(String animalId, bool checked) {
@@ -468,47 +543,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
                                     ),
                                   ),
                                 const SizedBox(height: 8),
-                                ..._sortedAnimals.map((animal) {
-                                  final unlocked =
-                                      CustomEggLogic.isAnimalUnlockedForCustomEgg(
-                                    animal.id,
-                                    _lifetimeCoins,
-                                  );
-                                  final selected =
-                                      _selectedAnimalIds.contains(animal.id);
-                                  final lockedSelected =
-                                      selected && !unlocked;
-
-                                  return _AnimalWeightTile(
-                                    animal: animal,
-                                    theme: theme,
-                                    selected: selected,
-                                    locked: !unlocked,
-                                    lockedSelected: lockedSelected,
-                                    lockMessage: unlocked
-                                        ? null
-                                        : CustomEggLogic.unlockMessageForAnimal(
-                                            animal.id,
-                                          ),
-                                    weight: _animalWeights[animal.id] ?? 1,
-                                    chancePercent: selected && unlocked
-                                        ? CustomEggLogic.chancePercentForAnimal(
-                                            draft,
-                                            animal.id,
-                                            lifetimeCoinsEarned: _lifetimeCoins,
-                                          ).round()
-                                        : null,
-                                    onToggle: (checked) =>
-                                        _toggleAnimal(animal.id, checked),
-                                    onLockedTap: () => _showError(
-                                      CustomEggLogic.unlockMessageForAnimal(
-                                        animal.id,
-                                      ),
-                                    ),
-                                    onWeightChange: (delta) =>
-                                        _changeWeight(animal.id, delta),
-                                  );
-                                }),
+                                ..._animalListWidgets(draft, theme),
                               ],
                             ),
                           ),

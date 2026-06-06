@@ -397,6 +397,46 @@ class GameData {
 
   static PlayerState startingPlayerState() => PlayerState.initial();
 
+  /// First built-in egg in progression order that can hatch [animalId].
+  static Egg? progressionEggForAnimal(String animalId) {
+    for (final egg in eggs) {
+      if (egg.possibleAnimalIds.contains(animalId)) return egg;
+    }
+    return null;
+  }
+
+  /// Lower values sort earlier (basic → endgame). Unknown animals sort last.
+  static int progressionIndexForAnimal(String animalId) {
+    for (var eggIndex = 0; eggIndex < eggs.length; eggIndex++) {
+      final slot = eggs[eggIndex].possibleAnimalIds.indexOf(animalId);
+      if (slot >= 0) return eggIndex * 100 + slot;
+    }
+    return 99999;
+  }
+
+  /// All animals ordered by built-in egg progression.
+  static final List<Animal> animalsInProgressionOrder =
+      _buildAnimalsInProgressionOrder();
+
+  static List<Animal> _buildAnimalsInProgressionOrder() {
+    final seen = <String>{};
+    final ordered = <Animal>[];
+
+    for (final egg in eggs) {
+      for (final animalId in egg.possibleAnimalIds) {
+        if (!seen.add(animalId)) continue;
+        final animal = animalById(animalId);
+        if (animal != null) ordered.add(animal);
+      }
+    }
+
+    for (final animal in animals) {
+      if (seen.add(animal.id)) ordered.add(animal);
+    }
+
+    return ordered;
+  }
+
   static Animal? animalById(String id) {
     for (final animal in animals) {
       if (animal.id == id) return animal;

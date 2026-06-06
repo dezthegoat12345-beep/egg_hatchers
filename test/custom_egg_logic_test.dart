@@ -263,6 +263,15 @@ void main() {
     expect(service.getById('custom_two'), isNotNull);
   });
 
+  test('animalsInProgressionOrder follows built-in egg order', () {
+    final ids = GameData.animalsInProgressionOrder.map((a) => a.id).toList();
+
+    expect(ids.sublist(0, 3), ['chicken', 'mouse', 'rabbit']);
+    expect(ids.sublist(3, 6), ['fox', 'deer', 'bear']);
+    expect(ids.sublist(6, 10), ['cow', 'pig', 'sheep', 'horse']);
+    expect(ids.last, 'galaxy_dragon');
+  });
+
   test('hatchable animals exclude locked selections for shop', () {
     const egg = CustomEgg(
       id: 'custom_locked',
