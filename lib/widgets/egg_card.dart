@@ -18,6 +18,7 @@ class EggCard extends StatelessWidget {
     required this.lifetimeCoinsEarned,
     required this.onBuy,
     required this.theme,
+    this.isCustomEgg = false,
   });
 
   final Egg egg;
@@ -26,6 +27,7 @@ class EggCard extends StatelessWidget {
   final int lifetimeCoinsEarned;
   final VoidCallback onBuy;
   final BackgroundTheme theme;
+  final bool isCustomEgg;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +131,7 @@ class EggCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (!isUnlocked) ...[
+            if (!isUnlocked && !isCustomEgg) ...[
               const SizedBox(height: 14),
               Text(
                 egg.unlockMessage,
