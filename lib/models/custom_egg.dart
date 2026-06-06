@@ -96,13 +96,28 @@ class CustomEgg {
   }
 
   static List<CustomEgg> listFromJsonString(String jsonString) {
-    final decoded = jsonDecode(jsonString);
-    if (decoded is! List<dynamic>) return [];
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! List<dynamic>) return [];
 
-    return [
-      for (final item in decoded)
-        if (item is Map<String, dynamic>) CustomEgg.fromJson(item),
-    ].where((egg) => egg.id.isNotEmpty).toList();
+      final eggs = <CustomEgg>[];
+      for (final item in decoded) {
+        if (item is! Map) continue;
+
+        try {
+          final map = Map<String, dynamic>.from(item);
+          final egg = CustomEgg.fromJson(map);
+          if (egg.id.isNotEmpty) {
+            eggs.add(egg);
+          }
+        } catch (_) {
+          // Skip malformed entries; keep loading valid eggs.
+        }
+      }
+      return eggs;
+    } catch (_) {
+      return [];
+    }
   }
 
   static String listToJsonString(List<CustomEgg> eggs) {
