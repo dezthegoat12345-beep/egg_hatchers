@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/game_data.dart';
+import '../utils/custom_egg_logic.dart';
 import 'egg.dart';
 
 /// A player-created egg stored locally; not part of built-in game data.
@@ -11,6 +12,7 @@ class CustomEgg {
     required this.emoji,
     required this.cost,
     required this.selectedAnimalIds,
+    this.animalWeights = const {},
     this.isEnabled = true,
   });
 
@@ -22,6 +24,7 @@ class CustomEgg {
   final String emoji;
   final int cost;
   final List<String> selectedAnimalIds;
+  final Map<String, int> animalWeights;
   final bool isEnabled;
 
   /// Animal ids that still exist in game data.
@@ -31,15 +34,19 @@ class CustomEgg {
 
   bool get isValid => validAnimalIds.isNotEmpty;
 
+  int get minimumCost => CustomEggLogic.minimumCostForCustomEgg(this);
+
   Egg toEgg() {
     final count = validAnimalIds.length;
+    final summary = CustomEggLogic.formatChanceSummary(this);
+    final chanceText = summary.isNotEmpty ? ' · $summary' : '';
     return Egg(
       id: id,
       name: name,
       cost: cost,
       possibleAnimalIds: List<String>.from(validAnimalIds),
       emoji: emoji.isNotEmpty ? emoji : '🥚',
-      description: 'Custom egg · $count animal${count == 1 ? '' : 's'}',
+      description: 'Custom egg · $count animal${count == 1 ? '' : 's'}$chanceText',
       unlockLifetimeCoins: 0,
     );
   }
@@ -49,6 +56,7 @@ class CustomEgg {
     String? emoji,
     int? cost,
     List<String>? selectedAnimalIds,
+    Map<String, int>? animalWeights,
     bool? isEnabled,
   }) {
     return CustomEgg(
@@ -57,29 +65,59 @@ class CustomEgg {
       emoji: emoji ?? this.emoji,
       cost: cost ?? this.cost,
       selectedAnimalIds: selectedAnimalIds ?? List.from(this.selectedAnimalIds),
+      animalWeights: animalWeights ?? Map.from(this.animalWeights),
       isEnabled: isEnabled ?? this.isEnabled,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'emoji': emoji,
-        'cost': cost,
-        'selectedAnimalIds': selectedAnimalIds,
-        'isEnabled': isEnabled,
-      };
+  Map<String, dynamic> toJson() {
+    final weights = <String, int>{};
+    for (final id in selectedAnimalIds) {
+      if (animalWeights.containsKey(id)) {
+        weights[id] = animalWeights[id]!.clamp(
+          CustomEggLogic.minWeight,
+          CustomEggLogic.maxWeight,
+        );
+      }
+    }
+
+    return {
+      'id': id,
+      'name': name,
+      'emoji': emoji,
+      'cost': cost,
+      'selectedAnimalIds': selectedAnimalIds,
+      if (weights.isNotEmpty) 'animalWeights': weights,
+      'isEnabled': isEnabled,
+    };
+  }
 
   factory CustomEgg.fromJson(Map<String, dynamic> json) {
+    final selected = (json['selectedAnimalIds'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    final weights = <String, int>{};
+    final rawWeights = json['animalWeights'];
+    if (rawWeights is Map) {
+      for (final entry in rawWeights.entries) {
+        final id = entry.key.toString();
+        final w = (entry.value as num?)?.toInt() ?? 1;
+        weights[id] = w.clamp(
+          CustomEggLogic.minWeight,
+          CustomEggLogic.maxWeight,
+        );
+      }
+    }
+
     return CustomEgg(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'My Custom Egg',
       emoji: json['emoji'] as String? ?? '🥚',
       cost: (json['cost'] as num?)?.toInt() ?? 1000,
-      selectedAnimalIds: (json['selectedAnimalIds'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
+      selectedAnimalIds: selected,
+      animalWeights: weights,
       isEnabled: json['isEnabled'] as bool? ?? true,
     );
   }

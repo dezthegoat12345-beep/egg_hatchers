@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 
 import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/custom_egg.dart';
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
+import '../utils/custom_egg_logic.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../models/player_state.dart';
@@ -198,7 +200,10 @@ class GameService extends ChangeNotifier {
   }
 
   /// Hatch a purchased egg, roll for mutation, and add to the collection.
-  HatchResult hatchEgg(Egg egg) {
+  ///
+  /// Pass [customEgg] when hatching a player-created custom egg so weighted
+  /// chances apply. Built-in eggs use equal random selection.
+  HatchResult hatchEgg(Egg egg, {CustomEgg? customEgg}) {
     final Animal animal;
     final Mutation mutation;
 
@@ -208,8 +213,15 @@ class GameService extends ChangeNotifier {
           GameData.mutationById(_forcedNextMutationId!) ?? GameData.mutations.first;
       clearForcedNextHatch();
     } else {
-      final animalId = egg
-          .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
+      final String animalId;
+      if (customEgg != null &&
+          customEgg.isValid &&
+          customEgg.id == egg.id) {
+        animalId = CustomEggLogic.weightedRandomAnimal(customEgg, _random);
+      } else {
+        animalId = egg
+            .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
+      }
       animal = GameData.animalById(animalId)!;
       mutation = GameData.rollMutation(_random);
     }

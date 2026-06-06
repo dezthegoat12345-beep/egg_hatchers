@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_data.dart';
 import '../models/egg.dart';
+import '../utils/custom_egg_logic.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
@@ -77,8 +78,12 @@ class ShopScreen extends StatelessWidget {
       return;
     }
 
+    final customDefinition = CustomEggLogic.isCustomEggId(egg.id)
+        ? customEggs.getById(egg.id)
+        : null;
+
     game.buyEgg(egg);
-    final result = game.hatchEgg(egg);
+    final result = game.hatchEgg(egg, customEgg: customDefinition);
 
     if (context.mounted) {
       await HatchDialog.show(
@@ -97,7 +102,7 @@ class ShopScreen extends StatelessWidget {
       listenable: Listenable.merge([game, preferences, customEggs]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final customShopEggs = customEggs.shopEggModels;
+        final customShopEggs = customEggs.shopEggs;
         final hasSavedCustomEggs = customEggs.allEggs.isNotEmpty;
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
@@ -182,17 +187,18 @@ class ShopScreen extends StatelessWidget {
                                         i++) ...[
                                       if (i > 0) const SizedBox(height: 14),
                                       EggCard(
-                                        egg: customShopEggs[i],
+                                        egg: customShopEggs[i].toEgg(),
                                         theme: bg,
                                         isUnlocked: true,
-                                        canAfford:
-                                            game.canAfford(customShopEggs[i]),
+                                        canAfford: game.canAfford(
+                                          customShopEggs[i].toEgg(),
+                                        ),
                                         lifetimeCoinsEarned:
                                             game.lifetimeCoinsEarned,
                                         isCustomEgg: true,
                                         onBuy: () => _buyAndHatch(
                                           context,
-                                          customShopEggs[i],
+                                          customShopEggs[i].toEgg(),
                                         ),
                                       ),
                                     ]
