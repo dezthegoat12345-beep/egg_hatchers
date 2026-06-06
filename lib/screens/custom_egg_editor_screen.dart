@@ -6,6 +6,7 @@ import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_egg.dart';
 import '../services/custom_egg_service.dart';
+import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/custom_egg_logic.dart';
@@ -17,11 +18,13 @@ import '../widgets/game_background.dart';
 class CustomEggEditorScreen extends StatefulWidget {
   const CustomEggEditorScreen({
     super.key,
+    required this.game,
     required this.preferences,
     required this.customEggs,
     this.existing,
   });
 
+  final GameService game;
   final PreferencesService preferences;
   final CustomEggService customEggs;
   final CustomEgg? existing;
@@ -40,6 +43,8 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
   late bool _isEnabled;
 
   bool get _isEditing => widget.existing != null;
+
+  int get _lifetimeCoins => widget.game.lifetimeCoinsEarned;
 
   @override
   void initState() {
@@ -74,18 +79,40 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
     );
   }
 
+  List<String> get _unlockedSelectedIds => _selectedAnimalIds
+      .where(
+        (id) => CustomEggLogic.isAnimalUnlockedForCustomEgg(id, _lifetimeCoins),
+      )
+      .toList();
+
+  List<String> get _lockedSelectedIds => _selectedAnimalIds
+      .where(
+        (id) => !CustomEggLogic.isAnimalUnlockedForCustomEgg(id, _lifetimeCoins),
+      )
+      .toList();
+
   int get _minimumCost {
-    if (_selectedAnimalIds.isEmpty) return 1;
-    return _buildDraftEgg().minimumCost;
+    final draft = _buildDraftEgg();
+    final unlockedDraft = draft.copyWith(
+      selectedAnimalIds: _unlockedSelectedIds,
+      animalWeights: Map.fromEntries(
+        _animalWeights.entries.where((e) => _unlockedSelectedIds.contains(e.key)),
+      ),
+    );
+    if (_unlockedSelectedIds.isEmpty) return 1;
+    return unlockedDraft.minimumCostFor(_lifetimeCoins);
   }
 
   int? get _enteredCost => int.tryParse(_costController.text.trim());
 
   bool get _costBelowMinimum {
     final cost = _enteredCost;
-    if (cost == null || _selectedAnimalIds.isEmpty) return false;
+    if (cost == null || _unlockedSelectedIds.isEmpty) return false;
     return cost < _minimumCost;
   }
+
+  bool get _tooManyAnimals =>
+      _selectedAnimalIds.length > CustomEgg.maxSelectedAnimals;
 
   List<Animal> get _sortedAnimals {
     final list = List<Animal>.from(GameData.animals);
@@ -98,14 +125,30 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
   }
 
   void _toggleAnimal(String animalId, bool checked) {
-    setState(() {
-      if (checked) {
+    final unlocked = CustomEggLogic.isAnimalUnlockedForCustomEgg(
+      animalId,
+      _lifetimeCoins,
+    );
+
+    if (checked) {
+      if (!unlocked) {
+        _showError(CustomEggLogic.unlockMessageForAnimal(animalId));
+        return;
+      }
+      if (_selectedAnimalIds.length >= CustomEgg.maxSelectedAnimals) {
+        _showError('Custom eggs can include up to 6 animals.');
+        return;
+      }
+      setState(() {
         _selectedAnimalIds.add(animalId);
         _animalWeights.putIfAbsent(animalId, () => 1);
-      } else {
-        _selectedAnimalIds.remove(animalId);
-        _animalWeights.remove(animalId);
-      }
+      });
+      return;
+    }
+
+    setState(() {
+      _selectedAnimalIds.remove(animalId);
+      _animalWeights.remove(animalId);
     });
   }
 
@@ -146,11 +189,32 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
       return;
     }
 
-    final draft = _buildDraftEgg();
-    if (cost < draft.minimumCost) {
+    if (_tooManyAnimals) {
       _showError(
-        'Cost must be at least ${formatCoins(draft.minimumCost)} coins '
-        'for these animals.',
+        'Custom eggs can include up to ${CustomEgg.maxSelectedAnimals} animals. '
+        'Remove ${_selectedAnimalIds.length - CustomEgg.maxSelectedAnimals} to save.',
+      );
+      return;
+    }
+
+    if (_lockedSelectedIds.isNotEmpty) {
+      _showError(
+        'Remove locked animals before saving '
+        '(${_lockedSelectedIds.length} selected).',
+      );
+      return;
+    }
+
+    if (_unlockedSelectedIds.isEmpty) {
+      _showError('Select at least one unlocked animal.');
+      return;
+    }
+
+    final draft = _buildDraftEgg();
+    if (cost < draft.minimumCostFor(_lifetimeCoins)) {
+      _showError(
+        'Cost must be at least ${formatCoins(draft.minimumCostFor(_lifetimeCoins))} '
+        'coins for these animals.',
       );
       return;
     }
@@ -183,241 +247,299 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = widget.preferences.selectedTheme;
-    final draft = _buildDraftEgg();
+    return ListenableBuilder(
+      listenable: Listenable.merge([widget.game, widget.preferences]),
+      builder: (context, _) {
+        final theme = widget.preferences.selectedTheme;
+        final draft = _buildDraftEgg();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldColor,
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? '✏️ Edit Egg' : '🥚 New Egg',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.appBarColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: GameBackground(
-        theme: theme,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth =
-                  constraints.maxWidth > 520 ? 520.0 : double.infinity;
+        return Scaffold(
+          backgroundColor: theme.scaffoldColor,
+          appBar: AppBar(
+            title: Text(
+              _isEditing ? '✏️ Edit Egg' : '🥚 New Egg',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            centerTitle: true,
+            backgroundColor: theme.appBarColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          body: GameBackground(
+            theme: theme,
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth =
+                      constraints.maxWidth > 520 ? 520.0 : double.infinity;
 
-              return Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            _FieldCard(
-                              theme: theme,
-                              child: TextField(
-                                controller: _nameController,
-                                maxLength: CustomEgg.maxNameLength,
-                                onChanged: (_) => setState(() {}),
-                                style: TextStyle(
-                                  color: theme.cardTextPrimaryColor,
-                                ),
-                                decoration: _inputDecoration(
-                                  theme,
-                                  'Egg name',
-                                  hint: 'My Custom Egg',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _FieldCard(
-                              theme: theme,
-                              child: TextField(
-                                controller: _emojiController,
-                                maxLength: 4,
-                                style: const TextStyle(fontSize: 28),
-                                decoration: _inputDecoration(
-                                  theme,
-                                  'Egg emoji',
-                                  hint: '🥚',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              decoration: GameTheme.cardDecoration(theme),
-                              padding: const EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Minimum cost: 🪙 ${formatCoins(_minimumCost)}',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: theme.cardTextPrimaryColor,
-                                    ),
-                                  ),
-                                  if (_selectedAnimalIds.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 6),
-                                      child: Text(
-                                        'Select animals to calculate minimum cost.',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: theme.cardTextSecondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _FieldCard(
-                              theme: theme,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  TextField(
-                                    controller: _costController,
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.all(16),
+                              children: [
+                                _FieldCard(
+                                  theme: theme,
+                                  child: TextField(
+                                    controller: _nameController,
+                                    maxLength: CustomEgg.maxNameLength,
                                     onChanged: (_) => setState(() {}),
                                     style: TextStyle(
                                       color: theme.cardTextPrimaryColor,
                                     ),
                                     decoration: _inputDecoration(
                                       theme,
-                                      'Cost (coins)',
-                                      hint: '1000',
+                                      'Egg name',
+                                      hint: 'My Custom Egg',
                                     ),
                                   ),
-                                  if (_costBelowMinimum) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Cost must be at least '
-                                      '${formatCoins(_minimumCost)} coins.',
+                                ),
+                                const SizedBox(height: 12),
+                                _FieldCard(
+                                  theme: theme,
+                                  child: TextField(
+                                    controller: _emojiController,
+                                    maxLength: 4,
+                                    style: const TextStyle(fontSize: 28),
+                                    decoration: _inputDecoration(
+                                      theme,
+                                      'Egg emoji',
+                                      hint: '🥚',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: GameTheme.cardDecoration(theme),
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Minimum cost: 🪙 ${formatCoins(_minimumCost)}',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.cardTextPrimaryColor,
+                                        ),
+                                      ),
+                                      if (_unlockedSelectedIds.isEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Text(
+                                            'Select unlocked animals to calculate minimum cost.',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: theme.cardTextSecondaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _FieldCard(
+                                  theme: theme,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      TextField(
+                                        controller: _costController,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                        ],
+                                        onChanged: (_) => setState(() {}),
+                                        style: TextStyle(
+                                          color: theme.cardTextPrimaryColor,
+                                        ),
+                                        decoration: _inputDecoration(
+                                          theme,
+                                          'Cost (coins)',
+                                          hint: '1000',
+                                        ),
+                                      ),
+                                      if (_costBelowMinimum) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Cost must be at least '
+                                          '${formatCoins(_minimumCost)} coins.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.red.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 10),
+                                      OutlinedButton(
+                                        onPressed: _unlockedSelectedIds.isEmpty
+                                            ? null
+                                            : _applyMinimumCost,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: theme.primaryColor,
+                                          side: BorderSide(
+                                            color: theme.primaryColor,
+                                          ),
+                                        ),
+                                        child: const Text('Use Minimum Cost'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: GameTheme.cardDecoration(theme),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: SwitchListTile(
+                                      title: Text(
+                                        'Enabled in shop',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: theme.cardTextPrimaryColor,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        _isEnabled
+                                            ? 'Visible in the Egg Shop'
+                                            : 'Saved but hidden from shop',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.cardTextSecondaryColor,
+                                        ),
+                                      ),
+                                      value: _isEnabled,
+                                      activeThumbColor: theme.primaryColor,
+                                      onChanged: (value) =>
+                                          setState(() => _isEnabled = value),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Select animals & hatch weights',
+                                  style: GameTheme.sectionTitle(theme, size: 15),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Selected animals: '
+                                  '${_selectedAnimalIds.length} / '
+                                  '${CustomEgg.maxSelectedAnimals}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _tooManyAnimals
+                                        ? Colors.red.shade600
+                                        : theme.cardTextSecondaryColor,
+                                  ),
+                                ),
+                                if (_tooManyAnimals)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      'Remove extra animals before saving.',
                                       style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
                                         color: Colors.red.shade600,
                                       ),
                                     ),
-                                  ],
-                                  const SizedBox(height: 10),
-                                  OutlinedButton(
-                                    onPressed: _selectedAnimalIds.isEmpty
+                                  ),
+                                if (_lockedSelectedIds.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      '${_lockedSelectedIds.length} locked animal(s) '
+                                      'selected — remove before saving.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: theme.secondaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 8),
+                                ..._sortedAnimals.map((animal) {
+                                  final unlocked =
+                                      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+                                    animal.id,
+                                    _lifetimeCoins,
+                                  );
+                                  final selected =
+                                      _selectedAnimalIds.contains(animal.id);
+                                  final lockedSelected =
+                                      selected && !unlocked;
+
+                                  return _AnimalWeightTile(
+                                    animal: animal,
+                                    theme: theme,
+                                    selected: selected,
+                                    locked: !unlocked,
+                                    lockedSelected: lockedSelected,
+                                    lockMessage: unlocked
                                         ? null
-                                        : _applyMinimumCost,
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: theme.primaryColor,
-                                      side: BorderSide(color: theme.primaryColor),
+                                        : CustomEggLogic.unlockMessageForAnimal(
+                                            animal.id,
+                                          ),
+                                    weight: _animalWeights[animal.id] ?? 1,
+                                    chancePercent: selected && unlocked
+                                        ? CustomEggLogic.chancePercentForAnimal(
+                                            draft,
+                                            animal.id,
+                                            lifetimeCoinsEarned: _lifetimeCoins,
+                                          ).round()
+                                        : null,
+                                    onToggle: (checked) =>
+                                        _toggleAnimal(animal.id, checked),
+                                    onLockedTap: () => _showError(
+                                      CustomEggLogic.unlockMessageForAnimal(
+                                        animal.id,
+                                      ),
                                     ),
-                                    child: const Text('Use Minimum Cost'),
-                                  ),
-                                ],
-                              ),
+                                    onWeightChange: (delta) =>
+                                        _changeWeight(animal.id, delta),
+                                  );
+                                }),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            Container(
-                              decoration: GameTheme.cardDecoration(theme),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                            child: FilledButton(
+                              onPressed: _save,
+                              style: GameTheme.filledButton(
+                                theme,
+                                color: theme.primaryColor,
+                                height: 52,
                               ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: SwitchListTile(
-                                  title: Text(
-                                    'Enabled in shop',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.cardTextPrimaryColor,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    _isEnabled
-                                        ? 'Visible in the Egg Shop'
-                                        : 'Saved but hidden from shop',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: theme.cardTextSecondaryColor,
-                                    ),
-                                  ),
-                                  value: _isEnabled,
-                                  activeThumbColor: theme.primaryColor,
-                                  onChanged: (value) =>
-                                      setState(() => _isEnabled = value),
+                              child: const Text(
+                                'Save Custom Egg',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Select animals & hatch weights',
-                              style: GameTheme.sectionTitle(theme, size: 15),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${_selectedAnimalIds.length} selected',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: theme.cardTextSecondaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ..._sortedAnimals.map(
-                              (animal) => _AnimalWeightTile(
-                                animal: animal,
-                                theme: theme,
-                                selected:
-                                    _selectedAnimalIds.contains(animal.id),
-                                weight: _animalWeights[animal.id] ?? 1,
-                                chancePercent: _selectedAnimalIds
-                                        .contains(animal.id)
-                                    ? CustomEggLogic.chancePercentForAnimal(
-                                        draft,
-                                        animal.id,
-                                      ).round()
-                                    : null,
-                                onToggle: (checked) =>
-                                    _toggleAnimal(animal.id, checked),
-                                onWeightChange: (delta) =>
-                                    _changeWeight(animal.id, delta),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: FilledButton(
-                          onPressed: _save,
-                          style: GameTheme.filledButton(
-                            theme,
-                            color: theme.primaryColor,
-                            height: 52,
                           ),
-                          child: const Text(
-                            'Save Custom Egg',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -465,99 +587,121 @@ class _AnimalWeightTile extends StatelessWidget {
     required this.animal,
     required this.theme,
     required this.selected,
-    required this.weight,
-    required this.chancePercent,
+    required this.locked,
+    required this.lockedSelected,
     required this.onToggle,
     required this.onWeightChange,
+    this.lockMessage,
+    this.weight = 1,
+    this.chancePercent,
+    this.onLockedTap,
   });
 
   final Animal animal;
   final BackgroundTheme theme;
   final bool selected;
+  final bool locked;
+  final bool lockedSelected;
+  final String? lockMessage;
   final int weight;
   final int? chancePercent;
   final ValueChanged<bool> onToggle;
+  final VoidCallback? onLockedTap;
   final ValueChanged<int> onWeightChange;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: GameTheme.cardDecoration(theme),
-      child: Material(
-        color: Colors.transparent,
-        child: Column(
-          children: [
-            CheckboxListTile(
-              value: selected,
-              activeColor: theme.primaryColor,
-              title: Text(
-                '${animal.emoji} ${animal.name}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: theme.cardTextPrimaryColor,
+    final canToggle = !locked || lockedSelected;
+
+    return Opacity(
+      opacity: locked && !lockedSelected ? 0.55 : 1,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        decoration: GameTheme.cardDecoration(
+          theme,
+          locked: locked && !lockedSelected,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            children: [
+              CheckboxListTile(
+                value: selected,
+                activeColor: theme.primaryColor,
+                title: Text(
+                  '${animal.emoji} ${animal.name}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: theme.cardTextPrimaryColor,
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                '${animal.rarity.label} · ${animal.coinsPerSecond}/s',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.cardTextSecondaryColor,
+                subtitle: Text(
+                  locked && lockMessage != null
+                      ? lockMessage!
+                      : '${animal.rarity.label} · ${animal.coinsPerSecond}/s',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: locked
+                        ? theme.secondaryColor
+                        : theme.cardTextSecondaryColor,
+                  ),
                 ),
+                onChanged: canToggle
+                    ? (value) => onToggle(value ?? false)
+                    : (_) => onLockedTap?.call(),
               ),
-              onChanged: (value) => onToggle(value ?? false),
-            ),
-            if (selected)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    Text(
-                      'Weight',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.cardTextSecondaryColor,
+              if (selected && !locked)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Weight',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.cardTextSecondaryColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: weight > CustomEggLogic.minWeight
-                          ? () => onWeightChange(-1)
-                          : null,
-                      icon: const Icon(Icons.remove_circle_outline),
-                      color: theme.primaryColor,
-                    ),
-                    Text(
-                      '$weight',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: theme.cardTextPrimaryColor,
+                      const SizedBox(width: 8),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        onPressed: weight > CustomEggLogic.minWeight
+                            ? () => onWeightChange(-1)
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: theme.primaryColor,
                       ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: weight < CustomEggLogic.maxWeight
-                          ? () => onWeightChange(1)
-                          : null,
-                      icon: const Icon(Icons.add_circle_outline),
-                      color: theme.primaryColor,
-                    ),
-                    const Spacer(),
-                    Text(
-                      '$chancePercent%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: theme.secondaryColor,
+                      Text(
+                        '$weight',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.cardTextPrimaryColor,
+                        ),
                       ),
-                    ),
-                  ],
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        onPressed: weight < CustomEggLogic.maxWeight
+                            ? () => onWeightChange(1)
+                            : null,
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: theme.primaryColor,
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$chancePercent%',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: theme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

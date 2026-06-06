@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/custom_egg.dart';
-import '../models/egg.dart';
 
 /// Persists player-created custom eggs in shared_preferences.
 class CustomEggService extends ChangeNotifier {
@@ -15,12 +14,10 @@ class CustomEggService extends ChangeNotifier {
 
   List<CustomEgg> get allEggs => List.unmodifiable(_eggs);
 
-  /// Enabled custom eggs with at least one valid animal, for the shop.
-  List<CustomEgg> get shopEggs =>
-      _eggs.where((egg) => egg.isEnabled && egg.isValid).toList();
-
-  List<Egg> get shopEggModels =>
-      shopEggs.map((egg) => egg.toEgg()).toList(growable: false);
+  /// Enabled custom eggs with hatchable animals for the shop.
+  List<CustomEgg> shopEggs(int lifetimeCoinsEarned) => _eggs
+      .where((egg) => egg.isShopValid(lifetimeCoinsEarned))
+      .toList();
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
@@ -43,11 +40,16 @@ class CustomEggService extends ChangeNotifier {
   }
 
   Future<void> saveEgg(CustomEgg egg) async {
+    var toSave = egg;
     final index = _eggs.indexWhere((e) => e.id == egg.id);
+
     if (index >= 0) {
-      _eggs[index] = egg;
+      _eggs[index] = toSave;
     } else {
-      _eggs.add(egg);
+      while (_eggs.any((e) => e.id == toSave.id)) {
+        toSave = toSave.copyWith(id: CustomEgg.generateUniqueId());
+      }
+      _eggs.add(toSave);
     }
 
     notifyListeners();

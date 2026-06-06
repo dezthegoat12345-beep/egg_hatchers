@@ -37,6 +37,7 @@ class ShopScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => CustomEggsScreen(
+          game: game,
           preferences: preferences,
           customEggs: customEggs,
         ),
@@ -49,6 +50,8 @@ class ShopScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => CustomEggEditorScreen(
+          key: ValueKey('create_${DateTime.now().microsecondsSinceEpoch}'),
+          game: game,
           preferences: preferences,
           customEggs: customEggs,
         ),
@@ -102,7 +105,8 @@ class ShopScreen extends StatelessWidget {
       listenable: Listenable.merge([game, preferences, customEggs]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final customShopEggs = customEggs.shopEggs;
+        final lifetime = game.lifetimeCoinsEarned;
+        final customShopEggs = customEggs.shopEggs(lifetime);
         final hasSavedCustomEggs = customEggs.allEggs.isNotEmpty;
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
@@ -181,27 +185,46 @@ class ShopScreen extends StatelessWidget {
                                     style: GameTheme.sectionTitle(bg),
                                   ),
                                   const SizedBox(height: 12),
-                                  if (customShopEggs.isNotEmpty)
+                                  if (customShopEggs.isNotEmpty) ...[
                                     for (var i = 0;
                                         i < customShopEggs.length;
                                         i++) ...[
                                       if (i > 0) const SizedBox(height: 14),
-                                      EggCard(
-                                        egg: customShopEggs[i].toEgg(),
-                                        theme: bg,
-                                        isUnlocked: true,
-                                        canAfford: game.canAfford(
-                                          customShopEggs[i].toEgg(),
-                                        ),
-                                        lifetimeCoinsEarned:
-                                            game.lifetimeCoinsEarned,
-                                        isCustomEgg: true,
-                                        onBuy: () => _buyAndHatch(
-                                          context,
-                                          customShopEggs[i].toEgg(),
-                                        ),
+                                      Builder(
+                                        builder: (context) {
+                                          final customEgg = customShopEggs[i];
+                                          final eggModel = customEgg.toEgg(
+                                            lifetimeCoinsEarned: lifetime,
+                                          );
+                                          return EggCard(
+                                            egg: eggModel,
+                                            theme: bg,
+                                            isUnlocked: true,
+                                            canAfford: game.canAfford(eggModel),
+                                            lifetimeCoinsEarned: lifetime,
+                                            isCustomEgg: true,
+                                            onBuy: () => _buyAndHatch(
+                                              context,
+                                              eggModel,
+                                            ),
+                                          );
+                                        },
                                       ),
-                                    ]
+                                    ],
+                                    const SizedBox(height: 14),
+                                    OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _openCreateCustomEgg(context),
+                                      icon: const Icon(Icons.add_rounded),
+                                      label: const Text('Create Custom Egg'),
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize:
+                                            const Size(double.infinity, 44),
+                                        foregroundColor: bg.primaryColor,
+                                        side: BorderSide(color: bg.primaryColor),
+                                      ),
+                                    ),
+                                  ]
                                   else if (hasHiddenCustomEggs)
                                     _CustomEggsShopNotice(
                                       theme: bg,

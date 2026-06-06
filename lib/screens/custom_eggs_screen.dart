@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../models/custom_egg.dart';
 import '../services/custom_egg_service.dart';
+import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
@@ -14,10 +15,12 @@ import 'custom_egg_editor_screen.dart';
 class CustomEggsScreen extends StatelessWidget {
   const CustomEggsScreen({
     super.key,
+    required this.game,
     required this.preferences,
     required this.customEggs,
   });
 
+  final GameService game;
   final PreferencesService preferences;
   final CustomEggService customEggs;
 
@@ -84,6 +87,10 @@ class CustomEggsScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => CustomEggEditorScreen(
+          key: egg == null
+              ? ValueKey('create_${DateTime.now().microsecondsSinceEpoch}')
+              : ValueKey('edit_${egg.id}'),
+          game: game,
           preferences: preferences,
           customEggs: customEggs,
           existing: egg,
@@ -95,7 +102,7 @@ class CustomEggsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([preferences, customEggs]),
+      listenable: Listenable.merge([game, preferences, customEggs]),
       builder: (context, _) {
         final theme = preferences.selectedTheme;
         final eggs = customEggs.allEggs;

@@ -11,6 +11,7 @@ class CustomEggLogic {
   static const double flexibilityMultiplier = 1.25;
   static const int minWeight = 1;
   static const int maxWeight = 100;
+  static const int maxSelectedAnimals = 6;
 
   /// Cheapest built-in egg that can hatch [animalId].
   static Egg? findSourceEggForAnimal(String animalId) {
@@ -24,38 +25,106 @@ class CustomEggLogic {
     return cheapest;
   }
 
-  /// Normalized weights for valid selected animals (1–100, default 1).
-  static Map<String, int> effectiveWeights(CustomEgg egg) {
+  /// Alias for clarity in unlock helpers.
+  static Egg? sourceEggForAnimal(String animalId) =>
+      findSourceEggForAnimal(animalId);
+
+  /// Lifetime coins required to use [animalId] in a custom egg.
+  static int lifetimeRequiredForAnimal(String animalId) {
+    final source = findSourceEggForAnimal(animalId);
+    return source?.unlockLifetimeCoins ?? 0;
+  }
+
+  static bool isAnimalUnlockedForCustomEgg(
+    String animalId,
+    int lifetimeCoinsEarned,
+  ) {
+    if (GameData.animalById(animalId) == null) return false;
+    final required = lifetimeRequiredForAnimal(animalId);
+    return lifetimeCoinsEarned >= required;
+  }
+
+  static bool canAddAnimalToCustomEgg(
+    String animalId,
+    int lifetimeCoinsEarned, {
+    required int selectedCount,
+  }) {
+    if (!isAnimalUnlockedForCustomEgg(animalId, lifetimeCoinsEarned)) {
+      return false;
+    }
+    return selectedCount < maxSelectedAnimals;
+  }
+
+  static String unlockMessageForAnimal(String animalId) {
+    final source = findSourceEggForAnimal(animalId);
+    if (source == null) return 'This animal is unavailable.';
+    if (source.unlockLifetimeCoins <= 0) return 'Always available.';
+    return 'Unlock ${source.name} by earning '
+        '${source.unlockLifetimeCoins} lifetime coins.';
+  }
+
+  /// Valid animals that are also unlocked for the player's progression.
+  static List<String> hatchableAnimalIds(
+    CustomEgg egg,
+    int lifetimeCoinsEarned,
+  ) {
+    return egg.validAnimalIds
+        .where(
+          (id) => isAnimalUnlockedForCustomEgg(id, lifetimeCoinsEarned),
+        )
+        .toList();
+  }
+
+  /// Normalized weights for active animals (1–100, default 1).
+  static Map<String, int> effectiveWeights(
+    CustomEgg egg, {
+    int lifetimeCoinsEarned = 0,
+  }) {
+    final ids = lifetimeCoinsEarned > 0
+        ? hatchableAnimalIds(egg, lifetimeCoinsEarned)
+        : egg.validAnimalIds;
     final weights = <String, int>{};
-    for (final id in egg.validAnimalIds) {
+    for (final id in ids) {
       final raw = egg.animalWeights[id] ?? 1;
       weights[id] = raw.clamp(minWeight, maxWeight);
     }
     return weights;
   }
 
-  static int totalWeight(CustomEgg egg) {
-    return effectiveWeights(egg).values.fold(0, (sum, w) => sum + w);
+  static int totalWeight(CustomEgg egg, {int lifetimeCoinsEarned = 0}) {
+    return effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned)
+        .values
+        .fold(0, (sum, w) => sum + w);
   }
 
   /// Hatch chance as 0–100 percent.
-  static double chancePercentForAnimal(CustomEgg egg, String animalId) {
-    final weights = effectiveWeights(egg);
+  static double chancePercentForAnimal(
+    CustomEgg egg,
+    String animalId, {
+    int lifetimeCoinsEarned = 0,
+  }) {
+    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
     if (!weights.containsKey(animalId)) return 0;
-    final total = totalWeight(egg);
+    final total = totalWeight(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
     if (total <= 0) return 0;
     return weights[animalId]! / total * 100;
   }
 
-  static int minimumCostForCustomEgg(CustomEgg egg) {
-    if (egg.validAnimalIds.isEmpty) return 1;
+  static int minimumCostForCustomEgg(
+    CustomEgg egg, {
+    int lifetimeCoinsEarned = 0,
+  }) {
+    final ids = lifetimeCoinsEarned > 0
+        ? hatchableAnimalIds(egg, lifetimeCoinsEarned)
+        : egg.validAnimalIds;
+    if (ids.isEmpty) return 1;
 
     var sum = 0.0;
-    final weights = effectiveWeights(egg);
-    final total = totalWeight(egg);
+    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final total = totalWeight(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
     if (total <= 0) return 1;
 
-    for (final animalId in egg.validAnimalIds) {
+    for (final animalId in ids) {
       final sourceEgg = findSourceEggForAnimal(animalId);
       if (sourceEgg == null) continue;
 
@@ -77,15 +146,19 @@ class CustomEggLogic {
   }
 
   /// Picks an animal id using weighted random selection.
-  static String weightedRandomAnimal(CustomEgg egg, Random random) {
-    final weights = effectiveWeights(egg);
-    final ids = egg.validAnimalIds;
+  static String weightedRandomAnimal(
+    CustomEgg egg,
+    Random random, {
+    int lifetimeCoinsEarned = 0,
+  }) {
+    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final ids = weights.keys.toList();
     if (ids.isEmpty) {
-      throw StateError('Custom egg has no valid animals');
+      throw StateError('Custom egg has no hatchable animals');
     }
     if (ids.length == 1) return ids.first;
 
-    final total = totalWeight(egg);
+    final total = weights.values.fold(0, (sum, w) => sum + w);
     var roll = random.nextInt(total);
     for (final id in ids) {
       roll -= weights[id]!;
@@ -95,18 +168,38 @@ class CustomEggLogic {
   }
 
   /// Short summary for shop cards, e.g. "Chicken 60% · Rabbit 30%".
-  static String formatChanceSummary(CustomEgg egg, {int maxEntries = 3}) {
-    final ids = List<String>.from(egg.validAnimalIds)
-      ..sort(
-        (a, b) => chancePercentForAnimal(egg, b)
-            .compareTo(chancePercentForAnimal(egg, a)),
-      );
+  static String formatChanceSummary(
+    CustomEgg egg, {
+    int maxEntries = 3,
+    int lifetimeCoinsEarned = 0,
+  }) {
+    var ids = List<String>.from(hatchableAnimalIds(egg, lifetimeCoinsEarned));
+    if (ids.isEmpty) {
+      ids = List<String>.from(egg.validAnimalIds);
+    }
+    ids.sort(
+      (a, b) => chancePercentForAnimal(
+        egg,
+        b,
+        lifetimeCoinsEarned: lifetimeCoinsEarned,
+      ).compareTo(
+        chancePercentForAnimal(
+          egg,
+          a,
+          lifetimeCoinsEarned: lifetimeCoinsEarned,
+        ),
+      ),
+    );
 
     final parts = <String>[];
     for (final id in ids.take(maxEntries)) {
       final animal = GameData.animalById(id);
       if (animal == null) continue;
-      final pct = chancePercentForAnimal(egg, id).round();
+      final pct = chancePercentForAnimal(
+        egg,
+        id,
+        lifetimeCoinsEarned: lifetimeCoinsEarned,
+      ).round();
       parts.add('${animal.name} $pct%');
     }
 

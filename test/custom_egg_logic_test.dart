@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/models/custom_egg.dart';
+import 'package:egg_hatchers/services/custom_egg_service.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 import 'package:egg_hatchers/utils/custom_egg_logic.dart';
 
@@ -149,7 +150,7 @@ void main() {
       selectedAnimalIds: ['chicken'],
       animalWeights: {'chicken': 1},
     );
-    final egg = customEgg.toEgg();
+    final egg = customEgg.toEgg(lifetimeCoinsEarned: 0);
     final game = GameService(random: Random(1));
     await game.initialize();
 
@@ -181,5 +182,99 @@ void main() {
 
     final galaxySource = CustomEggLogic.findSourceEggForAnimal('galaxy_dragon');
     expect(galaxySource?.id, 'space');
+  });
+
+  test('custom egg ids are unique', () {
+    final ids = {for (var i = 0; i < 20; i++) CustomEgg.generateUniqueId()};
+    expect(ids, hasLength(20));
+  });
+
+  test('animal unlock follows built-in egg lifetime requirements', () {
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg('chicken', 0),
+      isTrue,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg('fox', 299),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg('fox', 300),
+      isTrue,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg('galaxy_dragon', 749999),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg('galaxy_dragon', 750000),
+      isTrue,
+    );
+  });
+
+  test('canAddAnimalToCustomEgg respects six animal limit', () {
+    expect(
+      CustomEggLogic.canAddAnimalToCustomEgg(
+        'chicken',
+        0,
+        selectedCount: 6,
+      ),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.canAddAnimalToCustomEgg(
+        'chicken',
+        0,
+        selectedCount: 5,
+      ),
+      isTrue,
+    );
+  });
+
+  test('custom egg service stores multiple eggs', () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = CustomEggService();
+    await service.initialize();
+
+    const egg1 = CustomEgg(
+      id: 'custom_one',
+      name: 'Egg One',
+      emoji: '🥚',
+      cost: 100,
+      selectedAnimalIds: ['chicken'],
+    );
+    const egg2 = CustomEgg(
+      id: 'custom_two',
+      name: 'Egg Two',
+      emoji: '🐣',
+      cost: 200,
+      selectedAnimalIds: ['rabbit'],
+    );
+
+    await service.saveEgg(egg1);
+    await service.saveEgg(egg2);
+
+    expect(service.allEggs, hasLength(2));
+    expect(service.getById('custom_one')?.name, 'Egg One');
+    expect(service.getById('custom_two')?.name, 'Egg Two');
+
+    await service.deleteEgg('custom_one');
+    expect(service.allEggs, hasLength(1));
+    expect(service.getById('custom_two'), isNotNull);
+  });
+
+  test('hatchable animals exclude locked selections for shop', () {
+    const egg = CustomEgg(
+      id: 'custom_locked',
+      name: 'Locked Mix',
+      emoji: '🥚',
+      cost: 500,
+      selectedAnimalIds: ['chicken', 'galaxy_dragon'],
+      animalWeights: {'chicken': 1, 'galaxy_dragon': 1},
+    );
+
+    expect(egg.hatchableAnimalIds(0), ['chicken']);
+    expect(egg.isShopValid(0), isTrue);
+    expect(egg.hatchableAnimalIds(750000), contains('galaxy_dragon'));
   });
 }

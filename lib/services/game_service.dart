@@ -217,7 +217,11 @@ class GameService extends ChangeNotifier {
       if (customEgg != null &&
           customEgg.isValid &&
           customEgg.id == egg.id) {
-        animalId = CustomEggLogic.weightedRandomAnimal(customEgg, _random);
+        animalId = CustomEggLogic.weightedRandomAnimal(
+          customEgg,
+          _random,
+          lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+        );
       } else {
         animalId = egg
             .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];

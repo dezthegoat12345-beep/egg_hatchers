@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import '../data/game_data.dart';
 import '../utils/custom_egg_logic.dart';
@@ -17,6 +18,7 @@ class CustomEgg {
   });
 
   static const int maxNameLength = 20;
+  static const int maxSelectedAnimals = CustomEggLogic.maxSelectedAnimals;
   static const String idPrefix = 'custom_';
 
   final String id;
@@ -32,19 +34,35 @@ class CustomEgg {
       .where((id) => GameData.animalById(id) != null)
       .toList();
 
+  /// Valid animals the player has unlocked for custom eggs.
+  List<String> hatchableAnimalIds(int lifetimeCoinsEarned) =>
+      CustomEggLogic.hatchableAnimalIds(this, lifetimeCoinsEarned);
+
   bool get isValid => validAnimalIds.isNotEmpty;
 
-  int get minimumCost => CustomEggLogic.minimumCostForCustomEgg(this);
+  bool isShopValid(int lifetimeCoinsEarned) =>
+      isEnabled && hatchableAnimalIds(lifetimeCoinsEarned).isNotEmpty;
 
-  Egg toEgg() {
-    final count = validAnimalIds.length;
-    final summary = CustomEggLogic.formatChanceSummary(this);
+  int minimumCostFor(int lifetimeCoinsEarned) =>
+      CustomEggLogic.minimumCostForCustomEgg(
+        this,
+        lifetimeCoinsEarned: lifetimeCoinsEarned,
+      );
+
+  Egg toEgg({required int lifetimeCoinsEarned}) {
+    final ids = hatchableAnimalIds(lifetimeCoinsEarned);
+    final activeIds = ids.isNotEmpty ? ids : validAnimalIds;
+    final count = activeIds.length;
+    final summary = CustomEggLogic.formatChanceSummary(
+      this,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+    );
     final chanceText = summary.isNotEmpty ? ' · $summary' : '';
     return Egg(
       id: id,
       name: name,
       cost: cost,
-      possibleAnimalIds: List<String>.from(validAnimalIds),
+      possibleAnimalIds: List<String>.from(activeIds),
       emoji: emoji.isNotEmpty ? emoji : '🥚',
       description: 'Custom egg · $count animal${count == 1 ? '' : 's'}$chanceText',
       unlockLifetimeCoins: 0,
@@ -58,9 +76,10 @@ class CustomEgg {
     List<String>? selectedAnimalIds,
     Map<String, int>? animalWeights,
     bool? isEnabled,
+    String? id,
   }) {
     return CustomEgg(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       emoji: emoji ?? this.emoji,
       cost: cost ?? this.cost,
@@ -122,9 +141,14 @@ class CustomEgg {
     );
   }
 
+  static String generateUniqueId() {
+    final random = Random().nextInt(900000) + 100000;
+    return '$idPrefix${DateTime.now().millisecondsSinceEpoch}_$random';
+  }
+
   static CustomEgg newDraft() {
     return CustomEgg(
-      id: '$idPrefix${DateTime.now().millisecondsSinceEpoch}',
+      id: generateUniqueId(),
       name: 'My Custom Egg',
       emoji: '🥚',
       cost: 1000,
