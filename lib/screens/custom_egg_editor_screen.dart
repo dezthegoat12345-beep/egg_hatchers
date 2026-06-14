@@ -6,6 +6,7 @@ import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_egg.dart';
 import '../services/custom_egg_service.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
@@ -13,6 +14,7 @@ import '../utils/custom_egg_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
+import '../widgets/game_sprite.dart';
 
 /// Form for creating or editing a custom egg.
 class CustomEggEditorScreen extends StatefulWidget {
@@ -21,12 +23,14 @@ class CustomEggEditorScreen extends StatefulWidget {
     required this.game,
     required this.preferences,
     required this.customEggs,
+    required this.customSprites,
     this.existing,
   });
 
   final GameService game;
   final PreferencesService preferences;
   final CustomEggService customEggs;
+  final CustomSpriteService customSprites;
   final CustomEgg? existing;
 
   @override
@@ -192,6 +196,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
       key: ValueKey(animal.id),
       animal: animal,
       theme: theme,
+      customSprites: widget.customSprites,
       selected: selected,
       locked: !unlocked,
       lockedSelected: lockedSelected,
@@ -357,7 +362,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: widget.preferences,
+      listenable: Listenable.merge([widget.preferences, widget.customSprites]),
       builder: (context, _) {
         final theme = widget.preferences.selectedTheme;
         final draft = _buildDraftEgg();
@@ -640,6 +645,7 @@ class _AnimalWeightTile extends StatelessWidget {
     super.key,
     required this.animal,
     required this.theme,
+    required this.customSprites,
     required this.selected,
     required this.locked,
     required this.lockedSelected,
@@ -653,6 +659,7 @@ class _AnimalWeightTile extends StatelessWidget {
 
   final Animal animal;
   final BackgroundTheme theme;
+  final CustomSpriteService customSprites;
   final bool selected;
   final bool locked;
   final bool lockedSelected;
@@ -682,12 +689,28 @@ class _AnimalWeightTile extends StatelessWidget {
               CheckboxListTile(
                 value: selected,
                 activeColor: theme.primaryColor,
-                title: Text(
-                  '${animal.emoji} ${animal.name}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: theme.cardTextPrimaryColor,
-                  ),
+                title: Row(
+                  children: [
+                    GameSprite(
+                      customSprite:
+                          customSprites.getDisplaySprite(animal.id),
+                      spritePath: animal.spritePath,
+                      fallbackEmoji: animal.emoji,
+                      size: 32,
+                      semanticLabel: animal.name,
+                      emojiFontSize: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        animal.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: theme.cardTextPrimaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 subtitle: Text(
                   locked && lockMessage != null

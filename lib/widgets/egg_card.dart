@@ -4,6 +4,7 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
+import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import 'game_sprite.dart';
@@ -19,6 +20,7 @@ class EggCard extends StatelessWidget {
     required this.onBuy,
     required this.theme,
     this.isCustomEgg = false,
+    this.customSprites,
   });
 
   final Egg egg;
@@ -28,6 +30,7 @@ class EggCard extends StatelessWidget {
   final VoidCallback onBuy;
   final BackgroundTheme theme;
   final bool isCustomEgg;
+  final CustomSpriteService? customSprites;
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +183,8 @@ class EggCard extends StatelessWidget {
                       width: 24,
                       height: 24,
                       child: GameSprite(
+                        customSprite:
+                            customSprites?.getDisplaySprite(animal.id),
                         spritePath: animal.spritePath,
                         fallbackEmoji: animal.emoji,
                         size: 24,

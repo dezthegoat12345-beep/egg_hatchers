@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_data.dart';
+import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_egg.dart';
 import '../services/custom_egg_service.dart';
+import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
+import '../widgets/game_sprite.dart';
 import 'custom_egg_editor_screen.dart';
 
 /// Lists saved custom eggs and lets the player create or manage them.
@@ -18,11 +22,13 @@ class CustomEggsScreen extends StatelessWidget {
     required this.game,
     required this.preferences,
     required this.customEggs,
+    required this.customSprites,
   });
 
   final GameService game;
   final PreferencesService preferences;
   final CustomEggService customEggs;
+  final CustomSpriteService customSprites;
 
   Future<void> _confirmDelete(
     BuildContext context,
@@ -93,6 +99,7 @@ class CustomEggsScreen extends StatelessWidget {
           game: game,
           preferences: preferences,
           customEggs: customEggs,
+          customSprites: customSprites,
           existing: egg,
         ),
       ),
@@ -102,7 +109,7 @@ class CustomEggsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([game, preferences, customEggs]),
+      listenable: Listenable.merge([game, preferences, customEggs, customSprites]),
       builder: (context, _) {
         final theme = preferences.selectedTheme;
         final eggs = customEggs.allEggs;
@@ -176,6 +183,7 @@ class CustomEggsScreen extends StatelessWidget {
                       _CustomEggTile(
                         egg: egg,
                         theme: theme,
+                        customSprites: customSprites,
                         onEdit: () => _openEditor(context, egg: egg),
                         onDelete: () => _confirmDelete(context, theme, egg),
                       ),
@@ -195,18 +203,24 @@ class _CustomEggTile extends StatelessWidget {
   const _CustomEggTile({
     required this.egg,
     required this.theme,
+    required this.customSprites,
     required this.onEdit,
     required this.onDelete,
   });
 
   final CustomEgg egg;
   final BackgroundTheme theme;
+  final CustomSpriteService customSprites;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final validCount = egg.validAnimalIds.length;
+    final previewAnimals = egg.validAnimalIds
+        .map(GameData.animalById)
+        .whereType<Animal>()
+        .toList();
     final status = !egg.isValid
         ? 'Needs animals'
         : egg.isEnabled
@@ -263,6 +277,27 @@ class _CustomEggTile extends StatelessWidget {
               ),
             ],
           ),
+          if (previewAnimals.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final animal in previewAnimals)
+                  Tooltip(
+                    message: animal.name,
+                    child: GameSprite(
+                      customSprite: customSprites.getDisplaySprite(animal.id),
+                      spritePath: animal.spritePath,
+                      fallbackEmoji: animal.emoji,
+                      size: 32,
+                      semanticLabel: animal.name,
+                      emojiFontSize: 22,
+                    ),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [

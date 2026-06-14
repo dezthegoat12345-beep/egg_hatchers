@@ -40,6 +40,7 @@ class ShopScreen extends StatelessWidget {
           game: game,
           preferences: preferences,
           customEggs: customEggs,
+          customSprites: customSprites,
         ),
       ),
     );
@@ -54,6 +55,7 @@ class ShopScreen extends StatelessWidget {
           game: game,
           preferences: preferences,
           customEggs: customEggs,
+          customSprites: customSprites,
         ),
       ),
     );
@@ -102,7 +104,7 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([game, preferences, customEggs]),
+      listenable: Listenable.merge([game, preferences, customEggs, customSprites]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
         final lifetime = game.lifetimeCoinsEarned;
@@ -203,6 +205,7 @@ class ShopScreen extends StatelessWidget {
                                             canAfford: game.canAfford(eggModel),
                                             lifetimeCoinsEarned: lifetime,
                                             isCustomEgg: true,
+                                            customSprites: customSprites,
                                             onBuy: () => _buyAndHatch(
                                               context,
                                               eggModel,
