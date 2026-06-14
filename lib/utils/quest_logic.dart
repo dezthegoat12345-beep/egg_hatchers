@@ -38,6 +38,8 @@ class QuestLogic {
         return state.luckLevel;
       case QuestMetric.lifetimeCoinsEarned:
         return state.lifetimeCoinsEarned;
+      case QuestMetric.rebirthLevel:
+        return state.rebirthLevel;
     }
   }
 

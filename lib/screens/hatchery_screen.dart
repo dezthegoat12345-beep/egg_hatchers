@@ -12,6 +12,7 @@ import '../widgets/game_background.dart';
 import '../widgets/luck_panel.dart';
 import '../widgets/owned_animal_list.dart';
 import '../widgets/quest_notification_listener.dart';
+import '../widgets/rebirth_panel.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
 import 'developer_screen.dart';
@@ -146,6 +147,8 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                             ),
                             const SizedBox(height: 14),
                             LuckPanel(game: game, theme: bg),
+                            const SizedBox(height: 14),
+                            RebirthPanel(game: game, theme: bg),
                             const SizedBox(height: 18),
                             _NavButton(
                               label: '🛒 Shop',

@@ -30,6 +30,7 @@ enum QuestMetric {
   totalCustomTripleHatches,
   luckLevel,
   lifetimeCoinsEarned,
+  rebirthLevel,
 }
 
 /// A quest definition with stable id and reward.

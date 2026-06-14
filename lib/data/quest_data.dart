@@ -156,6 +156,15 @@ class QuestData {
       metric: QuestMetric.lifetimeCoinsEarned,
       target: 1000000,
     ),
+    Quest(
+      id: 'late_rebirth_1',
+      category: QuestCategory.lateGame,
+      title: 'Rebirth Once',
+      description: 'Rebirth to gain a permanent income boost.',
+      rewardCoins: 500000,
+      metric: QuestMetric.rebirthLevel,
+      target: 1,
+    ),
 
     // Custom Egg Quests
     Quest(

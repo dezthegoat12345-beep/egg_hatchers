@@ -18,6 +18,7 @@ import '../models/player_state.dart';
 import '../models/quest.dart';
 import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
+import '../utils/rebirth_logic.dart';
 import 'save_service.dart';
 
 /// Central game logic: coins, hatching, mutations, idle income, and saving.
@@ -60,8 +61,19 @@ class GameService extends ChangeNotifier {
     return animal.coinsPerSecond * owned.level * 30;
   }
 
-  /// Total coins earned per second from all owned animals.
+  /// Total coins earned per second from all owned animals (includes rebirth).
   int get coinsPerSecond {
+    var total = 0;
+    for (final owned in _state.ownedAnimals) {
+      final animal = GameData.animalById(owned.animalId);
+      if (animal != null) {
+        total += incomeFor(animal, owned);
+      }
+    }
+    return RebirthLogic.applyMultiplier(total, _state.rebirthLevel);
+  }
+
+  int get baseCoinsPerSecond {
     var total = 0;
     for (final owned in _state.ownedAnimals) {
       final animal = GameData.animalById(owned.animalId);
@@ -75,6 +87,11 @@ class GameService extends ChangeNotifier {
   int get coins => _state.coins;
   int get lifetimeCoinsEarned => _state.lifetimeCoinsEarned;
   int get luckLevel => _state.luckLevel;
+  int get rebirthLevel => _state.rebirthLevel;
+  double get incomeMultiplier =>
+      RebirthLogic.incomeMultiplier(_state.rebirthLevel);
+  bool get canRebirth => RebirthLogic.canRebirth(_state.lifetimeCoinsEarned);
+  int get rebirthRequirement => RebirthLogic.unlockLifetimeCoins;
   QuestProgress get questProgress => _state.questProgress;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
@@ -325,6 +342,39 @@ class GameService extends ChangeNotifier {
   void resetLuckLevel() => setLuckLevel(LuckLogic.minLevel);
 
   void maxLuckLevel() => setLuckLevel(LuckLogic.maxLevel);
+
+  /// Rebirth if eligible. Resets progress and increases rebirth level.
+  bool performRebirth() {
+    if (!canRebirth) return false;
+
+    final newRebirthLevel = _state.rebirthLevel + 1;
+    _state = PlayerState(
+      coins: GameData.startingPlayerState().coins,
+      ownedAnimals: const [],
+      lastSavedTime: DateTime.now(),
+      lifetimeCoinsEarned: 0,
+      luckLevel: 1,
+      rebirthLevel: newRebirthLevel,
+      questProgress: QuestProgress.initial(),
+    );
+    _pendingQuestNotification = null;
+    _questNotificationDeferred = false;
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  void setRebirthLevel(int level) {
+    _state = _state.copyWith(rebirthLevel: level < 0 ? 0 : level);
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devIncrementRebirthLevel() => setRebirthLevel(_state.rebirthLevel + 1);
+
+  void resetRebirthLevel() => setRebirthLevel(0);
 
   /// Claim a completed quest reward. Returns coins granted, or null on failure.
   int? claimQuest(String questId) {

@@ -9,6 +9,7 @@ class PlayerState {
     required this.lastSavedTime,
     required this.lifetimeCoinsEarned,
     this.luckLevel = 1,
+    this.rebirthLevel = 0,
     this.questProgress = const QuestProgress(),
   });
 
@@ -17,6 +18,7 @@ class PlayerState {
   final DateTime lastSavedTime;
   final int lifetimeCoinsEarned;
   final int luckLevel;
+  final int rebirthLevel;
   final QuestProgress questProgress;
 
   static PlayerState initial() {
@@ -26,6 +28,7 @@ class PlayerState {
       lastSavedTime: DateTime.now(),
       lifetimeCoinsEarned: 0,
       luckLevel: 1,
+      rebirthLevel: 0,
       questProgress: QuestProgress.initial(),
     );
   }
@@ -36,6 +39,7 @@ class PlayerState {
     DateTime? lastSavedTime,
     int? lifetimeCoinsEarned,
     int? luckLevel,
+    int? rebirthLevel,
     QuestProgress? questProgress,
   }) {
     return PlayerState(
@@ -44,6 +48,7 @@ class PlayerState {
       lastSavedTime: lastSavedTime ?? this.lastSavedTime,
       lifetimeCoinsEarned: lifetimeCoinsEarned ?? this.lifetimeCoinsEarned,
       luckLevel: luckLevel ?? this.luckLevel,
+      rebirthLevel: rebirthLevel ?? this.rebirthLevel,
       questProgress: questProgress ?? this.questProgress,
     );
   }
@@ -54,6 +59,7 @@ class PlayerState {
         'lastSavedTime': lastSavedTime.toIso8601String(),
         'lifetimeCoinsEarned': lifetimeCoinsEarned,
         'luckLevel': luckLevel,
+        'rebirthLevel': rebirthLevel,
         'questProgress': questProgress.toJson(),
       };
 
@@ -68,6 +74,7 @@ class PlayerState {
       // Older saves may not have lifetime coins — use current coins as estimate.
       lifetimeCoinsEarned: json['lifetimeCoinsEarned'] as int? ?? coins,
       luckLevel: json['luckLevel'] as int? ?? 1,
+      rebirthLevel: json['rebirthLevel'] as int? ?? 0,
       questProgress: QuestProgress.fromJson(
         json['questProgress'] as Map<String, dynamic>?,
       ),

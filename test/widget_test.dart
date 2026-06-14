@@ -6,15 +6,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/models/animal.dart';
+import 'package:egg_hatchers/models/custom_egg.dart';
 import 'package:egg_hatchers/models/forced_hatch_result.dart';
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';
+import 'package:egg_hatchers/services/custom_egg_service.dart';
 import 'package:egg_hatchers/services/developer_tools_preferences.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 import 'package:egg_hatchers/data/quest_data.dart';
 import 'package:egg_hatchers/models/quest_progress.dart';
 import 'package:egg_hatchers/utils/luck_logic.dart';
 import 'package:egg_hatchers/utils/quest_logic.dart';
+import 'package:egg_hatchers/utils/rebirth_logic.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +27,7 @@ void main() {
     expect(state.coins, 250);
     expect(state.lifetimeCoinsEarned, 0);
     expect(state.luckLevel, 1);
+    expect(state.rebirthLevel, 0);
     expect(state.ownedAnimals, isEmpty);
   });
 
@@ -895,5 +899,111 @@ void main() {
       QuestData.all.where((q) => q.id.startsWith('beginner_hatch')).toList(),
     );
     expect(message, '2 Quests Complete! Claim your rewards.');
+  });
+
+  test('old saves without rebirthLevel default to 0', () {
+    final restored = PlayerState.fromJson({
+      'coins': 500,
+      'ownedAnimals': [],
+      'lastSavedTime': '2025-01-01T00:00:00.000',
+      'lifetimeCoinsEarned': 600,
+      'luckLevel': 2,
+    });
+    expect(restored.rebirthLevel, 0);
+  });
+
+  test('income multiplier formula works', () {
+    expect(RebirthLogic.incomeMultiplier(0), 1);
+    expect(RebirthLogic.incomeMultiplier(1), 1.25);
+    expect(RebirthLogic.incomeMultiplier(2), 1.5);
+    expect(RebirthLogic.incomeMultiplier(4), 2);
+    expect(RebirthLogic.applyMultiplier(100, 1), 125);
+    expect(RebirthLogic.applyMultiplier(100, 4), 200);
+  });
+
+  test('rebirth is unavailable below 1 million lifetime coins', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setLifetimeCoinsEarned(999999);
+    expect(game.canRebirth, isFalse);
+    expect(game.performRebirth(), isFalse);
+
+    game.dispose();
+  });
+
+  test('rebirth resets progress and increases rebirth level', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    game.setLifetimeCoinsEarned(1000000);
+    game.setLuckLevel(4);
+    game.devAddEggsHatched(25);
+    game.setCoins(5000);
+    final basicEgg = GameData.eggs.first;
+    game.buyEgg(basicEgg);
+    game.hatchEgg(basicEgg);
+
+    expect(game.ownedAnimals, isNotEmpty);
+    expect(game.performRebirth(), isTrue);
+    expect(game.coins, 250);
+    expect(game.lifetimeCoinsEarned, 0);
+    expect(game.ownedAnimals, isEmpty);
+    expect(game.luckLevel, 1);
+    expect(game.rebirthLevel, 1);
+    expect(game.questProgress.totalEggsHatched, 0);
+    expect(game.questProgress.claimedQuestIds, isEmpty);
+
+    game.dispose();
+  });
+
+  test('rebirth multiplier affects coins per second', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setRebirthLevel(2);
+    game.setCoins(500);
+    game.setLifetimeCoinsEarned(5000);
+    final basicEgg = GameData.eggs.first;
+    game.buyEgg(basicEgg);
+    game.hatchEgg(basicEgg);
+
+    expect(game.baseCoinsPerSecond, greaterThan(0));
+    expect(
+      game.coinsPerSecond,
+      RebirthLogic.applyMultiplier(game.baseCoinsPerSecond, 2),
+    );
+
+    game.dispose();
+  });
+
+  test('custom eggs remain after rebirth', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    final customEggs = CustomEggService();
+    await Future.wait([game.initialize(), customEggs.initialize()]);
+
+    await customEggs.saveEgg(
+      const CustomEgg(
+        id: 'custom_test_1',
+        name: 'Test Egg',
+        emoji: '🥚',
+        cost: 500,
+        selectedAnimalIds: ['chicken'],
+        isEnabled: true,
+      ),
+    );
+    expect(customEggs.allEggs.length, 1);
+
+    game.setLifetimeCoinsEarned(1000000);
+    game.performRebirth();
+
+    expect(customEggs.allEggs.length, 1);
+    expect(game.rebirthLevel, 1);
+
+    game.dispose();
   });
 }

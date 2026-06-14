@@ -9,6 +9,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
 import '../utils/luck_logic.dart';
+import '../utils/rebirth_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_sprite.dart';
@@ -32,6 +33,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   final _coinController = TextEditingController();
   final _lifetimeController = TextEditingController();
   final _luckController = TextEditingController();
+  final _rebirthController = TextEditingController();
   DevForceSlotSelections _slots = DevForceSlotSelections(
     slot1: DevForceSlotSelection(
       animalId: DeveloperToolsPreferences.defaultAnimalId,
@@ -64,6 +66,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     _coinController.text = '${game.coins}';
     _lifetimeController.text = '${game.lifetimeCoinsEarned}';
     _luckController.text = '${game.luckLevel}';
+    _rebirthController.text = '${game.rebirthLevel}';
     _loadSavedSlots();
   }
 
@@ -152,6 +155,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     _coinController.dispose();
     _lifetimeController.dispose();
     _luckController.dispose();
+    _rebirthController.dispose();
     super.dispose();
   }
 
@@ -416,6 +420,83 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
             ],
+          ),
+          const SizedBox(height: 32),
+          _SectionTitle('Rebirth Testing'),
+          Text(
+            'Current: Rebirth Level ${game.rebirthLevel} · '
+            '${RebirthLogic.formatMultiplier(game.incomeMultiplier)} income',
+            style: DevToolsTheme.bodyText(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _rebirthController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: DevToolsTheme.bodyText(),
+            cursorColor: DevToolsTheme.primary,
+            decoration: DevToolsTheme.inputDecoration('Rebirth Level'),
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Set Rebirth Level',
+            onPressed: () {
+              final value = int.tryParse(_rebirthController.text.trim());
+              if (value == null) {
+                _showMessage('Enter a valid number.');
+                return;
+              }
+              game.setRebirthLevel(value);
+              _rebirthController.text = '${game.rebirthLevel}';
+              _showMessage('Rebirth set to Level ${game.rebirthLevel}.');
+            },
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+1 Rebirth',
+                onPressed: () {
+                  game.devIncrementRebirthLevel();
+                  _rebirthController.text = '${game.rebirthLevel}';
+                  _showMessage('Rebirth is now Level ${game.rebirthLevel}.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Rebirth',
+                onPressed: () {
+                  game.resetRebirthLevel();
+                  _rebirthController.text = '${game.rebirthLevel}';
+                  _showMessage('Rebirth reset to Level 0.');
+                },
+              ),
+              _QuickButton(
+                label: '1M lifetime',
+                onPressed: () {
+                  game.setLifetimeCoinsEarned(1000000);
+                  _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+                  _showMessage('Lifetime coins set to 1,000,000.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Perform Rebirth (if eligible)',
+            onPressed: () {
+              if (!game.canRebirth) {
+                _showMessage('Need 1,000,000 lifetime coins to rebirth.');
+                return;
+              }
+              game.performRebirth();
+              _coinController.text = '${game.coins}';
+              _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+              _luckController.text = '${game.luckLevel}';
+              _rebirthController.text = '${game.rebirthLevel}';
+              _showMessage('Rebirth performed.');
+            },
           ),
           const SizedBox(height: 32),
           _SectionTitle('Quest Testing'),
