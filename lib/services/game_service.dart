@@ -10,6 +10,7 @@ import '../models/egg.dart';
 import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
 import '../utils/custom_egg_logic.dart';
+import '../utils/luck_logic.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../models/player_state.dart';
@@ -67,6 +68,7 @@ class GameService extends ChangeNotifier {
 
   int get coins => _state.coins;
   int get lifetimeCoinsEarned => _state.lifetimeCoinsEarned;
+  int get luckLevel => _state.luckLevel;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
   List<OwnedAnimal> get normalAnimals =>
@@ -214,6 +216,39 @@ class GameService extends ChangeNotifier {
     setLifetimeCoinsEarned(0);
   }
 
+  int get luckUpgradeCost => LuckLogic.upgradeCost(_state.luckLevel);
+
+  bool get isLuckMaxed => _state.luckLevel >= LuckLogic.maxLevel;
+
+  bool canAffordLuckUpgrade() =>
+      !isLuckMaxed && _state.coins >= luckUpgradeCost;
+
+  /// Upgrade luck if affordable. Returns new level or null on failure.
+  int? upgradeLuck() {
+    if (isLuckMaxed) return null;
+    final cost = luckUpgradeCost;
+    if (_state.coins < cost) return null;
+
+    final newLevel = _state.luckLevel + 1;
+    _state = _state.copyWith(
+      coins: _state.coins - cost,
+      luckLevel: newLevel,
+    );
+    notifyListeners();
+    save();
+    return newLevel;
+  }
+
+  void setLuckLevel(int level) {
+    _state = _state.copyWith(luckLevel: LuckLogic.clampLevel(level));
+    notifyListeners();
+    save();
+  }
+
+  void resetLuckLevel() => setLuckLevel(LuckLogic.minLevel);
+
+  void maxLuckLevel() => setLuckLevel(LuckLogic.maxLevel);
+
   void setForcedNextHatch(String animalId, String mutationId) {
     _forcedHatchQueue = [
       ForcedHatchResult(animalId: animalId, mutationId: mutationId),
@@ -353,7 +388,7 @@ class GameService extends ChangeNotifier {
             .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
       }
       animal = GameData.animalById(animalId)!;
-      mutation = GameData.rollMutation(_random);
+      mutation = LuckLogic.rollMutation(_random, _state.luckLevel);
     }
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);

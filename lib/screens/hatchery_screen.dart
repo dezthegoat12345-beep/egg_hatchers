@@ -9,6 +9,7 @@ import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
+import '../widgets/luck_panel.dart';
 import '../widgets/owned_animal_list.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
@@ -138,6 +139,8 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                               onCoinTap: _onCoinTap,
                               theme: bg,
                             ),
+                            const SizedBox(height: 14),
+                            LuckPanel(game: game, theme: bg),
                             const SizedBox(height: 18),
                             _NavButton(
                               label: '🛒 Shop',

@@ -4,6 +4,7 @@ import '../models/animal.dart';
 import '../models/egg.dart';
 import '../models/mutation.dart';
 import '../models/player_state.dart';
+import '../utils/luck_logic.dart';
 
 /// Static game content: all animals, eggs, and helpers to look them up.
 class GameData {
@@ -458,15 +459,9 @@ class GameData {
     return null;
   }
 
-  /// Roll a mutation using weighted chances (70/20/8/2).
+  /// Roll a mutation using base chances (Luck Level 1).
   static Mutation rollMutation(Random random) {
-    final roll = random.nextInt(100);
-    var cumulative = 0;
-    for (final mutation in mutations) {
-      cumulative += mutation.chance;
-      if (roll < cumulative) return mutation;
-    }
-    return mutations.first;
+    return LuckLogic.rollMutation(random, LuckLogic.minLevel);
   }
 
   /// Sort owned animals by rarity, then base income, then name.

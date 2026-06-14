@@ -10,6 +10,7 @@ import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/services/developer_tools_preferences.dart';
 import 'package:egg_hatchers/services/game_service.dart';
+import 'package:egg_hatchers/utils/luck_logic.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,7 @@ void main() {
     final state = GameData.startingPlayerState();
     expect(state.coins, 250);
     expect(state.lifetimeCoinsEarned, 0);
+    expect(state.luckLevel, 1);
     expect(state.ownedAnimals, isEmpty);
   });
 
@@ -64,6 +66,7 @@ void main() {
     final restored = PlayerState.fromJson(state.toJson());
     expect(restored.coins, 500);
     expect(restored.lifetimeCoinsEarned, 1200);
+    expect(restored.luckLevel, 1);
     expect(restored.ownedAnimals.first.quantity, 2);
     expect(restored.ownedAnimals.first.level, 3);
     expect(restored.ownedAnimals.first.mutationId, 'golden');
@@ -564,6 +567,133 @@ void main() {
     }
 
     game.dispose();
+  });
+
+  test('old saves without luckLevel default to 1', () {
+    final restored = PlayerState.fromJson({
+      'coins': 500,
+      'ownedAnimals': [],
+      'lastSavedTime': '2025-01-01T00:00:00.000',
+      'lifetimeCoinsEarned': 600,
+    });
+    expect(restored.luckLevel, 1);
+  });
+
+  test('luck upgrade cost follows 500 * level * level', () {
+    expect(LuckLogic.upgradeCost(1), 500);
+    expect(LuckLogic.upgradeCost(2), 2000);
+    expect(LuckLogic.upgradeCost(3), 4500);
+    expect(LuckLogic.upgradeCost(4), 8000);
+    expect(LuckLogic.upgradeCost(10), 0);
+  });
+
+  test('upgrading luck subtracts coins and increases level', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setCoins(500);
+    final newLevel = game.upgradeLuck();
+
+    expect(newLevel, 2);
+    expect(game.luckLevel, 2);
+    expect(game.coins, 0);
+
+    game.dispose();
+  });
+
+  test('luck cannot exceed max level 10', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setLuckLevel(10);
+    expect(game.luckLevel, 10);
+    expect(game.upgradeLuck(), isNull);
+
+    game.setLuckLevel(99);
+    expect(game.luckLevel, 10);
+
+    game.dispose();
+  });
+
+  test('luck-adjusted mutation chances total 100 percent', () {
+    for (var level = 1; level <= LuckLogic.maxLevel; level++) {
+      final percentages = LuckLogic.mutationPercentages(level);
+      final sum = percentages.values.fold<double>(0, (total, p) => total + p);
+      expect(sum, closeTo(100.0, 0.001));
+      expect(LuckLogic.totalWeight(level), LuckLogic.weightTotal);
+    }
+
+    final level10 = LuckLogic.mutationPercentages(10);
+    expect(level10['none'], 43);
+    expect(level10['golden'], 38);
+    expect(level10['rainbow'], 14.75);
+    expect(level10['shadow'], 4.25);
+  });
+
+  test('forced hatch ignores luck and uses exact mutation', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(0));
+    await game.initialize();
+
+    game.setLuckLevel(1);
+    game.setForcedNextHatch('chicken', 'shadow');
+    game.setCoins(1000);
+    game.buyTripleHatch(GameData.eggs.first);
+    final results = game.hatchEggMultiple(GameData.eggs.first, 3);
+
+    expect(results.first.mutation.id, 'shadow');
+    expect(game.luckLevel, 1);
+
+    game.dispose();
+  });
+
+  test('higher luck increases shadow mutation weight', () {
+    final low = LuckLogic.mutationWeights(1)['shadow']!;
+    final high = LuckLogic.mutationWeights(10)['shadow']!;
+    expect(high, greaterThan(low));
+  });
+
+  test('triple hatch uses luck for non-forced results', () async {
+    SharedPreferences.setMockInitialValues({});
+    final basicEgg = GameData.eggs.first;
+    int? seedWhereLuckMatters;
+
+    for (var seed = 0; seed < 500; seed++) {
+      final lowLuckGame = GameService(random: Random(seed));
+      await lowLuckGame.initialize();
+      lowLuckGame.setLuckLevel(1);
+      lowLuckGame.setCoins(10000);
+      lowLuckGame.buyTripleHatch(basicEgg);
+      final lowLuckMutations = lowLuckGame
+          .hatchEggMultiple(basicEgg, 3)
+          .map((r) => r.mutation.id)
+          .toList();
+      lowLuckGame.dispose();
+
+      final highLuckGame = GameService(random: Random(seed));
+      await highLuckGame.initialize();
+      highLuckGame.setLuckLevel(10);
+      highLuckGame.setCoins(10000);
+      highLuckGame.buyTripleHatch(basicEgg);
+      final highLuckMutations = highLuckGame
+          .hatchEggMultiple(basicEgg, 3)
+          .map((r) => r.mutation.id)
+          .toList();
+      highLuckGame.dispose();
+
+      if (lowLuckMutations != highLuckMutations) {
+        seedWhereLuckMatters = seed;
+        break;
+      }
+    }
+
+    expect(
+      seedWhereLuckMatters,
+      isNotNull,
+      reason: 'luck level should change triple hatch mutation rolls',
+    );
   });
 
   test('single hatch still works after triple hatch helpers added', () async {

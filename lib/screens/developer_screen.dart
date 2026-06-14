@@ -8,6 +8,7 @@ import '../models/forced_hatch_result.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
+import '../utils/luck_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_sprite.dart';
@@ -30,6 +31,7 @@ class DeveloperScreen extends StatefulWidget {
 class _DeveloperScreenState extends State<DeveloperScreen> {
   final _coinController = TextEditingController();
   final _lifetimeController = TextEditingController();
+  final _luckController = TextEditingController();
   DevForceSlotSelections _slots = DevForceSlotSelections(
     slot1: DevForceSlotSelection(
       animalId: DeveloperToolsPreferences.defaultAnimalId,
@@ -61,6 +63,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     super.initState();
     _coinController.text = '${game.coins}';
     _lifetimeController.text = '${game.lifetimeCoinsEarned}';
+    _luckController.text = '${game.luckLevel}';
     _loadSavedSlots();
   }
 
@@ -148,6 +151,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
   void dispose() {
     _coinController.dispose();
     _lifetimeController.dispose();
+    _luckController.dispose();
     super.dispose();
   }
 
@@ -348,6 +352,70 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
               _lifetimeController.text = '0';
               _showMessage('Lifetime coins reset to 0.');
             },
+          ),
+          const SizedBox(height: 32),
+          _SectionTitle('Luck (Mutation Testing)'),
+          Text(
+            'Current: Luck Level ${game.luckLevel}',
+            style: DevToolsTheme.bodyText(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _luckController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: DevToolsTheme.bodyText(),
+            cursorColor: DevToolsTheme.primary,
+            decoration: DevToolsTheme.inputDecoration('Luck Level (1–10)'),
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Set Luck Level',
+            onPressed: () {
+              final value = int.tryParse(_luckController.text.trim());
+              if (value == null) {
+                _showMessage('Enter a valid number.');
+                return;
+              }
+              game.setLuckLevel(value);
+              _luckController.text = '${game.luckLevel}';
+              _showMessage('Luck set to Level ${game.luckLevel}.');
+            },
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+1 Luck',
+                onPressed: () {
+                  if (game.luckLevel >= LuckLogic.maxLevel) {
+                    _showMessage('Luck is already max level.');
+                    return;
+                  }
+                  game.setLuckLevel(game.luckLevel + 1);
+                  _luckController.text = '${game.luckLevel}';
+                  _showMessage('Luck is now Level ${game.luckLevel}.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Luck',
+                onPressed: () {
+                  game.resetLuckLevel();
+                  _luckController.text = '${game.luckLevel}';
+                  _showMessage('Luck reset to Level 1.');
+                },
+              ),
+              _QuickButton(
+                label: 'Max Luck',
+                onPressed: () {
+                  game.maxLuckLevel();
+                  _luckController.text = '${game.luckLevel}';
+                  _showMessage('Luck set to max Level ${game.luckLevel}.');
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 32),
           _SectionTitle('Force Next Hatch'),
