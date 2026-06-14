@@ -363,7 +363,8 @@ class _TripleResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMutated = !result.mutation.isNormal;
     final mutationColor = GameTheme.mutationAccent(result.mutation.id);
-    final displayName = result.mutation.fullName(result.animal);
+    final animalName = result.animal.name;
+    final accessibilityName = result.mutation.fullName(result.animal);
     final income = GameService.incomeFor(
       result.animal,
       OwnedAnimal(
@@ -393,12 +394,12 @@ class _TripleResultTile extends StatelessWidget {
                   fallbackEmoji: result.animal.emoji,
                   size: 52,
                   mutation: result.mutation,
-                  semanticLabel: displayName,
+                  semanticLabel: accessibilityName,
                   emojiFontSize: 36,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  displayName,
+                  animalName,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -436,7 +437,7 @@ class _TripleResultTile extends StatelessWidget {
                   fallbackEmoji: result.animal.emoji,
                   size: 56,
                   mutation: result.mutation,
-                  semanticLabel: displayName,
+                  semanticLabel: accessibilityName,
                   emojiFontSize: 40,
                 ),
                 const SizedBox(width: 12),
@@ -445,7 +446,7 @@ class _TripleResultTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '#$index $displayName',
+                        '#$index $animalName',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

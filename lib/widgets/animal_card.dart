@@ -24,6 +24,7 @@ class AnimalCard extends StatelessWidget {
     this.onUpgrade,
     this.compact = false,
     this.customSprites,
+    this.useBaseNameForTitle = false,
   });
 
   final Animal animal;
@@ -38,12 +39,15 @@ class AnimalCard extends StatelessWidget {
   final bool canAffordUpgrade;
   final VoidCallback? onUpgrade;
   final bool compact;
+  final bool useBaseNameForTitle;
 
   @override
   Widget build(BuildContext context) {
     final isOwned = quantity != null;
     final activeMutation = mutation ?? GameData.mutations.first;
-    final displayName = activeMutation.fullName(animal);
+    final displayName = useBaseNameForTitle
+        ? animal.name
+        : activeMutation.fullName(animal);
     final rarityColor = GameTheme.rarityAccent(animal.rarity);
     final mutationColor = GameTheme.mutationAccent(activeMutation.id);
     final borderColor = activeMutation.isNormal ? rarityColor : mutationColor;

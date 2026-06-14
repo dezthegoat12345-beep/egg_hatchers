@@ -270,6 +270,7 @@ class _HatchDialogState extends State<HatchDialog>
                   theme: widget.theme,
                   mutation: widget.result.mutation,
                   compact: true,
+                  useBaseNameForTitle: true,
                   customSprites: widget.customSprites,
                 ),
                 const SizedBox(height: 14),
