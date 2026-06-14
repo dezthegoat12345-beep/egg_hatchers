@@ -148,10 +148,28 @@ class GameService extends ChangeNotifier {
 
   bool canBuyEgg(Egg egg) => isEggUnlocked(egg) && canAfford(egg);
 
+  /// Triple Hatch costs 3.5× the egg price, rounded up.
+  static int tripleHatchCost(Egg egg) => (egg.cost * 3.5).ceil();
+
+  bool canAffordTripleHatch(Egg egg) =>
+      isEggUnlocked(egg) && _state.coins >= tripleHatchCost(egg);
+
   bool buyEgg(Egg egg) {
     if (!canBuyEgg(egg)) return false;
 
     _state = _state.copyWith(coins: _state.coins - egg.cost);
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool buyTripleHatch(Egg egg) {
+    if (!isEggUnlocked(egg)) return false;
+
+    final cost = tripleHatchCost(egg);
+    if (_state.coins < cost) return false;
+
+    _state = _state.copyWith(coins: _state.coins - cost);
     notifyListeners();
     save();
     return true;
@@ -204,10 +222,51 @@ class GameService extends ChangeNotifier {
   /// Pass [customEgg] when hatching a player-created custom egg so weighted
   /// chances apply. Built-in eggs use equal random selection.
   HatchResult hatchEgg(Egg egg, {CustomEgg? customEgg}) {
+    final result = _rollAndApplyHatch(
+      egg,
+      customEgg: customEgg,
+      useForcedOverride: true,
+    );
+    notifyListeners();
+    save();
+    return result;
+  }
+
+  /// Hatch multiple animals from one purchase. Forced override applies only
+  /// to the first result when [useForcedOnFirst] is true (default).
+  List<HatchResult> hatchEggMultiple(
+    Egg egg,
+    int count, {
+    CustomEgg? customEgg,
+    bool useForcedOnFirst = true,
+  }) {
+    if (count <= 0) return const [];
+
+    final results = <HatchResult>[];
+    for (var i = 0; i < count; i++) {
+      results.add(
+        _rollAndApplyHatch(
+          egg,
+          customEgg: customEgg,
+          useForcedOverride: useForcedOnFirst && i == 0,
+        ),
+      );
+    }
+
+    notifyListeners();
+    save();
+    return results;
+  }
+
+  HatchResult _rollAndApplyHatch(
+    Egg egg, {
+    CustomEgg? customEgg,
+    required bool useForcedOverride,
+  }) {
     final Animal animal;
     final Mutation mutation;
 
-    if (hasForcedNextHatch) {
+    if (useForcedOverride && hasForcedNextHatch) {
       animal = GameData.animalById(_forcedNextAnimalId!)!;
       mutation =
           GameData.mutationById(_forcedNextMutationId!) ?? GameData.mutations.first;
@@ -252,8 +311,6 @@ class GameService extends ChangeNotifier {
     }
 
     _state = _state.copyWith(ownedAnimals: updatedAnimals);
-    notifyListeners();
-    save();
     return HatchResult(animal: animal, mutation: mutation);
   }
 

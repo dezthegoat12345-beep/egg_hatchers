@@ -21,6 +21,9 @@ class EggCard extends StatelessWidget {
     required this.theme,
     this.isCustomEgg = false,
     this.customSprites,
+    this.tripleHatchCost,
+    this.canAffordTripleHatch = false,
+    this.onTripleHatch,
   });
 
   final Egg egg;
@@ -31,6 +34,9 @@ class EggCard extends StatelessWidget {
   final BackgroundTheme theme;
   final bool isCustomEgg;
   final CustomSpriteService? customSprites;
+  final int? tripleHatchCost;
+  final bool canAffordTripleHatch;
+  final VoidCallback? onTripleHatch;
 
   @override
   Widget build(BuildContext context) {
@@ -222,6 +228,32 @@ class EggCard extends StatelessWidget {
                         : 'Not enough coins',
               ),
             ),
+            if (onTripleHatch != null && tripleHatchCost != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: isUnlocked ? onTripleHatch : onBuy,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                  foregroundColor: isUnlocked && canAffordTripleHatch
+                      ? theme.secondaryColor
+                      : theme.disabledColor,
+                  side: BorderSide(
+                    color: isUnlocked && canAffordTripleHatch
+                        ? theme.secondaryColor
+                        : theme.disabledColor,
+                  ),
+                ),
+                child: Text(
+                  isUnlocked
+                      ? 'Triple Hatch · 🪙 ${formatCoins(tripleHatchCost!)}'
+                      : 'Triple Hatch',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

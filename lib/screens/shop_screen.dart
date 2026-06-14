@@ -13,6 +13,7 @@ import '../widgets/coin_header.dart';
 import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
+import '../widgets/multi_hatch_dialog.dart';
 import '../models/background_theme.dart';
 import 'custom_egg_editor_screen.dart';
 import 'custom_eggs_screen.dart';
@@ -59,6 +60,49 @@ class ShopScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _tripleHatch(BuildContext context, Egg egg) async {
+    final bg = preferences.selectedTheme;
+
+    if (!game.isEggUnlocked(egg)) {
+      showGameSnackBar(
+        context,
+        message: egg.unlockMessage,
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    if (!game.canAffordTripleHatch(egg)) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough coins for Triple Hatch.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    final customDefinition = CustomEggLogic.isCustomEggId(egg.id)
+        ? customEggs.getById(egg.id)
+        : null;
+
+    game.buyTripleHatch(egg);
+    final results = game.hatchEggMultiple(
+      egg,
+      3,
+      customEgg: customDefinition,
+    );
+
+    if (context.mounted) {
+      await MultiHatchDialog.show(
+        context,
+        egg: egg,
+        results: results,
+        theme: bg,
+        customSprites: customSprites,
+      );
+    }
   }
 
   Future<void> _buyAndHatch(BuildContext context, Egg egg) async {
@@ -175,7 +219,18 @@ class ShopScreen extends StatelessWidget {
                                           game.canAfford(GameData.eggs[i]),
                                       lifetimeCoinsEarned:
                                           game.lifetimeCoinsEarned,
+                                      tripleHatchCost: GameService.tripleHatchCost(
+                                        GameData.eggs[i],
+                                      ),
+                                      canAffordTripleHatch:
+                                          game.canAffordTripleHatch(
+                                        GameData.eggs[i],
+                                      ),
                                       onBuy: () => _buyAndHatch(
+                                        context,
+                                        GameData.eggs[i],
+                                      ),
+                                      onTripleHatch: () => _tripleHatch(
                                         context,
                                         GameData.eggs[i],
                                       ),
@@ -206,7 +261,19 @@ class ShopScreen extends StatelessWidget {
                                             lifetimeCoinsEarned: lifetime,
                                             isCustomEgg: true,
                                             customSprites: customSprites,
+                                            tripleHatchCost:
+                                                GameService.tripleHatchCost(
+                                              eggModel,
+                                            ),
+                                            canAffordTripleHatch:
+                                                game.canAffordTripleHatch(
+                                              eggModel,
+                                            ),
                                             onBuy: () => _buyAndHatch(
+                                              context,
+                                              eggModel,
+                                            ),
+                                            onTripleHatch: () => _tripleHatch(
                                               context,
                                               eggModel,
                                             ),

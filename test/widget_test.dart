@@ -390,4 +390,104 @@ void main() {
 
     game.dispose();
   });
+
+  test('triple hatch cost is ceil of egg cost times 3.5', () {
+    expect(GameService.tripleHatchCost(GameData.eggs.first), 350);
+    expect(GameService.tripleHatchCost(GameData.eggs[1]), 1400);
+    expect(GameService.tripleHatchCost(GameData.eggs[3]), 5250);
+    expect(GameService.tripleHatchCost(GameData.eggs[8]), 1750000);
+  });
+
+  test('triple hatch deducts correct coins and adds three animals', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(99));
+    await game.initialize();
+
+    final basicEgg = GameData.eggs.first;
+    game.setCoins(350);
+
+    expect(game.canAffordTripleHatch(basicEgg), isTrue);
+    expect(game.buyTripleHatch(basicEgg), isTrue);
+    expect(game.coins, 0);
+
+    final beforeCount = game.ownedAnimals.length;
+    final results = game.hatchEggMultiple(basicEgg, 3);
+
+    expect(results, hasLength(3));
+    expect(game.ownedAnimals.length, greaterThanOrEqualTo(beforeCount));
+    expect(
+      game.ownedAnimals.fold<int>(0, (sum, o) => sum + o.quantity),
+      greaterThanOrEqualTo(3),
+    );
+
+    game.dispose();
+  });
+
+  test('triple hatch fails when coins are too low', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    final basicEgg = GameData.eggs.first;
+    game.setCoins(349);
+
+    expect(game.canAffordTripleHatch(basicEgg), isFalse);
+    expect(game.buyTripleHatch(basicEgg), isFalse);
+    expect(game.coins, 349);
+
+    game.dispose();
+  });
+
+  test('forced hatch applies only to first triple hatch result', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(5));
+    await game.initialize();
+
+    game.setCoins(1000);
+    game.setForcedNextHatch('dragon', 'golden');
+
+    final basicEgg = GameData.eggs.first;
+    game.buyTripleHatch(basicEgg);
+    final results = game.hatchEggMultiple(basicEgg, 3);
+
+    expect(results, hasLength(3));
+    expect(results.first.animal.id, 'dragon');
+    expect(results.first.mutation.id, 'golden');
+    expect(game.hasForcedNextHatch, isFalse);
+
+    game.dispose();
+  });
+
+  test('triple hatch rolls separate results', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(42));
+    await game.initialize();
+
+    game.setCoins(5000);
+    final basicEgg = GameData.eggs.first;
+    game.buyTripleHatch(basicEgg);
+    final results = game.hatchEggMultiple(basicEgg, 3);
+
+    expect(results, hasLength(3));
+    for (final result in results) {
+      expect(basicEgg.possibleAnimalIds, contains(result.animal.id));
+    }
+
+    game.dispose();
+  });
+
+  test('single hatch still works after triple hatch helpers added', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(2));
+    await game.initialize();
+
+    final basicEgg = GameData.eggs.first;
+    game.buyEgg(basicEgg);
+    final result = game.hatchEgg(basicEgg);
+
+    expect(basicEgg.possibleAnimalIds, contains(result.animal.id));
+    expect(game.ownedAnimals, isNotEmpty);
+
+    game.dispose();
+  });
 }
