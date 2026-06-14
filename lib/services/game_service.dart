@@ -33,6 +33,7 @@ class GameService extends ChangeNotifier {
   Timer? _idleTimer;
   bool _isInitialized = false;
   String? _pendingQuestNotification;
+  bool _questNotificationDeferred = false;
 
   // In-memory only — for developer testing, not saved.
   ForcedHatchMode _forcedHatchMode = ForcedHatchMode.none;
@@ -153,10 +154,22 @@ class GameService extends ChangeNotifier {
 
   /// Returns and clears a pending quest completion notification message.
   String? consumePendingQuestNotification() {
+    if (_questNotificationDeferred) return null;
     final message = _pendingQuestNotification;
     _pendingQuestNotification = null;
     return message;
   }
+
+  /// Releases a hatch-deferred notification after the reveal dialog closes.
+  String? releaseDeferredQuestNotification() {
+    if (!_questNotificationDeferred) return null;
+    _questNotificationDeferred = false;
+    final message = _pendingQuestNotification;
+    _pendingQuestNotification = null;
+    return message;
+  }
+
+  bool get isQuestNotificationDeferred => _questNotificationDeferred;
 
   void _silenceExistingQuestNotifications() {
     final progress = _state.questProgress;
@@ -181,12 +194,15 @@ class GameService extends ChangeNotifier {
     _saveQuietly();
   }
 
-  void _refreshQuestNotifications() {
+  void _refreshQuestNotifications({bool deferDisplay = false}) {
     final newlyCompleted = QuestLogic.newlyCompletedUnnotified(_state);
     if (newlyCompleted.isEmpty) return;
 
     _pendingQuestNotification =
         QuestLogic.completionNotificationMessage(newlyCompleted);
+    if (deferDisplay) {
+      _questNotificationDeferred = true;
+    }
     final progress = _state.questProgress;
     _state = _state.copyWith(
       questProgress: progress.copyWith(
@@ -472,7 +488,7 @@ class GameService extends ChangeNotifier {
       isTripleHatch: false,
       isCustomEgg: customEgg != null,
     );
-    _refreshQuestNotifications();
+    _refreshQuestNotifications(deferDisplay: true);
     notifyListeners();
     save();
     return result;
@@ -504,7 +520,7 @@ class GameService extends ChangeNotifier {
       isTripleHatch: isTripleHatchSession,
       isCustomEgg: customEgg != null,
     );
-    _refreshQuestNotifications();
+    _refreshQuestNotifications(deferDisplay: true);
     notifyListeners();
     save();
     return results;

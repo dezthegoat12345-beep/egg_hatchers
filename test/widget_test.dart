@@ -817,6 +817,26 @@ void main() {
         containsAll(['beginner_hatch_1', 'beginner_hatch_3']));
   });
 
+  test('hatch defers quest notification until hatch dialog is dismissed', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    final basicEgg = GameData.eggs.first;
+    game.setCoins(1000);
+    game.buyEgg(basicEgg);
+    game.hatchEgg(basicEgg);
+
+    expect(game.isQuestNotificationDeferred, isTrue);
+    expect(game.consumePendingQuestNotification(), isNull);
+
+    final message = game.releaseDeferredQuestNotification();
+    expect(message, contains('Beginner Quest Complete'));
+    expect(game.consumePendingQuestNotification(), isNull);
+
+    game.dispose();
+  });
+
   test('quest completion notification is queued once per newly completed quest',
       () async {
     SharedPreferences.setMockInitialValues({});

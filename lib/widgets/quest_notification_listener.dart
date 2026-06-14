@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
+import '../utils/quest_notification_utils.dart';
 import '../utils/snackbar_utils.dart';
-
 /// Listens for pending quest completion messages and shows compact SnackBars.
 class QuestNotificationListener extends StatefulWidget {
   const QuestNotificationListener({
@@ -36,15 +36,22 @@ class _QuestNotificationListenerState extends State<QuestNotificationListener> {
   }
 
   void _showPendingNotification() {
+    if (widget.game.isQuestNotificationDeferred) return;
+
     final message = widget.game.consumePendingQuestNotification();
     if (message == null || !mounted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      showGameSnackBar(
+      showQuestCompletionSnackBar(
         context,
         message: message,
         backgroundColor: widget.preferences.selectedTheme.secondaryColor,
+        onViewQuests: () => openQuestsScreen(
+          context,
+          game: widget.game,
+          preferences: widget.preferences,
+        ),
       );
     });
   }

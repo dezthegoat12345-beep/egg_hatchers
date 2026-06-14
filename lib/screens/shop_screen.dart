@@ -8,6 +8,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/quest_notification_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/egg_card.dart';
@@ -103,6 +104,13 @@ class ShopScreen extends StatelessWidget {
         theme: bg,
         customSprites: customSprites,
       );
+      if (context.mounted) {
+        showPendingQuestCompletionNotification(
+          context,
+          game: game,
+          preferences: preferences,
+        );
+      }
     }
   }
 
@@ -143,6 +151,13 @@ class ShopScreen extends StatelessWidget {
         theme: bg,
         customSprites: customSprites,
       );
+      if (context.mounted) {
+        showPendingQuestCompletionNotification(
+          context,
+          game: game,
+          preferences: preferences,
+        );
+      }
     }
   }
 
