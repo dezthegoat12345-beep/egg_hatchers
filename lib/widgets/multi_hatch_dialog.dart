@@ -8,6 +8,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import 'game_sprite.dart';
+import 'hatching_egg_widgets.dart';
 
 /// Stages of the egg cracking hatch reveal animation.
 enum _HatchStage {
@@ -163,6 +164,8 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
   Widget build(BuildContext context) {
     final revealed = _stage == _HatchStage.revealed;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.9;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final eggSize = screenWidth < 360 ? 58.0 : 68.0;
     final accent = _hasMutation && revealed
         ? GameTheme.mutationAccent(
             widget.results
@@ -226,29 +229,36 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
               SizedBox(height: revealed ? 14 : 18),
               ClipRect(
                 child: SizedBox(
-                  height: revealed ? null : 108,
+                  height: revealed ? null : eggSize + 16,
                   child: Center(
                     child: revealed
                         ? ScaleTransition(
                             scale: _revealScale,
-                            child: _buildResultsGrid(),
+                            child: _buildResultsGrid(context),
                           )
                         : _stage == _HatchStage.pop
                             ? ScaleTransition(
                                 scale: _popScale,
-                                child: _buildEggVisual(showCracks: true),
+                                child: AnimatedTripleEggRow(
+                                  egg: widget.egg,
+                                  eggSize: eggSize,
+                                  showCracks: true,
+                                  shakeAmount: 0,
+                                  shakePhase: 0,
+                                ),
                               )
                             : AnimatedBuilder(
                                 animation: _shakeController,
-                                builder: (context, child) {
-                                  return Transform.translate(
-                                    offset: Offset(_shakeAmount, 0),
-                                    child: child,
+                                builder: (context, _) {
+                                  return AnimatedTripleEggRow(
+                                    egg: widget.egg,
+                                    eggSize: eggSize,
+                                    showCracks:
+                                        _stage == _HatchStage.cracking,
+                                    shakeAmount: _shakeAmount,
+                                    shakePhase: _shakeAnimation.value,
                                   );
                                 },
-                                child: _buildEggVisual(
-                                  showCracks: _stage == _HatchStage.cracking,
-                                ),
                               ),
                   ),
                 ),
@@ -293,7 +303,31 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
     );
   }
 
-  Widget _buildResultsGrid() {
+  Widget _buildResultsGrid(BuildContext context) {
+    final useWideLayout =
+        MediaQuery.sizeOf(context).width >= 520 && widget.results.length == 3;
+
+    if (useWideLayout) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < widget.results.length; i++)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: i == 0 ? 0 : 6, right: i == 2 ? 0 : 6),
+                child: _TripleResultTile(
+                  result: widget.results[i],
+                  theme: widget.theme,
+                  customSprites: widget.customSprites,
+                  index: i + 1,
+                  compact: true,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         for (var i = 0; i < widget.results.length; i++) ...[
@@ -308,22 +342,6 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
       ],
     );
   }
-
-  Widget _buildEggVisual({required bool showCracks}) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        GameSprite(
-          spritePath: widget.egg.spritePath,
-          fallbackEmoji: widget.egg.emoji,
-          size: 88,
-          semanticLabel: widget.egg.name,
-          emojiFontSize: 88,
-        ),
-        if (showCracks) const _CrackMarks(),
-      ],
-    );
-  }
 }
 
 class _TripleResultTile extends StatelessWidget {
@@ -332,12 +350,14 @@ class _TripleResultTile extends StatelessWidget {
     required this.theme,
     required this.index,
     this.customSprites,
+    this.compact = false,
   });
 
   final HatchResult result;
   final BackgroundTheme theme;
   final CustomSpriteService? customSprites;
   final int index;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -361,28 +381,29 @@ class _TripleResultTile extends StatelessWidget {
         backgroundColor:
             isMutated ? GameTheme.mutationTint(result.mutation.id) : null,
       ),
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          GameAnimalPortrait(
-            customSprite:
-                customSprites?.getDisplaySprite(result.animal.id),
-            spritePath: result.animal.spritePath,
-            fallbackEmoji: result.animal.emoji,
-            size: 56,
-            mutation: result.mutation,
-            semanticLabel: displayName,
-            emojiFontSize: 40,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.all(compact ? 10 : 12),
+      child: compact
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                GameAnimalPortrait(
+                  customSprite:
+                      customSprites?.getDisplaySprite(result.animal.id),
+                  spritePath: result.animal.spritePath,
+                  fallbackEmoji: result.animal.emoji,
+                  size: 52,
+                  mutation: result.mutation,
+                  semanticLabel: displayName,
+                  emojiFontSize: 36,
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  '#$index $displayName',
+                  displayName,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: isMutated
                         ? mutationColor
@@ -393,9 +414,10 @@ class _TripleResultTile extends StatelessWidget {
                 Text(
                   isMutated
                       ? result.mutation.displayName
-                      : '${result.animal.coinsPerSecond}/s base',
+                      : '$income/s',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight:
                         isMutated ? FontWeight.w700 : FontWeight.w500,
                     color: isMutated
@@ -403,54 +425,61 @@ class _TripleResultTile extends StatelessWidget {
                         : theme.cardTextSecondaryColor,
                   ),
                 ),
-                Text(
-                  '$income/s income',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.cardTextSecondaryColor,
+              ],
+            )
+          : Row(
+              children: [
+                GameAnimalPortrait(
+                  customSprite:
+                      customSprites?.getDisplaySprite(result.animal.id),
+                  spritePath: result.animal.spritePath,
+                  fallbackEmoji: result.animal.emoji,
+                  size: 56,
+                  mutation: result.mutation,
+                  semanticLabel: displayName,
+                  emojiFontSize: 40,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '#$index $displayName',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isMutated
+                              ? mutationColor
+                              : theme.cardTextPrimaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isMutated
+                            ? result.mutation.displayName
+                            : '${result.animal.coinsPerSecond}/s base',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight:
+                              isMutated ? FontWeight.w700 : FontWeight.w500,
+                          color: isMutated
+                              ? mutationColor
+                              : theme.cardTextSecondaryColor,
+                        ),
+                      ),
+                      Text(
+                        '$income/s income',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.cardTextSecondaryColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
-}
-
-class _CrackMarks extends StatelessWidget {
-  const _CrackMarks();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 88,
-      height: 88,
-      child: CustomPaint(
-        painter: _CrackPainter(),
-      ),
-    );
-  }
-}
-
-class _CrackPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.brown.shade700
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-
-    canvas.drawLine(Offset(cx - 8, cy - 20), Offset(cx + 4, cy + 2), paint);
-    canvas.drawLine(Offset(cx + 6, cy - 18), Offset(cx - 6, cy + 6), paint);
-    canvas.drawLine(Offset(cx - 2, cy + 4), Offset(cx + 10, cy + 18), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

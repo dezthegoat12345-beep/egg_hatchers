@@ -7,6 +7,7 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/custom_egg.dart';
 import '../models/egg.dart';
+import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
 import '../utils/custom_egg_logic.dart';
 import '../models/mutation.dart';
@@ -28,8 +29,8 @@ class GameService extends ChangeNotifier {
   bool _isInitialized = false;
 
   // In-memory only — for developer testing, not saved.
-  String? _forcedNextAnimalId;
-  String? _forcedNextMutationId;
+  ForcedHatchMode _forcedHatchMode = ForcedHatchMode.none;
+  List<ForcedHatchResult> _forcedHatchQueue = [];
 
   PlayerState get state => _state;
   bool get isInitialized => _isInitialized;
@@ -74,11 +75,19 @@ class GameService extends ChangeNotifier {
   List<OwnedAnimal> get mutatedAnimals =>
       _state.ownedAnimals.where((o) => o.mutationId != 'none').toList();
 
-  bool get hasForcedNextHatch =>
-      _forcedNextAnimalId != null && _forcedNextMutationId != null;
+  bool get hasForcedNextHatch => _forcedHatchQueue.isNotEmpty;
 
-  String? get forcedNextAnimalId => _forcedNextAnimalId;
-  String? get forcedNextMutationId => _forcedNextMutationId;
+  bool get isForcedTripleHatch =>
+      _forcedHatchMode == ForcedHatchMode.triple && _forcedHatchQueue.length >= 3;
+
+  List<ForcedHatchResult> get forcedHatchQueue =>
+      List<ForcedHatchResult>.unmodifiable(_forcedHatchQueue);
+
+  String? get forcedNextAnimalId =>
+      _forcedHatchQueue.isEmpty ? null : _forcedHatchQueue.first.animalId;
+
+  String? get forcedNextMutationId =>
+      _forcedHatchQueue.isEmpty ? null : _forcedHatchQueue.first.mutationId;
 
   /// Load saved progress, apply offline earnings, and start idle income.
   Future<void> initialize() async {
@@ -206,14 +215,32 @@ class GameService extends ChangeNotifier {
   }
 
   void setForcedNextHatch(String animalId, String mutationId) {
-    _forcedNextAnimalId = animalId;
-    _forcedNextMutationId = mutationId;
+    _forcedHatchQueue = [
+      ForcedHatchResult(animalId: animalId, mutationId: mutationId),
+    ];
+    _forcedHatchMode = ForcedHatchMode.single;
+    notifyListeners();
+  }
+
+  void setForcedNextTripleHatch(List<ForcedHatchResult> results) {
+    _forcedHatchQueue = results
+        .take(3)
+        .map(
+          (r) => ForcedHatchResult(
+            animalId: r.animalId,
+            mutationId: r.mutationId,
+          ),
+        )
+        .toList();
+    _forcedHatchMode = _forcedHatchQueue.length >= 3
+        ? ForcedHatchMode.triple
+        : ForcedHatchMode.single;
     notifyListeners();
   }
 
   void clearForcedNextHatch() {
-    _forcedNextAnimalId = null;
-    _forcedNextMutationId = null;
+    _forcedHatchQueue = [];
+    _forcedHatchMode = ForcedHatchMode.none;
     notifyListeners();
   }
 
@@ -225,30 +252,31 @@ class GameService extends ChangeNotifier {
     final result = _rollAndApplyHatch(
       egg,
       customEgg: customEgg,
-      useForcedOverride: true,
+      slotIndex: 0,
+      isTripleHatchSession: false,
     );
     notifyListeners();
     save();
     return result;
   }
 
-  /// Hatch multiple animals from one purchase. Forced override applies only
-  /// to the first result when [useForcedOnFirst] is true (default).
+  /// Hatch multiple animals from one purchase.
   List<HatchResult> hatchEggMultiple(
     Egg egg,
     int count, {
     CustomEgg? customEgg,
-    bool useForcedOnFirst = true,
   }) {
     if (count <= 0) return const [];
 
+    final isTripleHatchSession = count >= 3;
     final results = <HatchResult>[];
     for (var i = 0; i < count; i++) {
       results.add(
         _rollAndApplyHatch(
           egg,
           customEgg: customEgg,
-          useForcedOverride: useForcedOnFirst && i == 0,
+          slotIndex: i,
+          isTripleHatchSession: isTripleHatchSession,
         ),
       );
     }
@@ -258,19 +286,58 @@ class GameService extends ChangeNotifier {
     return results;
   }
 
+  ForcedHatchResult? _forcedResultForSlot(int slotIndex) {
+    if (_forcedHatchQueue.isEmpty) return null;
+
+    if (_forcedHatchMode == ForcedHatchMode.single) {
+      return slotIndex == 0 ? _forcedHatchQueue.first : null;
+    }
+
+    if (slotIndex < _forcedHatchQueue.length) {
+      return _forcedHatchQueue[slotIndex];
+    }
+    return null;
+  }
+
+  void _afterForcedSlotConsumed(
+    int slotIndex, {
+    required bool isTripleHatchSession,
+  }) {
+    if (_forcedHatchQueue.isEmpty) return;
+
+    if (_forcedHatchMode == ForcedHatchMode.single) {
+      if (slotIndex == 0) clearForcedNextHatch();
+      return;
+    }
+
+    if (!isTripleHatchSession) {
+      clearForcedNextHatch();
+      return;
+    }
+
+    if (slotIndex >= 2) {
+      clearForcedNextHatch();
+    }
+  }
+
   HatchResult _rollAndApplyHatch(
     Egg egg, {
     CustomEgg? customEgg,
-    required bool useForcedOverride,
+    required int slotIndex,
+    required bool isTripleHatchSession,
   }) {
     final Animal animal;
     final Mutation mutation;
 
-    if (useForcedOverride && hasForcedNextHatch) {
-      animal = GameData.animalById(_forcedNextAnimalId!)!;
+    final forced = _forcedResultForSlot(slotIndex);
+    if (forced != null) {
+      animal = GameData.animalById(forced.animalId)!;
       mutation =
-          GameData.mutationById(_forcedNextMutationId!) ?? GameData.mutations.first;
-      clearForcedNextHatch();
+          GameData.mutationById(forced.mutationId) ?? GameData.mutations.first;
+      _afterForcedSlotConsumed(
+        slotIndex,
+        isTripleHatchSession: isTripleHatchSession,
+      );
     } else {
       final String animalId;
       if (customEgg != null &&

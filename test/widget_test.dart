@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/models/animal.dart';
+import 'package:egg_hatchers/models/forced_hatch_result.dart';
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';
+import 'package:egg_hatchers/services/developer_tools_preferences.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 
 void main() {
@@ -456,6 +458,94 @@ void main() {
     expect(game.hasForcedNextHatch, isFalse);
 
     game.dispose();
+  });
+
+  test('triple forced hatch affects all three results in order', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(5));
+    await game.initialize();
+
+    game.setCoins(1000);
+    game.setForcedNextTripleHatch([
+      const ForcedHatchResult(animalId: 'chicken', mutationId: 'golden'),
+      const ForcedHatchResult(animalId: 'rabbit', mutationId: 'rainbow'),
+      const ForcedHatchResult(animalId: 'dragon', mutationId: 'shadow'),
+    ]);
+
+    expect(game.isForcedTripleHatch, isTrue);
+
+    final basicEgg = GameData.eggs.first;
+    game.buyTripleHatch(basicEgg);
+    final results = game.hatchEggMultiple(basicEgg, 3);
+
+    expect(results, hasLength(3));
+    expect(results[0].animal.id, 'chicken');
+    expect(results[0].mutation.id, 'golden');
+    expect(results[1].animal.id, 'rabbit');
+    expect(results[1].mutation.id, 'rainbow');
+    expect(results[2].animal.id, 'dragon');
+    expect(results[2].mutation.id, 'shadow');
+    expect(game.hasForcedNextHatch, isFalse);
+
+    game.dispose();
+  });
+
+  test('triple force on single hatch uses slot 1 only and clears', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    game.setForcedNextTripleHatch([
+      const ForcedHatchResult(animalId: 'fox', mutationId: 'golden'),
+      const ForcedHatchResult(animalId: 'bear', mutationId: 'rainbow'),
+      const ForcedHatchResult(animalId: 'tiger', mutationId: 'shadow'),
+    ]);
+
+    game.buyEgg(GameData.eggs.first);
+    final result = game.hatchEgg(GameData.eggs.first);
+
+    expect(result.animal.id, 'fox');
+    expect(result.mutation.id, 'golden');
+    expect(game.hasForcedNextHatch, isFalse);
+
+    game.dispose();
+  });
+
+  test('developer force slot selections persist in shared_preferences', () async {
+    SharedPreferences.setMockInitialValues({});
+    await DeveloperToolsPreferences.saveSlots(
+      DevForceSlotSelections(
+        slot1: const DevForceSlotSelection(
+          animalId: 'dragon',
+          mutationId: 'golden',
+        ),
+        slot2: const DevForceSlotSelection(
+          animalId: 'rabbit',
+          mutationId: 'rainbow',
+        ),
+        slot3: const DevForceSlotSelection(
+          animalId: 'unicorn',
+          mutationId: 'shadow',
+        ),
+      ),
+    );
+
+    final loaded = await DeveloperToolsPreferences.load();
+    expect(loaded.slot1.animalId, 'dragon');
+    expect(loaded.slot1.mutationId, 'golden');
+    expect(loaded.slot2.animalId, 'rabbit');
+    expect(loaded.slot3.animalId, 'unicorn');
+  });
+
+  test('invalid saved force slots default safely', () async {
+    SharedPreferences.setMockInitialValues({
+      'devForceSlot1AnimalId': 'not_real',
+      'devForceSlot1MutationId': 'not_real',
+    });
+
+    final loaded = await DeveloperToolsPreferences.load();
+    expect(GameData.animalById(loaded.slot1.animalId), isNotNull);
+    expect(GameData.mutationById(loaded.slot1.mutationId), isNotNull);
   });
 
   test('triple hatch rolls separate results', () async {

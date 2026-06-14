@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/mutation.dart';
+import '../models/forced_hatch_result.dart';
 import '../services/custom_sprite_service.dart';
+import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
@@ -28,8 +30,21 @@ class DeveloperScreen extends StatefulWidget {
 class _DeveloperScreenState extends State<DeveloperScreen> {
   final _coinController = TextEditingController();
   final _lifetimeController = TextEditingController();
-  late String _selectedAnimalId;
-  late String _selectedMutationId;
+  DevForceSlotSelections _slots = DevForceSlotSelections(
+    slot1: DevForceSlotSelection(
+      animalId: DeveloperToolsPreferences.defaultAnimalId,
+      mutationId: DeveloperToolsPreferences.defaultMutationId,
+    ),
+    slot2: DevForceSlotSelection(
+      animalId: DeveloperToolsPreferences.defaultAnimalId,
+      mutationId: DeveloperToolsPreferences.defaultMutationId,
+    ),
+    slot3: DevForceSlotSelection(
+      animalId: DeveloperToolsPreferences.defaultAnimalId,
+      mutationId: DeveloperToolsPreferences.defaultMutationId,
+    ),
+  );
+  bool _slotsLoaded = false;
 
   GameService get game => widget.game;
 
@@ -46,8 +61,87 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     super.initState();
     _coinController.text = '${game.coins}';
     _lifetimeController.text = '${game.lifetimeCoinsEarned}';
-    _selectedAnimalId = GameData.animals.first.id;
-    _selectedMutationId = GameData.mutations.first.id;
+    _loadSavedSlots();
+  }
+
+  Future<void> _loadSavedSlots() async {
+    final saved = await DeveloperToolsPreferences.load();
+    if (!mounted) return;
+    setState(() {
+      _slots = saved;
+      _slotsLoaded = true;
+    });
+  }
+
+  Future<void> _persistSlots() async {
+    await DeveloperToolsPreferences.saveSlots(_slots);
+  }
+
+  void _updateSlotAnimal(int slotIndex, String animalId) {
+    setState(() {
+      final current = _slots.slotAt(slotIndex);
+      _slots = _slots.updateSlot(
+        slotIndex,
+        current.copyWith(animalId: animalId),
+      );
+    });
+    _persistSlots();
+  }
+
+  void _updateSlotMutation(int slotIndex, String mutationId) {
+    setState(() {
+      final current = _slots.slotAt(slotIndex);
+      _slots = _slots.updateSlot(
+        slotIndex,
+        current.copyWith(mutationId: mutationId),
+      );
+    });
+    _persistSlots();
+  }
+
+  String _formatForcedName(ForcedHatchResult result) {
+    final animal = GameData.animalById(result.animalId);
+    final mutation = GameData.mutationById(result.mutationId);
+    if (animal == null || mutation == null) return 'Unknown';
+    return mutation.fullName(animal);
+  }
+
+  String _activeForceStatus() {
+    if (!game.hasForcedNextHatch) return 'No forced hatch active';
+
+    if (game.isForcedTripleHatch) {
+      final names = game.forcedHatchQueue.map(_formatForcedName).join(', ');
+      return 'Next triple hatch forced: $names';
+    }
+
+    final first = game.forcedHatchQueue.first;
+    return 'Next single hatch forced: ${_formatForcedName(first)}';
+  }
+
+  void _forceSingleHatch() {
+    final slot = _slots.slot1;
+    game.setForcedNextHatch(slot.animalId, slot.mutationId);
+    final animal = GameData.animalById(slot.animalId)!;
+    final mutation = GameData.mutationById(slot.mutationId)!;
+    _showMessage('Next single hatch forced: ${mutation.fullName(animal)}');
+    setState(() {});
+  }
+
+  void _forceTripleHatch() {
+    game.setForcedNextTripleHatch([
+      _slots.slot1.toForcedResult(),
+      _slots.slot2.toForcedResult(),
+      _slots.slot3.toForcedResult(),
+    ]);
+    final names = game.forcedHatchQueue.map(_formatForcedName).join(', ');
+    _showMessage('Next triple hatch forced: $names');
+    setState(() {});
+  }
+
+  void _clearForcedHatch() {
+    game.clearForcedNextHatch();
+    _showMessage('Forced hatch cleared.');
+    setState(() {});
   }
 
   @override
@@ -79,22 +173,6 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     _showMessage('Coins reset to 250.');
   }
 
-  void _applyForcedHatch() {
-    game.setForcedNextHatch(_selectedAnimalId, _selectedMutationId);
-    final animal = GameData.animalById(_selectedAnimalId)!;
-    final mutation = GameData.mutationById(_selectedMutationId)!;
-    _showMessage(
-      'Next hatch forced: ${mutation.fullName(animal)}',
-    );
-    setState(() {});
-  }
-
-  void _clearForcedHatch() {
-    game.clearForcedNextHatch();
-    _showMessage('Forced hatch cleared.');
-    setState(() {});
-  }
-
   void _showMessage(String text) {
     showGameSnackBar(
       context,
@@ -108,16 +186,23 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     return ListenableBuilder(
       listenable: Listenable.merge([game, widget.customSprites]),
       builder: (context, _) {
-        final forcedAnimal = game.forcedNextAnimalId != null
-            ? GameData.animalById(game.forcedNextAnimalId!)
-            : null;
-        final forcedMutation = game.forcedNextMutationId != null
-            ? GameData.mutationById(game.forcedNextMutationId!)
-            : null;
-        final selectedAnimal = GameData.animalById(_selectedAnimalId)!;
-        final selectedMutation =
-            GameData.mutationById(_selectedMutationId) ??
-                GameData.mutations.first;
+        if (!_slotsLoaded) {
+          return Scaffold(
+            backgroundColor: DevToolsTheme.background,
+            appBar: AppBar(
+              title: Text(
+                '> Developer Tools',
+                style: DevToolsTheme.sectionTitle(size: 18),
+              ),
+              backgroundColor: DevToolsTheme.surface,
+              foregroundColor: DevToolsTheme.text,
+              elevation: 0,
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(color: DevToolsTheme.primary),
+            ),
+          );
+        }
 
         return Scaffold(
       backgroundColor: DevToolsTheme.background,
@@ -273,64 +358,34 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
               active: game.hasForcedNextHatch,
             ),
             child: Text(
-              game.hasForcedNextHatch &&
-                      forcedAnimal != null &&
-                      forcedMutation != null
-                  ? 'ACTIVE: ${forcedMutation.fullName(forcedAnimal)}'
-                  : 'No forced hatch active',
+              _activeForceStatus(),
               style: DevToolsTheme.bodyText(
                 muted: !game.hasForcedNextHatch,
               ).copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 16),
-          _DevAnimalPreview(
-            animal: selectedAnimal,
-            mutation: selectedMutation,
-            customSprites: widget.customSprites,
-          ),
-          const SizedBox(height: 16),
-          _LabeledDropdown<String>(
-            label: 'Animal',
-            value: _selectedAnimalId,
-            items: [
-              for (final animal in _sortedAnimals)
-                DropdownMenuItem(
-                  value: animal.id,
-                  child: _DevAnimalDropdownRow(
-                    animal: animal,
-                    customSprites: widget.customSprites,
-                  ),
-                ),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => _selectedAnimalId = value);
-            },
-          ),
-          const SizedBox(height: 12),
-          _LabeledDropdown<String>(
-            label: 'Mutation',
-            value: _selectedMutationId,
-            items: [
-              for (final mutation in GameData.mutations)
-                DropdownMenuItem(
-                  value: mutation.id,
-                  child: Text(
-                    mutation.isNormal
-                        ? 'Normal (none)'
-                        : '${mutation.icon} ${mutation.displayName}',
-                    style: DevToolsTheme.bodyText(),
-                  ),
-                ),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => _selectedMutationId = value);
-            },
-          ),
+          for (var i = 0; i < 3; i++) ...[
+            if (i > 0) const SizedBox(height: 20),
+            _ForceSlotEditor(
+              slotNumber: i + 1,
+              selection: _slots.slotAt(i),
+              animals: _sortedAnimals,
+              customSprites: widget.customSprites,
+              onAnimalChanged: (id) => _updateSlotAnimal(i, id),
+              onMutationChanged: (id) => _updateSlotMutation(i, id),
+            ),
+          ],
           const SizedBox(height: 16),
           _BigButton(
-            label: 'Set Forced Next Hatch',
-            onPressed: _applyForcedHatch,
+            label: 'Force Next Single Hatch',
+            onPressed: _forceSingleHatch,
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Force Next Triple Hatch',
+            color: DevToolsTheme.primaryDim,
+            onPressed: _forceTripleHatch,
           ),
           const SizedBox(height: 12),
           _BigButton(
@@ -342,6 +397,90 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
       ),
         );
       },
+    );
+  }
+}
+
+class _ForceSlotEditor extends StatelessWidget {
+  const _ForceSlotEditor({
+    required this.slotNumber,
+    required this.selection,
+    required this.animals,
+    required this.customSprites,
+    required this.onAnimalChanged,
+    required this.onMutationChanged,
+  });
+
+  final int slotNumber;
+  final DevForceSlotSelection selection;
+  final List<Animal> animals;
+  final CustomSpriteService customSprites;
+  final ValueChanged<String> onAnimalChanged;
+  final ValueChanged<String> onMutationChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final animal = GameData.animalById(selection.animalId)!;
+    final mutation =
+        GameData.mutationById(selection.mutationId) ?? GameData.mutations.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: DevToolsTheme.panelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Force Slot $slotNumber',
+            style: DevToolsTheme.sectionTitle(size: 16),
+          ),
+          const SizedBox(height: 12),
+          _DevAnimalPreview(
+            animal: animal,
+            mutation: mutation,
+            customSprites: customSprites,
+          ),
+          const SizedBox(height: 12),
+          _LabeledDropdown<String>(
+            label: 'Animal',
+            value: selection.animalId,
+            items: [
+              for (final item in animals)
+                DropdownMenuItem(
+                  value: item.id,
+                  child: _DevAnimalDropdownRow(
+                    animal: item,
+                    customSprites: customSprites,
+                  ),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) onAnimalChanged(value);
+            },
+          ),
+          const SizedBox(height: 12),
+          _LabeledDropdown<String>(
+            label: 'Mutation',
+            value: selection.mutationId,
+            items: [
+              for (final item in GameData.mutations)
+                DropdownMenuItem(
+                  value: item.id,
+                  child: Text(
+                    item.isNormal
+                        ? 'Normal (none)'
+                        : '${item.icon} ${item.displayName}',
+                    style: DevToolsTheme.bodyText(),
+                  ),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) onMutationChanged(value);
+            },
+          ),
+        ],
+      ),
     );
   }
 }
