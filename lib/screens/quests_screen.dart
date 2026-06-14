@@ -41,7 +41,9 @@ class QuestsScreen extends StatelessWidget {
       listenable: Listenable.merge([game, preferences]),
       builder: (context, _) {
         final bg = preferences.selectedTheme;
-        final readyCount = QuestLogic.readyToClaimCount(game.state);
+        final readyToClaim = QuestLogic.readyToClaimQuests(game.state);
+        final readyIds = readyToClaim.map((q) => q.id).toSet();
+        final readyCount = readyToClaim.length;
 
         return Scaffold(
           backgroundColor: bg.scaffoldColor,
@@ -117,6 +119,38 @@ class QuestsScreen extends StatelessWidget {
                             Expanded(
                               child: ListView(
                                 children: [
+                                  if (readyToClaim.isNotEmpty) ...[
+                                    _CompletedQuestsHeader(theme: bg),
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: GameTheme.cardDecoration(
+                                        bg,
+                                        borderColor: bg.secondaryColor,
+                                        backgroundColor: bg.secondaryColor
+                                            .withValues(alpha: 0.1),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          for (var i = 0;
+                                              i < readyToClaim.length;
+                                              i++) ...[
+                                            if (i > 0) const SizedBox(height: 10),
+                                            QuestCard(
+                                              quest: readyToClaim[i],
+                                              game: game,
+                                              theme: bg,
+                                              onClaim: () => _claimQuest(
+                                                context,
+                                                readyToClaim[i],
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
                                   for (final category
                                       in QuestData.categoryOrder) ...[
                                     _CategoryHeader(
@@ -124,17 +158,19 @@ class QuestsScreen extends StatelessWidget {
                                       theme: bg,
                                     ),
                                     const SizedBox(height: 10),
-                                    for (final quest
-                                        in QuestData.forCategory(category)) ...[
-                                      QuestCard(
-                                        quest: quest,
-                                        game: game,
-                                        theme: bg,
-                                        onClaim: () =>
-                                            _claimQuest(context, quest),
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ],
+                                    for (final quest in QuestData.forCategory(
+                                      category,
+                                    ))
+                                      if (!readyIds.contains(quest.id)) ...[
+                                        QuestCard(
+                                          quest: quest,
+                                          game: game,
+                                          theme: bg,
+                                          onClaim: () =>
+                                              _claimQuest(context, quest),
+                                        ),
+                                        const SizedBox(height: 10),
+                                      ],
                                     const SizedBox(height: 8),
                                   ],
                                 ],
@@ -151,6 +187,26 @@ class QuestsScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _CompletedQuestsHeader extends StatelessWidget {
+  const _CompletedQuestsHeader({required this.theme});
+
+  final BackgroundTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          '🎉 Completed Quests',
+          style: GameTheme.sectionTitle(theme, size: 17).copyWith(
+            color: theme.secondaryColor,
+          ),
+        ),
+      ],
     );
   }
 }

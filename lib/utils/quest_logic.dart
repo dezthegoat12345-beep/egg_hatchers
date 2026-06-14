@@ -74,10 +74,13 @@ class QuestLogic {
   }
 
   static int readyToClaimCount(PlayerState state) {
-    var count = 0;
-    for (final quest in QuestData.all) {
-      if (status(quest, state) == QuestStatus.readyToClaim) count++;
-    }
-    return count;
+    return readyToClaimQuests(state).length;
+  }
+
+  /// Completed but unclaimed quests in stable definition order.
+  static List<Quest> readyToClaimQuests(PlayerState state) {
+    return QuestData.all
+        .where((quest) => status(quest, state) == QuestStatus.readyToClaim)
+        .toList();
   }
 }

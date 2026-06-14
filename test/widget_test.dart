@@ -778,6 +778,26 @@ void main() {
     game.dispose();
   });
 
+  test('ready to claim quests follow stable definition order', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.devAddEggsHatched(3);
+    game.setLuckLevel(2);
+
+    final ready = QuestLogic.readyToClaimQuests(game.state);
+    final readyIds = ready.map((q) => q.id).toList();
+
+    expect(readyIds, containsAll(['beginner_hatch_1', 'beginner_hatch_3']));
+    expect(
+      QuestData.all.indexWhere((q) => q.id == readyIds.first),
+      lessThan(QuestData.all.indexWhere((q) => q.id == readyIds.last)),
+    );
+
+    game.dispose();
+  });
+
   test('claimed quests persist through player state serialization', () {
     final state = PlayerState(
       coins: 1000,
