@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
 import 'package:egg_hatchers/services/game_service.dart';
@@ -155,5 +156,26 @@ void main() {
 
     expect(reloaded.isClaimed('fox', 'persist1'), isTrue);
     expect(reloaded.getClaim('fox', 'persist1')?.score, 5);
+  });
+
+  test('every animal has a built-in sprite path', () {
+    for (final animal in GameData.animals) {
+      expect(
+        animal.spritePath,
+        isNotNull,
+        reason: '${animal.id} is missing spritePath',
+      );
+      expect(animal.spritePath, startsWith('assets/images/animals/'));
+    }
+  });
+
+  test('every animal has a sprite rating reference', () {
+    for (final animal in GameData.animals) {
+      expect(
+        SpriteReferenceData.hasReference(animal.id),
+        isTrue,
+        reason: '${animal.id} is missing rating reference',
+      );
+    }
   });
 }

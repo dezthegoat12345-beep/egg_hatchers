@@ -51,6 +51,7 @@ class GameData {
       rarity: Rarity.uncommon,
       coinsPerSecond: 10,
       emoji: '🦌',
+      spritePath: 'assets/images/animals/deer.png',
     ),
     Animal(
       id: 'bear',
@@ -58,6 +59,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 20,
       emoji: '🐻',
+      spritePath: 'assets/images/animals/bear.png',
     ),
     // Magic Egg
     Animal(
@@ -66,6 +68,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 50,
       emoji: '🐯',
+      spritePath: 'assets/images/animals/tiger.png',
     ),
     Animal(
       id: 'dragon',
@@ -98,6 +101,7 @@ class GameData {
       rarity: Rarity.uncommon,
       coinsPerSecond: 18,
       emoji: '🐷',
+      spritePath: 'assets/images/animals/pig.png',
     ),
     Animal(
       id: 'sheep',
@@ -105,6 +109,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 25,
       emoji: '🐑',
+      spritePath: 'assets/images/animals/sheep.png',
     ),
     Animal(
       id: 'horse',
@@ -112,6 +117,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 35,
       emoji: '🐴',
+      spritePath: 'assets/images/animals/horse.png',
     ),
     // Jungle Egg
     Animal(
@@ -120,6 +126,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 75,
       emoji: '🐵',
+      spritePath: 'assets/images/animals/monkey.png',
     ),
     Animal(
       id: 'parrot',
@@ -127,6 +134,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 90,
       emoji: '🦜',
+      spritePath: 'assets/images/animals/parrot.png',
     ),
     Animal(
       id: 'snake',
@@ -134,6 +142,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 140,
       emoji: '🐍',
+      spritePath: 'assets/images/animals/snake.png',
     ),
     Animal(
       id: 'gorilla',
@@ -141,6 +150,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 200,
       emoji: '🦍',
+      spritePath: 'assets/images/animals/gorilla.png',
     ),
     // Ocean Egg
     Animal(
@@ -149,6 +159,7 @@ class GameData {
       rarity: Rarity.rare,
       coinsPerSecond: 250,
       emoji: '🐟',
+      spritePath: 'assets/images/animals/fish.png',
     ),
     Animal(
       id: 'turtle',
@@ -156,6 +167,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 400,
       emoji: '🐢',
+      spritePath: 'assets/images/animals/turtle.png',
     ),
     Animal(
       id: 'dolphin',
@@ -163,6 +175,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 650,
       emoji: '🐬',
+      spritePath: 'assets/images/animals/dolphin.png',
     ),
     Animal(
       id: 'shark',
@@ -179,6 +192,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 1500,
       emoji: '🐧',
+      spritePath: 'assets/images/animals/penguin.png',
     ),
     Animal(
       id: 'seal',
@@ -186,6 +200,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 2000,
       emoji: '🦭',
+      spritePath: 'assets/images/animals/seal.png',
     ),
     Animal(
       id: 'polar_bear',
@@ -210,6 +225,7 @@ class GameData {
       rarity: Rarity.epic,
       coinsPerSecond: 6000,
       emoji: '🦖',
+      spritePath: 'assets/images/animals/raptor.png',
     ),
     Animal(
       id: 'triceratops',
