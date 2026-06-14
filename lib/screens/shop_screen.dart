@@ -14,6 +14,7 @@ import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
 import '../widgets/multi_hatch_dialog.dart';
+import '../widgets/quest_notification_listener.dart';
 import '../models/background_theme.dart';
 import 'custom_egg_editor_screen.dart';
 import 'custom_eggs_screen.dart';
@@ -157,7 +158,10 @@ class ShopScreen extends StatelessWidget {
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
 
-        return Scaffold(
+        return QuestNotificationListener(
+          game: game,
+          preferences: preferences,
+          child: Scaffold(
           backgroundColor: bg.scaffoldColor,
           appBar: AppBar(
             title: const Text(
@@ -328,6 +332,7 @@ class ShopScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       },
     );

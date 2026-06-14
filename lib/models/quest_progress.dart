@@ -14,6 +14,7 @@ class QuestProgress {
     this.totalCustomEggHatches = 0,
     this.totalCustomTripleHatches = 0,
     this.claimedQuestIds = const [],
+    this.notifiedCompletedQuestIds = const [],
   });
 
   final int totalEggsHatched;
@@ -29,10 +30,14 @@ class QuestProgress {
   final int totalCustomEggHatches;
   final int totalCustomTripleHatches;
   final List<String> claimedQuestIds;
+  final List<String> notifiedCompletedQuestIds;
 
   static QuestProgress initial() => const QuestProgress();
 
   bool isQuestClaimed(String questId) => claimedQuestIds.contains(questId);
+
+  bool wasCompletionNotified(String questId) =>
+      notifiedCompletedQuestIds.contains(questId);
 
   QuestProgress copyWith({
     int? totalEggsHatched,
@@ -48,6 +53,7 @@ class QuestProgress {
     int? totalCustomEggHatches,
     int? totalCustomTripleHatches,
     List<String>? claimedQuestIds,
+    List<String>? notifiedCompletedQuestIds,
   }) {
     return QuestProgress(
       totalEggsHatched: totalEggsHatched ?? this.totalEggsHatched,
@@ -67,6 +73,8 @@ class QuestProgress {
       totalCustomTripleHatches:
           totalCustomTripleHatches ?? this.totalCustomTripleHatches,
       claimedQuestIds: claimedQuestIds ?? this.claimedQuestIds,
+      notifiedCompletedQuestIds:
+          notifiedCompletedQuestIds ?? this.notifiedCompletedQuestIds,
     );
   }
 
@@ -84,6 +92,7 @@ class QuestProgress {
         'totalCustomEggHatches': totalCustomEggHatches,
         'totalCustomTripleHatches': totalCustomTripleHatches,
         'claimedQuestIds': claimedQuestIds,
+        'notifiedCompletedQuestIds': notifiedCompletedQuestIds,
       };
 
   factory QuestProgress.fromJson(Map<String, dynamic>? json) {
@@ -106,6 +115,11 @@ class QuestProgress {
               ?.map((id) => id as String)
               .toList() ??
           const [],
+      notifiedCompletedQuestIds:
+          (json['notifiedCompletedQuestIds'] as List<dynamic>?)
+                  ?.map((id) => id as String)
+                  .toList() ??
+              const [],
     );
   }
 }

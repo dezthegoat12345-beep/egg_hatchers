@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -814,5 +815,65 @@ void main() {
     expect(restored.questProgress.totalEggsHatched, 5);
     expect(restored.questProgress.claimedQuestIds,
         containsAll(['beginner_hatch_1', 'beginner_hatch_3']));
+  });
+
+  test('quest completion notification is queued once per newly completed quest',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.devAddEggsHatched(1);
+
+    expect(
+      game.consumePendingQuestNotification(),
+      '🌱 Beginner Quest Complete! Claim your reward.',
+    );
+    expect(game.consumePendingQuestNotification(), isNull);
+    expect(
+      game.questProgress.wasCompletionNotified('beginner_hatch_1'),
+      isTrue,
+    );
+
+    game.devAddEggsHatched(1);
+    expect(game.consumePendingQuestNotification(), isNull);
+
+    game.dispose();
+  });
+
+  test('already completed quests are silenced on load without notification',
+      () async {
+    final saved = PlayerState(
+      coins: 1000,
+      ownedAnimals: const [],
+      lastSavedTime: DateTime(2025, 1, 1),
+      lifetimeCoinsEarned: 5000,
+      questProgress: QuestProgress.initial().copyWith(totalEggsHatched: 3),
+    );
+    SharedPreferences.setMockInitialValues({
+      'egg_hatchers_player_state': jsonEncode(saved.toJson()),
+    });
+
+    final game = GameService();
+    await game.initialize();
+
+    expect(game.consumePendingQuestNotification(), isNull);
+    expect(
+      game.questProgress.wasCompletionNotified('beginner_hatch_1'),
+      isTrue,
+    );
+    expect(
+      game.questProgress.wasCompletionNotified('beginner_hatch_3'),
+      isTrue,
+    );
+
+    game.dispose();
+  });
+
+  test('multiple quest completions produce one combined notification', () {
+    final message = QuestLogic.completionNotificationMessage(
+      QuestData.all.where((q) => q.id.startsWith('beginner_hatch')).toList(),
+    );
+    expect(message, '2 Quests Complete! Claim your rewards.');
   });
 }

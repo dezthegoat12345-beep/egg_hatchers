@@ -15,6 +15,7 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
+import '../widgets/quest_notification_listener.dart';
 
 /// Form for creating or editing a custom egg.
 class CustomEggEditorScreen extends StatefulWidget {
@@ -372,7 +373,10 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
         final maxWidth =
             MediaQuery.sizeOf(context).width > 520 ? 520.0 : double.infinity;
 
-        return Scaffold(
+        return QuestNotificationListener(
+          game: widget.game,
+          preferences: widget.preferences,
+          child: Scaffold(
           backgroundColor: theme.scaffoldColor,
           appBar: AppBar(
             title: Text(
@@ -599,6 +603,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
               ),
             ),
           ),
+        ),
         );
       },
     );

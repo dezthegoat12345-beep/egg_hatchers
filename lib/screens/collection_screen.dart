@@ -9,6 +9,7 @@ import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
+import '../widgets/quest_notification_listener.dart';
 
 /// Shows every animal the player owns with quantities, levels, and income.
 class CollectionScreen extends StatelessWidget {
@@ -52,7 +53,10 @@ class CollectionScreen extends StatelessWidget {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
-        return Scaffold(
+        return QuestNotificationListener(
+          game: game,
+          preferences: preferences,
+          child: Scaffold(
           backgroundColor: bg.scaffoldColor,
           appBar: AppBar(
             title: const Text(
@@ -111,6 +115,7 @@ class CollectionScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       },
     );

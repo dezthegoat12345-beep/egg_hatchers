@@ -83,4 +83,26 @@ class QuestLogic {
         .where((quest) => status(quest, state) == QuestStatus.readyToClaim)
         .toList();
   }
+
+  /// Quests that just became complete and have not triggered a notification.
+  static List<Quest> newlyCompletedUnnotified(PlayerState state) {
+    return QuestData.all
+        .where(
+          (quest) =>
+              !state.questProgress.wasCompletionNotified(quest.id) &&
+              status(quest, state) == QuestStatus.readyToClaim,
+        )
+        .toList();
+  }
+
+  /// SnackBar message for one or more newly completed quests.
+  static String completionNotificationMessage(List<Quest> quests) {
+    if (quests.isEmpty) return '';
+    if (quests.length > 1) {
+      return '${quests.length} Quests Complete! Claim your rewards.';
+    }
+    final quest = quests.first;
+    return '${quest.notificationEmoji} ${quest.notificationCategoryLabel} '
+        'Quest Complete! Claim your reward.';
+  }
 }

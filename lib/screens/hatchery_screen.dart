@@ -11,6 +11,7 @@ import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/luck_panel.dart';
 import '../widgets/owned_animal_list.dart';
+import '../widgets/quest_notification_listener.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
 import 'developer_screen.dart';
@@ -89,7 +90,10 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
-        return Scaffold(
+        return QuestNotificationListener(
+          game: game,
+          preferences: preferences,
+          child: Scaffold(
           backgroundColor: bg.scaffoldColor,
           extendBody: true,
           appBar: AppBar(
@@ -222,6 +226,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
               ),
             ),
           ),
+        ),
         );
       },
     );

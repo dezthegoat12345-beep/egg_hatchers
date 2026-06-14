@@ -85,4 +85,36 @@ class Quest {
         return '🎨';
     }
   }
+
+  /// Short label for completion notifications.
+  String get notificationCategoryLabel {
+    switch (category) {
+      case QuestCategory.beginner:
+        return 'Beginner';
+      case QuestCategory.regular:
+        return 'Regular';
+      case QuestCategory.advanced:
+        return 'Advanced';
+      case QuestCategory.lateGame:
+        return 'Late Game';
+      case QuestCategory.customEgg:
+        return 'Custom Egg';
+    }
+  }
+
+  /// Emoji used in completion notifications.
+  String get notificationEmoji {
+    switch (category) {
+      case QuestCategory.beginner:
+        return '🌱';
+      case QuestCategory.regular:
+        return '⭐';
+      case QuestCategory.advanced:
+        return '💎';
+      case QuestCategory.lateGame:
+        return '👑';
+      case QuestCategory.customEgg:
+        return '🥚';
+    }
+  }
 }

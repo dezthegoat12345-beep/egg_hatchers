@@ -32,6 +32,7 @@ class GameService extends ChangeNotifier {
   PlayerState _state = GameData.startingPlayerState();
   Timer? _idleTimer;
   bool _isInitialized = false;
+  String? _pendingQuestNotification;
 
   // In-memory only — for developer testing, not saved.
   ForcedHatchMode _forcedHatchMode = ForcedHatchMode.none;
@@ -106,6 +107,7 @@ class GameService extends ChangeNotifier {
       _state = GameData.startingPlayerState();
     }
 
+    _silenceExistingQuestNotifications();
     _isInitialized = true;
     _startIdleTimer();
     notifyListeners();
@@ -145,6 +147,54 @@ class GameService extends ChangeNotifier {
       coins: _state.coins + amount,
       lifetimeCoinsEarned: _state.lifetimeCoinsEarned + amount,
       lastSavedTime: lastSavedTime ?? DateTime.now(),
+    );
+    _refreshQuestNotifications();
+  }
+
+  /// Returns and clears a pending quest completion notification message.
+  String? consumePendingQuestNotification() {
+    final message = _pendingQuestNotification;
+    _pendingQuestNotification = null;
+    return message;
+  }
+
+  void _silenceExistingQuestNotifications() {
+    final progress = _state.questProgress;
+    final toAdd = <String>[];
+    for (final quest in QuestData.all) {
+      if (progress.wasCompletionNotified(quest.id)) continue;
+      final status = QuestLogic.status(quest, _state);
+      if (status == QuestStatus.readyToClaim || status == QuestStatus.claimed) {
+        toAdd.add(quest.id);
+      }
+    }
+    if (toAdd.isEmpty) return;
+
+    _state = _state.copyWith(
+      questProgress: progress.copyWith(
+        notifiedCompletedQuestIds: [
+          ...progress.notifiedCompletedQuestIds,
+          ...toAdd,
+        ],
+      ),
+    );
+    _saveQuietly();
+  }
+
+  void _refreshQuestNotifications() {
+    final newlyCompleted = QuestLogic.newlyCompletedUnnotified(_state);
+    if (newlyCompleted.isEmpty) return;
+
+    _pendingQuestNotification =
+        QuestLogic.completionNotificationMessage(newlyCompleted);
+    final progress = _state.questProgress;
+    _state = _state.copyWith(
+      questProgress: progress.copyWith(
+        notifiedCompletedQuestIds: [
+          ...progress.notifiedCompletedQuestIds,
+          ...newlyCompleted.map((quest) => quest.id),
+        ],
+      ),
     );
   }
 
@@ -209,6 +259,7 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       lifetimeCoinsEarned: amount < 0 ? 0 : amount,
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -242,6 +293,7 @@ class GameService extends ChangeNotifier {
         totalLuckUpgrades: _state.questProgress.totalLuckUpgrades + 1,
       ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return newLevel;
@@ -249,6 +301,7 @@ class GameService extends ChangeNotifier {
 
   void setLuckLevel(int level) {
     _state = _state.copyWith(luckLevel: LuckLogic.clampLevel(level));
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -291,6 +344,7 @@ class GameService extends ChangeNotifier {
             _state.questProgress.totalCustomEggsCreated + 1,
       ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -302,6 +356,7 @@ class GameService extends ChangeNotifier {
         totalEggsHatched: _state.questProgress.totalEggsHatched + count,
       ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -325,6 +380,7 @@ class GameService extends ChangeNotifier {
         );
     }
     _state = _state.copyWith(questProgress: progress);
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -335,6 +391,7 @@ class GameService extends ChangeNotifier {
         totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
       ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -354,6 +411,7 @@ class GameService extends ChangeNotifier {
         totalCustomEggsCreated: 0,
         totalCustomEggHatches: 0,
         totalCustomTripleHatches: 0,
+        notifiedCompletedQuestIds: const [],
       ),
     );
     notifyListeners();
@@ -414,6 +472,7 @@ class GameService extends ChangeNotifier {
       isTripleHatch: false,
       isCustomEgg: customEgg != null,
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return result;
@@ -445,6 +504,7 @@ class GameService extends ChangeNotifier {
       isTripleHatch: isTripleHatchSession,
       isCustomEgg: customEgg != null,
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return results;
@@ -641,6 +701,7 @@ class GameService extends ChangeNotifier {
         totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
       ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return newLevel;
