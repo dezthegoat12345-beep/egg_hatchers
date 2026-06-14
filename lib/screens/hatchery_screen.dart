@@ -15,6 +15,7 @@ import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
+import 'custom_sprites_screen.dart';
 import 'developer_screen.dart';
 import 'quests_screen.dart';
 import 'shop_screen.dart';
@@ -106,21 +107,6 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
             elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: 'Backgrounds',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BackgroundsScreen(
-                      preferences: preferences,
-                      customSprites: customSprites,
-                    ),
-                  ),
-                ),
-                icon: const Text('🎨', style: TextStyle(fontSize: 24)),
-              ),
-            ],
           ),
           body: GameBackground(
             theme: bg,
@@ -150,52 +136,78 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                             const SizedBox(height: 14),
                             RebirthPanel(game: game, theme: bg),
                             const SizedBox(height: 18),
-                            _NavButton(
-                              label: '🛒 Shop',
+                            _HatcheryNavGrid(
                               theme: bg,
-                              color: bg.secondaryColor,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ShopScreen(
-                                    game: game,
-                                    preferences: preferences,
-                                    customSprites: customSprites,
-                                    customEggs: customEggs,
+                              items: [
+                                _HatcheryNavItem(
+                                  label: '🛒 Shop',
+                                  color: bg.secondaryColor,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ShopScreen(
+                                        game: game,
+                                        preferences: preferences,
+                                        customSprites: customSprites,
+                                        customEggs: customEggs,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _NavButton(
-                              label: '🎯 Quests',
-                              theme: bg,
-                              color: bg.panelAccentColor,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => QuestsScreen(
-                                    game: game,
-                                    preferences: preferences,
+                                _HatcheryNavItem(
+                                  label: '🎯 Quests',
+                                  color: bg.panelAccentColor,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => QuestsScreen(
+                                        game: game,
+                                        preferences: preferences,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _NavButton(
-                              label: '📚 Collection',
-                              theme: bg,
-                              color: bg.primaryColor,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CollectionScreen(
-                                    game: game,
-                                    preferences: preferences,
-                                    customSprites: customSprites,
+                                _HatcheryNavItem(
+                                  label: '📚 Collection',
+                                  color: bg.primaryColor,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CollectionScreen(
+                                        game: game,
+                                        preferences: preferences,
+                                        customSprites: customSprites,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                _HatcheryNavItem(
+                                  label: '🎨 Themes',
+                                  color: bg.appBarColor,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BackgroundsScreen(
+                                        preferences: preferences,
+                                        customSprites: customSprites,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                _HatcheryNavItem(
+                                  label: '✏️ Sprites',
+                                  color: bg.secondaryColor.withValues(alpha: 0.85),
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CustomSpritesScreen(
+                                        preferences: preferences,
+                                        customSprites: customSprites,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 22),
                             Text(
@@ -236,25 +248,88 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   }
 }
 
+class _HatcheryNavItem {
+  const _HatcheryNavItem({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+}
+
+class _HatcheryNavGrid extends StatelessWidget {
+  const _HatcheryNavGrid({
+    required this.theme,
+    required this.items,
+  });
+
+  final BackgroundTheme theme;
+  final List<_HatcheryNavItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final useTwoColumns = constraints.maxWidth >= 340;
+        final itemWidth = useTwoColumns
+            ? (constraints.maxWidth - gap) / 2
+            : constraints.maxWidth;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: itemWidth,
+                child: _NavButton(
+                  label: item.label,
+                  theme: theme,
+                  color: item.color,
+                  onTap: item.onTap,
+                  compact: useTwoColumns,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _NavButton extends StatelessWidget {
   const _NavButton({
     required this.label,
     required this.theme,
     required this.color,
     required this.onTap,
+    this.compact = false,
   });
 
   final String label;
   final BackgroundTheme theme;
   final Color color;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onTap,
-      style: GameTheme.filledButton(theme, color: color, height: 56),
-      child: Text(label, style: const TextStyle(fontSize: 20)),
+      style: GameTheme.filledButton(
+        theme,
+        color: color,
+        height: compact ? 50 : 56,
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: compact ? 16 : 18),
+      ),
     );
   }
 }

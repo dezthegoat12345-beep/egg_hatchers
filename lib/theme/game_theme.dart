@@ -194,6 +194,26 @@ class DevToolsTheme {
     );
   }
 
+  /// Compact buttons for Wrap layouts — avoids full-width minimum size overflow.
+  static ButtonStyle compactButton({Color? color, double height = 44}) {
+    final buttonColor = color ?? primaryDim;
+    return FilledButton.styleFrom(
+      backgroundColor: buttonColor.withValues(alpha: 0.2),
+      foregroundColor: text,
+      minimumSize: Size(0, height),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      side: BorderSide(color: buttonColor),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GameTheme.buttonRadius),
+      ),
+      textStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        fontFamily: 'monospace',
+      ),
+    );
+  }
+
   static TextStyle sectionTitle({double size = 20}) {
     return TextStyle(
       fontSize: size,

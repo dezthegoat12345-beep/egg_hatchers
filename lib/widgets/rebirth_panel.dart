@@ -97,23 +97,43 @@ class RebirthPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _InfoChip(
-                label: 'Income',
-                value: RebirthLogic.formatMultiplier(currentMultiplier),
-                theme: theme,
-                color: theme.primaryColor,
-              ),
-              _InfoChip(
-                label: 'Next Rebirth',
-                value: RebirthLogic.formatMultiplier(nextMultiplier),
-                theme: theme,
-                color: theme.secondaryColor,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stackChips = constraints.maxWidth < 280;
+              final chips = [
+                _InfoChip(
+                  label: 'Income',
+                  value: RebirthLogic.formatMultiplier(currentMultiplier),
+                  theme: theme,
+                  color: theme.primaryColor,
+                ),
+                _InfoChip(
+                  label: 'Next Rebirth',
+                  value: RebirthLogic.formatMultiplier(nextMultiplier),
+                  theme: theme,
+                  color: theme.secondaryColor,
+                ),
+              ];
+
+              if (stackChips) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    chips[0],
+                    const SizedBox(height: 8),
+                    chips[1],
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: chips[0]),
+                  const SizedBox(width: 8),
+                  Expanded(child: chips[1]),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           Text(
@@ -259,35 +279,33 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.cardTextSecondaryColor,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: theme.cardTextSecondaryColor,
             ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: theme.cardTextPrimaryColor,
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: theme.cardTextPrimaryColor,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

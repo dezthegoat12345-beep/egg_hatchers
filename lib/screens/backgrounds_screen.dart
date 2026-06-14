@@ -70,29 +70,39 @@ class BackgroundsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 8),
-                  FilledButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CustomSpritesScreen(
-                          preferences: preferences,
-                          customSprites: customSprites,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 360;
+                      return SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomSpritesScreen(
+                                preferences: preferences,
+                                customSprites: customSprites,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.brush_rounded),
+                          label: Text(
+                            compact
+                                ? 'Custom Sprites'
+                                : 'Custom Animal Sprites',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: GameTheme.filledButton(
+                            selected,
+                            color: selected.secondaryColor,
+                            height: 52,
+                          ),
                         ),
-                      ),
-                    ),
-                    icon: const Icon(Icons.brush_rounded),
-                    label: const Text(
-                      'Custom Animal Sprites',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: GameTheme.filledButton(
-                      selected,
-                      color: selected.secondaryColor,
-                      height: 52,
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),

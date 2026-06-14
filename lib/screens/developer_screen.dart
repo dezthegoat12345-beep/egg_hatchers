@@ -223,8 +223,10 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         foregroundColor: DevToolsTheme.text,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
           _SectionTitle('Coins'),
           Text(
@@ -591,6 +593,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           ),
         ],
       ),
+      ),
         );
       },
     );
@@ -716,6 +719,8 @@ class _DevAnimalPreview extends StatelessWidget {
             mutation.fullName(animal),
             style: DevToolsTheme.bodyText().copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -788,10 +793,13 @@ class _BigButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: DevToolsTheme.filledButton(color: color),
-      child: Text(label),
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: DevToolsTheme.filledButton(color: color),
+        child: Text(label, textAlign: TextAlign.center),
+      ),
     );
   }
 }
@@ -836,7 +844,7 @@ class _QuickButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
-      style: DevToolsTheme.filledButton(color: DevToolsTheme.primaryDim),
+      style: DevToolsTheme.compactButton(color: DevToolsTheme.primaryDim),
       child: Text(label),
     );
   }
