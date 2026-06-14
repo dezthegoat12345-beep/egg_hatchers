@@ -6,6 +6,7 @@ import 'services/custom_egg_service.dart';
 import 'services/custom_sprite_service.dart';
 import 'services/game_service.dart';
 import 'services/preferences_service.dart';
+import 'services/sprite_rating_service.dart';
 import 'widgets/game_background.dart';
 
 void main() {
@@ -26,6 +27,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
   final PreferencesService _preferences = PreferencesService();
   final CustomSpriteService _customSprites = CustomSpriteService();
   final CustomEggService _customEggs = CustomEggService();
+  final SpriteRatingService _spriteRating = SpriteRatingService();
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _preferences.addListener(_onGameChanged);
     _customSprites.addListener(_onGameChanged);
     _customEggs.addListener(_onGameChanged);
+    _spriteRating.addListener(_onGameChanged);
   }
 
   Future<void> _initialize() async {
@@ -44,6 +47,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _preferences.initialize(),
       _customSprites.initialize(),
       _customEggs.initialize(),
+      _spriteRating.initialize(),
     ]);
     if (mounted) setState(() {});
   }
@@ -67,6 +71,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _preferences.removeListener(_onGameChanged);
     _customSprites.removeListener(_onGameChanged);
     _customEggs.removeListener(_onGameChanged);
+    _spriteRating.removeListener(_onGameChanged);
     _game.dispose();
     super.dispose();
   }
@@ -75,7 +80,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _game.isInitialized &&
       _preferences.isInitialized &&
       _customSprites.isInitialized &&
-      _customEggs.isInitialized;
+      _customEggs.isInitialized &&
+      _spriteRating.isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +103,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
               preferences: _preferences,
               customSprites: _customSprites,
               customEggs: _customEggs,
+              spriteRating: _spriteRating,
             )
           : const _LoadingScreen(),
     );

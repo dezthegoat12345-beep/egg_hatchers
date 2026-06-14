@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
 import '../services/custom_sprite_service.dart';
+import '../services/game_service.dart';
 import '../services/preferences_service.dart';
+import '../services/sprite_rating_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
@@ -14,10 +16,14 @@ class BackgroundsScreen extends StatelessWidget {
     super.key,
     required this.preferences,
     required this.customSprites,
+    required this.game,
+    required this.spriteRating,
   });
 
   final PreferencesService preferences;
   final CustomSpriteService customSprites;
+  final GameService game;
+  final SpriteRatingService spriteRating;
 
   Future<void> _selectTheme(BuildContext context, BackgroundTheme theme) async {
     await preferences.setBackgroundTheme(theme);
@@ -82,6 +88,8 @@ class BackgroundsScreen extends StatelessWidget {
                               builder: (_) => CustomSpritesScreen(
                                 preferences: preferences,
                                 customSprites: customSprites,
+                                game: game,
+                                spriteRating: spriteRating,
                               ),
                             ),
                           ),

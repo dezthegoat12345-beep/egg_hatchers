@@ -403,6 +403,15 @@ class GameService extends ChangeNotifier {
     return quest.rewardCoins;
   }
 
+  /// Grants sprite rating bonus coins without affecting lifetime earnings.
+  int? grantSpriteRatingReward(int coins) {
+    if (coins <= 0) return null;
+    _state = _state.copyWith(coins: _state.coins + coins);
+    notifyListeners();
+    save();
+    return coins;
+  }
+
   void recordCustomEggCreated() {
     _state = _state.copyWith(
       questProgress: _state.questProgress.copyWith(

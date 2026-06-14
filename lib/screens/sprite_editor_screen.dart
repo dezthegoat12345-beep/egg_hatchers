@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../data/sprite_reference_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_sprite_data.dart';
 import '../services/custom_sprite_service.dart';
+import '../services/game_service.dart';
+import '../services/sprite_rating_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/sprite_rating_logic.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
 import '../widgets/pixel_sprite.dart';
@@ -17,11 +22,15 @@ class SpriteEditorScreen extends StatefulWidget {
     required this.animal,
     required this.theme,
     required this.customSprites,
+    required this.game,
+    required this.spriteRating,
   });
 
   final Animal animal;
   final BackgroundTheme theme;
   final CustomSpriteService customSprites;
+  final GameService game;
+  final SpriteRatingService spriteRating;
 
   @override
   State<SpriteEditorScreen> createState() => _SpriteEditorScreenState();
@@ -31,6 +40,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   late CustomSpriteData _data;
   int? _selectedColor = SpritePalette.colors.first;
   bool _eraserSelected = false;
+  int? _ratedScore;
+  int? _ratedReward;
 
   @override
   void initState() {
@@ -40,12 +51,147 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   }
 
   void _clear() {
-    setState(() => _data = CustomSpriteData.empty());
+    setState(() {
+      _data = CustomSpriteData.empty();
+      _ratedScore = null;
+      _ratedReward = null;
+    });
+  }
+
+  void _clearRating() {
+    setState(() {
+      _ratedScore = null;
+      _ratedReward = null;
+    });
+  }
+
+  CustomSpriteData? get _savedSprite =>
+      widget.customSprites.getSprite(widget.animal.id);
+
+  bool get _hasUnsavedChanges {
+    final saved = _savedSprite;
+    if (saved == null) return _data.hasVisiblePixels;
+    return !SpriteRatingLogic.spritesEqual(saved, _data);
+  }
+
+  void _rateSprite() {
+    final reference = SpriteReferenceData.referenceFor(widget.animal.id);
+    if (reference == null) return;
+
+    if (!_data.hasVisiblePixels) {
+      setState(() {
+        _ratedScore = 0;
+        _ratedReward = 0;
+      });
+      return;
+    }
+
+    final score = SpriteRatingLogic.displayScore(_data, reference);
+    final reward = SpriteRatingLogic.calculateReward(
+      animalId: widget.animal.id,
+      score: score,
+      currentCoins: widget.game.coins,
+    );
+
+    setState(() {
+      _ratedScore = score;
+      _ratedReward = reward;
+    });
+  }
+
+  Future<void> _claimReward() async {
+    final reference = SpriteReferenceData.referenceFor(widget.animal.id);
+    if (reference == null) return;
+
+    final saved = _savedSprite;
+    if (saved == null || !saved.hasVisiblePixels) {
+      showGameSnackBar(
+        context,
+        message: 'Save your sprite before claiming a reward.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    if (_hasUnsavedChanges) {
+      showGameSnackBar(
+        context,
+        message: 'Save your sprite before claiming a reward.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final hash = SpriteRatingLogic.computeSpriteHash(saved);
+    if (widget.spriteRating.isClaimed(widget.animal.id, hash)) {
+      showGameSnackBar(
+        context,
+        message: 'Reward already claimed for this sprite.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final score = SpriteRatingLogic.displayScore(saved, reference);
+    if (score < 1) {
+      showGameSnackBar(
+        context,
+        message: 'Score too low to claim a reward.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final reward = SpriteRatingLogic.calculateReward(
+      animalId: widget.animal.id,
+      score: score,
+      currentCoins: widget.game.coins,
+    );
+    if (reward <= 0) return;
+
+    final recorded = await widget.spriteRating.recordClaim(
+      animalId: widget.animal.id,
+      spriteHash: hash,
+      score: score,
+      rewardCoins: reward,
+    );
+    if (!recorded || !mounted) return;
+
+    final granted = widget.game.grantSpriteRatingReward(reward);
+    if (granted == null || !mounted) return;
+
+    setState(() {
+      _ratedScore = score;
+      _ratedReward = reward;
+    });
+
+    showGameSnackBar(
+      context,
+      message: 'Sprite rated! +${formatCoins(granted)} coins',
+      backgroundColor: widget.theme.secondaryColor,
+    );
   }
 
   Future<void> _save() async {
     await widget.customSprites.saveSprite(widget.animal.id, _data);
     if (!mounted) return;
+
+    final reference = SpriteReferenceData.referenceFor(widget.animal.id);
+    if (reference != null && _data.hasVisiblePixels) {
+      final score = SpriteRatingLogic.displayScore(_data, reference);
+      final reward = SpriteRatingLogic.calculateReward(
+        animalId: widget.animal.id,
+        score: score,
+        currentCoins: widget.game.coins,
+      );
+      setState(() {
+        _ratedScore = score;
+        _ratedReward = reward;
+      });
+    } else {
+      _clearRating();
+    }
+
     showGameSnackBar(
       context,
       message: '${widget.animal.name} sprite saved!',
@@ -56,7 +202,11 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   Future<void> _reset() async {
     await widget.customSprites.resetSprite(widget.animal.id);
     if (!mounted) return;
-    setState(() => _data = CustomSpriteData.empty());
+    setState(() {
+      _data = CustomSpriteData.empty();
+      _ratedScore = null;
+      _ratedReward = null;
+    });
     showGameSnackBar(
       context,
       message: '${widget.animal.name} reset to original sprite.',
@@ -68,6 +218,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     setState(() {
       _selectedColor = color;
       _eraserSelected = color == SpritePalette.transparent;
+      _ratedScore = null;
+      _ratedReward = null;
     });
   }
 
@@ -89,179 +241,360 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: GameBackground(
-        theme: theme,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth =
-                  constraints.maxWidth > 520 ? 520.0 : double.infinity;
+      body: ListenableBuilder(
+        listenable: Listenable.merge([widget.game, widget.spriteRating]),
+        builder: (context, _) {
+          return _buildBody(theme, activeColor);
+        },
+      ),
+    );
+  }
 
-              return Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          decoration: GameTheme.cardDecoration(theme),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Tap squares to draw. Choose a color below.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.cardTextSecondaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              PixelSpriteEditor(
-                                data: _data,
-                                selectedColor: activeColor,
-                                onChanged: (next) => setState(() => _data = next),
-                                canvasSize: 240,
-                                themeColor: theme.primaryColor,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          decoration: GameTheme.cardDecoration(theme),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Preview',
-                                style: GameTheme.sectionTitle(theme, size: 15),
-                              ),
-                              const SizedBox(height: 12),
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: theme.primaryColor
-                                        .withValues(alpha: 0.06),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: theme.cardBorderColor
-                                          .withValues(alpha: 0.4),
-                                    ),
-                                  ),
-                                  child: _data.hasVisiblePixels
-                                      ? PixelSprite(data: _data, size: 96)
-                                      : CustomSpritePreview(
-                                          spritePath: widget.animal.spritePath,
-                                          fallbackEmoji: widget.animal.emoji,
-                                          size: 96,
-                                          emojiFontSize: 64,
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          decoration: GameTheme.cardDecoration(theme),
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Palette',
-                                style: GameTheme.sectionTitle(theme, size: 15),
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  _PaletteSwatch(
-                                    label: 'Eraser',
-                                    color: Colors.transparent,
-                                    isSelected: _eraserSelected,
-                                    onTap: () => _selectColor(
-                                      SpritePalette.transparent,
-                                    ),
-                                    showEraserIcon: true,
-                                    theme: theme,
-                                  ),
-                                  for (var i = 0;
-                                      i < SpritePalette.colors.length;
-                                      i++)
-                                    _PaletteSwatch(
-                                      label: SpritePalette.labels[i],
-                                      color: Color(SpritePalette.colors[i]!),
-                                      isSelected: !_eraserSelected &&
-                                          _selectedColor ==
-                                              SpritePalette.colors[i],
-                                      onTap: () =>
-                                          _selectColor(SpritePalette.colors[i]),
-                                      theme: theme,
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
+  Widget _buildBody(BackgroundTheme theme, int? activeColor) {
+    final hasReference = SpriteReferenceData.hasReference(widget.animal.id);
+    final saved = _savedSprite;
+    final savedHash = saved != null
+        ? SpriteRatingLogic.computeSpriteHash(saved)
+        : null;
+    final alreadyClaimed = savedHash != null &&
+        widget.spriteRating.isClaimed(widget.animal.id, savedHash);
+    final canClaim = hasReference &&
+        _ratedScore != null &&
+        _ratedScore! >= 1 &&
+        !_hasUnsavedChanges &&
+        saved != null &&
+        saved.hasVisiblePixels &&
+        !alreadyClaimed;
+
+    return GameBackground(
+      theme: theme,
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth =
+                constraints.maxWidth > 520 ? 520.0 : double.infinity;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        decoration: GameTheme.cardDecoration(theme),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _clear,
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 48),
-                                  foregroundColor: theme.cardTextPrimaryColor,
-                                  side: BorderSide(color: theme.cardBorderColor),
-                                ),
-                                child: const Text('Clear'),
+                            Text(
+                              'Tap squares to draw. Choose a color below.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: theme.cardTextSecondaryColor,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _reset,
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 48),
-                                  foregroundColor: theme.cardTextPrimaryColor,
-                                  side: BorderSide(color: theme.cardBorderColor),
+                            const SizedBox(height: 16),
+                            PixelSpriteEditor(
+                              data: _data,
+                              selectedColor: activeColor,
+                              onChanged: (next) => setState(() {
+                                _data = next;
+                                _ratedScore = null;
+                                _ratedReward = null;
+                              }),
+                              canvasSize: 240,
+                              themeColor: theme.primaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: GameTheme.cardDecoration(theme),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Preview',
+                              style: GameTheme.sectionTitle(theme, size: 15),
+                            ),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: theme.primaryColor
+                                      .withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: theme.cardBorderColor
+                                        .withValues(alpha: 0.4),
+                                  ),
                                 ),
-                                child: const Text('Reset'),
+                                child: _data.hasVisiblePixels
+                                    ? PixelSprite(data: _data, size: 96)
+                                    : CustomSpritePreview(
+                                        spritePath: widget.animal.spritePath,
+                                        fallbackEmoji: widget.animal.emoji,
+                                        size: 96,
+                                        emojiFontSize: 64,
+                                      ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        FilledButton(
-                          onPressed: _save,
-                          style: GameTheme.filledButton(
-                            theme,
-                            color: theme.primaryColor,
-                            height: 52,
-                          ),
-                          child: const Text(
-                            'Save Sprite',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 16),
+                      _RatingCard(
+                        theme: theme,
+                        hasReference: hasReference,
+                        ratedScore: _ratedScore,
+                        ratedReward: _ratedReward,
+                        alreadyClaimed: alreadyClaimed,
+                        hasUnsavedChanges: _hasUnsavedChanges,
+                        canClaim: canClaim,
+                        onRate: _rateSprite,
+                        onClaim: _claimReward,
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: GameTheme.cardDecoration(theme),
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Palette',
+                              style: GameTheme.sectionTitle(theme, size: 15),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _PaletteSwatch(
+                                  label: 'Eraser',
+                                  color: Colors.transparent,
+                                  isSelected: _eraserSelected,
+                                  onTap: () => _selectColor(
+                                    SpritePalette.transparent,
+                                  ),
+                                  showEraserIcon: true,
+                                  theme: theme,
+                                ),
+                                for (var i = 0;
+                                    i < SpritePalette.colors.length;
+                                    i++)
+                                  _PaletteSwatch(
+                                    label: SpritePalette.labels[i],
+                                    color: Color(SpritePalette.colors[i]!),
+                                    isSelected: !_eraserSelected &&
+                                        _selectedColor ==
+                                            SpritePalette.colors[i],
+                                    onTap: () =>
+                                        _selectColor(SpritePalette.colors[i]),
+                                    theme: theme,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _clear,
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                                foregroundColor: theme.cardTextPrimaryColor,
+                                side: BorderSide(color: theme.cardBorderColor),
+                              ),
+                              child: const Text('Clear'),
                             ),
                           ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _reset,
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                                foregroundColor: theme.cardTextPrimaryColor,
+                                side: BorderSide(color: theme.cardBorderColor),
+                              ),
+                              child: const Text('Reset'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      FilledButton(
+                        onPressed: _save,
+                        style: GameTheme.filledButton(
+                          theme,
+                          color: theme.primaryColor,
+                          height: 52,
                         ),
-                      ],
-                    ),
+                        child: const Text(
+                          'Save Sprite',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
+      ),
+    );
+  }
+}
+
+class _RatingCard extends StatelessWidget {
+  const _RatingCard({
+    required this.theme,
+    required this.hasReference,
+    required this.ratedScore,
+    required this.ratedReward,
+    required this.alreadyClaimed,
+    required this.hasUnsavedChanges,
+    required this.canClaim,
+    required this.onRate,
+    required this.onClaim,
+  });
+
+  final BackgroundTheme theme;
+  final bool hasReference;
+  final int? ratedScore;
+  final int? ratedReward;
+  final bool alreadyClaimed;
+  final bool hasUnsavedChanges;
+  final bool canClaim;
+  final VoidCallback onRate;
+  final VoidCallback onClaim;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: GameTheme.cardDecoration(theme),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Rate Sprite (Beta)',
+            style: GameTheme.sectionTitle(theme, size: 15),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Local similarity check. This is not online AI and does not '
+            'detect inappropriate drawings.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.35,
+              color: theme.cardTextSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (!hasReference) ...[
+            Text(
+              'Rating is available for animals with built-in sprite references.',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.cardTextSecondaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: null,
+              style: GameTheme.filledButton(
+                theme,
+                color: theme.disabledColor,
+                height: 48,
+              ),
+              child: const Text('Rate Sprite (Beta)'),
+            ),
+          ] else ...[
+            if (ratedScore != null) ...[
+              Text(
+                'Score: $ratedScore / 10',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.cardTextPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                SpriteRatingLogic.ratingMessage(ratedScore!),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+              if (ratedReward != null && ratedScore! >= 1) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Reward: +${formatCoins(ratedReward!)} coins',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: theme.primaryColor,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+            ],
+            if (alreadyClaimed)
+              Text(
+                'Reward already claimed for this sprite.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.secondaryColor,
+                ),
+              )
+            else if (hasUnsavedChanges && ratedScore != null && ratedScore! >= 1)
+              Text(
+                'Save your sprite before claiming a reward.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: onRate,
+              style: GameTheme.filledButton(
+                theme,
+                color: theme.panelAccentColor,
+                height: 48,
+              ),
+              child: const Text('Rate Sprite (Beta)'),
+            ),
+            if (ratedScore != null && ratedScore! >= 1) ...[
+              const SizedBox(height: 10),
+              FilledButton(
+                onPressed: canClaim ? onClaim : null,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: canClaim ? theme.secondaryColor : theme.disabledColor,
+                  height: 48,
+                ),
+                child: const Text('Claim Reward'),
+              ),
+            ],
+          ],
+        ],
       ),
     );
   }
