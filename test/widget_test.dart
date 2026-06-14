@@ -10,7 +10,10 @@ import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/services/developer_tools_preferences.dart';
 import 'package:egg_hatchers/services/game_service.dart';
+import 'package:egg_hatchers/data/quest_data.dart';
+import 'package:egg_hatchers/models/quest_progress.dart';
 import 'package:egg_hatchers/utils/luck_logic.dart';
+import 'package:egg_hatchers/utils/quest_logic.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +73,20 @@ void main() {
     expect(restored.ownedAnimals.first.quantity, 2);
     expect(restored.ownedAnimals.first.level, 3);
     expect(restored.ownedAnimals.first.mutationId, 'golden');
+    expect(restored.questProgress.totalEggsHatched, 0);
+    expect(restored.questProgress.claimedQuestIds, isEmpty);
+  });
+
+  test('old saves without questProgress default stats to zero', () {
+    final restored = PlayerState.fromJson({
+      'coins': 500,
+      'ownedAnimals': [],
+      'lastSavedTime': '2025-01-01T00:00:00.000',
+      'lifetimeCoinsEarned': 600,
+      'luckLevel': 2,
+    });
+    expect(restored.questProgress.totalEggsHatched, 0);
+    expect(restored.questProgress.claimedQuestIds, isEmpty);
   });
 
   test('old saves without lifetimeCoinsEarned default to current coins', () {
@@ -709,5 +726,73 @@ void main() {
     expect(game.ownedAnimals, isNotEmpty);
 
     game.dispose();
+  });
+
+  test('hatching increments quest egg stats', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    final basicEgg = GameData.eggs.first;
+    game.buyEgg(basicEgg);
+    game.hatchEgg(basicEgg);
+
+    expect(game.questProgress.totalEggsHatched, 1);
+    expect(game.questProgress.totalSingleHatches, 1);
+    expect(game.questProgress.totalTripleHatches, 0);
+
+    game.dispose();
+  });
+
+  test('claiming quest reward adds coins without lifetime earnings', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.devAddEggsHatched(1);
+    final lifetimeBefore = game.lifetimeCoinsEarned;
+    final coinsBefore = game.coins;
+
+    final reward = game.claimQuest('beginner_hatch_1');
+
+    expect(reward, 100);
+    expect(game.coins, coinsBefore + 100);
+    expect(game.lifetimeCoinsEarned, lifetimeBefore);
+    expect(game.questProgress.isQuestClaimed('beginner_hatch_1'), isTrue);
+    expect(game.claimQuest('beginner_hatch_1'), isNull);
+
+    game.dispose();
+  });
+
+  test('luck level quest can complete from current luck without retroactive upgrades',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setLuckLevel(2);
+    final quest = QuestData.all.firstWhere((q) => q.id == 'beginner_luck_2');
+
+    expect(QuestLogic.isComplete(quest, game.state), isTrue);
+
+    game.dispose();
+  });
+
+  test('claimed quests persist through player state serialization', () {
+    final state = PlayerState(
+      coins: 1000,
+      ownedAnimals: const [],
+      lastSavedTime: DateTime(2025, 1, 1),
+      lifetimeCoinsEarned: 5000,
+      questProgress: QuestProgress.initial().copyWith(
+        totalEggsHatched: 5,
+        claimedQuestIds: const ['beginner_hatch_1', 'beginner_hatch_3'],
+      ),
+    );
+
+    final restored = PlayerState.fromJson(state.toJson());
+    expect(restored.questProgress.totalEggsHatched, 5);
+    expect(restored.questProgress.claimedQuestIds,
+        containsAll(['beginner_hatch_1', 'beginner_hatch_3']));
   });
 }

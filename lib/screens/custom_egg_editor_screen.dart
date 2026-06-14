@@ -341,6 +341,9 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
     );
 
     await widget.customEggs.saveEgg(egg);
+    if (!_isEditing) {
+      widget.game.recordCustomEggCreated();
+    }
     if (!mounted) return;
 
     showGameSnackBar(

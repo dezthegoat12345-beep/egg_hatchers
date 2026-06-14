@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+
+import '../data/quest_data.dart';
+import '../models/background_theme.dart';
+import '../models/quest.dart';
+import '../services/game_service.dart';
+import '../services/preferences_service.dart';
+import '../theme/game_theme.dart';
+import '../utils/quest_logic.dart';
+import '../utils/snackbar_utils.dart';
+import '../widgets/coin_header.dart';
+import '../widgets/game_background.dart';
+import '../widgets/quest_card.dart';
+import '../utils/format_utils.dart';
+
+/// Shows quest categories, progress, and claimable coin rewards.
+class QuestsScreen extends StatelessWidget {
+  const QuestsScreen({
+    super.key,
+    required this.game,
+    required this.preferences,
+  });
+
+  final GameService game;
+  final PreferencesService preferences;
+
+  void _claimQuest(BuildContext context, Quest quest) {
+    final reward = game.claimQuest(quest.id);
+    if (reward != null && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Quest complete! +${formatCoins(reward)} coins',
+        backgroundColor: preferences.selectedTheme.secondaryColor,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([game, preferences]),
+      builder: (context, _) {
+        final bg = preferences.selectedTheme;
+        final readyCount = QuestLogic.readyToClaimCount(game.state);
+
+        return Scaffold(
+          backgroundColor: bg.scaffoldColor,
+          appBar: AppBar(
+            title: const Text(
+              '🎯 Quests',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+            ),
+            centerTitle: true,
+            backgroundColor: bg.appBarColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          body: GameBackground(
+            theme: bg,
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth =
+                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
+
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            CoinHeader(
+                              coins: game.coins,
+                              coinsPerSecond: game.coinsPerSecond,
+                              lifetimeCoinsEarned: game.lifetimeCoinsEarned,
+                              theme: bg,
+                            ),
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: GameTheme.cardDecoration(bg),
+                              child: Row(
+                                children: [
+                                  const Text('🗺️', style: TextStyle(fontSize: 28)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Goals & Rewards',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.bold,
+                                            color: bg.cardTextPrimaryColor,
+                                          ),
+                                        ),
+                                        Text(
+                                          readyCount > 0
+                                              ? '$readyCount quest${readyCount == 1 ? '' : 's'} ready to claim!'
+                                              : 'Complete quests to earn bonus coins.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: bg.cardTextSecondaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: ListView(
+                                children: [
+                                  for (final category
+                                      in QuestData.categoryOrder) ...[
+                                    _CategoryHeader(
+                                      category: category,
+                                      theme: bg,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    for (final quest
+                                        in QuestData.forCategory(category)) ...[
+                                      QuestCard(
+                                        quest: quest,
+                                        game: game,
+                                        theme: bg,
+                                        onClaim: () =>
+                                            _claimQuest(context, quest),
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ],
+                                    const SizedBox(height: 8),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({
+    required this.category,
+    required this.theme,
+  });
+
+  final QuestCategory category;
+  final BackgroundTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final sample = QuestData.forCategory(category).first;
+    return Text(
+      '${sample.categoryEmoji} ${sample.categoryLabel}',
+      style: GameTheme.sectionTitle(theme, size: 16),
+    );
+  }
+}

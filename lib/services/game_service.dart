@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../data/game_data.dart';
+import '../data/quest_data.dart';
 import '../models/animal.dart';
 import '../models/custom_egg.dart';
 import '../models/egg.dart';
@@ -14,6 +15,9 @@ import '../utils/luck_logic.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../models/player_state.dart';
+import '../models/quest.dart';
+import '../models/quest_progress.dart';
+import '../utils/quest_logic.dart';
 import 'save_service.dart';
 
 /// Central game logic: coins, hatching, mutations, idle income, and saving.
@@ -69,6 +73,7 @@ class GameService extends ChangeNotifier {
   int get coins => _state.coins;
   int get lifetimeCoinsEarned => _state.lifetimeCoinsEarned;
   int get luckLevel => _state.luckLevel;
+  QuestProgress get questProgress => _state.questProgress;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
   List<OwnedAnimal> get normalAnimals =>
@@ -233,6 +238,9 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       coins: _state.coins - cost,
       luckLevel: newLevel,
+      questProgress: _state.questProgress.copyWith(
+        totalLuckUpgrades: _state.questProgress.totalLuckUpgrades + 1,
+      ),
     );
     notifyListeners();
     save();
@@ -248,6 +256,117 @@ class GameService extends ChangeNotifier {
   void resetLuckLevel() => setLuckLevel(LuckLogic.minLevel);
 
   void maxLuckLevel() => setLuckLevel(LuckLogic.maxLevel);
+
+  /// Claim a completed quest reward. Returns coins granted, or null on failure.
+  int? claimQuest(String questId) {
+    Quest? quest;
+    for (final candidate in QuestData.all) {
+      if (candidate.id == questId) {
+        quest = candidate;
+        break;
+      }
+    }
+    if (quest == null) return null;
+    if (_state.questProgress.isQuestClaimed(questId)) return null;
+    if (!QuestLogic.isComplete(quest, _state)) return null;
+
+    _state = _state.copyWith(
+      coins: _state.coins + quest.rewardCoins,
+      questProgress: _state.questProgress.copyWith(
+        claimedQuestIds: [
+          ..._state.questProgress.claimedQuestIds,
+          questId,
+        ],
+      ),
+    );
+    notifyListeners();
+    save();
+    return quest.rewardCoins;
+  }
+
+  void recordCustomEggCreated() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalCustomEggsCreated:
+            _state.questProgress.totalCustomEggsCreated + 1,
+      ),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devAddEggsHatched(int count) {
+    if (count <= 0) return;
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalEggsHatched: _state.questProgress.totalEggsHatched + count,
+      ),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devAddMutationHatched({String mutationId = 'golden'}) {
+    var progress = _state.questProgress.copyWith(
+      totalMutationsHatched: _state.questProgress.totalMutationsHatched + 1,
+    );
+    switch (mutationId) {
+      case 'golden':
+        progress = progress.copyWith(
+          totalGoldenHatched: progress.totalGoldenHatched + 1,
+        );
+      case 'rainbow':
+        progress = progress.copyWith(
+          totalRainbowHatched: progress.totalRainbowHatched + 1,
+        );
+      case 'shadow':
+        progress = progress.copyWith(
+          totalShadowHatched: progress.totalShadowHatched + 1,
+        );
+    }
+    _state = _state.copyWith(questProgress: progress);
+    notifyListeners();
+    save();
+  }
+
+  void devAddAnimalUpgrade() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
+      ),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devResetQuestStats() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalEggsHatched: 0,
+        totalSingleHatches: 0,
+        totalTripleHatches: 0,
+        totalMutationsHatched: 0,
+        totalGoldenHatched: 0,
+        totalRainbowHatched: 0,
+        totalShadowHatched: 0,
+        totalAnimalUpgrades: 0,
+        totalLuckUpgrades: 0,
+        totalCustomEggsCreated: 0,
+        totalCustomEggHatches: 0,
+        totalCustomTripleHatches: 0,
+      ),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devClearClaimedQuests() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(claimedQuestIds: const []),
+    );
+    notifyListeners();
+    save();
+  }
 
   void setForcedNextHatch(String animalId, String mutationId) {
     _forcedHatchQueue = [
@@ -290,6 +409,11 @@ class GameService extends ChangeNotifier {
       slotIndex: 0,
       isTripleHatchSession: false,
     );
+    _recordHatchSession(
+      results: [result],
+      isTripleHatch: false,
+      isCustomEgg: customEgg != null,
+    );
     notifyListeners();
     save();
     return result;
@@ -316,6 +440,11 @@ class GameService extends ChangeNotifier {
       );
     }
 
+    _recordHatchSession(
+      results: results,
+      isTripleHatch: isTripleHatchSession,
+      isCustomEgg: customEgg != null,
+    );
     notifyListeners();
     save();
     return results;
@@ -416,6 +545,60 @@ class GameService extends ChangeNotifier {
     return HatchResult(animal: animal, mutation: mutation);
   }
 
+  void _recordHatchSession({
+    required List<HatchResult> results,
+    required bool isTripleHatch,
+    required bool isCustomEgg,
+  }) {
+    if (results.isEmpty) return;
+
+    var progress = _state.questProgress;
+    progress = progress.copyWith(
+      totalEggsHatched: progress.totalEggsHatched + results.length,
+      totalSingleHatches: isTripleHatch
+          ? progress.totalSingleHatches
+          : progress.totalSingleHatches + 1,
+      totalTripleHatches: isTripleHatch
+          ? progress.totalTripleHatches + 1
+          : progress.totalTripleHatches,
+    );
+
+    if (isCustomEgg) {
+      progress = progress.copyWith(
+        totalCustomEggHatches:
+            progress.totalCustomEggHatches + results.length,
+      );
+      if (isTripleHatch) {
+        progress = progress.copyWith(
+          totalCustomTripleHatches: progress.totalCustomTripleHatches + 1,
+        );
+      }
+    }
+
+    for (final result in results) {
+      if (result.mutation.isNormal) continue;
+      progress = progress.copyWith(
+        totalMutationsHatched: progress.totalMutationsHatched + 1,
+      );
+      switch (result.mutation.id) {
+        case 'golden':
+          progress = progress.copyWith(
+            totalGoldenHatched: progress.totalGoldenHatched + 1,
+          );
+        case 'rainbow':
+          progress = progress.copyWith(
+            totalRainbowHatched: progress.totalRainbowHatched + 1,
+          );
+        case 'shadow':
+          progress = progress.copyWith(
+            totalShadowHatched: progress.totalShadowHatched + 1,
+          );
+      }
+    }
+
+    _state = _state.copyWith(questProgress: progress);
+  }
+
   OwnedAnimal? ownedAnimal(String animalId, {String mutationId = 'none'}) {
     for (final owned in _state.ownedAnimals) {
       if (owned.animalId == animalId && owned.mutationId == mutationId) {
@@ -454,6 +637,9 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       coins: _state.coins - cost,
       ownedAnimals: updatedAnimals,
+      questProgress: _state.questProgress.copyWith(
+        totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
+      ),
     );
     notifyListeners();
     save();

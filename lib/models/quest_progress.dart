@@ -1,0 +1,111 @@
+/// Tracks quest-related stats and which quests have been claimed.
+class QuestProgress {
+  const QuestProgress({
+    this.totalEggsHatched = 0,
+    this.totalSingleHatches = 0,
+    this.totalTripleHatches = 0,
+    this.totalMutationsHatched = 0,
+    this.totalGoldenHatched = 0,
+    this.totalRainbowHatched = 0,
+    this.totalShadowHatched = 0,
+    this.totalAnimalUpgrades = 0,
+    this.totalLuckUpgrades = 0,
+    this.totalCustomEggsCreated = 0,
+    this.totalCustomEggHatches = 0,
+    this.totalCustomTripleHatches = 0,
+    this.claimedQuestIds = const [],
+  });
+
+  final int totalEggsHatched;
+  final int totalSingleHatches;
+  final int totalTripleHatches;
+  final int totalMutationsHatched;
+  final int totalGoldenHatched;
+  final int totalRainbowHatched;
+  final int totalShadowHatched;
+  final int totalAnimalUpgrades;
+  final int totalLuckUpgrades;
+  final int totalCustomEggsCreated;
+  final int totalCustomEggHatches;
+  final int totalCustomTripleHatches;
+  final List<String> claimedQuestIds;
+
+  static QuestProgress initial() => const QuestProgress();
+
+  bool isQuestClaimed(String questId) => claimedQuestIds.contains(questId);
+
+  QuestProgress copyWith({
+    int? totalEggsHatched,
+    int? totalSingleHatches,
+    int? totalTripleHatches,
+    int? totalMutationsHatched,
+    int? totalGoldenHatched,
+    int? totalRainbowHatched,
+    int? totalShadowHatched,
+    int? totalAnimalUpgrades,
+    int? totalLuckUpgrades,
+    int? totalCustomEggsCreated,
+    int? totalCustomEggHatches,
+    int? totalCustomTripleHatches,
+    List<String>? claimedQuestIds,
+  }) {
+    return QuestProgress(
+      totalEggsHatched: totalEggsHatched ?? this.totalEggsHatched,
+      totalSingleHatches: totalSingleHatches ?? this.totalSingleHatches,
+      totalTripleHatches: totalTripleHatches ?? this.totalTripleHatches,
+      totalMutationsHatched:
+          totalMutationsHatched ?? this.totalMutationsHatched,
+      totalGoldenHatched: totalGoldenHatched ?? this.totalGoldenHatched,
+      totalRainbowHatched: totalRainbowHatched ?? this.totalRainbowHatched,
+      totalShadowHatched: totalShadowHatched ?? this.totalShadowHatched,
+      totalAnimalUpgrades: totalAnimalUpgrades ?? this.totalAnimalUpgrades,
+      totalLuckUpgrades: totalLuckUpgrades ?? this.totalLuckUpgrades,
+      totalCustomEggsCreated:
+          totalCustomEggsCreated ?? this.totalCustomEggsCreated,
+      totalCustomEggHatches:
+          totalCustomEggHatches ?? this.totalCustomEggHatches,
+      totalCustomTripleHatches:
+          totalCustomTripleHatches ?? this.totalCustomTripleHatches,
+      claimedQuestIds: claimedQuestIds ?? this.claimedQuestIds,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'totalEggsHatched': totalEggsHatched,
+        'totalSingleHatches': totalSingleHatches,
+        'totalTripleHatches': totalTripleHatches,
+        'totalMutationsHatched': totalMutationsHatched,
+        'totalGoldenHatched': totalGoldenHatched,
+        'totalRainbowHatched': totalRainbowHatched,
+        'totalShadowHatched': totalShadowHatched,
+        'totalAnimalUpgrades': totalAnimalUpgrades,
+        'totalLuckUpgrades': totalLuckUpgrades,
+        'totalCustomEggsCreated': totalCustomEggsCreated,
+        'totalCustomEggHatches': totalCustomEggHatches,
+        'totalCustomTripleHatches': totalCustomTripleHatches,
+        'claimedQuestIds': claimedQuestIds,
+      };
+
+  factory QuestProgress.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return QuestProgress.initial();
+
+    return QuestProgress(
+      totalEggsHatched: json['totalEggsHatched'] as int? ?? 0,
+      totalSingleHatches: json['totalSingleHatches'] as int? ?? 0,
+      totalTripleHatches: json['totalTripleHatches'] as int? ?? 0,
+      totalMutationsHatched: json['totalMutationsHatched'] as int? ?? 0,
+      totalGoldenHatched: json['totalGoldenHatched'] as int? ?? 0,
+      totalRainbowHatched: json['totalRainbowHatched'] as int? ?? 0,
+      totalShadowHatched: json['totalShadowHatched'] as int? ?? 0,
+      totalAnimalUpgrades: json['totalAnimalUpgrades'] as int? ?? 0,
+      totalLuckUpgrades: json['totalLuckUpgrades'] as int? ?? 0,
+      totalCustomEggsCreated: json['totalCustomEggsCreated'] as int? ?? 0,
+      totalCustomEggHatches: json['totalCustomEggHatches'] as int? ?? 0,
+      totalCustomTripleHatches: json['totalCustomTripleHatches'] as int? ?? 0,
+      claimedQuestIds: (json['claimedQuestIds'] as List<dynamic>?)
+              ?.map((id) => id as String)
+              .toList() ??
+          const [],
+    );
+  }
+}

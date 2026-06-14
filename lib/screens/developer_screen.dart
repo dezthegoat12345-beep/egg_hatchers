@@ -418,6 +418,53 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             ],
           ),
           const SizedBox(height: 32),
+          _SectionTitle('Quest Testing'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+10 eggs hatched',
+                onPressed: () {
+                  game.devAddEggsHatched(10);
+                  _showMessage('Added 10 to eggs hatched stat.');
+                },
+              ),
+              _QuickButton(
+                label: '+1 mutation',
+                onPressed: () {
+                  game.devAddMutationHatched();
+                  _showMessage('Added 1 mutation hatched stat.');
+                },
+              ),
+              _QuickButton(
+                label: '+1 animal upgrade',
+                onPressed: () {
+                  game.devAddAnimalUpgrade();
+                  _showMessage('Added 1 animal upgrade stat.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Reset quest stats',
+            color: DevToolsTheme.warning,
+            onPressed: () {
+              game.devResetQuestStats();
+              _showMessage('Quest stats reset to 0.');
+            },
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Clear claimed quests',
+            color: DevToolsTheme.warning,
+            onPressed: () {
+              game.devClearClaimedQuests();
+              _showMessage('Claimed quests cleared.');
+            },
+          ),
+          const SizedBox(height: 32),
           _SectionTitle('Force Next Hatch'),
           Container(
             width: double.infinity,

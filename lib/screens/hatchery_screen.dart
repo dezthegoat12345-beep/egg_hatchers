@@ -14,6 +14,7 @@ import '../widgets/owned_animal_list.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
 import 'developer_screen.dart';
+import 'quests_screen.dart';
 import 'shop_screen.dart';
 
 /// Main home screen: coins, income, owned animals, and navigation.
@@ -154,6 +155,21 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                     preferences: preferences,
                                     customSprites: customSprites,
                                     customEggs: customEggs,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _NavButton(
+                              label: '🎯 Quests',
+                              theme: bg,
+                              color: bg.panelAccentColor,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => QuestsScreen(
+                                    game: game,
+                                    preferences: preferences,
                                   ),
                                 ),
                               ),

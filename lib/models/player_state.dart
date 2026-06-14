@@ -1,4 +1,5 @@
 import 'owned_animal.dart';
+import 'quest_progress.dart';
 
 /// All progress the player has made in the game.
 class PlayerState {
@@ -8,6 +9,7 @@ class PlayerState {
     required this.lastSavedTime,
     required this.lifetimeCoinsEarned,
     this.luckLevel = 1,
+    this.questProgress = const QuestProgress(),
   });
 
   final int coins;
@@ -15,6 +17,7 @@ class PlayerState {
   final DateTime lastSavedTime;
   final int lifetimeCoinsEarned;
   final int luckLevel;
+  final QuestProgress questProgress;
 
   static PlayerState initial() {
     return PlayerState(
@@ -23,6 +26,7 @@ class PlayerState {
       lastSavedTime: DateTime.now(),
       lifetimeCoinsEarned: 0,
       luckLevel: 1,
+      questProgress: QuestProgress.initial(),
     );
   }
 
@@ -32,6 +36,7 @@ class PlayerState {
     DateTime? lastSavedTime,
     int? lifetimeCoinsEarned,
     int? luckLevel,
+    QuestProgress? questProgress,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -39,6 +44,7 @@ class PlayerState {
       lastSavedTime: lastSavedTime ?? this.lastSavedTime,
       lifetimeCoinsEarned: lifetimeCoinsEarned ?? this.lifetimeCoinsEarned,
       luckLevel: luckLevel ?? this.luckLevel,
+      questProgress: questProgress ?? this.questProgress,
     );
   }
 
@@ -48,6 +54,7 @@ class PlayerState {
         'lastSavedTime': lastSavedTime.toIso8601String(),
         'lifetimeCoinsEarned': lifetimeCoinsEarned,
         'luckLevel': luckLevel,
+        'questProgress': questProgress.toJson(),
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -61,6 +68,9 @@ class PlayerState {
       // Older saves may not have lifetime coins — use current coins as estimate.
       lifetimeCoinsEarned: json['lifetimeCoinsEarned'] as int? ?? coins,
       luckLevel: json['luckLevel'] as int? ?? 1,
+      questProgress: QuestProgress.fromJson(
+        json['questProgress'] as Map<String, dynamic>?,
+      ),
     );
   }
 }
