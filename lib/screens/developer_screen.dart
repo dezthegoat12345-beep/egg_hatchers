@@ -14,6 +14,9 @@ import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_sprite.dart';
 
+/// Max content width for the phone-sized dev tools column on wide screens.
+const double _kDevToolsMaxContentWidth = 430;
+
 /// Hidden developer tools — always green-on-black, never follows player theme.
 class DeveloperScreen extends StatefulWidget {
   const DeveloperScreen({
@@ -224,10 +227,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _kDevToolsMaxContentWidth),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              children: [
           _SectionTitle('Coins'),
           Text(
             'Current: ${game.coins} coins',
@@ -591,8 +597,10 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             color: DevToolsTheme.danger,
             onPressed: _clearForcedHatch,
           ),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
       ),
         );
       },
