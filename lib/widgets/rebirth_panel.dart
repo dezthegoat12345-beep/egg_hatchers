@@ -196,7 +196,8 @@ class _RebirthConfirmDialog extends StatelessWidget {
           children: [
             const Text(
               'Rebirth resets your coins, animals, upgrades, Luck, and quest '
-              'progress, but gives a permanent +25% income boost.',
+              'progress, but gives a permanent +25% income boost. Secret '
+              'reward animals are kept.',
               style: TextStyle(height: 1.4),
             ),
             const SizedBox(height: 16),

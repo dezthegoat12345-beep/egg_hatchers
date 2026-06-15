@@ -32,8 +32,13 @@ class CollectionScreen extends StatelessWidget {
     String animalId,
     String mutationId,
     String displayName,
+    bool isProtected,
   ) {
-    final newLevel = game.upgradeAnimal(animalId, mutationId);
+    final newLevel = game.upgradeAnimal(
+      animalId,
+      mutationId,
+      isProtected: isProtected,
+    );
     if (newLevel != null) {
       showGameSnackBar(
         context,
@@ -54,11 +59,22 @@ class CollectionScreen extends StatelessWidget {
     String animalId,
     String mutationId,
     String displayName,
+    bool isProtected,
   ) {
+    if (isProtected) {
+      showGameSnackBar(
+        context,
+        message: 'Secret reward animals cannot be sold.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
     final coins = game.sellOwnedAnimal(
       animalId,
       mutationId,
       quantity: 1,
+      isProtected: isProtected,
     );
     if (coins != null && context.mounted) {
       showGameSnackBar(
@@ -76,7 +92,17 @@ class CollectionScreen extends StatelessWidget {
     String displayName,
     int quantity,
     int totalCoins,
+    bool isProtected,
   ) async {
+    if (isProtected) {
+      showGameSnackBar(
+        context,
+        message: 'Secret reward animals cannot be sold.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
     final theme = preferences.selectedTheme;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -126,6 +152,7 @@ class CollectionScreen extends StatelessWidget {
       animalId,
       mutationId,
       quantity: quantity,
+      isProtected: isProtected,
     );
     if (coins != null && context.mounted) {
       showGameSnackBar(
@@ -181,28 +208,32 @@ class CollectionScreen extends StatelessWidget {
                             separatorHeight: 12,
                             customSprites: customSprites,
                             showSellButtons: true,
-                            onUpgrade: (animalId, mutationId, name) =>
+                            onUpgrade: (animalId, mutationId, name, isProtected) =>
                                 _handleUpgrade(
                               context,
                               animalId,
                               mutationId,
                               name,
+                              isProtected,
                             ),
-                            onSellOne: (animalId, mutationId, name, _) =>
+                            onSellOne: (animalId, mutationId, name, _, isProtected) =>
                                 _handleSellOne(
                               context,
                               animalId,
                               mutationId,
                               name,
+                              isProtected,
                             ),
-                            onSellAll: (animalId, mutationId, name, qty, total) =>
-                                _handleSellAll(
+                            onSellAll:
+                                (animalId, mutationId, name, qty, total, isProtected) =>
+                                    _handleSellAll(
                               context,
                               animalId,
                               mutationId,
                               name,
                               qty,
                               total,
+                              isProtected,
                             ),
                           ),
                   ),

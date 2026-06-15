@@ -77,8 +77,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     String animalId,
     String mutationId,
     String displayName,
+    bool isProtected,
   ) {
-    final newLevel = game.upgradeAnimal(animalId, mutationId);
+    final newLevel = game.upgradeAnimal(
+      animalId,
+      mutationId,
+      isProtected: isProtected,
+    );
     if (newLevel != null) {
       showGameSnackBar(
         context,
@@ -231,12 +236,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                       theme: bg,
                                       compact: true,
                                       customSprites: customSprites,
-                                      onUpgrade: (animalId, mutationId, name) =>
+                                      onUpgrade: (animalId, mutationId, name, isProtected) =>
                                           _handleUpgrade(
                                         context,
                                         animalId,
                                         mutationId,
                                         name,
+                                        isProtected,
                                       ),
                                     ),
                             ),

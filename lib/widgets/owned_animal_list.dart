@@ -30,12 +30,14 @@ class OwnedAnimalList extends StatelessWidget {
     String animalId,
     String mutationId,
     String displayName,
+    bool isProtected,
   ) onUpgrade;
   final void Function(
     String animalId,
     String mutationId,
     String displayName,
     int coins,
+    bool isProtected,
   )? onSellOne;
   final void Function(
     String animalId,
@@ -43,6 +45,7 @@ class OwnedAnimalList extends StatelessWidget {
     String displayName,
     int quantity,
     int totalCoins,
+    bool isProtected,
   )? onSellAll;
   final bool showSellButtons;
   final bool compact;
@@ -106,6 +109,7 @@ class OwnedAnimalList extends StatelessWidget {
     final mutation = GameData.mutationById(owned.mutationId) ??
         GameData.mutations.first;
     final displayName = mutation.fullName(animal);
+    final canSell = showSellButtons && !owned.isProtected;
 
     return AnimalCard(
       animal: animal,
@@ -116,22 +120,33 @@ class OwnedAnimalList extends StatelessWidget {
       typeIncome: GameService.incomeFor(animal, owned),
       upgradeCost: GameService.upgradeCostFor(animal, owned),
       showUpgradeButton: true,
-      canAffordUpgrade:
-          game.canAffordUpgrade(animal.id, owned.mutationId),
-      onUpgrade: () => onUpgrade(animal.id, owned.mutationId, displayName),
-      showSellButtons: showSellButtons,
-      sellValue: showSellButtons
-          ? GameService.sellValueFor(animal, owned)
-          : null,
-      onSellOne: showSellButtons && onSellOne != null
+      canAffordUpgrade: game.canAffordUpgrade(
+        animal.id,
+        owned.mutationId,
+        isProtected: owned.isProtected,
+      ),
+      onUpgrade: () => onUpgrade(
+        animal.id,
+        owned.mutationId,
+        displayName,
+        owned.isProtected,
+      ),
+      showSellButtons: canSell,
+      isProtected: owned.isProtected,
+      sellValue: canSell ? GameService.sellValueFor(animal, owned) : null,
+      onSellOne: canSell && onSellOne != null
           ? () {
               final coins = GameService.sellValueFor(animal, owned);
-              onSellOne!(animal.id, owned.mutationId, displayName, coins);
+              onSellOne!(
+                animal.id,
+                owned.mutationId,
+                displayName,
+                coins,
+                owned.isProtected,
+              );
             }
           : null,
-      onSellAll: showSellButtons &&
-              owned.quantity > 1 &&
-              onSellAll != null
+      onSellAll: canSell && owned.quantity > 1 && onSellAll != null
           ? () {
               final unit = GameService.sellValueFor(animal, owned);
               onSellAll!(
@@ -140,6 +155,7 @@ class OwnedAnimalList extends StatelessWidget {
                 displayName,
                 owned.quantity,
                 unit * owned.quantity,
+                owned.isProtected,
               );
             }
           : null,

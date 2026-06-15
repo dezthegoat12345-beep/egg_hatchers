@@ -29,6 +29,7 @@ class AnimalCard extends StatelessWidget {
     this.sellValue,
     this.onSellOne,
     this.onSellAll,
+    this.isProtected = false,
   });
 
   final Animal animal;
@@ -48,6 +49,7 @@ class AnimalCard extends StatelessWidget {
   final int? sellValue;
   final VoidCallback? onSellOne;
   final VoidCallback? onSellAll;
+  final bool isProtected;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +126,8 @@ class AnimalCard extends StatelessWidget {
                           _RarityBadge(rarity: animal.rarity),
                           if (!activeMutation.isNormal)
                             _MutationBadge(mutation: activeMutation),
+                          if (isProtected)
+                            const _ProtectedBadge(),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -250,7 +254,7 @@ class AnimalCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (showSellButtons && sellValue != null && isOwned) ...[
+            if (showSellButtons && !isProtected && sellValue != null && isOwned) ...[
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -435,6 +439,30 @@ class _MutationBadge extends StatelessWidget {
         '${mutation.icon} ${mutation.displayName}'.trim(),
         style: TextStyle(
           color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProtectedBadge extends StatelessWidget {
+  const _ProtectedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7E57C2).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF7E57C2), width: 1.5),
+      ),
+      child: const Text(
+        'Secret Reward',
+        style: TextStyle(
+          color: Color(0xFF7E57C2),
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),

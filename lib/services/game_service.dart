@@ -74,10 +74,16 @@ class GameService extends ChangeNotifier {
     String animalId,
     String mutationId, {
     int quantity = 1,
+    bool isProtected = false,
   }) {
     if (quantity < 1) return false;
-    final owned = ownedAnimal(animalId, mutationId: mutationId);
-    return owned != null && owned.quantity >= quantity;
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
+    if (owned == null || owned.isProtected) return false;
+    return owned.quantity >= quantity;
   }
 
   /// Sells animals from a specific stack. Returns coins granted, or null.
@@ -85,12 +91,22 @@ class GameService extends ChangeNotifier {
     String animalId,
     String mutationId, {
     int quantity = 1,
+    bool isProtected = false,
   }) {
-    if (!canSellOwnedAnimal(animalId, mutationId, quantity: quantity)) {
+    if (!canSellOwnedAnimal(
+      animalId,
+      mutationId,
+      quantity: quantity,
+      isProtected: isProtected,
+    )) {
       return null;
     }
 
-    final owned = ownedAnimal(animalId, mutationId: mutationId)!;
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    )!;
     final animal = GameData.animalById(animalId);
     if (animal == null) return null;
 
@@ -99,9 +115,11 @@ class GameService extends ChangeNotifier {
     if (coinsGranted <= 0) return null;
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final index = updatedAnimals.indexWhere(
-      (entry) =>
-          entry.animalId == animalId && entry.mutationId == mutationId,
+    final index = _indexOfOwnedStack(
+      updatedAnimals,
+      animalId,
+      mutationId,
+      isProtected: isProtected,
     );
     if (index < 0) return null;
 
@@ -411,9 +429,12 @@ class GameService extends ChangeNotifier {
     final newRebirthLevel = _state.rebirthLevel + 1;
     final secretClaimed = _state.secretSpaceEggClaimed;
     final devToolsUnlocked = _state.fullDeveloperToolsUnlocked;
+    final protectedAnimals = _state.ownedAnimals
+        .where((owned) => owned.isProtected)
+        .toList();
     _state = PlayerState(
       coins: GameData.startingPlayerState().coins,
-      ownedAnimals: const [],
+      ownedAnimals: protectedAnimals,
       lastSavedTime: DateTime.now(),
       lifetimeCoinsEarned: 0,
       luckLevel: 1,
@@ -506,9 +527,11 @@ class GameService extends ChangeNotifier {
     final mutation = LuckLogic.rollMutation(_random, boostedLuck);
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex = updatedAnimals.indexWhere(
-      (owned) =>
-          owned.animalId == animal.id && owned.mutationId == mutation.id,
+    final existingIndex = _indexOfOwnedStack(
+      updatedAnimals,
+      animal.id,
+      mutation.id,
+      isProtected: true,
     );
 
     if (existingIndex >= 0) {
@@ -522,6 +545,7 @@ class GameService extends ChangeNotifier {
           quantity: 1,
           level: 1,
           mutationId: mutation.id,
+          isProtected: true,
         ),
       );
     }
@@ -980,9 +1004,11 @@ class GameService extends ChangeNotifier {
     }
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex = updatedAnimals.indexWhere(
-      (owned) =>
-          owned.animalId == animal.id && owned.mutationId == mutation.id,
+    final existingIndex = _indexOfOwnedStack(
+      updatedAnimals,
+      animal.id,
+      mutation.id,
+      isProtected: false,
     );
 
     if (existingIndex >= 0) {
@@ -1002,6 +1028,23 @@ class GameService extends ChangeNotifier {
 
     _state = _state.copyWith(ownedAnimals: updatedAnimals);
     return HatchResult(animal: animal, mutation: mutation);
+  }
+
+  int _indexOfOwnedStack(
+    List<OwnedAnimal> animals,
+    String animalId,
+    String mutationId, {
+    required bool isProtected,
+  }) {
+    for (var i = 0; i < animals.length; i++) {
+      final owned = animals[i];
+      if (owned.animalId == animalId &&
+          owned.mutationId == mutationId &&
+          owned.isProtected == isProtected) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   void _recordHatchSession({
@@ -1058,25 +1101,49 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(questProgress: progress);
   }
 
-  OwnedAnimal? ownedAnimal(String animalId, {String mutationId = 'none'}) {
+  OwnedAnimal? ownedAnimal(
+    String animalId, {
+    String mutationId = 'none',
+    bool? isProtected,
+  }) {
     for (final owned in _state.ownedAnimals) {
-      if (owned.animalId == animalId && owned.mutationId == mutationId) {
-        return owned;
+      if (owned.animalId != animalId || owned.mutationId != mutationId) {
+        continue;
       }
+      if (isProtected != null && owned.isProtected != isProtected) {
+        continue;
+      }
+      return owned;
     }
     return null;
   }
 
-  bool canAffordUpgrade(String animalId, String mutationId) {
-    final owned = ownedAnimal(animalId, mutationId: mutationId);
+  bool canAffordUpgrade(
+    String animalId,
+    String mutationId, {
+    bool isProtected = false,
+  }) {
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
     final animal = GameData.animalById(animalId);
     if (owned == null || animal == null) return false;
     return _state.coins >= upgradeCostFor(animal, owned);
   }
 
   /// Upgrade a specific animal/mutation combo. Returns new level or null.
-  int? upgradeAnimal(String animalId, String mutationId) {
-    final owned = ownedAnimal(animalId, mutationId: mutationId);
+  int? upgradeAnimal(
+    String animalId,
+    String mutationId, {
+    bool isProtected = false,
+  }) {
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
     final animal = GameData.animalById(animalId);
     if (owned == null || animal == null) return null;
 
@@ -1084,9 +1151,11 @@ class GameService extends ChangeNotifier {
     if (_state.coins < cost) return null;
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final index = updatedAnimals.indexWhere(
-      (entry) =>
-          entry.animalId == animalId && entry.mutationId == mutationId,
+    final index = _indexOfOwnedStack(
+      updatedAnimals,
+      animalId,
+      mutationId,
+      isProtected: isProtected,
     );
     if (index < 0) return null;
 
