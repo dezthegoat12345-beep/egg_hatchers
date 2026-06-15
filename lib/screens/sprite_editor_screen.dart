@@ -536,23 +536,40 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                                   showEraserIcon: true,
                                   theme: theme,
                                 ),
-                                for (var i = 0;
-                                    i < SpritePalette.colors.length;
-                                    i++)
-                                  _PaletteSwatch(
-                                    label: SpritePalette.labels[i],
-                                    color: Color(SpritePalette.colors[i]!),
-                                    isSelected: _tool != SpriteEditorTool.eraser &&
-                                        _selectedColor ==
-                                            SpritePalette.colors[i],
-                                    onTap: () {
-                                      _selectTool(SpriteEditorTool.pencil);
-                                      _selectColor(SpritePalette.colors[i]);
-                                    },
-                                    theme: theme,
-                                  ),
                               ],
                             ),
+                            for (final group in SpritePalette.groups) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                group.name,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                  color: theme.cardTextSecondaryColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  for (final entry in group.entries)
+                                    _PaletteSwatch(
+                                      label: entry.label,
+                                      color: Color(entry.color),
+                                      isSelected:
+                                          _tool != SpriteEditorTool.eraser &&
+                                              _selectedColor == entry.color,
+                                      onTap: () {
+                                        _selectTool(SpriteEditorTool.pencil);
+                                        _selectColor(entry.color);
+                                      },
+                                      theme: theme,
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),

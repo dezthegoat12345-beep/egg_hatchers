@@ -47,4 +47,35 @@ void main() {
     expect(erased.pixelAt(0, 0), isNull);
     expect(erased.pixelAt(2, 2), 0xFFFFEB3B);
   });
+
+  test('expanded palette keeps legacy colors and grows color count', () {
+    const legacyColors = <int>[
+      0xFF000000,
+      0xFFFFFFFF,
+      0xFF9E9E9E,
+      0xFFE53935,
+      0xFFFF9800,
+      0xFFFFEB3B,
+      0xFF43A047,
+      0xFF1E88E5,
+      0xFF8E24AA,
+      0xFFF06292,
+      0xFF6D4C41,
+    ];
+
+    expect(SpritePalette.colors.length, greaterThan(legacyColors.length));
+    for (final color in legacyColors) {
+      expect(SpritePalette.colors, contains(color));
+    }
+
+    final saved = CustomSpriteData(
+      pixels: [
+        for (var i = 0; i < CustomSpriteData.cellCount; i++)
+          i.isEven ? legacyColors[i % legacyColors.length] : null,
+      ],
+    );
+    final restored = CustomSpriteData.fromJson(saved.toJson());
+
+    expect(restored.pixels, saved.pixels);
+  });
 }

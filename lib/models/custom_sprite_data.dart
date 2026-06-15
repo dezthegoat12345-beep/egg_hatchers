@@ -117,31 +117,73 @@ class SpritePalette {
 
   static const transparent = null;
 
-  static const colors = <int?>[
-    0xFF000000,
-    0xFFFFFFFF,
-    0xFF9E9E9E,
-    0xFFE53935,
-    0xFFFF9800,
-    0xFFFFEB3B,
-    0xFF43A047,
-    0xFF1E88E5,
-    0xFF8E24AA,
-    0xFFF06292,
-    0xFF6D4C41,
+  static const groups = <SpritePaletteGroup>[
+    SpritePaletteGroup('Basic', [
+      SpritePaletteEntry(0xFFFFFFFF, 'White'),
+      SpritePaletteEntry(0xFFE0E0E0, 'Light gray'),
+      SpritePaletteEntry(0xFF9E9E9E, 'Gray'),
+      SpritePaletteEntry(0xFF616161, 'Dark gray'),
+      SpritePaletteEntry(0xFF000000, 'Black'),
+    ]),
+    SpritePaletteGroup('Fur', [
+      SpritePaletteEntry(0xFFD7CCC8, 'Tan'),
+      SpritePaletteEntry(0xFFA1887F, 'Light brown'),
+      SpritePaletteEntry(0xFF6D4C41, 'Brown'),
+      SpritePaletteEntry(0xFF4E342E, 'Dark brown'),
+    ]),
+    SpritePaletteGroup('Warm', [
+      SpritePaletteEntry(0xFFE53935, 'Red'),
+      SpritePaletteEntry(0xFFB71C1C, 'Dark red'),
+      SpritePaletteEntry(0xFFF06292, 'Pink'),
+      SpritePaletteEntry(0xFFF8BBD9, 'Light pink'),
+      SpritePaletteEntry(0xFFFF9800, 'Orange'),
+      SpritePaletteEntry(0xFFE65100, 'Dark orange'),
+      SpritePaletteEntry(0xFFFFEB3B, 'Yellow'),
+      SpritePaletteEntry(0xFFFFF9C4, 'Cream'),
+    ]),
+    SpritePaletteGroup('Greens', [
+      SpritePaletteEntry(0xFF81C784, 'Light green'),
+      SpritePaletteEntry(0xFF43A047, 'Green'),
+      SpritePaletteEntry(0xFF2E7D32, 'Dark green'),
+      SpritePaletteEntry(0xFF80CBC4, 'Mint'),
+    ]),
+    SpritePaletteGroup('Cool', [
+      SpritePaletteEntry(0xFF64B5F6, 'Light blue'),
+      SpritePaletteEntry(0xFF1E88E5, 'Blue'),
+      SpritePaletteEntry(0xFF1565C0, 'Dark blue'),
+      SpritePaletteEntry(0xFF26C6DA, 'Cyan'),
+      SpritePaletteEntry(0xFF8E24AA, 'Purple'),
+      SpritePaletteEntry(0xFF4A148C, 'Dark purple'),
+      SpritePaletteEntry(0xFFCE93D8, 'Lavender'),
+    ]),
+    SpritePaletteGroup('Special', [
+      SpritePaletteEntry(0xFFFFC107, 'Gold'),
+      SpritePaletteEntry(0xFFE040FB, 'Bright magenta'),
+      SpritePaletteEntry(0xFF1A1028, 'Shadow'),
+    ]),
   ];
 
-  static const labels = <String>[
-    'Black',
-    'White',
-    'Gray',
-    'Red',
-    'Orange',
-    'Yellow',
-    'Green',
-    'Blue',
-    'Purple',
-    'Pink',
-    'Brown',
+  static final colors = <int?>[
+    for (final group in groups)
+      for (final entry in group.entries) entry.color,
   ];
+
+  static final labels = <String>[
+    for (final group in groups)
+      for (final entry in group.entries) entry.label,
+  ];
+}
+
+class SpritePaletteGroup {
+  const SpritePaletteGroup(this.name, this.entries);
+
+  final String name;
+  final List<SpritePaletteEntry> entries;
+}
+
+class SpritePaletteEntry {
+  const SpritePaletteEntry(this.color, this.label);
+
+  final int color;
+  final String label;
 }
