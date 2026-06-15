@@ -180,15 +180,65 @@ void main() {
     }
   });
 
-  test('reference overlay cost is 25 percent of max reward with 25 coin floor', () {
-    for (final animal in GameData.animals) {
-      final maxReward = SpriteRatingLogic.maxRatingRewardForAnimal(animal.id);
-      final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(animal.id);
+  test('reference overlay cost is 25 percent of perfect score reward', () {
+    const currentCoins = 1_000_000;
 
-      expect(maxReward, greaterThan(0));
+    for (final animal in GameData.animals) {
+      final perfectReward = SpriteRatingLogic.calculateReward(
+        animalId: animal.id,
+        score: 10,
+        currentCoins: currentCoins,
+      );
+      final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(
+        animalId: animal.id,
+        currentCoins: currentCoins,
+      );
+
+      expect(perfectReward, greaterThan(0));
       expect(cost, greaterThanOrEqualTo(25));
-      expect(cost, (maxReward * 0.25).round());
+      expect(cost, lessThanOrEqualTo(perfectReward));
+      expect(cost, (perfectReward * 0.25).round());
     }
+  });
+
+  test('reference overlay cost scales with visible reward not theoretical max', () {
+    const animalId = 'galaxy_dragon';
+    const currentCoins = 250;
+    const displayedReward = 25000;
+
+    final perfectReward = SpriteRatingLogic.calculateReward(
+      animalId: animalId,
+      score: 10,
+      currentCoins: currentCoins,
+    );
+    final maxReward = SpriteRatingLogic.maxRatingRewardForAnimal(animalId);
+    final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(
+      animalId: animalId,
+      currentCoins: currentCoins,
+      displayedReward: displayedReward,
+    );
+
+    expect(perfectReward, displayedReward);
+    expect(maxReward, 1_000_000);
+    expect(cost, 6250);
+    expect(cost, lessThan(displayedReward));
+    expect(cost, lessThan(displayedReward ~/ 2));
+    expect(maxReward * 0.25, 250_000);
+    expect(cost, lessThan(maxReward * 0.25));
+  });
+
+  test('reference overlay cost respects displayed reward caps', () {
+    const currentCoins = 500_000;
+    const displayedReward = 8000;
+
+    final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(
+      animalId: 'chicken',
+      currentCoins: currentCoins,
+      displayedReward: displayedReward,
+    );
+
+    expect(cost, lessThanOrEqualTo((displayedReward * 0.5).round()));
+    expect(cost, lessThanOrEqualTo(displayedReward));
   });
 
   test('unlocking reference overlay subtracts coins without lifetime earnings',

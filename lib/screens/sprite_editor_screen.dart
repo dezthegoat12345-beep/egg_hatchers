@@ -136,7 +136,11 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   Future<void> _unlockReferenceOverlay() async {
     if (widget.referenceOverlay.isUnlocked(widget.animal.id)) return;
 
-    if (!widget.game.canAffordReferenceOverlay(widget.animal.id)) {
+    final displayedReward = _ratedReward;
+    if (!widget.game.canAffordReferenceOverlay(
+      widget.animal.id,
+      displayedReward: displayedReward,
+    )) {
       showGameSnackBar(
         context,
         message: 'Not enough coins to unlock overlay.',
@@ -148,6 +152,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     final unlocked = await widget.game.unlockReferenceOverlay(
       widget.animal.id,
       widget.referenceOverlay,
+      displayedReward: displayedReward,
     );
     if (!mounted) return;
 
@@ -388,8 +393,10 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         !alreadyClaimed;
     final overlayUnlocked =
         widget.referenceOverlay.isUnlocked(widget.animal.id);
-    final overlayCost =
-        widget.game.referenceOverlayCostForAnimal(widget.animal.id);
+    final overlayCost = widget.game.referenceOverlayCostForAnimal(
+      widget.animal.id,
+      displayedReward: _ratedReward,
+    );
 
     return GameBackground(
       theme: theme,
@@ -816,6 +823,15 @@ class _ReferenceToolsPanel extends StatelessWidget {
                 'Overlay helps you trace the reference, so it costs coins.',
                 style: TextStyle(
                   fontSize: 13,
+                  color: theme.cardTextSecondaryColor,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Cost is based on this animal\'s rating reward.',
+                style: TextStyle(
+                  fontSize: 12,
                   color: theme.cardTextSecondaryColor,
                   height: 1.35,
                 ),

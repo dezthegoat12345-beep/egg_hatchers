@@ -415,23 +415,40 @@ class GameService extends ChangeNotifier {
   }
 
   /// One-time reference overlay unlock cost for an animal.
-  int referenceOverlayCostForAnimal(String animalId) {
-    return SpriteRatingLogic.referenceOverlayCostForAnimal(animalId);
+  int referenceOverlayCostForAnimal(
+    String animalId, {
+    int? displayedReward,
+  }) {
+    return SpriteRatingLogic.referenceOverlayCostForAnimal(
+      animalId: animalId,
+      currentCoins: _state.coins,
+      displayedReward: displayedReward,
+    );
   }
 
-  bool canAffordReferenceOverlay(String animalId) {
-    final cost = referenceOverlayCostForAnimal(animalId);
+  bool canAffordReferenceOverlay(
+    String animalId, {
+    int? displayedReward,
+  }) {
+    final cost = referenceOverlayCostForAnimal(
+      animalId,
+      displayedReward: displayedReward,
+    );
     return cost > 0 && _state.coins >= cost;
   }
 
   /// Spends coins for a reference overlay unlock without affecting lifetime earnings.
   Future<bool> unlockReferenceOverlay(
     String animalId,
-    SpriteReferenceOverlayService overlayService,
-  ) async {
+    SpriteReferenceOverlayService overlayService, {
+    int? displayedReward,
+  }) async {
     if (overlayService.isUnlocked(animalId)) return true;
 
-    final cost = referenceOverlayCostForAnimal(animalId);
+    final cost = referenceOverlayCostForAnimal(
+      animalId,
+      displayedReward: displayedReward,
+    );
     if (cost <= 0 || _state.coins < cost) return false;
 
     _state = _state.copyWith(coins: _state.coins - cost);

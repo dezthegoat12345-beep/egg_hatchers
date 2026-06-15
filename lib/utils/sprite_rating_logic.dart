@@ -98,11 +98,33 @@ class SpriteRatingLogic {
     return tierBase * 8;
   }
 
-  /// One-time reference overlay unlock cost (25% of max reward, min 25 coins).
-  static int referenceOverlayCostForAnimal(String animalId) {
-    final maxReward = maxRatingRewardForAnimal(animalId);
-    if (maxReward <= 0) return 0;
-    return max(25, (maxReward * 0.25).round());
+  /// One-time reference overlay unlock cost (25% of perfect-score reward).
+  static int referenceOverlayCostForAnimal({
+    required String animalId,
+    required int currentCoins,
+    int? displayedReward,
+  }) {
+    final perfectReward = calculateReward(
+      animalId: animalId,
+      score: 10,
+      currentCoins: currentCoins,
+    );
+    if (perfectReward <= 0) return 0;
+
+    var cost = (perfectReward * 0.25).round();
+    cost = max(25, cost);
+
+    // Never greater than the perfect-score estimated reward.
+    cost = min(cost, perfectReward);
+
+    if (displayedReward != null && displayedReward > 0) {
+      // Cap at 50% of the displayed actual reward preview.
+      cost = min(cost, (displayedReward * 0.5).round());
+      // Keep cost in line with the visible reward (avoids old ~10× mismatch).
+      cost = min(cost, displayedReward);
+    }
+
+    return max(25, cost);
   }
 
   /// Reward coins for a score; returns 0 when score < 1.
