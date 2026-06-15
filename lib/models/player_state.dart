@@ -11,6 +11,7 @@ class PlayerState {
     this.luckLevel = 1,
     this.rebirthLevel = 0,
     this.questProgress = const QuestProgress(),
+    this.secretToolsCoinsClaimed = false,
   });
 
   final int coins;
@@ -20,6 +21,7 @@ class PlayerState {
   final int luckLevel;
   final int rebirthLevel;
   final QuestProgress questProgress;
+  final bool secretToolsCoinsClaimed;
 
   static PlayerState initial() {
     return PlayerState(
@@ -41,6 +43,7 @@ class PlayerState {
     int? luckLevel,
     int? rebirthLevel,
     QuestProgress? questProgress,
+    bool? secretToolsCoinsClaimed,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -50,6 +53,8 @@ class PlayerState {
       luckLevel: luckLevel ?? this.luckLevel,
       rebirthLevel: rebirthLevel ?? this.rebirthLevel,
       questProgress: questProgress ?? this.questProgress,
+      secretToolsCoinsClaimed:
+          secretToolsCoinsClaimed ?? this.secretToolsCoinsClaimed,
     );
   }
 
@@ -61,6 +66,7 @@ class PlayerState {
         'luckLevel': luckLevel,
         'rebirthLevel': rebirthLevel,
         'questProgress': questProgress.toJson(),
+        'secretToolsCoinsClaimed': secretToolsCoinsClaimed,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -78,6 +84,8 @@ class PlayerState {
       questProgress: QuestProgress.fromJson(
         json['questProgress'] as Map<String, dynamic>?,
       ),
+      secretToolsCoinsClaimed:
+          json['secretToolsCoinsClaimed'] as bool? ?? false,
     );
   }
 }

@@ -139,6 +139,7 @@ const Duration kReturnToHatcheryPreNavDuration = Duration(milliseconds: 550);
 
 const String kQuestsRouteName = '/quests';
 const String kCustomSpritesRouteName = '/custom-sprites';
+const String kSecretToolsRouteName = '/secret-tools';
 
 /// Tracks the navigator's top route name for duplicate-route guards.
 class AppNavigationTracker extends NavigatorObserver {
@@ -230,6 +231,22 @@ Future<T?> openShopWithTransition<T>(
     icon: '🛒',
     duration: kShopPreNavTransitionDuration,
     settings: settings,
+  );
+}
+
+/// Hatchery -> Secret Tools: pre-navigation transition screen, then destination.
+Future<T?> openSecretToolsWithTransition<T>(
+  BuildContext context, {
+  required BackgroundTheme theme,
+  required WidgetBuilder builder,
+}) {
+  return openWithThemedTransition<T>(
+    context,
+    theme: theme,
+    builder: builder,
+    label: 'Opening Secret',
+    icon: '🔐',
+    settings: const RouteSettings(name: kSecretToolsRouteName),
   );
 }
 

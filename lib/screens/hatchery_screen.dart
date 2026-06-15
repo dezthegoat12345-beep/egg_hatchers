@@ -20,8 +20,8 @@ import '../widgets/rebirth_panel.dart';
 import 'backgrounds_screen.dart';
 import 'collection_screen.dart';
 import 'custom_sprites_screen.dart';
-import 'developer_screen.dart';
 import 'quests_screen.dart';
+import 'secret_tools_screen.dart';
 import 'shop_screen.dart';
 
 /// Main home screen: coins, income, owned animals, and navigation.
@@ -59,12 +59,14 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     _coinTapCount++;
     if (_coinTapCount >= 3) {
       _coinTapCount = 0;
-      pushDevToolsRoute(
+      final bg = preferences.selectedTheme;
+      openSecretToolsWithTransition(
         context,
-        builder: (_) => DeveloperScreen(
+        theme: bg,
+        builder: (_) => SecretToolsScreen(
           game: game,
           customSprites: customSprites,
-          returnTheme: preferences.selectedTheme,
+          theme: bg,
         ),
       );
     }

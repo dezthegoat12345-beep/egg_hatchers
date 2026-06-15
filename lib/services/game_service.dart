@@ -151,6 +151,8 @@ class GameService extends ChangeNotifier {
       RebirthLogic.incomeMultiplier(_state.rebirthLevel);
   bool get canRebirth => RebirthLogic.canRebirth(_state.lifetimeCoinsEarned);
   int get rebirthRequirement => RebirthLogic.unlockLifetimeCoins;
+  bool get secretToolsCoinsClaimed => _state.secretToolsCoinsClaimed;
+  static const int secretToolsCoinReward = 500;
   QuestProgress get questProgress => _state.questProgress;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
@@ -407,6 +409,7 @@ class GameService extends ChangeNotifier {
     if (!canRebirth) return false;
 
     final newRebirthLevel = _state.rebirthLevel + 1;
+    final secretClaimed = _state.secretToolsCoinsClaimed;
     _state = PlayerState(
       coins: GameData.startingPlayerState().coins,
       ownedAnimals: const [],
@@ -415,6 +418,7 @@ class GameService extends ChangeNotifier {
       luckLevel: 1,
       rebirthLevel: newRebirthLevel,
       questProgress: QuestProgress.initial(),
+      secretToolsCoinsClaimed: secretClaimed,
     );
     _pendingQuestNotification = null;
     _questNotificationDeferred = false;
@@ -483,6 +487,18 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return coins;
+  }
+
+  /// One-time secret hatchery coin bonus — does not affect lifetime earnings.
+  int? claimSecretToolsCoins() {
+    if (_state.secretToolsCoinsClaimed) return null;
+    _state = _state.copyWith(
+      coins: _state.coins + secretToolsCoinReward,
+      secretToolsCoinsClaimed: true,
+    );
+    notifyListeners();
+    save();
+    return secretToolsCoinReward;
   }
 
   /// One-time reference overlay unlock cost for an animal.
