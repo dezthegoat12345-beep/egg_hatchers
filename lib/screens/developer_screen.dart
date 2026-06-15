@@ -554,6 +554,51 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             },
           ),
           const SizedBox(height: 32),
+          _SectionTitle('Sprite Quest Testing'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+1 sprite rated',
+                onPressed: () {
+                  game.devAddSpriteRated();
+                  _showMessage('Added 1 sprite rated stat.');
+                },
+              ),
+              _QuickButton(
+                label: '+1 reward claimed',
+                onPressed: () {
+                  game.devAddSpriteRewardClaimed();
+                  _showMessage('Added 1 sprite reward claimed stat.');
+                },
+              ),
+              _QuickButton(
+                label: '+1 overlay unlocked',
+                onPressed: () {
+                  game.devAddOverlayUnlocked();
+                  _showMessage('Added 1 overlay unlocked stat.');
+                },
+              ),
+              _QuickButton(
+                label: 'Set best score 10',
+                onPressed: () {
+                  game.devSetBestSpriteRatingScore(10);
+                  _showMessage('Best sprite rating set to 10.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
+            label: 'Reset sprite quest stats',
+            color: DevToolsTheme.warning,
+            onPressed: () {
+              game.devResetSpriteQuestStats();
+              _showMessage('Sprite quest stats reset to 0.');
+            },
+          ),
+          const SizedBox(height: 32),
           _SectionTitle('Force Next Hatch'),
           Container(
             width: double.infinity,

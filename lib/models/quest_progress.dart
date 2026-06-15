@@ -13,6 +13,12 @@ class QuestProgress {
     this.totalCustomEggsCreated = 0,
     this.totalCustomEggHatches = 0,
     this.totalCustomTripleHatches = 0,
+    this.totalSpritesRated = 0,
+    this.totalSpriteRatingRewardsClaimed = 0,
+    this.bestSpriteRatingScore = 0,
+    this.totalPerfectSpriteRatings = 0,
+    this.totalReferenceOverlaysUnlocked = 0,
+    this.perfectRatedSpriteKeys = const [],
     this.claimedQuestIds = const [],
     this.notifiedCompletedQuestIds = const [],
   });
@@ -29,6 +35,14 @@ class QuestProgress {
   final int totalCustomEggsCreated;
   final int totalCustomEggHatches;
   final int totalCustomTripleHatches;
+  final int totalSpritesRated;
+  final int totalSpriteRatingRewardsClaimed;
+  final int bestSpriteRatingScore;
+  final int totalPerfectSpriteRatings;
+  final int totalReferenceOverlaysUnlocked;
+
+  /// Tracks sprite versions already counted toward perfect rating quests.
+  final List<String> perfectRatedSpriteKeys;
   final List<String> claimedQuestIds;
   final List<String> notifiedCompletedQuestIds;
 
@@ -52,6 +66,12 @@ class QuestProgress {
     int? totalCustomEggsCreated,
     int? totalCustomEggHatches,
     int? totalCustomTripleHatches,
+    int? totalSpritesRated,
+    int? totalSpriteRatingRewardsClaimed,
+    int? bestSpriteRatingScore,
+    int? totalPerfectSpriteRatings,
+    int? totalReferenceOverlaysUnlocked,
+    List<String>? perfectRatedSpriteKeys,
     List<String>? claimedQuestIds,
     List<String>? notifiedCompletedQuestIds,
   }) {
@@ -72,6 +92,17 @@ class QuestProgress {
           totalCustomEggHatches ?? this.totalCustomEggHatches,
       totalCustomTripleHatches:
           totalCustomTripleHatches ?? this.totalCustomTripleHatches,
+      totalSpritesRated: totalSpritesRated ?? this.totalSpritesRated,
+      totalSpriteRatingRewardsClaimed: totalSpriteRatingRewardsClaimed ??
+          this.totalSpriteRatingRewardsClaimed,
+      bestSpriteRatingScore:
+          bestSpriteRatingScore ?? this.bestSpriteRatingScore,
+      totalPerfectSpriteRatings:
+          totalPerfectSpriteRatings ?? this.totalPerfectSpriteRatings,
+      totalReferenceOverlaysUnlocked: totalReferenceOverlaysUnlocked ??
+          this.totalReferenceOverlaysUnlocked,
+      perfectRatedSpriteKeys:
+          perfectRatedSpriteKeys ?? this.perfectRatedSpriteKeys,
       claimedQuestIds: claimedQuestIds ?? this.claimedQuestIds,
       notifiedCompletedQuestIds:
           notifiedCompletedQuestIds ?? this.notifiedCompletedQuestIds,
@@ -91,6 +122,12 @@ class QuestProgress {
         'totalCustomEggsCreated': totalCustomEggsCreated,
         'totalCustomEggHatches': totalCustomEggHatches,
         'totalCustomTripleHatches': totalCustomTripleHatches,
+        'totalSpritesRated': totalSpritesRated,
+        'totalSpriteRatingRewardsClaimed': totalSpriteRatingRewardsClaimed,
+        'bestSpriteRatingScore': bestSpriteRatingScore,
+        'totalPerfectSpriteRatings': totalPerfectSpriteRatings,
+        'totalReferenceOverlaysUnlocked': totalReferenceOverlaysUnlocked,
+        'perfectRatedSpriteKeys': perfectRatedSpriteKeys,
         'claimedQuestIds': claimedQuestIds,
         'notifiedCompletedQuestIds': notifiedCompletedQuestIds,
       };
@@ -111,6 +148,19 @@ class QuestProgress {
       totalCustomEggsCreated: json['totalCustomEggsCreated'] as int? ?? 0,
       totalCustomEggHatches: json['totalCustomEggHatches'] as int? ?? 0,
       totalCustomTripleHatches: json['totalCustomTripleHatches'] as int? ?? 0,
+      totalSpritesRated: json['totalSpritesRated'] as int? ?? 0,
+      totalSpriteRatingRewardsClaimed:
+          json['totalSpriteRatingRewardsClaimed'] as int? ?? 0,
+      bestSpriteRatingScore: json['bestSpriteRatingScore'] as int? ?? 0,
+      totalPerfectSpriteRatings:
+          json['totalPerfectSpriteRatings'] as int? ?? 0,
+      totalReferenceOverlaysUnlocked:
+          json['totalReferenceOverlaysUnlocked'] as int? ?? 0,
+      perfectRatedSpriteKeys:
+          (json['perfectRatedSpriteKeys'] as List<dynamic>?)
+                  ?.map((key) => key as String)
+                  .toList() ??
+              const [],
       claimedQuestIds: (json['claimedQuestIds'] as List<dynamic>?)
               ?.map((id) => id as String)
               .toList() ??

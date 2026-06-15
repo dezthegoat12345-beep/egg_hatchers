@@ -455,7 +455,67 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     await overlayService.unlock(animalId);
+    recordReferenceOverlayUnlocked();
     return true;
+  }
+
+  /// Records a successful Rate Sprite (Beta) rating on a supported animal.
+  void recordSpriteRated({
+    required String animalId,
+    required int score,
+    required String spriteHash,
+  }) {
+    var progress = _state.questProgress.copyWith(
+      totalSpritesRated: _state.questProgress.totalSpritesRated + 1,
+      bestSpriteRatingScore: max(
+        _state.questProgress.bestSpriteRatingScore,
+        score,
+      ),
+    );
+
+    if (score == 10) {
+      final perfectKey = '$animalId:$spriteHash';
+      if (!progress.perfectRatedSpriteKeys.contains(perfectKey)) {
+        progress = progress.copyWith(
+          totalPerfectSpriteRatings: progress.totalPerfectSpriteRatings + 1,
+          perfectRatedSpriteKeys: [
+            ...progress.perfectRatedSpriteKeys,
+            perfectKey,
+          ],
+        );
+      }
+    }
+
+    _state = _state.copyWith(questProgress: progress);
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  /// Records a successful sprite rating reward claim (not a duplicate).
+  void recordSpriteRatingRewardClaimed() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalSpriteRatingRewardsClaimed:
+            _state.questProgress.totalSpriteRatingRewardsClaimed + 1,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  /// Records a newly purchased reference overlay unlock.
+  void recordReferenceOverlayUnlocked() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalReferenceOverlaysUnlocked:
+            _state.questProgress.totalReferenceOverlaysUnlocked + 1,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
   }
 
   void recordCustomEggCreated() {
@@ -532,6 +592,12 @@ class GameService extends ChangeNotifier {
         totalCustomEggsCreated: 0,
         totalCustomEggHatches: 0,
         totalCustomTripleHatches: 0,
+        totalSpritesRated: 0,
+        totalSpriteRatingRewardsClaimed: 0,
+        bestSpriteRatingScore: 0,
+        totalPerfectSpriteRatings: 0,
+        totalReferenceOverlaysUnlocked: 0,
+        perfectRatedSpriteKeys: const [],
         notifiedCompletedQuestIds: const [],
       ),
     );
@@ -543,6 +609,69 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       questProgress: _state.questProgress.copyWith(claimedQuestIds: const []),
     );
+    notifyListeners();
+    save();
+  }
+
+  void devResetSpriteQuestStats() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalSpritesRated: 0,
+        totalSpriteRatingRewardsClaimed: 0,
+        bestSpriteRatingScore: 0,
+        totalPerfectSpriteRatings: 0,
+        totalReferenceOverlaysUnlocked: 0,
+        perfectRatedSpriteKeys: const [],
+        notifiedCompletedQuestIds: const [],
+      ),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devSetBestSpriteRatingScore(int score) {
+    final clamped = score.clamp(0, 10);
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        bestSpriteRatingScore: clamped,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devAddSpriteRated() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalSpritesRated: _state.questProgress.totalSpritesRated + 1,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devAddSpriteRewardClaimed() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalSpriteRatingRewardsClaimed:
+            _state.questProgress.totalSpriteRatingRewardsClaimed + 1,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devAddOverlayUnlocked() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalReferenceOverlaysUnlocked:
+            _state.questProgress.totalReferenceOverlaysUnlocked + 1,
+      ),
+    );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }

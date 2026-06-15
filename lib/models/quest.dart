@@ -5,6 +5,7 @@ enum QuestCategory {
   advanced,
   lateGame,
   customEgg,
+  customSprite,
 }
 
 /// Player-facing quest state.
@@ -28,6 +29,11 @@ enum QuestMetric {
   totalCustomEggsCreated,
   totalCustomEggHatches,
   totalCustomTripleHatches,
+  totalSpritesRated,
+  totalSpriteRatingRewardsClaimed,
+  bestSpriteRatingScore,
+  totalPerfectSpriteRatings,
+  totalReferenceOverlaysUnlocked,
   luckLevel,
   lifetimeCoinsEarned,
   rebirthLevel,
@@ -69,6 +75,8 @@ class Quest {
         return 'Late Game Quests';
       case QuestCategory.customEgg:
         return 'Custom Egg Quests';
+      case QuestCategory.customSprite:
+        return 'Custom Sprite';
     }
   }
 
@@ -83,6 +91,8 @@ class Quest {
       case QuestCategory.lateGame:
         return '👑';
       case QuestCategory.customEgg:
+        return '🎨';
+      case QuestCategory.customSprite:
         return '🎨';
     }
   }
@@ -100,6 +110,8 @@ class Quest {
         return 'Late Game';
       case QuestCategory.customEgg:
         return 'Custom Egg';
+      case QuestCategory.customSprite:
+        return 'Custom Sprite';
     }
   }
 
@@ -116,6 +128,8 @@ class Quest {
         return '👑';
       case QuestCategory.customEgg:
         return '🥚';
+      case QuestCategory.customSprite:
+        return '🎨';
     }
   }
 }

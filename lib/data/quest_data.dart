@@ -195,6 +195,80 @@ class QuestData {
       metric: QuestMetric.totalCustomTripleHatches,
       target: 1,
     ),
+
+    // Custom Sprite Quests
+    Quest(
+      id: 'sprite_rate_1',
+      category: QuestCategory.customSprite,
+      title: 'First Sprite Rating',
+      description: 'Rate one of your custom sprites with Rate Sprite (Beta).',
+      rewardCoins: 250,
+      metric: QuestMetric.totalSpritesRated,
+      target: 1,
+    ),
+    Quest(
+      id: 'sprite_rate_5',
+      category: QuestCategory.customSprite,
+      title: 'Sprite Critic',
+      description: 'Rate 5 custom sprites with Rate Sprite (Beta).',
+      rewardCoins: 1000,
+      metric: QuestMetric.totalSpritesRated,
+      target: 5,
+    ),
+    Quest(
+      id: 'sprite_claim_3',
+      category: QuestCategory.customSprite,
+      title: 'Custom Artist',
+      description: 'Claim 3 sprite rating rewards from saved sprites.',
+      rewardCoins: 2500,
+      metric: QuestMetric.totalSpriteRatingRewardsClaimed,
+      target: 3,
+    ),
+    Quest(
+      id: 'sprite_best_7',
+      category: QuestCategory.customSprite,
+      title: 'Solid Match',
+      description: 'Reach a best sprite rating score of at least 7/10.',
+      rewardCoins: 5000,
+      metric: QuestMetric.bestSpriteRatingScore,
+      target: 7,
+    ),
+    Quest(
+      id: 'sprite_best_9',
+      category: QuestCategory.customSprite,
+      title: 'Almost Perfect',
+      description: 'Reach a best sprite rating score of at least 9/10.',
+      rewardCoins: 15000,
+      metric: QuestMetric.bestSpriteRatingScore,
+      target: 9,
+    ),
+    Quest(
+      id: 'sprite_perfect_1',
+      category: QuestCategory.customSprite,
+      title: 'Perfect Match',
+      description: 'Earn a 10/10 sprite rating on a saved sprite version.',
+      rewardCoins: 50000,
+      metric: QuestMetric.totalPerfectSpriteRatings,
+      target: 1,
+    ),
+    Quest(
+      id: 'sprite_overlay_1',
+      category: QuestCategory.customSprite,
+      title: 'Reference Helper',
+      description: 'Unlock a paid Reference Overlay for one animal.',
+      rewardCoins: 5000,
+      metric: QuestMetric.totalReferenceOverlaysUnlocked,
+      target: 1,
+    ),
+    Quest(
+      id: 'sprite_overlay_5',
+      category: QuestCategory.customSprite,
+      title: 'Overlay Collector',
+      description: 'Unlock Reference Overlays for 5 different animals.',
+      rewardCoins: 25000,
+      metric: QuestMetric.totalReferenceOverlaysUnlocked,
+      target: 5,
+    ),
   ];
 
   static List<Quest> forCategory(QuestCategory category) =>
@@ -206,5 +280,6 @@ class QuestData {
     QuestCategory.advanced,
     QuestCategory.lateGame,
     QuestCategory.customEgg,
+    QuestCategory.customSprite,
   ];
 }

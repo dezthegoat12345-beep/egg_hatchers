@@ -203,6 +203,12 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       _ratedScore = score;
       _ratedReward = reward;
     });
+
+    widget.game.recordSpriteRated(
+      animalId: widget.animal.id,
+      score: score,
+      spriteHash: SpriteRatingLogic.computeSpriteHash(_data),
+    );
   }
 
   Future<void> _claimReward() async {
@@ -265,6 +271,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
 
     final granted = widget.game.grantSpriteRatingReward(reward);
     if (granted == null || !mounted) return;
+
+    widget.game.recordSpriteRatingRewardClaimed();
 
     setState(() {
       _ratedScore = score;

@@ -34,6 +34,16 @@ class QuestLogic {
         return progress.totalCustomEggHatches;
       case QuestMetric.totalCustomTripleHatches:
         return progress.totalCustomTripleHatches;
+      case QuestMetric.totalSpritesRated:
+        return progress.totalSpritesRated;
+      case QuestMetric.totalSpriteRatingRewardsClaimed:
+        return progress.totalSpriteRatingRewardsClaimed;
+      case QuestMetric.bestSpriteRatingScore:
+        return progress.bestSpriteRatingScore;
+      case QuestMetric.totalPerfectSpriteRatings:
+        return progress.totalPerfectSpriteRatings;
+      case QuestMetric.totalReferenceOverlaysUnlocked:
+        return progress.totalReferenceOverlaysUnlocked;
       case QuestMetric.luckLevel:
         return state.luckLevel;
       case QuestMetric.lifetimeCoinsEarned:
@@ -71,6 +81,10 @@ class QuestLogic {
     final current = currentValue(quest, state).clamp(0, quest.target);
     if (quest.metric == QuestMetric.lifetimeCoinsEarned) {
       return '${formatCoins(current)} / ${formatCoins(quest.target)}';
+    }
+    if (quest.metric == QuestMetric.bestSpriteRatingScore) {
+      final best = state.questProgress.bestSpriteRatingScore;
+      return '$best / ${quest.target}';
     }
     return '$current / ${quest.target}';
   }
