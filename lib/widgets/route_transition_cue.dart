@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
 
-const Duration kShopRouteForwardDuration = Duration(milliseconds: 650);
-const Duration kShopRouteReverseDuration = Duration(milliseconds: 350);
+const Duration kShopPreNavTransitionDuration = Duration(milliseconds: 680);
 
-/// Fade-in for the first ~150ms of the 650ms shop transition.
-const double kShopCueFadeInPortion = 150 / 650;
+/// Fade-in for the first ~150ms of the shop pre-navigation transition.
+const double kShopCueFadeInPortion = 150 / 680;
 
 /// Quick opacity curve for standard route transition cues.
 double routeCueOpacity(double progress) {
@@ -135,31 +134,6 @@ class _CueCard extends StatelessWidget {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Shop-themed route transition cue.
-class ShopRouteTransitionCue extends StatelessWidget {
-  const ShopRouteTransitionCue({
-    super.key,
-    required this.theme,
-    required this.animation,
-  });
-
-  final BackgroundTheme theme;
-  final Animation<double> animation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: RouteTransitionCue(
-        theme: theme,
-        animation: animation,
-        icon: '🛒',
-        label: 'Opening Shop',
-        opacityForProgress: shopRouteCueOpacity,
       ),
     );
   }

@@ -1,45 +1,50 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
 import '../widgets/app_theme_background.dart';
 import '../widgets/phone_width_layout.dart';
-import '../widgets/route_transition_cue.dart';
+import '../widgets/themed_route_transition_screen.dart';
 
 const Duration kAppRouteForwardDuration = Duration(milliseconds: 300);
 const Duration kAppRouteReverseDuration = Duration(milliseconds: 250);
-
-/// Optional themed transition cues for specific navigation paths.
-enum AppRouteTransitionKind {
-  standard,
-  shop,
-}
 
 /// Opaque route with a stable backdrop and animated phone-width panel only.
 Route<T> appPageRoute<T>({
   required WidgetBuilder builder,
   required Color backgroundColor,
   BackgroundTheme? backgroundTheme,
-  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
+  bool instantTransition = false,
 }) {
-  final isShop = transitionKind == AppRouteTransitionKind.shop;
-
   return PageRouteBuilder<T>(
     settings: settings,
     opaque: true,
     transitionDuration:
-        isShop ? kShopRouteForwardDuration : kAppRouteForwardDuration,
+        instantTransition ? Duration.zero : kAppRouteForwardDuration,
     reverseTransitionDuration:
-        isShop ? kShopRouteReverseDuration : kAppRouteReverseDuration,
+        instantTransition ? Duration.zero : kAppRouteReverseDuration,
     pageBuilder: (context, animation, secondaryAnimation) {
       return builder(context);
     },
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      if (isShop && animation.value < 0.02) {
-        debugPrint('Shop themed transition active');
+      final panel = AppRoutePhonePanel(
+        maxWidth: kPhoneMaxContentWidth,
+        child: child,
+      );
+
+      if (instantTransition) {
+        return Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            StableRouteBackdrop(
+              theme: backgroundTheme,
+              color: backgroundTheme == null ? backgroundColor : null,
+            ),
+            panel,
+          ],
+        );
       }
 
       final curved = CurvedAnimation(
@@ -48,18 +53,12 @@ Route<T> appPageRoute<T>({
         reverseCurve: Curves.easeInCubic,
       );
 
-      final slideBegin = isShop
-          ? const Offset(0.20, 0.01)
-          : const Offset(0.14, 0);
       final slide = Tween<Offset>(
-        begin: slideBegin,
+        begin: const Offset(0.14, 0),
         end: Offset.zero,
       ).animate(curved);
 
-      final fade = Tween<double>(
-        begin: isShop ? 0.75 : 0.85,
-        end: 1.0,
-      ).animate(
+      final fade = Tween<double>(begin: 0.85, end: 1.0).animate(
         CurvedAnimation(
           parent: animation,
           curve: Curves.easeOut,
@@ -67,49 +66,7 @@ Route<T> appPageRoute<T>({
         ),
       );
 
-      final scale = Tween<double>(
-        begin: isShop ? 0.97 : 0.985,
-        end: 1.0,
-      ).animate(fade);
-
-      final animatedPanel = AppRoutePhonePanel(
-        maxWidth: kPhoneMaxContentWidth,
-        child: SlideTransition(
-          position: slide,
-          child: FadeTransition(
-            opacity: fade,
-            child: ScaleTransition(
-              scale: scale,
-              child: child,
-            ),
-          ),
-        ),
-      );
-
-      final backdropTheme = backgroundTheme;
-      final isPopping = animation.status == AnimationStatus.reverse;
-      final showShopCue = isShop && backdropTheme != null && !isPopping;
-
-      Widget? transitionCue;
-      if (showShopCue) {
-        final panelWidth = math.min(
-          MediaQuery.sizeOf(context).width,
-          kPhoneMaxContentWidth,
-        );
-        transitionCue = IgnorePointer(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: SizedBox(
-              width: panelWidth,
-              height: MediaQuery.sizeOf(context).height,
-              child: ShopRouteTransitionCue(
-                theme: backdropTheme,
-                animation: animation,
-              ),
-            ),
-          ),
-        );
-      }
+      final scale = Tween<double>(begin: 0.985, end: 1.0).animate(fade);
 
       return Stack(
         fit: StackFit.expand,
@@ -119,8 +76,19 @@ Route<T> appPageRoute<T>({
             theme: backgroundTheme,
             color: backgroundTheme == null ? backgroundColor : null,
           ),
-          animatedPanel,
-          ?transitionCue,
+          AppRoutePhonePanel(
+            maxWidth: kPhoneMaxContentWidth,
+            child: SlideTransition(
+              position: slide,
+              child: FadeTransition(
+                opacity: fade,
+                child: ScaleTransition(
+                  scale: scale,
+                  child: child,
+                ),
+              ),
+            ),
+          ),
         ],
       );
     },
@@ -133,16 +101,16 @@ Future<T?> pushAppRoute<T>(
   required WidgetBuilder builder,
   required Color backgroundColor,
   BackgroundTheme? backgroundTheme,
-  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
+  bool instantTransition = false,
 }) {
   return Navigator.of(context).push<T>(
     appPageRoute<T>(
       builder: builder,
       backgroundColor: backgroundColor,
       backgroundTheme: backgroundTheme,
-      transitionKind: transitionKind,
       settings: settings,
+      instantTransition: instantTransition,
     ),
   );
 }
@@ -152,32 +120,52 @@ Future<T?> pushThemedAppRoute<T>(
   BuildContext context, {
   required BackgroundTheme theme,
   required WidgetBuilder builder,
-  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
+  bool instantTransition = false,
 }) {
   return pushAppRoute<T>(
     context,
     builder: builder,
     backgroundColor: theme.scaffoldColor,
     backgroundTheme: theme,
-    transitionKind: transitionKind,
     settings: settings,
+    instantTransition: instantTransition,
   );
 }
 
-/// Hatchery -> Shop prototype with a shop-themed transition cue.
-Future<T?> pushShopAppRoute<T>(
+/// Hatchery -> Shop: pre-navigation transition screen, then Shop.
+Future<T?> openShopWithTransition<T>(
   BuildContext context, {
   required BackgroundTheme theme,
   required WidgetBuilder builder,
   RouteSettings? settings,
 }) {
-  return pushThemedAppRoute<T>(
-    context,
-    theme: theme,
-    transitionKind: AppRouteTransitionKind.shop,
-    builder: builder,
-    settings: settings,
+  return Navigator.of(context).push<T>(
+    appPageRoute<T>(
+      settings: settings,
+      backgroundColor: theme.scaffoldColor,
+      backgroundTheme: theme,
+      instantTransition: true,
+      builder: (transitionContext) {
+        return ThemedRouteTransitionScreen(
+          theme: theme,
+          icon: '🛒',
+          label: 'Opening Shop',
+          duration: kShopPreNavTransitionDuration,
+          onComplete: () {
+            if (!transitionContext.mounted) return;
+            Navigator.of(transitionContext).pushReplacement<T, void>(
+              appPageRoute<T>(
+                builder: builder,
+                backgroundColor: theme.scaffoldColor,
+                backgroundTheme: theme,
+                settings: settings,
+              ),
+            );
+          },
+        );
+      },
+    ),
   );
 }
 
