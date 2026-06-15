@@ -133,11 +133,17 @@ Future<T?> pushThemedAppRoute<T>(
   );
 }
 
-/// Hatchery -> Shop: pre-navigation transition screen, then Shop.
-Future<T?> openShopWithTransition<T>(
+const Duration kMainThemedPreNavDuration = Duration(milliseconds: 620);
+const Duration kEditorThemedPreNavDuration = Duration(milliseconds: 580);
+
+/// Pre-navigation transition screen, then destination via pushReplacement.
+Future<T?> openWithThemedTransition<T>(
   BuildContext context, {
   required BackgroundTheme theme,
   required WidgetBuilder builder,
+  required String label,
+  required String icon,
+  Duration duration = kMainThemedPreNavDuration,
   RouteSettings? settings,
 }) {
   return Navigator.of(context).push<T>(
@@ -149,9 +155,9 @@ Future<T?> openShopWithTransition<T>(
       builder: (transitionContext) {
         return ThemedRouteTransitionScreen(
           theme: theme,
-          icon: '🛒',
-          label: 'Opening Shop',
-          duration: kShopPreNavTransitionDuration,
+          icon: icon,
+          label: label,
+          duration: duration,
           onComplete: () {
             if (!transitionContext.mounted) return;
             Navigator.of(transitionContext).pushReplacement<T, void>(
@@ -166,6 +172,24 @@ Future<T?> openShopWithTransition<T>(
         );
       },
     ),
+  );
+}
+
+/// Hatchery -> Shop: pre-navigation transition screen, then Shop.
+Future<T?> openShopWithTransition<T>(
+  BuildContext context, {
+  required BackgroundTheme theme,
+  required WidgetBuilder builder,
+  RouteSettings? settings,
+}) {
+  return openWithThemedTransition<T>(
+    context,
+    theme: theme,
+    builder: builder,
+    label: 'Opening Shop',
+    icon: '🛒',
+    duration: kShopPreNavTransitionDuration,
+    settings: settings,
   );
 }
 

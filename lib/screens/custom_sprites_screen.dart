@@ -174,9 +174,12 @@ class CustomSpritesScreen extends StatelessWidget {
                       theme: theme,
                       hasCustom: customSprites.hasCustomSprite(animal.id),
                       customSprite: customSprites.getSprite(animal.id),
-                      onTap: () => pushThemedAppRoute(
+                      onTap: () => openWithThemedTransition(
                         context,
                         theme: theme,
+                        icon: '✏️',
+                        label: 'Opening Editor',
+                        duration: kEditorThemedPreNavDuration,
                         builder: (_) => SpriteEditorScreen(
                           animal: animal,
                           theme: theme,

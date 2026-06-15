@@ -91,9 +91,12 @@ class CustomEggsScreen extends StatelessWidget {
   }
 
   void _openEditor(BuildContext context, {CustomEgg? egg}) {
-    pushThemedAppRoute(
+    openWithThemedTransition(
       context,
       theme: preferences.selectedTheme,
+      icon: '🥚✏️',
+      label: 'Editing Egg',
+      duration: kEditorThemedPreNavDuration,
       builder: (_) => CustomEggEditorScreen(
         key: egg == null
             ? ValueKey('create_${DateTime.now().microsecondsSinceEpoch}')

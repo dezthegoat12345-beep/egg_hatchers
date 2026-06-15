@@ -16,7 +16,7 @@ class ThemedRouteTransitionScreen extends StatefulWidget {
     required this.label,
     required this.duration,
     required this.onComplete,
-    this.opacityForProgress = shopRouteCueOpacity,
+    this.opacityForProgress,
   });
 
   final BackgroundTheme theme;
@@ -24,7 +24,7 @@ class ThemedRouteTransitionScreen extends StatefulWidget {
   final String label;
   final Duration duration;
   final VoidCallback onComplete;
-  final double Function(double progress) opacityForProgress;
+  final double Function(double progress)? opacityForProgress;
 
   @override
   State<ThemedRouteTransitionScreen> createState() =>
@@ -89,7 +89,9 @@ class _ThemedRouteTransitionScreenState extends State<ThemedRouteTransitionScree
               animation: _controller,
               icon: widget.icon,
               label: widget.label,
-              opacityForProgress: widget.opacityForProgress,
+              opacityForProgress: widget.opacityForProgress ??
+                  ((progress) =>
+                      themedPreNavCueOpacity(progress, widget.duration)),
             ),
           ),
         ),

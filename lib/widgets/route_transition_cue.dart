@@ -5,24 +5,26 @@ import '../theme/game_theme.dart';
 
 const Duration kShopPreNavTransitionDuration = Duration(milliseconds: 680);
 
-/// Fade-in for the first ~150ms of the shop pre-navigation transition.
-const double kShopCueFadeInPortion = 150 / 680;
+/// Fade-in for the first ~150ms of a pre-navigation transition.
+double themedPreNavCueOpacity(double progress, Duration duration) {
+  final fadeInPortion = 150 / duration.inMilliseconds;
+  if (progress < fadeInPortion) {
+    return progress / fadeInPortion;
+  }
+  if (progress > 0.88) {
+    return (1.0 - progress) / 0.12;
+  }
+  return 1.0;
+}
+
+/// Default cue opacity curve for the shop pre-navigation duration.
+double shopRouteCueOpacity(double progress) =>
+    themedPreNavCueOpacity(progress, kShopPreNavTransitionDuration);
 
 /// Quick opacity curve for standard route transition cues.
 double routeCueOpacity(double progress) {
   if (progress < 0.12) return progress / 0.12;
   if (progress > 0.82) return (1.0 - progress) / 0.18;
-  return 1.0;
-}
-
-/// Shop cue: fade in over ~150ms, hold, then fade out near the end.
-double shopRouteCueOpacity(double progress) {
-  if (progress < kShopCueFadeInPortion) {
-    return progress / kShopCueFadeInPortion;
-  }
-  if (progress > 0.88) {
-    return (1.0 - progress) / 0.12;
-  }
   return 1.0;
 }
 

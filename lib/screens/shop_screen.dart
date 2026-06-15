@@ -39,9 +39,11 @@ class ShopScreen extends StatelessWidget {
 
   void _openCustomEggsScreen(BuildContext context) {
     final theme = preferences.selectedTheme;
-    pushThemedAppRoute(
+    openWithThemedTransition(
       context,
       theme: theme,
+      icon: '🥚',
+      label: 'Opening Custom Eggs',
       builder: (_) => CustomEggsScreen(
         game: game,
         preferences: preferences,

@@ -148,9 +148,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '🎯 Quests',
                                   color: bg.panelAccentColor,
-                                  onTap: () => pushThemedAppRoute(
+                                  onTap: () => openWithThemedTransition(
                                     context,
                                     theme: bg,
+                                    icon: '⭐',
+                                    label: 'Opening Quests',
                                     builder: (_) => QuestsScreen(
                                       game: game,
                                       preferences: preferences,
@@ -160,9 +162,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '📚 Collection',
                                   color: bg.primaryColor,
-                                  onTap: () => pushThemedAppRoute(
+                                  onTap: () => openWithThemedTransition(
                                     context,
                                     theme: bg,
+                                    icon: '🐾',
+                                    label: 'Opening Collection',
                                     builder: (_) => CollectionScreen(
                                       game: game,
                                       preferences: preferences,
@@ -173,9 +177,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '🎨 Themes',
                                   color: bg.appBarColor,
-                                  onTap: () => pushThemedAppRoute(
+                                  onTap: () => openWithThemedTransition(
                                     context,
                                     theme: bg,
+                                    icon: '🎨',
+                                    label: 'Opening Themes',
                                     builder: (_) => BackgroundsScreen(
                                       preferences: preferences,
                                       customSprites: customSprites,
@@ -188,9 +194,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '✏️ Sprites',
                                   color: bg.secondaryColor.withValues(alpha: 0.85),
-                                  onTap: () => pushThemedAppRoute(
+                                  onTap: () => openWithThemedTransition(
                                     context,
                                     theme: bg,
+                                    icon: '✏️',
+                                    label: 'Opening Sprites',
                                     builder: (_) => CustomSpritesScreen(
                                       preferences: preferences,
                                       customSprites: customSprites,
