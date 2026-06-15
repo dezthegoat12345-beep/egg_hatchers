@@ -8,6 +8,7 @@ import 'services/game_service.dart';
 import 'services/preferences_service.dart';
 import 'services/sprite_rating_service.dart';
 import 'services/sprite_reference_overlay_service.dart';
+import 'widgets/app_theme_background.dart';
 import 'widgets/game_background.dart';
 
 void main() {
@@ -111,8 +112,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
         fontFamily: 'Roboto',
       ),
       builder: (context, child) {
-        return ColoredBox(
-          color: theme.scaffoldColor,
+        return AppThemeBackground(
+          theme: theme,
           child: child ?? const SizedBox.shrink(),
         );
       },

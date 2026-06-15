@@ -2,39 +2,37 @@ import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
+import '../widgets/app_theme_background.dart';
 
 const Duration kAppRouteForwardDuration = Duration(milliseconds: 300);
 const Duration kAppRouteReverseDuration = Duration(milliseconds: 250);
 
-/// Themed full-screen route with fade + slight slide and a non-white background.
+/// Opaque route with a stable full-screen backdrop and animated screen content.
 Route<T> appPageRoute<T>({
   required WidgetBuilder builder,
   required Color backgroundColor,
+  BackgroundTheme? backgroundTheme,
   RouteSettings? settings,
 }) {
   return PageRouteBuilder<T>(
     settings: settings,
     opaque: true,
-    barrierColor: backgroundColor,
     transitionDuration: kAppRouteForwardDuration,
     reverseTransitionDuration: kAppRouteReverseDuration,
     pageBuilder: (context, animation, secondaryAnimation) {
-      return ColoredBox(
-        color: backgroundColor,
-        child: builder(context),
-      );
+      return builder(context);
     },
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final slide = Tween<Offset>(
-        begin: const Offset(0.04, 0.008),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        ),
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
       );
+
+      final slide = Tween<Offset>(
+        begin: const Offset(0.10, 0.012),
+        end: Offset.zero,
+      ).animate(curved);
 
       final fade = CurvedAnimation(
         parent: animation,
@@ -42,12 +40,28 @@ Route<T> appPageRoute<T>({
         reverseCurve: Curves.easeIn,
       );
 
-      return FadeTransition(
-        opacity: fade,
-        child: SlideTransition(
-          position: slide,
-          child: child,
+      final scale = Tween<double>(begin: 0.98, end: 1.0).animate(fade);
+
+      final animatedContent = SlideTransition(
+        position: slide,
+        child: FadeTransition(
+          opacity: fade,
+          child: ScaleTransition(
+            scale: scale,
+            child: child,
+          ),
         ),
+      );
+
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          if (backgroundTheme != null)
+            AppThemeBackground(theme: backgroundTheme)
+          else
+            ColoredBox(color: backgroundColor),
+          animatedContent,
+        ],
       );
     },
   );
@@ -58,18 +72,20 @@ Future<T?> pushAppRoute<T>(
   BuildContext context, {
   required WidgetBuilder builder,
   required Color backgroundColor,
+  BackgroundTheme? backgroundTheme,
   RouteSettings? settings,
 }) {
   return Navigator.of(context).push<T>(
     appPageRoute<T>(
       builder: builder,
       backgroundColor: backgroundColor,
+      backgroundTheme: backgroundTheme,
       settings: settings,
     ),
   );
 }
 
-/// Pushes a screen using the selected background theme's scaffold color.
+/// Pushes a screen using the selected background theme's gradient backdrop.
 Future<T?> pushThemedAppRoute<T>(
   BuildContext context, {
   required BackgroundTheme theme,
@@ -80,6 +96,7 @@ Future<T?> pushThemedAppRoute<T>(
     context,
     builder: builder,
     backgroundColor: theme.scaffoldColor,
+    backgroundTheme: theme,
     settings: settings,
   );
 }
