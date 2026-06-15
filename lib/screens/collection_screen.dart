@@ -9,6 +9,7 @@ import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 
 /// Shows every animal the player owns with quantities, levels, and income.
@@ -70,48 +71,33 @@ class CollectionScreen extends StatelessWidget {
           ),
           body: GameBackground(
             theme: bg,
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth =
-                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
-
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          children: [
-                            CoinHeader(
-                              coins: game.coins,
-                              coinsPerSecond: game.coinsPerSecond,
-                              theme: bg,
+            child: PhoneWidthLayout(
+              child: Column(
+                children: [
+                  CoinHeader(
+                    coins: game.coins,
+                    coinsPerSecond: game.coinsPerSecond,
+                    theme: bg,
+                  ),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: game.ownedAnimals.isEmpty
+                        ? _EmptyCollection(theme: bg)
+                        : OwnedAnimalList(
+                            game: game,
+                            theme: bg,
+                            separatorHeight: 12,
+                            customSprites: customSprites,
+                            onUpgrade: (animalId, mutationId, name) =>
+                                _handleUpgrade(
+                              context,
+                              animalId,
+                              mutationId,
+                              name,
                             ),
-                            const SizedBox(height: 18),
-                            Expanded(
-                              child: game.ownedAnimals.isEmpty
-                                  ? _EmptyCollection(theme: bg)
-                                  : OwnedAnimalList(
-                                      game: game,
-                                      theme: bg,
-                                      separatorHeight: 12,
-                                      customSprites: customSprites,
-                                      onUpgrade: (animalId, mutationId, name) =>
-                                          _handleUpgrade(
-                                        context,
-                                        animalId,
-                                        mutationId,
-                                        name,
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                          ),
+                  ),
+                ],
               ),
             ),
           ),

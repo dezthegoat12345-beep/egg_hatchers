@@ -188,28 +188,31 @@ class _RebirthConfirmDialog extends StatelessWidget {
         'Rebirth?',
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Rebirth resets your coins, animals, upgrades, Luck, and quest '
-            'progress, but gives a permanent +25% income boost.',
-            style: TextStyle(height: 1.4),
-          ),
-          const SizedBox(height: 16),
-          _DialogRow(
-            label: 'Rebirth Level',
-            current: '$currentLevel',
-            next: '$newLevel',
-          ),
-          const SizedBox(height: 8),
-          _DialogRow(
-            label: 'Income Multiplier',
-            current: RebirthLogic.formatMultiplier(currentMultiplier),
-            next: RebirthLogic.formatMultiplier(newMultiplier),
-          ),
-        ],
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Rebirth resets your coins, animals, upgrades, Luck, and quest '
+              'progress, but gives a permanent +25% income boost.',
+              style: TextStyle(height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            _DialogRow(
+              label: 'Rebirth Level',
+              current: '$currentLevel',
+              next: '$newLevel',
+            ),
+            const SizedBox(height: 8),
+            _DialogRow(
+              label: 'Income Multiplier',
+              current: RebirthLogic.formatMultiplier(currentMultiplier),
+              next: RebirthLogic.formatMultiplier(newMultiplier),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -239,27 +242,58 @@ class _DialogRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        Expanded(
-          child: Text(current, textAlign: TextAlign.center),
-        ),
-        const Text('→'),
-        Expanded(
-          child: Text(
-            next,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackValues = constraints.maxWidth < 300;
+
+        if (stackValues) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(child: Text(current)),
+                  const Text('→'),
+                  Expanded(
+                    child: Text(
+                      next,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Expanded(
+              child: Text(current, textAlign: TextAlign.center),
+            ),
+            const Text('→'),
+            Expanded(
+              child: Text(
+                next,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

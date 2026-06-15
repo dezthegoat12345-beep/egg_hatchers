@@ -10,6 +10,7 @@ import '../utils/quest_logic.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_card.dart';
 import '../utils/format_utils.dart';
 
@@ -59,66 +60,55 @@ class QuestsScreen extends StatelessWidget {
           ),
           body: GameBackground(
             theme: bg,
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth =
-                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
-
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            CoinHeader(
-                              coins: game.coins,
-                              coinsPerSecond: game.coinsPerSecond,
-                              lifetimeCoinsEarned: game.lifetimeCoinsEarned,
-                              theme: bg,
-                            ),
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: GameTheme.cardDecoration(bg),
-                              child: Row(
-                                children: [
-                                  const Text('🗺️', style: TextStyle(fontSize: 28)),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Goals & Rewards',
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.bold,
-                                            color: bg.cardTextPrimaryColor,
-                                          ),
-                                        ),
-                                        Text(
-                                          readyCount > 0
-                                              ? '$readyCount quest${readyCount == 1 ? '' : 's'} ready to claim!'
-                                              : 'Complete quests to earn bonus coins.',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: bg.cardTextSecondaryColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+            child: PhoneWidthLayout(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CoinHeader(
+                    coins: game.coins,
+                    coinsPerSecond: game.coinsPerSecond,
+                    lifetimeCoinsEarned: game.lifetimeCoinsEarned,
+                    theme: bg,
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: GameTheme.cardDecoration(bg),
+                    child: Row(
+                      children: [
+                        const Text('🗺️', style: TextStyle(fontSize: 28)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Goals & Rewards',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: bg.cardTextPrimaryColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: ListView(
-                                children: [
+                              Text(
+                                readyCount > 0
+                                    ? '$readyCount quest${readyCount == 1 ? '' : 's'} ready to claim!'
+                                    : 'Complete quests to earn bonus coins.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: bg.cardTextSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      children: [
                                   if (readyToClaim.isNotEmpty) ...[
                                     _CompletedQuestsHeader(theme: bg),
                                     const SizedBox(height: 10),
@@ -179,11 +169,6 @@ class QuestsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
           ),
         );
       },

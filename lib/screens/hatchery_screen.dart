@@ -13,6 +13,7 @@ import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/luck_panel.dart';
 import '../widgets/owned_animal_list.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
 import 'backgrounds_screen.dart';
@@ -116,33 +117,23 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
           ),
           body: GameBackground(
             theme: bg,
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth =
-                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
-
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            CoinHeader(
-                              coins: game.coins,
-                              coinsPerSecond: game.coinsPerSecond,
-                              lifetimeCoinsEarned: game.lifetimeCoinsEarned,
-                              onCoinTap: _onCoinTap,
-                              theme: bg,
-                            ),
-                            const SizedBox(height: 14),
-                            LuckPanel(game: game, theme: bg),
-                            const SizedBox(height: 14),
-                            RebirthPanel(game: game, theme: bg),
-                            const SizedBox(height: 18),
-                            _HatcheryNavGrid(
+            child: PhoneWidthLayout(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CoinHeader(
+                    coins: game.coins,
+                    coinsPerSecond: game.coinsPerSecond,
+                    lifetimeCoinsEarned: game.lifetimeCoinsEarned,
+                    onCoinTap: _onCoinTap,
+                    theme: bg,
+                  ),
+                  const SizedBox(height: 14),
+                  LuckPanel(game: game, theme: bg),
+                  const SizedBox(height: 14),
+                  RebirthPanel(game: game, theme: bg),
+                  const SizedBox(height: 18),
+                  _HatcheryNavGrid(
                               theme: bg,
                               items: [
                                 _HatcheryNavItem(
@@ -247,11 +238,6 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                           ],
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
           ),
         ),
         );

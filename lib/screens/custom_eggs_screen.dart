@@ -13,6 +13,7 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
+import '../widgets/phone_width_layout.dart';
 import 'custom_egg_editor_screen.dart';
 
 /// Lists saved custom eggs and lets the player create or manage them.
@@ -128,9 +129,9 @@ class CustomEggsScreen extends StatelessWidget {
           ),
           body: GameBackground(
             theme: theme,
-            child: SafeArea(
+            child: PhoneWidthLayout(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 children: [
                   Text(
                     'Create eggs that hatch your favorite animals!',

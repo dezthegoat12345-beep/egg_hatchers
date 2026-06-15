@@ -191,7 +191,7 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
             )
           : widget.theme.cardColor,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 460, maxHeight: maxHeight),
+        constraints: BoxConstraints(maxWidth: 420, maxHeight: maxHeight),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(

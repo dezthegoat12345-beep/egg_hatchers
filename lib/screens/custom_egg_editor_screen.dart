@@ -15,6 +15,7 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 
 /// Form for creating or editing a custom egg.
@@ -370,8 +371,6 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
       builder: (context, _) {
         final theme = widget.preferences.selectedTheme;
         final draft = _buildDraftEgg();
-        final maxWidth =
-            MediaQuery.sizeOf(context).width > 520 ? 520.0 : double.infinity;
 
         return QuestNotificationListener(
           game: widget.game,
@@ -390,20 +389,17 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
           ),
           body: GameBackground(
             theme: theme,
-            child: SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: ListView(
-                          key: _scrollStorageKey,
-                          controller: _scrollController,
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.all(16),
-                          children: [
+            child: PhoneWidthLayout(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      key: _scrollStorageKey,
+                      controller: _scrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsets.zero,
+                      children: [
                             _FieldCard(
                               theme: theme,
                               child: TextField(
@@ -580,7 +576,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        padding: const EdgeInsets.only(top: 8),
                         child: FilledButton(
                           onPressed: _save,
                           style: GameTheme.filledButton(
@@ -602,8 +598,6 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
                 ),
               ),
             ),
-          ),
-        ),
         );
       },
     );

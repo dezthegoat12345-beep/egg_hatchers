@@ -15,6 +15,7 @@ import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
 import '../widgets/multi_hatch_dialog.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../models/background_theme.dart';
 import 'custom_egg_editor_screen.dart';
@@ -188,43 +189,27 @@ class ShopScreen extends StatelessWidget {
             foregroundColor: Colors.white,
             elevation: 0,
             actions: [
-              TextButton(
+              CompactAppBarIconAction(
+                icon: Icons.egg_alt_outlined,
+                tooltip: 'Custom Eggs',
                 onPressed: () => _openCustomEggsScreen(context),
-                child: const Text(
-                  'Custom Eggs',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
               ),
             ],
           ),
           body: GameBackground(
             theme: bg,
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth =
-                      constraints.maxWidth > 600 ? 600.0 : double.infinity;
-
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          children: [
-                            CoinHeader(
-                              coins: game.coins,
-                              coinsPerSecond: game.coinsPerSecond,
-                              theme: bg,
-                            ),
-                            const SizedBox(height: 18),
-                            Expanded(
-                              child: ListView(
-                                children: [
+            child: PhoneWidthLayout(
+              child: Column(
+                children: [
+                  CoinHeader(
+                    coins: game.coins,
+                    coinsPerSecond: game.coinsPerSecond,
+                    theme: bg,
+                  ),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: ListView(
+                      children: [
                                   for (var i = 0;
                                       i < GameData.eggs.length;
                                       i++) ...[
@@ -341,11 +326,6 @@ class ShopScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
           ),
         ),
         );

@@ -56,89 +56,104 @@ class EggCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isUnlocked
-                        ? theme.secondaryColor.withValues(alpha: 0.18)
-                        : theme.disabledColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isUnlocked
-                          ? theme.secondaryColor.withValues(alpha: 0.45)
-                          : theme.disabledColor,
-                    ),
-                  ),
-                  child: isUnlocked
-                      ? GameSprite(
-                          spritePath: egg.spritePath,
-                          fallbackEmoji: egg.emoji,
-                          size: 56,
-                          semanticLabel: egg.name,
-                          emojiFontSize: 40,
-                        )
-                      : Text(
-                          '🔒',
-                          style: TextStyle(
-                            fontSize: 40,
-                            color: theme.disabledColor,
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stackPrice = constraints.maxWidth < 360;
+                final titleStyle = TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isUnlocked
+                      ? theme.cardTextPrimaryColor
+                      : theme.disabledColor,
+                );
+                final priceChip = _PriceChip(
+                  theme: theme,
+                  cost: egg.cost,
+                );
+
+                if (stackPrice) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        egg.name,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: isUnlocked
-                              ? theme.cardTextPrimaryColor
-                              : theme.disabledColor,
-                        ),
-                      ),
-                      if (egg.description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          egg.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.cardTextSecondaryColor,
-                            height: 1.3,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _EggArtwork(
+                            egg: egg,
+                            theme: theme,
+                            isUnlocked: isUnlocked,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  egg.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: titleStyle,
+                                ),
+                                if (egg.description.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    egg.description,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: theme.cardTextSecondaryColor,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      priceChip,
                     ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: theme.panelAccentColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: theme.panelAccentColor.withValues(alpha: 0.5),
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _EggArtwork(
+                      egg: egg,
+                      theme: theme,
+                      isUnlocked: isUnlocked,
                     ),
-                  ),
-                  child: Text(
-                    '🪙 ${formatCoins(egg.cost)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: theme.cardTextPrimaryColor,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            egg.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: titleStyle,
+                          ),
+                          if (egg.description.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              egg.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: theme.cardTextSecondaryColor,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                    const SizedBox(width: 8),
+                    priceChip,
+                  ],
+                );
+              },
             ),
             if (!isUnlocked && !isCustomEgg) ...[
               const SizedBox(height: 14),
@@ -243,18 +258,115 @@ class EggCard extends StatelessWidget {
                         : theme.disabledColor,
                   ),
                 ),
-                child: Text(
-                  isUnlocked
-                      ? 'Triple Hatch · 🪙 ${formatCoins(tripleHatchCost!)}'
-                      : 'Triple Hatch',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: isUnlocked
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Triple Hatch',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '🪙 ${formatCoins(tripleHatchCost!)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Text(
+                        'Triple Hatch',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EggArtwork extends StatelessWidget {
+  const _EggArtwork({
+    required this.egg,
+    required this.theme,
+    required this.isUnlocked,
+  });
+
+  final Egg egg;
+  final BackgroundTheme theme;
+  final bool isUnlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 72,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isUnlocked
+            ? theme.secondaryColor.withValues(alpha: 0.18)
+            : theme.disabledColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isUnlocked
+              ? theme.secondaryColor.withValues(alpha: 0.45)
+              : theme.disabledColor,
+        ),
+      ),
+      child: isUnlocked
+          ? GameSprite(
+              spritePath: egg.spritePath,
+              fallbackEmoji: egg.emoji,
+              size: 56,
+              semanticLabel: egg.name,
+              emojiFontSize: 40,
+            )
+          : Text(
+              '🔒',
+              style: TextStyle(
+                fontSize: 40,
+                color: theme.disabledColor,
+              ),
+            ),
+    );
+  }
+}
+
+class _PriceChip extends StatelessWidget {
+  const _PriceChip({
+    required this.theme,
+    required this.cost,
+  });
+
+  final BackgroundTheme theme;
+  final int cost;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.panelAccentColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.panelAccentColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Text(
+        '🪙 ${formatCoins(cost)}',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: theme.cardTextPrimaryColor,
         ),
       ),
     );

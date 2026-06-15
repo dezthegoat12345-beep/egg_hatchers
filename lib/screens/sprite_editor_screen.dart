@@ -14,6 +14,7 @@ import '../utils/snackbar_utils.dart';
 import '../utils/sprite_rating_logic.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
+import '../widgets/phone_width_layout.dart';
 import '../widgets/pixel_sprite.dart';
 
 enum ReferenceOverlayStrength {
@@ -408,20 +409,12 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
 
     return GameBackground(
       theme: theme,
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth =
-                constraints.maxWidth > 520 ? 520.0 : double.infinity;
-
-            return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+      child: PhoneWidthLayout(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                       Container(
                         decoration: GameTheme.cardDecoration(theme),
                         padding: const EdgeInsets.all(16),
@@ -617,12 +610,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );
@@ -656,7 +645,7 @@ class _ReferencePreviewsPanel extends StatelessWidget {
           const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
-              final useRow = constraints.maxWidth >= 360;
+              final useRow = constraints.maxWidth >= 400;
               final previewSize = useRow ? 88.0 : 96.0;
 
               final tiles = <Widget>[
@@ -865,12 +854,28 @@ class _ReferenceToolsPanel extends StatelessWidget {
               FilledButton(
                 onPressed: onUnlockOverlay,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44),
+                  minimumSize: const Size(double.infinity, 48),
                   backgroundColor: theme.primaryColor,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(
-                  'Unlock Reference Overlay — ${formatCoins(overlayCost)} coins',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Unlock Overlay',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${formatCoins(overlayCost)} coins',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ] else ...[

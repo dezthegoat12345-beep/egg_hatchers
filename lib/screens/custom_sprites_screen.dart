@@ -13,6 +13,7 @@ import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
+import '../widgets/phone_width_layout.dart';
 import 'sprite_editor_screen.dart';
 
 /// Lists all animals so the player can create or edit custom sprites.
@@ -116,9 +117,9 @@ class CustomSpritesScreen extends StatelessWidget {
           ),
           body: GameBackground(
             theme: theme,
-            child: SafeArea(
+            child: PhoneWidthLayout(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 children: [
                   Text(
                     'Draw your own 16×16 sprites for any animal!',

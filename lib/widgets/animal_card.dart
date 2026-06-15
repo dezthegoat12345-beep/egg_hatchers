@@ -161,47 +161,84 @@ class AnimalCard extends StatelessWidget {
                     color: theme.cardBorderColor.withValues(alpha: 0.35),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Upgrade: 🪙 $upgradeCost',
-                        style: TextStyle(
-                          fontSize: compact ? 14 : 16,
-                          fontWeight: FontWeight.w700,
-                          color: textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    FilledButton(
-                      onPressed: onUpgrade,
-                      style: GameTheme.filledButton(
-                        theme,
-                        color: canAffordUpgrade
-                            ? theme.primaryColor
-                            : theme.disabledColor,
-                        height: compact ? 44 : 48,
-                      ).copyWith(
-                        padding: WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(
-                            horizontal: compact ? 14 : 18,
-                            vertical: compact ? 10 : 12,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stackUpgrade = constraints.maxWidth < 340;
+
+                    if (stackUpgrade) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Upgrade: 🪙 $upgradeCost',
+                            style: TextStyle(
+                              fontSize: compact ? 14 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: onUpgrade,
+                              style: GameTheme.filledButton(
+                                theme,
+                                color: canAffordUpgrade
+                                    ? theme.primaryColor
+                                    : theme.disabledColor,
+                                height: compact ? 44 : 48,
+                              ),
+                              child: const Text('Upgrade ⬆️'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Upgrade: 🪙 $upgradeCost',
+                            style: TextStyle(
+                              fontSize: compact ? 14 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: textPrimary,
+                            ),
                           ),
                         ),
-                        minimumSize: WidgetStatePropertyAll(
-                          Size(0, compact ? 44 : 48),
-                        ),
-                        textStyle: WidgetStatePropertyAll(
-                          TextStyle(
-                            fontSize: compact ? 14 : 16,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(width: 10),
+                        FilledButton(
+                          onPressed: onUpgrade,
+                          style: GameTheme.filledButton(
+                            theme,
+                            color: canAffordUpgrade
+                                ? theme.primaryColor
+                                : theme.disabledColor,
+                            height: compact ? 44 : 48,
+                          ).copyWith(
+                            padding: WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(
+                                horizontal: compact ? 14 : 18,
+                                vertical: compact ? 10 : 12,
+                              ),
+                            ),
+                            minimumSize: WidgetStatePropertyAll(
+                              Size(0, compact ? 44 : 48),
+                            ),
+                            textStyle: WidgetStatePropertyAll(
+                              TextStyle(
+                                fontSize: compact ? 14 : 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
+                          child: const Text('Upgrade ⬆️'),
                         ),
-                      ),
-                      child: const Text('Upgrade ⬆️'),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ],

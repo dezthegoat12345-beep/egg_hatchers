@@ -9,6 +9,7 @@ import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
+import '../widgets/phone_width_layout.dart';
 import 'custom_sprites_screen.dart';
 
 /// Lets the player pick and preview background themes.
@@ -60,9 +61,9 @@ class BackgroundsScreen extends StatelessWidget {
           ),
           body: GameBackground(
             theme: selected,
-            child: SafeArea(
+            child: PhoneWidthLayout(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 children: [
                   Text(
                     'Pick a cozy background for your hatchery!',
