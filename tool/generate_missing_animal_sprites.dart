@@ -28,6 +28,79 @@ void main() {
     'penguin': _drawPenguin,
     'seal': _drawSeal,
     'raptor': _drawRaptor,
+    'scarab_beetle': () => _drawCuteMascot(
+          body: _c(121, 85, 72),
+          accent: _c(255, 193, 7),
+          belly: _c(255, 224, 130),
+        ),
+    'saber_cub': () => _drawCuteMascot(
+          body: _c(255, 152, 0),
+          accent: _c(255, 224, 178),
+          belly: _c(255, 236, 179),
+          ears: true,
+        ),
+    'stone_golem': () => _drawCuteMascot(
+          body: _c(120, 144, 156),
+          accent: _c(69, 90, 100),
+          belly: _c(176, 190, 197),
+          blocky: true,
+        ),
+    'royal_chicken': () => _drawCuteMascot(
+          body: _c(255, 215, 0),
+          accent: _c(255, 193, 7),
+          belly: _c(255, 241, 118),
+          crown: true,
+        ),
+    'crown_fox': () => _drawCuteMascot(
+          body: _c(255, 87, 34),
+          accent: _c(255, 171, 64),
+          belly: _c(255, 224, 178),
+          ears: true,
+          crown: true,
+        ),
+    'gem_dragon': () => _drawCuteMascot(
+          body: _c(171, 71, 188),
+          accent: _c(233, 30, 99),
+          belly: _c(225, 190, 231),
+          horns: true,
+        ),
+    'cloud_bunny': () => _drawCuteMascot(
+          body: _c(236, 239, 241),
+          accent: _c(144, 202, 249),
+          belly: _c(255, 255, 255),
+          ears: true,
+        ),
+    'sun_lion': () => _drawCuteMascot(
+          body: _c(255, 193, 7),
+          accent: _c(255, 152, 0),
+          belly: _c(255, 236, 179),
+          mane: true,
+        ),
+    'cosmic_phoenix': () => _drawCuteMascot(
+          body: _c(244, 67, 54),
+          accent: _c(156, 39, 176),
+          belly: _c(255, 183, 77),
+          wings: true,
+        ),
+    'void_mouse': () => _drawCuteMascot(
+          body: _c(66, 66, 66),
+          accent: _c(103, 58, 183),
+          belly: _c(158, 158, 158),
+          ears: true,
+        ),
+    'eclipse_wolf': () => _drawCuteMascot(
+          body: _c(55, 71, 79),
+          accent: _c(176, 190, 197),
+          belly: _c(120, 144, 156),
+          ears: true,
+        ),
+    'nebula_hydra': () => _drawCuteMascot(
+          body: _c(63, 81, 181),
+          accent: _c(171, 71, 188),
+          belly: _c(121, 134, 203),
+          horns: true,
+          wings: true,
+        ),
   };
 
   Directory(outDir).createSync(recursive: true);
@@ -506,6 +579,64 @@ img.Image _drawRaptor() {
   // Claws
   for (final dx in [-10, 0, 10]) {
     _fillRoundedRect(image, 58 + dx, 96, 62 + dx, 108, 1, _c(255, 235, 59));
+  }
+  return image;
+}
+
+img.Image _drawCuteMascot({
+  required img.ColorRgba8 body,
+  required img.ColorRgba8 accent,
+  required img.ColorRgba8 belly,
+  bool ears = false,
+  bool crown = false,
+  bool horns = false,
+  bool mane = false,
+  bool wings = false,
+  bool blocky = false,
+}) {
+  final image = _canvas();
+  if (wings) {
+    _fillEllipse(image, 34, 70, 14, 22, accent);
+    _fillEllipse(image, 94, 70, 14, 22, accent);
+  }
+  if (mane) {
+    _fillEllipse(image, 64, 50, 30, 24, accent);
+  }
+  if (blocky) {
+    _fillRoundedRect(image, 40, 58, 88, 96, 6, body);
+    _fillRoundedRect(image, 48, 68, 80, 88, 4, belly);
+  } else {
+    _drawOutlinedBody(
+      image,
+      cx: 64,
+      cy: 78,
+      rx: 28,
+      ry: 24,
+      fill: body,
+      outline: accent,
+    );
+    _fillEllipse(image, 64, 82, 16, 14, belly);
+  }
+  _fillEllipse(image, 64, 48, 22, 20, body);
+  _strokeEllipse(image, 64, 48, 22, 20, 2, accent);
+  if (ears) {
+    _fillEllipse(image, 46, 34, 8, 14, body);
+    _fillEllipse(image, 82, 34, 8, 14, body);
+  }
+  if (horns) {
+    _fillEllipse(image, 52, 30, 5, 10, accent);
+    _fillEllipse(image, 76, 30, 5, 10, accent);
+  }
+  if (crown) {
+    _fillRoundedRect(image, 50, 24, 78, 34, 2, _c(255, 215, 0));
+    for (final x in [54, 64, 74]) {
+      _fillEllipse(image, x, 22, 4, 6, _c(255, 235, 59));
+    }
+  }
+  _drawEyes(image, 64, 46, 7, 4);
+  _fillEllipse(image, 64, 56, 6, 4, accent);
+  for (final pos in [(50, 100), (78, 100)]) {
+    _fillEllipse(image, pos.$1, pos.$2, 8, 5, accent);
   }
   return image;
 }

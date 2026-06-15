@@ -335,8 +335,8 @@ void main() {
         );
       }
     }
-    expect(GameData.animals.length, 33);
-    expect(GameData.eggs.length, 9);
+    expect(GameData.animals.length, 45);
+    expect(GameData.eggs.length, 13);
   });
 
   test('egg unlocks based on lifetime coins earned', () async {

@@ -1,0 +1,117 @@
+import 'dart:math';
+
+import 'package:egg_hatchers/data/game_data.dart';
+import 'package:egg_hatchers/models/egg.dart';
+import 'package:egg_hatchers/services/game_service.dart';
+import 'package:egg_hatchers/utils/built_in_egg_logic.dart';
+import 'package:egg_hatchers/utils/custom_egg_logic.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  test('built-in egg weighted roll only returns valid animals', () {
+    final random = Random(7);
+    final basic = GameData.eggById('basic')!;
+
+    for (var i = 0; i < 50; i++) {
+      final animalId = BuiltInEggLogic.rollAnimal(basic, random);
+      expect(basic.possibleAnimalIds, contains(animalId));
+    }
+  });
+
+  test('built-in egg without weights uses equal fallback', () {
+    const egg = Egg(
+      id: 'test',
+      name: 'Test',
+      cost: 100,
+      possibleAnimalIds: ['chicken', 'mouse'],
+      emoji: '🥚',
+    );
+    final weights = BuiltInEggLogic.effectiveWeights(egg);
+    expect(weights['chicken'], 1);
+    expect(weights['mouse'], 1);
+  });
+
+  test('basic egg favors chicken over rabbit in weighted rolls', () {
+    final basic = GameData.eggById('basic')!;
+    var chicken = 0;
+    var rabbit = 0;
+    final random = Random(99);
+
+    for (var i = 0; i < 500; i++) {
+      final id = BuiltInEggLogic.rollAnimal(basic, random);
+      if (id == 'chicken') chicken++;
+      if (id == 'rabbit') rabbit++;
+    }
+
+    expect(chicken, greaterThan(rabbit));
+  });
+
+  test('rebirth eggs stay locked below required rebirth level', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    final ancient = GameData.eggById('ancient')!;
+    final royal = GameData.eggById('royal')!;
+    final celestial = GameData.eggById('celestial')!;
+    final voidEgg = GameData.eggById('void')!;
+
+    expect(game.isEggUnlocked(ancient), isFalse);
+    expect(game.isEggUnlocked(royal), isFalse);
+    expect(game.isEggUnlocked(celestial), isFalse);
+    expect(game.isEggUnlocked(voidEgg), isFalse);
+
+    game.setRebirthLevel(1);
+    expect(game.isEggUnlocked(ancient), isTrue);
+    expect(game.isEggUnlocked(royal), isFalse);
+
+    game.setRebirthLevel(2);
+    expect(game.isEggUnlocked(royal), isTrue);
+    expect(game.isEggUnlocked(celestial), isFalse);
+
+    game.setRebirthLevel(3);
+    expect(game.isEggUnlocked(celestial), isTrue);
+    expect(game.isEggUnlocked(voidEgg), isFalse);
+
+    game.setRebirthLevel(5);
+    expect(game.isEggUnlocked(voidEgg), isTrue);
+
+    game.dispose();
+  });
+
+  test('rebirth-required animals stay locked in custom egg editor logic', () {
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'scarab_beetle',
+        999999999,
+        rebirthLevel: 0,
+      ),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'scarab_beetle',
+        0,
+        rebirthLevel: 1,
+      ),
+      isTrue,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'void_mouse',
+        999999999,
+        rebirthLevel: 4,
+      ),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'void_mouse',
+        0,
+        rebirthLevel: 5,
+      ),
+      isTrue,
+    );
+  });
+}

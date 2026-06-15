@@ -37,27 +37,44 @@ class CustomEggLogic {
 
   static bool isAnimalUnlockedForCustomEgg(
     String animalId,
-    int lifetimeCoinsEarned,
-  ) {
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) {
     if (GameData.animalById(animalId) == null) return false;
-    final required = lifetimeRequiredForAnimal(animalId);
-    return lifetimeCoinsEarned >= required;
+    final source = findSourceEggForAnimal(animalId);
+    if (source == null) return false;
+    return source.isUnlocked(
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
   }
 
   static bool canAddAnimalToCustomEgg(
     String animalId,
     int lifetimeCoinsEarned, {
     required int selectedCount,
+    int rebirthLevel = 0,
   }) {
-    if (!isAnimalUnlockedForCustomEgg(animalId, lifetimeCoinsEarned)) {
+    if (!isAnimalUnlockedForCustomEgg(
+      animalId,
+      lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    )) {
       return false;
     }
     return selectedCount < maxSelectedAnimals;
   }
 
-  static String unlockMessageForAnimal(String animalId) {
+  static String unlockMessageForAnimal(
+    String animalId, {
+    int rebirthLevel = 0,
+  }) {
     final source = findSourceEggForAnimal(animalId);
     if (source == null) return 'This animal is unavailable.';
+    if (source.unlockRebirthLevel > 0 &&
+        rebirthLevel < source.unlockRebirthLevel) {
+      return 'Requires Rebirth Level ${source.unlockRebirthLevel}';
+    }
     if (source.unlockLifetimeCoins <= 0) return 'Always available.';
     return 'Unlock ${source.name} by earning '
         '${source.unlockLifetimeCoins} lifetime coins.';
@@ -66,11 +83,16 @@ class CustomEggLogic {
   /// Valid animals that are also unlocked for the player's progression.
   static List<String> hatchableAnimalIds(
     CustomEgg egg,
-    int lifetimeCoinsEarned,
-  ) {
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) {
     return egg.validAnimalIds
         .where(
-          (id) => isAnimalUnlockedForCustomEgg(id, lifetimeCoinsEarned),
+          (id) => isAnimalUnlockedForCustomEgg(
+            id,
+            lifetimeCoinsEarned,
+            rebirthLevel: rebirthLevel,
+          ),
         )
         .toList();
   }
@@ -79,10 +101,13 @@ class CustomEggLogic {
   static Map<String, int> effectiveWeights(
     CustomEgg egg, {
     int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
   }) {
-    final ids = lifetimeCoinsEarned > 0
-        ? hatchableAnimalIds(egg, lifetimeCoinsEarned)
-        : egg.validAnimalIds;
+    final ids = hatchableAnimalIds(
+      egg,
+      lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     final weights = <String, int>{};
     for (final id in ids) {
       final raw = egg.animalWeights[id] ?? 1;
@@ -91,10 +116,16 @@ class CustomEggLogic {
     return weights;
   }
 
-  static int totalWeight(CustomEgg egg, {int lifetimeCoinsEarned = 0}) {
-    return effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned)
-        .values
-        .fold(0, (sum, w) => sum + w);
+  static int totalWeight(
+    CustomEgg egg, {
+    int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
+  }) {
+    return effectiveWeights(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    ).values.fold(0, (sum, w) => sum + w);
   }
 
   /// Hatch chance as 0–100 percent.
@@ -102,10 +133,19 @@ class CustomEggLogic {
     CustomEgg egg,
     String animalId, {
     int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
   }) {
-    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final weights = effectiveWeights(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     if (!weights.containsKey(animalId)) return 0;
-    final total = totalWeight(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final total = totalWeight(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     if (total <= 0) return 0;
     return weights[animalId]! / total * 100;
   }
@@ -113,15 +153,26 @@ class CustomEggLogic {
   static int minimumCostForCustomEgg(
     CustomEgg egg, {
     int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
   }) {
-    final ids = lifetimeCoinsEarned > 0
-        ? hatchableAnimalIds(egg, lifetimeCoinsEarned)
-        : egg.validAnimalIds;
+    final ids = hatchableAnimalIds(
+      egg,
+      lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     if (ids.isEmpty) return 1;
 
     var sum = 0.0;
-    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
-    final total = totalWeight(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final weights = effectiveWeights(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
+    final total = totalWeight(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     if (total <= 0) return 1;
 
     for (final animalId in ids) {
@@ -150,8 +201,13 @@ class CustomEggLogic {
     CustomEgg egg,
     Random random, {
     int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
   }) {
-    final weights = effectiveWeights(egg, lifetimeCoinsEarned: lifetimeCoinsEarned);
+    final weights = effectiveWeights(
+      egg,
+      lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     final ids = weights.keys.toList();
     if (ids.isEmpty) {
       throw StateError('Custom egg has no hatchable animals');
@@ -172,8 +228,15 @@ class CustomEggLogic {
     CustomEgg egg, {
     int maxEntries = 3,
     int lifetimeCoinsEarned = 0,
+    int rebirthLevel = 0,
   }) {
-    var ids = List<String>.from(hatchableAnimalIds(egg, lifetimeCoinsEarned));
+    var ids = List<String>.from(
+      hatchableAnimalIds(
+        egg,
+        lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
+      ),
+    );
     if (ids.isEmpty) {
       ids = List<String>.from(egg.validAnimalIds);
     }
@@ -182,11 +245,13 @@ class CustomEggLogic {
         egg,
         b,
         lifetimeCoinsEarned: lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
       ).compareTo(
         chancePercentForAnimal(
           egg,
           a,
           lifetimeCoinsEarned: lifetimeCoinsEarned,
+          rebirthLevel: rebirthLevel,
         ),
       ),
     );
@@ -199,6 +264,7 @@ class CustomEggLogic {
         egg,
         id,
         lifetimeCoinsEarned: lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
       ).round();
       parts.add('${animal.name} $pct%');
     }

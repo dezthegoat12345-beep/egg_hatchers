@@ -17,6 +17,7 @@ class OwnedAnimalList extends StatelessWidget {
     required this.theme,
     this.compact = false,
     this.separatorHeight = 8,
+    this.embedInParentScroll = false,
     this.customSprites,
     this.showSellButtons = false,
     this.onSellOne,
@@ -50,6 +51,7 @@ class OwnedAnimalList extends StatelessWidget {
   final bool showSellButtons;
   final bool compact;
   final double separatorHeight;
+  final bool embedInParentScroll;
 
   @override
   Widget build(BuildContext context) {
@@ -60,28 +62,38 @@ class OwnedAnimalList extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return ListView(
-      children: [
-        if (normal.isNotEmpty) ...[
-          _SectionHeader(
-            title: '🐾 Normal Animals',
-            compact: compact,
-            theme: theme,
-          ),
-          SizedBox(height: separatorHeight),
-          ..._buildCards(normal),
-        ],
-        if (mutated.isNotEmpty) ...[
-          SizedBox(height: separatorHeight * 2),
-          _SectionHeader(
-            title: '✨ Mutated Animals',
-            compact: compact,
-            theme: theme,
-          ),
-          SizedBox(height: separatorHeight),
-          ..._buildCards(mutated),
-        ],
+    final children = <Widget>[
+      if (normal.isNotEmpty) ...[
+        _SectionHeader(
+          title: '🐾 Normal Animals',
+          compact: compact,
+          theme: theme,
+        ),
+        SizedBox(height: separatorHeight),
+        ..._buildCards(normal),
       ],
+      if (mutated.isNotEmpty) ...[
+        SizedBox(height: separatorHeight * 2),
+        _SectionHeader(
+          title: '✨ Mutated Animals',
+          compact: compact,
+          theme: theme,
+        ),
+        SizedBox(height: separatorHeight),
+        ..._buildCards(mutated),
+      ],
+    ];
+
+    if (embedInParentScroll) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      );
+    }
+
+    return ListView(
+      children: children,
     );
   }
 

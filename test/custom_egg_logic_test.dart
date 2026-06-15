@@ -13,6 +13,9 @@ import 'package:egg_hatchers/utils/custom_egg_logic.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const maxLifetime = 999999999;
+  const maxRebirth = 5;
+
   test('old custom eggs without weights default to weight 1', () {
     final json = jsonEncode([
       {
@@ -48,9 +51,30 @@ void main() {
       },
     );
 
-    expect(CustomEggLogic.chancePercentForAnimal(egg, 'chicken'), 60);
-    expect(CustomEggLogic.chancePercentForAnimal(egg, 'rabbit'), 30);
-    expect(CustomEggLogic.chancePercentForAnimal(egg, 'dragon'), 10);
+    expect(
+      CustomEggLogic.chancePercentForAnimal(
+        egg,
+        'chicken',
+        lifetimeCoinsEarned: maxLifetime,
+      ),
+      60,
+    );
+    expect(
+      CustomEggLogic.chancePercentForAnimal(
+        egg,
+        'rabbit',
+        lifetimeCoinsEarned: maxLifetime,
+      ),
+      30,
+    );
+    expect(
+      CustomEggLogic.chancePercentForAnimal(
+        egg,
+        'dragon',
+        lifetimeCoinsEarned: maxLifetime,
+      ),
+      10,
+    );
   });
 
   test('minimum cost is higher for late-game animals', () {
@@ -72,8 +96,16 @@ void main() {
       animalWeights: {'galaxy_dragon': 1},
     );
 
-    final chickenMin = CustomEggLogic.minimumCostForCustomEgg(chickenOnly);
-    final galaxyMin = CustomEggLogic.minimumCostForCustomEgg(galaxyOnly);
+    final chickenMin = CustomEggLogic.minimumCostForCustomEgg(
+      chickenOnly,
+      lifetimeCoinsEarned: maxLifetime,
+      rebirthLevel: maxRebirth,
+    );
+    final galaxyMin = CustomEggLogic.minimumCostForCustomEgg(
+      galaxyOnly,
+      lifetimeCoinsEarned: maxLifetime,
+      rebirthLevel: maxRebirth,
+    );
 
     expect(chickenMin, greaterThan(0));
     expect(galaxyMin, greaterThan(chickenMin));
@@ -93,7 +125,11 @@ void main() {
       },
     );
 
-    final mixedMin = CustomEggLogic.minimumCostForCustomEgg(mixed);
+    final mixedMin = CustomEggLogic.minimumCostForCustomEgg(
+      mixed,
+      lifetimeCoinsEarned: maxLifetime,
+      rebirthLevel: maxRebirth,
+    );
     const chickenOnly = CustomEgg(
       id: 'custom_c',
       name: 'C',
@@ -102,19 +138,30 @@ void main() {
       selectedAnimalIds: ['chicken'],
       animalWeights: {'chicken': 1},
     );
-    final chickenMin = CustomEggLogic.minimumCostForCustomEgg(chickenOnly);
+    final chickenMin = CustomEggLogic.minimumCostForCustomEgg(
+      chickenOnly,
+      lifetimeCoinsEarned: maxLifetime,
+      rebirthLevel: maxRebirth,
+    );
 
     expect(mixedMin, greaterThan(chickenMin));
-    expect(mixedMin, lessThan(CustomEggLogic.minimumCostForCustomEgg(
-      const CustomEgg(
-        id: 'custom_d',
-        name: 'D',
-        emoji: '🥚',
-        cost: 100,
-        selectedAnimalIds: ['galaxy_dragon'],
-        animalWeights: {'galaxy_dragon': 1},
+    expect(
+      mixedMin,
+      lessThan(
+        CustomEggLogic.minimumCostForCustomEgg(
+          const CustomEgg(
+            id: 'custom_d',
+            name: 'D',
+            emoji: '🥚',
+            cost: 100,
+            selectedAnimalIds: ['galaxy_dragon'],
+            animalWeights: {'galaxy_dragon': 1},
+          ),
+          lifetimeCoinsEarned: maxLifetime,
+          rebirthLevel: maxRebirth,
+        ),
       ),
-    )));
+    );
   });
 
   test('weighted random favors higher weights', () {
@@ -210,6 +257,22 @@ void main() {
       CustomEggLogic.isAnimalUnlockedForCustomEgg('galaxy_dragon', 750000),
       isTrue,
     );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'scarab_beetle',
+        maxLifetime,
+        rebirthLevel: 0,
+      ),
+      isFalse,
+    );
+    expect(
+      CustomEggLogic.isAnimalUnlockedForCustomEgg(
+        'scarab_beetle',
+        0,
+        rebirthLevel: 1,
+      ),
+      isTrue,
+    );
   });
 
   test('canAddAnimalToCustomEgg respects six animal limit', () {
@@ -269,7 +332,27 @@ void main() {
     expect(ids.sublist(0, 3), ['chicken', 'mouse', 'rabbit']);
     expect(ids.sublist(3, 6), ['fox', 'deer', 'bear']);
     expect(ids.sublist(6, 10), ['cow', 'pig', 'sheep', 'horse']);
-    expect(ids.last, 'galaxy_dragon');
+    expect(
+      ids.sublist(29, 33),
+      ['moon_cat', 'star_fox', 'alien_slime', 'galaxy_dragon'],
+    );
+    expect(
+      ids.sublist(33, 36),
+      ['scarab_beetle', 'saber_cub', 'stone_golem'],
+    );
+    expect(
+      ids.sublist(36, 39),
+      ['royal_chicken', 'crown_fox', 'gem_dragon'],
+    );
+    expect(
+      ids.sublist(39, 42),
+      ['cloud_bunny', 'sun_lion', 'cosmic_phoenix'],
+    );
+    expect(
+      ids.sublist(42, 45),
+      ['void_mouse', 'eclipse_wolf', 'nebula_hydra'],
+    );
+    expect(ids.last, 'nebula_hydra');
   });
 
   test('hatchable animals exclude locked selections for shop', () {

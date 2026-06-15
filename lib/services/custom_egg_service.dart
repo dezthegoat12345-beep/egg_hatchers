@@ -15,9 +15,18 @@ class CustomEggService extends ChangeNotifier {
   List<CustomEgg> get allEggs => List.unmodifiable(_eggs);
 
   /// Enabled custom eggs with hatchable animals for the shop.
-  List<CustomEgg> shopEggs(int lifetimeCoinsEarned) => _eggs
-      .where((egg) => egg.isShopValid(lifetimeCoinsEarned))
-      .toList();
+  List<CustomEgg> shopEggs(
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) =>
+      _eggs
+          .where(
+            (egg) => egg.isShopValid(
+              lifetimeCoinsEarned,
+              rebirthLevel: rebirthLevel,
+            ),
+          )
+          .toList();
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();

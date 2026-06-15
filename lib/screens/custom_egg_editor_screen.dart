@@ -55,6 +55,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
   bool get _isEditing => widget.existing != null;
 
   int get _lifetimeCoins => widget.game.lifetimeCoinsEarned;
+  int get _rebirthLevel => widget.game.rebirthLevel;
 
   @override
   void initState() {
@@ -101,13 +102,21 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
 
   List<String> get _unlockedSelectedIds => _selectedAnimalIds
       .where(
-        (id) => CustomEggLogic.isAnimalUnlockedForCustomEgg(id, _lifetimeCoins),
+        (id) => CustomEggLogic.isAnimalUnlockedForCustomEgg(
+          id,
+          _lifetimeCoins,
+          rebirthLevel: _rebirthLevel,
+        ),
       )
       .toList();
 
   List<String> get _lockedSelectedIds => _selectedAnimalIds
       .where(
-        (id) => !CustomEggLogic.isAnimalUnlockedForCustomEgg(id, _lifetimeCoins),
+        (id) => !CustomEggLogic.isAnimalUnlockedForCustomEgg(
+          id,
+          _lifetimeCoins,
+          rebirthLevel: _rebirthLevel,
+        ),
       )
       .toList();
 
@@ -120,7 +129,10 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
       ),
     );
     if (_unlockedSelectedIds.isEmpty) return 1;
-    return unlockedDraft.minimumCostFor(_lifetimeCoins);
+    return unlockedDraft.minimumCostFor(
+      _lifetimeCoins,
+      rebirthLevel: _rebirthLevel,
+    );
   }
 
   int? get _enteredCost => int.tryParse(_costController.text.trim());
@@ -190,6 +202,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
     final unlocked = CustomEggLogic.isAnimalUnlockedForCustomEgg(
       animal.id,
       _lifetimeCoins,
+      rebirthLevel: _rebirthLevel,
     );
     final selected = _selectedAnimalIds.contains(animal.id);
     final lockedSelected = selected && !unlocked;
@@ -204,7 +217,10 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
       lockedSelected: lockedSelected,
       lockMessage: unlocked
           ? null
-          : CustomEggLogic.unlockMessageForAnimal(animal.id),
+          : CustomEggLogic.unlockMessageForAnimal(
+              animal.id,
+              rebirthLevel: _rebirthLevel,
+            ),
       weight: _animalWeights[animal.id] ?? 1,
       chancePercent: selected && unlocked
           ? CustomEggLogic.chancePercentForAnimal(
@@ -215,7 +231,10 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
           : null,
       onToggle: (checked) => _toggleAnimal(animal.id, checked),
       onLockedTap: () => _showError(
-        CustomEggLogic.unlockMessageForAnimal(animal.id),
+        CustomEggLogic.unlockMessageForAnimal(
+          animal.id,
+          rebirthLevel: _rebirthLevel,
+        ),
       ),
       onWeightChange: (delta) => _changeWeight(animal.id, delta),
     );
@@ -225,11 +244,17 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
     final unlocked = CustomEggLogic.isAnimalUnlockedForCustomEgg(
       animalId,
       _lifetimeCoins,
+      rebirthLevel: _rebirthLevel,
     );
 
     if (checked) {
       if (!unlocked) {
-        _showError(CustomEggLogic.unlockMessageForAnimal(animalId));
+        _showError(
+          CustomEggLogic.unlockMessageForAnimal(
+            animalId,
+            rebirthLevel: _rebirthLevel,
+          ),
+        );
         return;
       }
       if (_selectedAnimalIds.length >= CustomEgg.maxSelectedAnimals) {
@@ -327,9 +352,15 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
     }
 
     final draft = _buildDraftEgg();
-    if (cost < draft.minimumCostFor(_lifetimeCoins)) {
+    if (cost < draft.minimumCostFor(
+      _lifetimeCoins,
+      rebirthLevel: _rebirthLevel,
+    )) {
       _showError(
-        'Cost must be at least ${formatCoins(draft.minimumCostFor(_lifetimeCoins))} '
+        'Cost must be at least ${formatCoins(draft.minimumCostFor(
+          _lifetimeCoins,
+          rebirthLevel: _rebirthLevel,
+        ))} '
         'coins for these animals.',
       );
       return;

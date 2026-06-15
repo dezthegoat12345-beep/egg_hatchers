@@ -56,6 +56,18 @@ void main() {
     'star_fox': 'assets/images/animals/star_fox.png',
     'alien_slime': 'assets/images/animals/alien_slime.png',
     'galaxy_dragon': 'assets/images/animals/galaxy_dragon.png',
+    'scarab_beetle': 'assets/images/animals/scarab_beetle.png',
+    'saber_cub': 'assets/images/animals/saber_cub.png',
+    'stone_golem': 'assets/images/animals/stone_golem.png',
+    'royal_chicken': 'assets/images/animals/royal_chicken.png',
+    'crown_fox': 'assets/images/animals/crown_fox.png',
+    'gem_dragon': 'assets/images/animals/gem_dragon.png',
+    'cloud_bunny': 'assets/images/animals/cloud_bunny.png',
+    'sun_lion': 'assets/images/animals/sun_lion.png',
+    'cosmic_phoenix': 'assets/images/animals/cosmic_phoenix.png',
+    'void_mouse': 'assets/images/animals/void_mouse.png',
+    'eclipse_wolf': 'assets/images/animals/eclipse_wolf.png',
+    'nebula_hydra': 'assets/images/animals/nebula_hydra.png',
   };
 
   final buffer = StringBuffer()

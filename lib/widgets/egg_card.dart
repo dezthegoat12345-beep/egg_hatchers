@@ -165,26 +165,28 @@ class EggCard extends StatelessWidget {
                   color: theme.secondaryColor,
                 ),
               ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: unlockProgress,
-                  minHeight: 8,
-                  backgroundColor:
-                      theme.disabledColor.withValues(alpha: 0.2),
-                  color: theme.secondaryColor,
+              if (egg.unlockLifetimeCoins > 0) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: unlockProgress,
+                    minHeight: 8,
+                    backgroundColor:
+                        theme.disabledColor.withValues(alpha: 0.2),
+                    color: theme.secondaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Progress: ${formatCoins(lifetimeCoinsEarned)} / ${formatCoins(egg.unlockLifetimeCoins)} lifetime',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: theme.cardTextSecondaryColor,
+                const SizedBox(height: 6),
+                Text(
+                  'Progress: ${formatCoins(lifetimeCoinsEarned)} / ${formatCoins(egg.unlockLifetimeCoins)} lifetime',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: theme.cardTextSecondaryColor,
+                  ),
                 ),
-              ),
+              ],
             ],
             const SizedBox(height: 14),
             Text(

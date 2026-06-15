@@ -20,6 +20,7 @@ import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
+import '../utils/built_in_egg_logic.dart';
 import '../utils/secret_space_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
@@ -319,8 +320,10 @@ class GameService extends ChangeNotifier {
     await _saveService.save(_state);
   }
 
-  bool isEggUnlocked(Egg egg) =>
-      egg.isUnlocked(_state.lifetimeCoinsEarned);
+  bool isEggUnlocked(Egg egg) => egg.isUnlocked(
+        lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+        rebirthLevel: _state.rebirthLevel,
+      );
 
   bool canAfford(Egg egg) => _state.coins >= egg.cost;
 
@@ -994,10 +997,10 @@ class GameService extends ChangeNotifier {
           customEgg,
           _random,
           lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+          rebirthLevel: _state.rebirthLevel,
         );
       } else {
-        animalId = egg
-            .possibleAnimalIds[_random.nextInt(egg.possibleAnimalIds.length)];
+        animalId = BuiltInEggLogic.rollAnimal(egg, _random);
       }
       animal = GameData.animalById(animalId)!;
       mutation = LuckLogic.rollMutation(_random, _state.luckLevel);

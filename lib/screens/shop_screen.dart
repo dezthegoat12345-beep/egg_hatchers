@@ -74,7 +74,9 @@ class ShopScreen extends StatelessWidget {
     if (!game.isEggUnlocked(egg)) {
       showGameSnackBar(
         context,
-        message: egg.unlockMessage,
+        message: egg.unlockRebirthLevel > 0
+            ? egg.rebirthUnlockSnackbarMessage
+            : egg.unlockMessage,
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -124,7 +126,9 @@ class ShopScreen extends StatelessWidget {
     if (!game.isEggUnlocked(egg)) {
       showGameSnackBar(
         context,
-        message: egg.unlockMessage,
+        message: egg.unlockRebirthLevel > 0
+            ? egg.rebirthUnlockSnackbarMessage
+            : egg.unlockMessage,
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -172,7 +176,10 @@ class ShopScreen extends StatelessWidget {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
         final lifetime = game.lifetimeCoinsEarned;
-        final customShopEggs = customEggs.shopEggs(lifetime);
+        final customShopEggs = customEggs.shopEggs(
+          lifetime,
+          rebirthLevel: game.rebirthLevel,
+        );
         final hasSavedCustomEggs = customEggs.allEggs.isNotEmpty;
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
@@ -262,6 +269,7 @@ class ShopScreen extends StatelessWidget {
                                           final customEgg = customShopEggs[i];
                                           final eggModel = customEgg.toEgg(
                                             lifetimeCoinsEarned: lifetime,
+                                            rebirthLevel: game.rebirthLevel,
                                           );
                                           return EggCard(
                                             egg: eggModel,

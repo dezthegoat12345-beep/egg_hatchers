@@ -175,7 +175,7 @@ class QuestData {
       rewardDisplayLabel: '???',
       showsSecretHintOnClaim: true,
       metric: QuestMetric.collectedBaseAnimals,
-      target: 33,
+      target: 45,
     ),
 
     // Custom Egg Quests

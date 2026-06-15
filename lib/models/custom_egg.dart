@@ -35,27 +35,52 @@ class CustomEgg {
       .toList();
 
   /// Valid animals the player has unlocked for custom eggs.
-  List<String> hatchableAnimalIds(int lifetimeCoinsEarned) =>
-      CustomEggLogic.hatchableAnimalIds(this, lifetimeCoinsEarned);
+  List<String> hatchableAnimalIds(
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) =>
+      CustomEggLogic.hatchableAnimalIds(
+        this,
+        lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
+      );
+
+  bool isShopValid(
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) =>
+      isEnabled &&
+      hatchableAnimalIds(
+        lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
+      ).isNotEmpty;
 
   bool get isValid => validAnimalIds.isNotEmpty;
 
-  bool isShopValid(int lifetimeCoinsEarned) =>
-      isEnabled && hatchableAnimalIds(lifetimeCoinsEarned).isNotEmpty;
-
-  int minimumCostFor(int lifetimeCoinsEarned) =>
+  int minimumCostFor(
+    int lifetimeCoinsEarned, {
+    int rebirthLevel = 0,
+  }) =>
       CustomEggLogic.minimumCostForCustomEgg(
         this,
         lifetimeCoinsEarned: lifetimeCoinsEarned,
+        rebirthLevel: rebirthLevel,
       );
 
-  Egg toEgg({required int lifetimeCoinsEarned}) {
-    final ids = hatchableAnimalIds(lifetimeCoinsEarned);
+  Egg toEgg({
+    required int lifetimeCoinsEarned,
+    int rebirthLevel = 0,
+  }) {
+    final ids = hatchableAnimalIds(
+      lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
+    );
     final activeIds = ids.isNotEmpty ? ids : validAnimalIds;
     final count = activeIds.length;
     final summary = CustomEggLogic.formatChanceSummary(
       this,
       lifetimeCoinsEarned: lifetimeCoinsEarned,
+      rebirthLevel: rebirthLevel,
     );
     final chanceText = summary.isNotEmpty ? ' · $summary' : '';
     return Egg(
