@@ -15,6 +15,24 @@ import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
 import '../widgets/pixel_sprite.dart';
 
+enum ReferenceOverlayStrength {
+  low,
+  medium,
+  high;
+
+  double get opacity => switch (this) {
+        ReferenceOverlayStrength.low => 0.20,
+        ReferenceOverlayStrength.medium => 0.30,
+        ReferenceOverlayStrength.high => 0.45,
+      };
+
+  String get label => switch (this) {
+        ReferenceOverlayStrength.low => 'Low',
+        ReferenceOverlayStrength.medium => 'Medium',
+        ReferenceOverlayStrength.high => 'High',
+      };
+}
+
 /// Simple 16×16 pixel editor for one animal sprite.
 class SpriteEditorScreen extends StatefulWidget {
   const SpriteEditorScreen({
@@ -44,6 +62,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   SpriteEditorTool _tool = SpriteEditorTool.pencil;
   int _brushSize = 1;
   bool _showGrid = true;
+  bool _showReferenceOverlay = false;
+  ReferenceOverlayStrength _overlayStrength = ReferenceOverlayStrength.medium;
   int? _ratedScore;
   int? _ratedReward;
   final List<CustomSpriteData> _undoStack = [];
@@ -285,6 +305,55 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     });
   }
 
+  Future<void> _startFromOriginal() async {
+    final reference = SpriteReferenceData.referenceFor(widget.animal.id);
+    if (reference == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: widget.theme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+        ),
+        title: Text(
+          'Start from Original?',
+          style: TextStyle(
+            color: widget.theme.cardTextPrimaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Replace your current drawing with the original reference?',
+          style: TextStyle(
+            color: widget.theme.cardTextSecondaryColor,
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: widget.theme.cardTextSecondaryColor),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: GameTheme.filledButton(widget.theme, height: 40),
+            child: const Text('Replace'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    _pushUndo();
+    _setData(reference.copyWith());
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
@@ -312,6 +381,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
 
   Widget _buildBody(BackgroundTheme theme) {
     final hasReference = SpriteReferenceData.hasReference(widget.animal.id);
+    final ratingReference = SpriteReferenceData.referenceFor(widget.animal.id);
     final saved = _savedSprite;
     final savedHash = saved != null
         ? SpriteRatingLogic.computeSpriteHash(saved)
@@ -382,46 +452,38 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                               onChanged: _onEditorChanged,
                               canvasSize: 240,
                               themeColor: theme.primaryColor,
+                              referenceOverlay: ratingReference,
+                              showReferenceOverlay:
+                                  hasReference && _showReferenceOverlay,
+                              overlayOpacity: _overlayStrength.opacity,
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Container(
-                        decoration: GameTheme.cardDecoration(theme),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Preview',
-                              style: GameTheme.sectionTitle(theme, size: 15),
-                            ),
-                            const SizedBox(height: 12),
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: theme.primaryColor
-                                      .withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: theme.cardBorderColor
-                                        .withValues(alpha: 0.4),
-                                  ),
-                                ),
-                                child: _data.hasVisiblePixels
-                                    ? PixelSprite(data: _data, size: 96)
-                                    : CustomSpritePreview(
-                                        spritePath: widget.animal.spritePath,
-                                        fallbackEmoji: widget.animal.emoji,
-                                        size: 96,
-                                        emojiFontSize: 64,
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      _ReferencePreviewsPanel(
+                        theme: theme,
+                        animal: widget.animal,
+                        customData: _data,
+                        ratingReference: ratingReference,
+                        hasReference: hasReference,
+                      ),
+                      const SizedBox(height: 16),
+                      _ReferenceToolsPanel(
+                        theme: theme,
+                        hasReference: hasReference,
+                        showReferenceOverlay: _showReferenceOverlay,
+                        overlayStrength: _overlayStrength,
+                        onShowOverlayChanged: hasReference
+                            ? (value) =>
+                                setState(() => _showReferenceOverlay = value)
+                            : null,
+                        onOverlayStrengthChanged: hasReference
+                            ? (value) =>
+                                setState(() => _overlayStrength = value)
+                            : null,
+                        onStartFromOriginal:
+                            hasReference ? _startFromOriginal : null,
                       ),
                       const SizedBox(height: 16),
                       _RatingCard(
@@ -530,6 +592,280 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _ReferencePreviewsPanel extends StatelessWidget {
+  const _ReferencePreviewsPanel({
+    required this.theme,
+    required this.animal,
+    required this.customData,
+    required this.ratingReference,
+    required this.hasReference,
+  });
+
+  final BackgroundTheme theme;
+  final Animal animal;
+  final CustomSpriteData customData;
+  final CustomSpriteData? ratingReference;
+  final bool hasReference;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: GameTheme.cardDecoration(theme),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Previews', style: GameTheme.sectionTitle(theme, size: 15)),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final useRow = constraints.maxWidth >= 360;
+              final previewSize = useRow ? 88.0 : 96.0;
+
+              final tiles = <Widget>[
+                _PreviewTile(
+                  theme: theme,
+                  label: 'Original',
+                  child: CustomSpritePreview(
+                    spritePath: animal.spritePath,
+                    fallbackEmoji: animal.emoji,
+                    size: previewSize,
+                    emojiFontSize: previewSize * 0.65,
+                    semanticLabel: '${animal.name} original sprite',
+                  ),
+                ),
+                _PreviewTile(
+                  theme: theme,
+                  label: 'Your Sprite',
+                  child: customData.hasVisiblePixels
+                      ? PixelSprite(data: customData, size: previewSize)
+                      : _EmptyPreviewFrame(
+                          theme: theme,
+                          size: previewSize,
+                          label: 'Empty',
+                        ),
+                ),
+                if (hasReference && ratingReference != null)
+                  _PreviewTile(
+                    theme: theme,
+                    label: 'Rating Reference',
+                    child: PixelSprite(
+                      data: ratingReference!,
+                      size: previewSize,
+                      showGrid: true,
+                      gridColor: theme.cardBorderColor.withValues(alpha: 0.35),
+                    ),
+                  ),
+              ];
+
+              if (useRow) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < tiles.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(child: tiles[i]),
+                    ],
+                  ],
+                );
+              }
+
+              return Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: tiles,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyPreviewFrame extends StatelessWidget {
+  const _EmptyPreviewFrame({
+    required this.theme,
+    required this.size,
+    required this.label,
+  });
+
+  final BackgroundTheme theme;
+  final double size;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: theme.primaryColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.cardBorderColor.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: theme.cardTextSecondaryColor,
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewTile extends StatelessWidget {
+  const _PreviewTile({
+    required this.theme,
+    required this.label,
+    required this.child,
+  });
+
+  final BackgroundTheme theme;
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: theme.cardTextSecondaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: theme.primaryColor.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.cardBorderColor.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Center(child: child),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReferenceToolsPanel extends StatelessWidget {
+  const _ReferenceToolsPanel({
+    required this.theme,
+    required this.hasReference,
+    required this.showReferenceOverlay,
+    required this.overlayStrength,
+    required this.onShowOverlayChanged,
+    required this.onOverlayStrengthChanged,
+    required this.onStartFromOriginal,
+  });
+
+  final BackgroundTheme theme;
+  final bool hasReference;
+  final bool showReferenceOverlay;
+  final ReferenceOverlayStrength overlayStrength;
+  final ValueChanged<bool>? onShowOverlayChanged;
+  final ValueChanged<ReferenceOverlayStrength>? onOverlayStrengthChanged;
+  final VoidCallback? onStartFromOriginal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: GameTheme.cardDecoration(theme),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Reference Tools',
+            style: GameTheme.sectionTitle(theme, size: 15),
+          ),
+          const SizedBox(height: 10),
+          if (!hasReference)
+            Text(
+              'Reference tools are available when a rating reference exists.',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.cardTextSecondaryColor,
+                height: 1.35,
+              ),
+            )
+          else ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Show Reference Overlay',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.cardTextPrimaryColor,
+                ),
+              ),
+              subtitle: Text(
+                'Faint rating reference behind your drawing canvas.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+              value: showReferenceOverlay,
+              activeThumbColor: theme.primaryColor,
+              onChanged: onShowOverlayChanged,
+            ),
+            if (showReferenceOverlay) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Overlay Opacity',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final strength in ReferenceOverlayStrength.values)
+                    _ToolChip(
+                      theme: theme,
+                      label: strength.label,
+                      selected: overlayStrength == strength,
+                      onTap: () => onOverlayStrengthChanged?.call(strength),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: onStartFromOriginal,
+              style: GameTheme.filledButton(
+                theme,
+                color: theme.secondaryColor,
+                height: 48,
+              ),
+              icon: const Icon(Icons.copy_all_rounded, size: 18),
+              label: const Text('Start from Original'),
+            ),
+          ],
+        ],
       ),
     );
   }

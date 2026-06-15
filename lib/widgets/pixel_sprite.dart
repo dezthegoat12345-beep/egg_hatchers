@@ -18,6 +18,9 @@ class PixelSprite extends StatelessWidget {
     this.showGrid = false,
     this.gridColor,
     this.backgroundColor,
+    this.referenceOverlay,
+    this.showReferenceOverlay = false,
+    this.overlayOpacity = 0.3,
   });
 
   final CustomSpriteData data;
@@ -25,6 +28,9 @@ class PixelSprite extends StatelessWidget {
   final bool showGrid;
   final Color? gridColor;
   final Color? backgroundColor;
+  final CustomSpriteData? referenceOverlay;
+  final bool showReferenceOverlay;
+  final double overlayOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +43,9 @@ class PixelSprite extends StatelessWidget {
           showGrid: showGrid,
           gridColor: gridColor ?? Colors.black.withValues(alpha: 0.15),
           backgroundColor: backgroundColor,
+          referenceOverlay: referenceOverlay,
+          showReferenceOverlay: showReferenceOverlay,
+          overlayOpacity: overlayOpacity,
         ),
       ),
     );
@@ -49,12 +58,38 @@ class _PixelSpritePainter extends CustomPainter {
     required this.showGrid,
     required this.gridColor,
     this.backgroundColor,
+    this.referenceOverlay,
+    this.showReferenceOverlay = false,
+    this.overlayOpacity = 0.3,
   });
 
   final CustomSpriteData data;
   final bool showGrid;
   final Color gridColor;
   final Color? backgroundColor;
+  final CustomSpriteData? referenceOverlay;
+  final bool showReferenceOverlay;
+  final double overlayOpacity;
+
+  void _drawPixels(
+    Canvas canvas,
+    CustomSpriteData sprite,
+    double cell, {
+    double opacity = 1.0,
+  }) {
+    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
+      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+        final argb = sprite.pixelAt(x, y);
+        if (argb != null) {
+          final paint = Paint()..color = Color(argb).withValues(alpha: opacity);
+          canvas.drawRect(
+            Rect.fromLTWH(x * cell, y * cell, cell, cell),
+            paint,
+          );
+        }
+      }
+    }
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -64,18 +99,16 @@ class _PixelSpritePainter extends CustomPainter {
 
     final cell = size.width / CustomSpriteData.gridSize;
 
-    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
-      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
-        final argb = data.pixelAt(x, y);
-        if (argb != null) {
-          final paint = Paint()..color = Color(argb);
-          canvas.drawRect(
-            Rect.fromLTWH(x * cell, y * cell, cell, cell),
-            paint,
-          );
-        }
-      }
+    if (showReferenceOverlay && referenceOverlay != null) {
+      _drawPixels(
+        canvas,
+        referenceOverlay!,
+        cell,
+        opacity: overlayOpacity.clamp(0.0, 1.0),
+      );
     }
+
+    _drawPixels(canvas, data, cell);
 
     if (showGrid) {
       final gridPaint = Paint()
@@ -95,7 +128,10 @@ class _PixelSpritePainter extends CustomPainter {
     return oldDelegate.data != data ||
         oldDelegate.showGrid != showGrid ||
         oldDelegate.gridColor != gridColor ||
-        oldDelegate.backgroundColor != backgroundColor;
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.referenceOverlay != referenceOverlay ||
+        oldDelegate.showReferenceOverlay != showReferenceOverlay ||
+        oldDelegate.overlayOpacity != overlayOpacity;
   }
 }
 
@@ -113,6 +149,9 @@ class PixelSpriteEditor extends StatefulWidget {
     this.onStrokeEnd,
     this.canvasSize = 256,
     this.themeColor,
+    this.referenceOverlay,
+    this.showReferenceOverlay = false,
+    this.overlayOpacity = 0.3,
   });
 
   final CustomSpriteData data;
@@ -125,6 +164,9 @@ class PixelSpriteEditor extends StatefulWidget {
   final VoidCallback? onStrokeEnd;
   final double canvasSize;
   final Color? themeColor;
+  final CustomSpriteData? referenceOverlay;
+  final bool showReferenceOverlay;
+  final double overlayOpacity;
 
   @override
   State<PixelSpriteEditor> createState() => _PixelSpriteEditorState();
@@ -223,6 +265,10 @@ class _PixelSpriteEditorState extends State<PixelSpriteEditor> {
               size: widget.canvasSize,
               showGrid: widget.showGrid,
               gridColor: borderColor.withValues(alpha: 0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.6),
+              referenceOverlay: widget.referenceOverlay,
+              showReferenceOverlay: widget.showReferenceOverlay,
+              overlayOpacity: widget.overlayOpacity,
             ),
           ),
         ),
