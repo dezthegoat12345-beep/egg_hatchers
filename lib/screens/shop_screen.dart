@@ -179,15 +179,11 @@ class ShopScreen extends StatelessWidget {
           preferences: preferences,
           child: Scaffold(
           backgroundColor: bg.scaffoldColor,
-          appBar: AppBar(
-            title: const Text(
-              '🛒 Egg Shop',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-            ),
-            centerTitle: true,
+          appBar: PhoneWidthAppBar(
+            title: '🛒 Egg Shop',
+            titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
-            elevation: 0,
             actions: [
               CompactAppBarIconAction(
                 icon: Icons.egg_alt_outlined,

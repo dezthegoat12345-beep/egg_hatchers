@@ -49,15 +49,11 @@ class BackgroundsScreen extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: selected.scaffoldColor,
-          appBar: AppBar(
-            title: const Text(
-              '🎨 Backgrounds',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-            ),
-            centerTitle: true,
+          appBar: PhoneWidthAppBar(
+            title: '🎨 Backgrounds',
+            titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: selected.appBarColor,
             foregroundColor: Colors.white,
-            elevation: 0,
           ),
           body: GameBackground(
             theme: selected,

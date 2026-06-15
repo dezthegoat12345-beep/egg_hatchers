@@ -105,15 +105,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
           child: Scaffold(
           backgroundColor: bg.scaffoldColor,
           extendBody: true,
-          appBar: AppBar(
-            title: const Text(
-              '🐣 Egg Hatchers',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-            ),
-            centerTitle: true,
+          appBar: PhoneWidthAppBar(
+            title: '🐣 Egg Hatchers',
+            titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
-            elevation: 0,
           ),
           body: GameBackground(
             theme: bg,

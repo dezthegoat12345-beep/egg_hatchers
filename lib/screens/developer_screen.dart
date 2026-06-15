@@ -13,6 +13,7 @@ import '../utils/rebirth_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_sprite.dart';
+import '../widgets/phone_width_layout.dart';
 
 /// Max content width for the phone-sized dev tools column on wide screens.
 const double _kDevToolsMaxContentWidth = 430;
@@ -200,14 +201,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         if (!_slotsLoaded) {
           return Scaffold(
             backgroundColor: DevToolsTheme.background,
-            appBar: AppBar(
-              title: Text(
+            appBar: PhoneWidthAppBar.widget(
+              titleWidget: Text(
                 '> Developer Tools',
                 style: DevToolsTheme.sectionTitle(size: 18),
               ),
               backgroundColor: DevToolsTheme.surface,
               foregroundColor: DevToolsTheme.text,
-              elevation: 0,
             ),
             body: const Center(
               child: CircularProgressIndicator(color: DevToolsTheme.primary),
@@ -217,14 +217,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
 
         return Scaffold(
       backgroundColor: DevToolsTheme.background,
-      appBar: AppBar(
-        title: Text(
+      appBar: PhoneWidthAppBar.widget(
+        titleWidget: Text(
           '> Developer Tools',
           style: DevToolsTheme.sectionTitle(size: 18),
         ),
         backgroundColor: DevToolsTheme.surface,
         foregroundColor: DevToolsTheme.text,
-        elevation: 0,
       ),
       body: SafeArea(
         child: Center(

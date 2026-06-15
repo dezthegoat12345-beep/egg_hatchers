@@ -361,15 +361,13 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldColor,
-      appBar: AppBar(
-        title: Text(
+      appBar: PhoneWidthAppBar.widget(
+        titleWidget: Text(
           '✏️ ${widget.animal.name}',
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        centerTitle: true,
         backgroundColor: theme.appBarColor,
         foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: ListenableBuilder(
         listenable: Listenable.merge([
