@@ -7,6 +7,7 @@ import '../models/custom_sprite_data.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/sprite_rating_service.dart';
+import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
@@ -42,6 +43,7 @@ class SpriteEditorScreen extends StatefulWidget {
     required this.customSprites,
     required this.game,
     required this.spriteRating,
+    required this.referenceOverlay,
   });
 
   final Animal animal;
@@ -49,6 +51,7 @@ class SpriteEditorScreen extends StatefulWidget {
   final CustomSpriteService customSprites;
   final GameService game;
   final SpriteRatingService spriteRating;
+  final SpriteReferenceOverlayService referenceOverlay;
 
   @override
   State<SpriteEditorScreen> createState() => _SpriteEditorScreenState();
@@ -128,6 +131,39 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       _ratedScore = null;
       _ratedReward = null;
     });
+  }
+
+  Future<void> _unlockReferenceOverlay() async {
+    if (widget.referenceOverlay.isUnlocked(widget.animal.id)) return;
+
+    if (!widget.game.canAffordReferenceOverlay(widget.animal.id)) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough coins to unlock overlay.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final unlocked = await widget.game.unlockReferenceOverlay(
+      widget.animal.id,
+      widget.referenceOverlay,
+    );
+    if (!mounted) return;
+
+    if (unlocked) {
+      showGameSnackBar(
+        context,
+        message: 'Reference Overlay unlocked!',
+        backgroundColor: widget.theme.primaryColor,
+      );
+    } else {
+      showGameSnackBar(
+        context,
+        message: 'Not enough coins to unlock overlay.',
+        backgroundColor: Colors.orange.shade700,
+      );
+    }
   }
 
   CustomSpriteData? get _savedSprite =>
@@ -322,7 +358,11 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         elevation: 0,
       ),
       body: ListenableBuilder(
-        listenable: Listenable.merge([widget.game, widget.spriteRating]),
+        listenable: Listenable.merge([
+          widget.game,
+          widget.spriteRating,
+          widget.referenceOverlay,
+        ]),
         builder: (context, _) {
           return _buildBody(theme);
         },
@@ -346,6 +386,10 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         saved != null &&
         saved.hasVisiblePixels &&
         !alreadyClaimed;
+    final overlayUnlocked =
+        widget.referenceOverlay.isUnlocked(widget.animal.id);
+    final overlayCost =
+        widget.game.referenceOverlayCostForAnimal(widget.animal.id);
 
     return GameBackground(
       theme: theme,
@@ -404,8 +448,9 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                               canvasSize: 240,
                               themeColor: theme.primaryColor,
                               referenceOverlay: ratingReference,
-                              showReferenceOverlay:
-                                  hasReference && _showReferenceOverlay,
+                              showReferenceOverlay: hasReference &&
+                                  overlayUnlocked &&
+                                  _showReferenceOverlay,
                               overlayOpacity: _overlayStrength.opacity,
                             ),
                           ],
@@ -423,16 +468,22 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                       _ReferenceToolsPanel(
                         theme: theme,
                         hasReference: hasReference,
+                        overlayUnlocked: overlayUnlocked,
+                        overlayCost: overlayCost,
                         showReferenceOverlay: _showReferenceOverlay,
                         overlayStrength: _overlayStrength,
-                        onShowOverlayChanged: hasReference
+                        onUnlockOverlay: hasReference && !overlayUnlocked
+                            ? _unlockReferenceOverlay
+                            : null,
+                        onShowOverlayChanged: hasReference && overlayUnlocked
                             ? (value) =>
                                 setState(() => _showReferenceOverlay = value)
                             : null,
-                        onOverlayStrengthChanged: hasReference
-                            ? (value) =>
-                                setState(() => _overlayStrength = value)
-                            : null,
+                        onOverlayStrengthChanged:
+                            hasReference && overlayUnlocked
+                                ? (value) =>
+                                    setState(() => _overlayStrength = value)
+                                : null,
                       ),
                       const SizedBox(height: 16),
                       _RatingCard(
@@ -718,16 +769,22 @@ class _ReferenceToolsPanel extends StatelessWidget {
   const _ReferenceToolsPanel({
     required this.theme,
     required this.hasReference,
+    required this.overlayUnlocked,
+    required this.overlayCost,
     required this.showReferenceOverlay,
     required this.overlayStrength,
+    required this.onUnlockOverlay,
     required this.onShowOverlayChanged,
     required this.onOverlayStrengthChanged,
   });
 
   final BackgroundTheme theme;
   final bool hasReference;
+  final bool overlayUnlocked;
+  final int overlayCost;
   final bool showReferenceOverlay;
   final ReferenceOverlayStrength overlayStrength;
+  final VoidCallback? onUnlockOverlay;
   final ValueChanged<bool>? onShowOverlayChanged;
   final ValueChanged<ReferenceOverlayStrength>? onOverlayStrengthChanged;
 
@@ -754,51 +811,74 @@ class _ReferenceToolsPanel extends StatelessWidget {
               ),
             )
           else ...[
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                'Show Reference Overlay',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: theme.cardTextPrimaryColor,
-                ),
-              ),
-              subtitle: Text(
-                'Faint rating reference behind your drawing canvas.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.cardTextSecondaryColor,
-                ),
-              ),
-              value: showReferenceOverlay,
-              activeThumbColor: theme.primaryColor,
-              onChanged: onShowOverlayChanged,
-            ),
-            if (showReferenceOverlay) ...[
-              const SizedBox(height: 8),
+            if (!overlayUnlocked) ...[
               Text(
-                'Overlay Opacity',
+                'Overlay helps you trace the reference, so it costs coins.',
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
                   color: theme.cardTextSecondaryColor,
+                  height: 1.35,
                 ),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final strength in ReferenceOverlayStrength.values)
-                    _ToolChip(
-                      theme: theme,
-                      label: strength.label,
-                      selected: overlayStrength == strength,
-                      onTap: () => onOverlayStrengthChanged?.call(strength),
-                    ),
-                ],
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onUnlockOverlay,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(
+                  'Unlock Reference Overlay — ${formatCoins(overlayCost)} coins',
+                ),
               ),
+            ] else ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  'Show Reference Overlay',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: theme.cardTextPrimaryColor,
+                  ),
+                ),
+                subtitle: Text(
+                  'Faint rating reference behind your drawing canvas.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.cardTextSecondaryColor,
+                  ),
+                ),
+                value: showReferenceOverlay,
+                activeThumbColor: theme.primaryColor,
+                onChanged: onShowOverlayChanged,
+              ),
+              if (showReferenceOverlay) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Overlay Opacity',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: theme.cardTextSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final strength in ReferenceOverlayStrength.values)
+                      _ToolChip(
+                        theme: theme,
+                        label: strength.label,
+                        selected: overlayStrength == strength,
+                        onTap: () => onOverlayStrengthChanged?.call(strength),
+                      ),
+                  ],
+                ),
+              ],
             ],
           ],
         ],

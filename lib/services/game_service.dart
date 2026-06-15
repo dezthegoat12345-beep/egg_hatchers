@@ -19,7 +19,9 @@ import '../models/quest.dart';
 import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
+import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
+import 'sprite_reference_overlay_service.dart';
 
 /// Central game logic: coins, hatching, mutations, idle income, and saving.
 class GameService extends ChangeNotifier {
@@ -410,6 +412,33 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return coins;
+  }
+
+  /// One-time reference overlay unlock cost for an animal.
+  int referenceOverlayCostForAnimal(String animalId) {
+    return SpriteRatingLogic.referenceOverlayCostForAnimal(animalId);
+  }
+
+  bool canAffordReferenceOverlay(String animalId) {
+    final cost = referenceOverlayCostForAnimal(animalId);
+    return cost > 0 && _state.coins >= cost;
+  }
+
+  /// Spends coins for a reference overlay unlock without affecting lifetime earnings.
+  Future<bool> unlockReferenceOverlay(
+    String animalId,
+    SpriteReferenceOverlayService overlayService,
+  ) async {
+    if (overlayService.isUnlocked(animalId)) return true;
+
+    final cost = referenceOverlayCostForAnimal(animalId);
+    if (cost <= 0 || _state.coins < cost) return false;
+
+    _state = _state.copyWith(coins: _state.coins - cost);
+    notifyListeners();
+    save();
+    await overlayService.unlock(animalId);
+    return true;
   }
 
   void recordCustomEggCreated() {

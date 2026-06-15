@@ -77,6 +77,34 @@ class SpriteRatingLogic {
     return 'Almost a perfect match!';
   }
 
+  /// Tier base used for rating rewards and overlay unlock pricing.
+  static int tierBaseForAnimal(String animalId) {
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return 0;
+
+    final sourceEgg = CustomEggLogic.findSourceEggForAnimal(animalId);
+    return max(
+      100,
+      sourceEgg != null
+          ? (sourceEgg.cost / 4).round()
+          : animal.coinsPerSecond * 30,
+    );
+  }
+
+  /// Maximum possible rating reward for an animal (tierBase × 8).
+  static int maxRatingRewardForAnimal(String animalId) {
+    final tierBase = tierBaseForAnimal(animalId);
+    if (tierBase <= 0) return 0;
+    return tierBase * 8;
+  }
+
+  /// One-time reference overlay unlock cost (25% of max reward, min 25 coins).
+  static int referenceOverlayCostForAnimal(String animalId) {
+    final maxReward = maxRatingRewardForAnimal(animalId);
+    if (maxReward <= 0) return 0;
+    return max(25, (maxReward * 0.25).round());
+  }
+
   /// Reward coins for a score; returns 0 when score < 1.
   static int calculateReward({
     required String animalId,
@@ -85,14 +113,8 @@ class SpriteRatingLogic {
   }) {
     if (score < 1) return 0;
 
-    final animal = GameData.animalById(animalId);
-    if (animal == null) return 0;
-
-    final sourceEgg = CustomEggLogic.findSourceEggForAnimal(animalId);
-    final tierBase = max(
-      100,
-      sourceEgg != null ? (sourceEgg.cost / 4).round() : animal.coinsPerSecond * 30,
-    );
+    final tierBase = tierBaseForAnimal(animalId);
+    if (tierBase <= 0) return 0;
 
     final scoreFactor = score / 10.0;
     final progressFactor =

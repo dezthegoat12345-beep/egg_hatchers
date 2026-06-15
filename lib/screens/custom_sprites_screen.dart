@@ -8,6 +8,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sprite_rating_service.dart';
+import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/custom_sprite_preview.dart';
@@ -22,12 +23,14 @@ class CustomSpritesScreen extends StatelessWidget {
     required this.customSprites,
     required this.game,
     required this.spriteRating,
+    required this.referenceOverlay,
   });
 
   final PreferencesService preferences;
   final CustomSpriteService customSprites;
   final GameService game;
   final SpriteRatingService spriteRating;
+  final SpriteReferenceOverlayService referenceOverlay;
 
   Future<void> _confirmResetAll(BuildContext context, BackgroundTheme theme) async {
     final confirmed = await showDialog<bool>(
@@ -182,6 +185,7 @@ class CustomSpritesScreen extends StatelessWidget {
                             customSprites: customSprites,
                             game: game,
                             spriteRating: spriteRating,
+                            referenceOverlay: referenceOverlay,
                           ),
                         ),
                       ),

@@ -6,6 +6,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sprite_rating_service.dart';
+import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
@@ -30,6 +31,7 @@ class HatcheryScreen extends StatefulWidget {
     required this.customSprites,
     required this.customEggs,
     required this.spriteRating,
+    required this.referenceOverlay,
   });
 
   final GameService game;
@@ -37,6 +39,7 @@ class HatcheryScreen extends StatefulWidget {
   final CustomSpriteService customSprites;
   final CustomEggService customEggs;
   final SpriteRatingService spriteRating;
+  final SpriteReferenceOverlayService referenceOverlay;
 
   @override
   State<HatcheryScreen> createState() => _HatcheryScreenState();
@@ -195,6 +198,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                         customSprites: customSprites,
                                         game: game,
                                         spriteRating: widget.spriteRating,
+                                        referenceOverlay: widget.referenceOverlay,
                                       ),
                                     ),
                                   ),
@@ -210,6 +214,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                         customSprites: customSprites,
                                         game: game,
                                         spriteRating: widget.spriteRating,
+                                        referenceOverlay: widget.referenceOverlay,
                                       ),
                                     ),
                                   ),

@@ -7,6 +7,7 @@ import 'services/custom_sprite_service.dart';
 import 'services/game_service.dart';
 import 'services/preferences_service.dart';
 import 'services/sprite_rating_service.dart';
+import 'services/sprite_reference_overlay_service.dart';
 import 'widgets/game_background.dart';
 
 void main() {
@@ -28,6 +29,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
   final CustomSpriteService _customSprites = CustomSpriteService();
   final CustomEggService _customEggs = CustomEggService();
   final SpriteRatingService _spriteRating = SpriteRatingService();
+  final SpriteReferenceOverlayService _referenceOverlay =
+      SpriteReferenceOverlayService();
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _customSprites.addListener(_onGameChanged);
     _customEggs.addListener(_onGameChanged);
     _spriteRating.addListener(_onGameChanged);
+    _referenceOverlay.addListener(_onGameChanged);
   }
 
   Future<void> _initialize() async {
@@ -48,6 +52,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _customSprites.initialize(),
       _customEggs.initialize(),
       _spriteRating.initialize(),
+      _referenceOverlay.initialize(),
     ]);
     if (mounted) setState(() {});
   }
@@ -72,6 +77,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _customSprites.removeListener(_onGameChanged);
     _customEggs.removeListener(_onGameChanged);
     _spriteRating.removeListener(_onGameChanged);
+    _referenceOverlay.removeListener(_onGameChanged);
     _game.dispose();
     super.dispose();
   }
@@ -81,7 +87,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _preferences.isInitialized &&
       _customSprites.isInitialized &&
       _customEggs.isInitialized &&
-      _spriteRating.isInitialized;
+      _spriteRating.isInitialized &&
+      _referenceOverlay.isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +111,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
               customSprites: _customSprites,
               customEggs: _customEggs,
               spriteRating: _spriteRating,
+              referenceOverlay: _referenceOverlay,
             )
           : const _LoadingScreen(),
     );

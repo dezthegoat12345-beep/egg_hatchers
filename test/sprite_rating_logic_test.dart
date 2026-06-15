@@ -6,6 +6,7 @@ import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 import 'package:egg_hatchers/services/sprite_rating_service.dart';
+import 'package:egg_hatchers/services/sprite_reference_overlay_service.dart';
 import 'package:egg_hatchers/utils/sprite_rating_logic.dart';
 
 void main() {
@@ -177,5 +178,91 @@ void main() {
         reason: '${animal.id} is missing rating reference',
       );
     }
+  });
+
+  test('reference overlay cost is 25 percent of max reward with 25 coin floor', () {
+    for (final animal in GameData.animals) {
+      final maxReward = SpriteRatingLogic.maxRatingRewardForAnimal(animal.id);
+      final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(animal.id);
+
+      expect(maxReward, greaterThan(0));
+      expect(cost, greaterThanOrEqualTo(25));
+      expect(cost, (maxReward * 0.25).round());
+    }
+  });
+
+  test('unlocking reference overlay subtracts coins without lifetime earnings',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    final overlay = SpriteReferenceOverlayService();
+    await Future.wait([game.initialize(), overlay.initialize()]);
+
+    final cost = game.referenceOverlayCostForAnimal('chicken');
+    game.setCoins(cost + 50);
+    game.setLifetimeCoinsEarned(5000);
+    final lifetimeBefore = game.lifetimeCoinsEarned;
+    final coinsBefore = game.coins;
+
+    final unlocked =
+        await game.unlockReferenceOverlay('chicken', overlay);
+
+    expect(unlocked, isTrue);
+    expect(overlay.isUnlocked('chicken'), isTrue);
+    expect(game.coins, coinsBefore - cost);
+    expect(game.lifetimeCoinsEarned, lifetimeBefore);
+  });
+
+  test('reference overlay unlock is blocked when coins are too low', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    final overlay = SpriteReferenceOverlayService();
+    await Future.wait([game.initialize(), overlay.initialize()]);
+
+    final cost = game.referenceOverlayCostForAnimal('chicken');
+    game.setCoins(cost - 1);
+
+    final unlocked =
+        await game.unlockReferenceOverlay('chicken', overlay);
+
+    expect(unlocked, isFalse);
+    expect(overlay.isUnlocked('chicken'), isFalse);
+    expect(game.coins, cost - 1);
+  });
+
+  test('reference overlay unlock persists after restart', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    final overlay = SpriteReferenceOverlayService();
+    await Future.wait([game.initialize(), overlay.initialize()]);
+
+    game.setCoins(10000);
+    expect(
+      await game.unlockReferenceOverlay('fox', overlay),
+      isTrue,
+    );
+
+    final reloaded = SpriteReferenceOverlayService();
+    await reloaded.initialize();
+
+    expect(reloaded.isUnlocked('fox'), isTrue);
+    expect(reloaded.isUnlocked('chicken'), isFalse);
+  });
+
+  test('reference overlay unlock persists after rebirth', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    final overlay = SpriteReferenceOverlayService();
+    await Future.wait([game.initialize(), overlay.initialize()]);
+
+    game.setCoins(10000);
+    game.setLifetimeCoinsEarned(1000000);
+    expect(
+      await game.unlockReferenceOverlay('dragon', overlay),
+      isTrue,
+    );
+    expect(game.performRebirth(), isTrue);
+
+    expect(overlay.isUnlocked('dragon'), isTrue);
   });
 }
