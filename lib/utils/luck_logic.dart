@@ -14,6 +14,11 @@ class LuckLogic {
   static int clampLevel(int level) =>
       level.clamp(minLevel, maxLevel).toInt();
 
+  /// Applies a temporary luck multiplier for one-off bonus rolls (e.g. secret rewards).
+  static int boostedLuckLevel(int luckLevel, {required double multiplier}) {
+    return clampLevel((luckLevel * multiplier).round());
+  }
+
   /// Cost to upgrade from [currentLevel] to the next level.
   static int upgradeCost(int currentLevel) {
     final level = clampLevel(currentLevel);

@@ -11,7 +11,8 @@ class PlayerState {
     this.luckLevel = 1,
     this.rebirthLevel = 0,
     this.questProgress = const QuestProgress(),
-    this.secretToolsCoinsClaimed = false,
+    this.secretSpaceEggClaimed = false,
+    this.fullDeveloperToolsUnlocked = false,
   });
 
   final int coins;
@@ -21,7 +22,8 @@ class PlayerState {
   final int luckLevel;
   final int rebirthLevel;
   final QuestProgress questProgress;
-  final bool secretToolsCoinsClaimed;
+  final bool secretSpaceEggClaimed;
+  final bool fullDeveloperToolsUnlocked;
 
   static PlayerState initial() {
     return PlayerState(
@@ -43,7 +45,8 @@ class PlayerState {
     int? luckLevel,
     int? rebirthLevel,
     QuestProgress? questProgress,
-    bool? secretToolsCoinsClaimed,
+    bool? secretSpaceEggClaimed,
+    bool? fullDeveloperToolsUnlocked,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -53,8 +56,10 @@ class PlayerState {
       luckLevel: luckLevel ?? this.luckLevel,
       rebirthLevel: rebirthLevel ?? this.rebirthLevel,
       questProgress: questProgress ?? this.questProgress,
-      secretToolsCoinsClaimed:
-          secretToolsCoinsClaimed ?? this.secretToolsCoinsClaimed,
+      secretSpaceEggClaimed:
+          secretSpaceEggClaimed ?? this.secretSpaceEggClaimed,
+      fullDeveloperToolsUnlocked:
+          fullDeveloperToolsUnlocked ?? this.fullDeveloperToolsUnlocked,
     );
   }
 
@@ -66,7 +71,8 @@ class PlayerState {
         'luckLevel': luckLevel,
         'rebirthLevel': rebirthLevel,
         'questProgress': questProgress.toJson(),
-        'secretToolsCoinsClaimed': secretToolsCoinsClaimed,
+        'secretSpaceEggClaimed': secretSpaceEggClaimed,
+        'fullDeveloperToolsUnlocked': fullDeveloperToolsUnlocked,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -84,8 +90,9 @@ class PlayerState {
       questProgress: QuestProgress.fromJson(
         json['questProgress'] as Map<String, dynamic>?,
       ),
-      secretToolsCoinsClaimed:
-          json['secretToolsCoinsClaimed'] as bool? ?? false,
+      secretSpaceEggClaimed: json['secretSpaceEggClaimed'] as bool? ?? false,
+      fullDeveloperToolsUnlocked:
+          json['fullDeveloperToolsUnlocked'] as bool? ?? false,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
@@ -407,12 +408,13 @@ class ReturnToCustomSpritesPopScope extends StatelessWidget {
   }
 }
 
-/// Pushes Developer Tools with the terminal black background.
+/// Pushes Developer Tools with the terminal black background (debug builds only).
 Future<T?> pushDevToolsRoute<T>(
   BuildContext context, {
   required WidgetBuilder builder,
   RouteSettings? settings,
 }) {
+  if (!kDebugMode) return Future<T?>.value();
   return pushAppRoute<T>(
     context,
     builder: builder,

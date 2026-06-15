@@ -20,6 +20,7 @@ import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
+import '../utils/secret_space_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
 import 'sprite_reference_overlay_service.dart';
@@ -151,8 +152,7 @@ class GameService extends ChangeNotifier {
       RebirthLogic.incomeMultiplier(_state.rebirthLevel);
   bool get canRebirth => RebirthLogic.canRebirth(_state.lifetimeCoinsEarned);
   int get rebirthRequirement => RebirthLogic.unlockLifetimeCoins;
-  bool get secretToolsCoinsClaimed => _state.secretToolsCoinsClaimed;
-  static const int secretToolsCoinReward = 500;
+  bool get secretSpaceEggClaimed => _state.secretSpaceEggClaimed;
   QuestProgress get questProgress => _state.questProgress;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
@@ -409,7 +409,8 @@ class GameService extends ChangeNotifier {
     if (!canRebirth) return false;
 
     final newRebirthLevel = _state.rebirthLevel + 1;
-    final secretClaimed = _state.secretToolsCoinsClaimed;
+    final secretClaimed = _state.secretSpaceEggClaimed;
+    final devToolsUnlocked = _state.fullDeveloperToolsUnlocked;
     _state = PlayerState(
       coins: GameData.startingPlayerState().coins,
       ownedAnimals: const [],
@@ -418,7 +419,8 @@ class GameService extends ChangeNotifier {
       luckLevel: 1,
       rebirthLevel: newRebirthLevel,
       questProgress: QuestProgress.initial(),
-      secretToolsCoinsClaimed: secretClaimed,
+      secretSpaceEggClaimed: secretClaimed,
+      fullDeveloperToolsUnlocked: devToolsUnlocked,
     );
     _pendingQuestNotification = null;
     _questNotificationDeferred = false;
@@ -489,16 +491,57 @@ class GameService extends ChangeNotifier {
     return coins;
   }
 
-  /// One-time secret hatchery coin bonus — does not affect lifetime earnings.
-  int? claimSecretToolsCoins() {
-    if (_state.secretToolsCoinsClaimed) return null;
-    _state = _state.copyWith(
-      coins: _state.coins + secretToolsCoinReward,
-      secretToolsCoinsClaimed: true,
+  /// One-time Secret Hatchery Space Egg — free hatch with boosted luck.
+  HatchResult? claimSecretSpaceEggReward() {
+    if (_state.secretSpaceEggClaimed) return null;
+
+    final animalId = SecretSpaceEggLogic.rollAnimal(_random);
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return null;
+
+    final boostedLuck = LuckLogic.boostedLuckLevel(
+      _state.luckLevel,
+      multiplier: SecretSpaceEggLogic.rewardLuckMultiplier,
     );
+    final mutation = LuckLogic.rollMutation(_random, boostedLuck);
+
+    final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final existingIndex = updatedAnimals.indexWhere(
+      (owned) =>
+          owned.animalId == animal.id && owned.mutationId == mutation.id,
+    );
+
+    if (existingIndex >= 0) {
+      final existing = updatedAnimals[existingIndex];
+      updatedAnimals[existingIndex] =
+          existing.copyWith(quantity: existing.quantity + 1);
+    } else {
+      updatedAnimals.add(
+        OwnedAnimal(
+          animalId: animal.id,
+          quantity: 1,
+          level: 1,
+          mutationId: mutation.id,
+        ),
+      );
+    }
+
+    _state = _state.copyWith(
+      ownedAnimals: updatedAnimals,
+      secretSpaceEggClaimed: true,
+    );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
-    return secretToolsCoinReward;
+    return HatchResult(animal: animal, mutation: mutation);
+  }
+
+  /// Test helper for injecting owned animals without changing hatch odds.
+  @visibleForTesting
+  void devSetOwnedAnimalsForTesting(List<OwnedAnimal> animals) {
+    _state = _state.copyWith(ownedAnimals: animals);
+    notifyListeners();
+    save();
   }
 
   /// One-time reference overlay unlock cost for an animal.

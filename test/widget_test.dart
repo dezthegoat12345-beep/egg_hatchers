@@ -80,7 +80,8 @@ void main() {
     expect(restored.ownedAnimals.first.mutationId, 'golden');
     expect(restored.questProgress.totalEggsHatched, 0);
     expect(restored.questProgress.claimedQuestIds, isEmpty);
-    expect(restored.secretToolsCoinsClaimed, isFalse);
+    expect(restored.secretSpaceEggClaimed, isFalse);
+    expect(restored.fullDeveloperToolsUnlocked, isFalse);
   });
 
   test('old saves without questProgress default stats to zero', () {

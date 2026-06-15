@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/collection_quest_logic.dart';
-import '../utils/format_utils.dart';
-import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
+import '../widgets/hatch_dialog.dart';
 import '../widgets/phone_width_layout.dart';
 import 'developer_screen.dart';
 
@@ -26,13 +26,19 @@ class SecretToolsScreen extends StatelessWidget {
   final CustomSpriteService customSprites;
   final BackgroundTheme theme;
 
-  void _claimSecretCoins(BuildContext context) {
-    final granted = game.claimSecretToolsCoins();
-    if (granted == null) return;
-    showGameSnackBar(
+  Future<void> _claimSecretSpaceEgg(BuildContext context) async {
+    final result = game.claimSecretSpaceEggReward();
+    if (result == null || !context.mounted) return;
+
+    final spaceEgg = GameData.eggById('space');
+    if (spaceEgg == null) return;
+
+    await HatchDialog.show(
       context,
-      message: 'You claimed ${formatCoins(granted)} secret coins!',
-      backgroundColor: theme.secondaryColor,
+      egg: spaceEgg,
+      result: result,
+      theme: theme,
+      customSprites: customSprites,
     );
   }
 
@@ -43,7 +49,7 @@ class SecretToolsScreen extends StatelessWidget {
       builder: (context, _) {
         final collected = CollectionQuestLogic.collectedBaseAnimalCount(game.state);
         final total = CollectionQuestLogic.totalBaseAnimalCount;
-        final claimed = game.secretToolsCoinsClaimed;
+        final claimed = game.secretSpaceEggClaimed;
 
         return ReturnToHatcheryPopScope(
           theme: theme,
@@ -138,8 +144,7 @@ class SecretToolsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'A one-time stash of ${formatCoins(GameService.secretToolsCoinReward)} coins, '
-                            'hidden behind the coin.',
+                            'Free Space Egg with 3x luck.',
                             style: TextStyle(
                               color: theme.cardTextSecondaryColor,
                               fontSize: 14,
@@ -148,12 +153,14 @@ class SecretToolsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
                           FilledButton.icon(
-                            onPressed: claimed ? null : () => _claimSecretCoins(context),
-                            icon: Text(claimed ? '✅' : '🪙'),
+                            onPressed: claimed
+                                ? null
+                                : () => _claimSecretSpaceEgg(context),
+                            icon: Text(claimed ? '✅' : '🚀'),
                             label: Text(
                               claimed
-                                  ? 'Claimed'
-                                  : 'Claim Secret Coins',
+                                  ? 'Secret Space Egg claimed'
+                                  : 'Claim Secret Space Egg',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: theme.secondaryColor,
@@ -182,7 +189,7 @@ class SecretToolsScreen extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.build_outlined, size: 18),
-                        label: const Text('Developer Tools'),
+                        label: const Text('Developer Tools (Debug)'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: theme.cardTextSecondaryColor,
                           side: BorderSide(

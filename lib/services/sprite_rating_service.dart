@@ -56,6 +56,21 @@ class SpriteRatingService extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool hasPerfectRating(String animalId, {int minScore = 10}) {
+    return bestClaimedScore(animalId) >= minScore;
+  }
+
+  int bestClaimedScore(String animalId) {
+    final claims = _claimsByAnimal[animalId];
+    if (claims == null || claims.isEmpty) return 0;
+
+    var best = 0;
+    for (final claim in claims.values) {
+      if (claim.score > best) best = claim.score;
+    }
+    return best;
+  }
+
   Future<bool> recordClaim({
     required String animalId,
     required String spriteHash,
