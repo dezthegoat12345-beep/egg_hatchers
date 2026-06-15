@@ -177,7 +177,9 @@ class ShopScreen extends StatelessWidget {
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
 
-        return QuestNotificationListener(
+        return ReturnToHatcheryPopScope(
+          theme: bg,
+          child: QuestNotificationListener(
           game: game,
           preferences: preferences,
           child: Scaffold(
@@ -187,6 +189,11 @@ class ShopScreen extends StatelessWidget {
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: ReturnToHatcheryBackButton(
+              theme: bg,
+              color: Colors.white,
+            ),
             actions: [
               CompactAppBarIconAction(
                 icon: Icons.egg_alt_outlined,
@@ -326,6 +333,7 @@ class ShopScreen extends StatelessWidget {
                         ),
                       ),
           ),
+        ),
         ),
         );
       },

@@ -26,6 +26,7 @@ class CustomSpritesScreen extends StatelessWidget {
     required this.game,
     required this.spriteRating,
     required this.referenceOverlay,
+    this.returnToHatcheryOnBack = false,
   });
 
   final PreferencesService preferences;
@@ -33,6 +34,7 @@ class CustomSpritesScreen extends StatelessWidget {
   final GameService game;
   final SpriteRatingService spriteRating;
   final SpriteReferenceOverlayService referenceOverlay;
+  final bool returnToHatcheryOnBack;
 
   Future<void> _confirmResetAll(BuildContext context, BackgroundTheme theme) async {
     final confirmed = await showDialog<bool>(
@@ -104,13 +106,20 @@ class CustomSpritesScreen extends StatelessWidget {
             return a.name.compareTo(b.name);
           });
 
-        return Scaffold(
+        final scaffold = Scaffold(
           backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎨 Custom Sprites',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: theme.appBarColor,
             foregroundColor: Colors.white,
+            automaticallyImplyLeading: !returnToHatcheryOnBack,
+            leading: returnToHatcheryOnBack
+                ? ReturnToHatcheryBackButton(
+                    theme: theme,
+                    color: Colors.white,
+                  )
+                : null,
           ),
           body: GameBackground(
             theme: theme,
@@ -219,6 +228,14 @@ class CustomSpritesScreen extends StatelessWidget {
             ),
           ),
         );
+
+        if (returnToHatcheryOnBack) {
+          return ReturnToHatcheryPopScope(
+            theme: theme,
+            child: scaffold,
+          );
+        }
+        return scaffold;
       },
     );
   }

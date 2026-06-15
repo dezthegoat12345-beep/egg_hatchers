@@ -64,6 +64,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
         builder: (_) => DeveloperScreen(
           game: game,
           customSprites: customSprites,
+          returnTheme: preferences.selectedTheme,
         ),
       );
     }
@@ -205,6 +206,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                       game: game,
                                       spriteRating: widget.spriteRating,
                                       referenceOverlay: widget.referenceOverlay,
+                                      returnToHatcheryOnBack: true,
                                     ),
                                   ),
                                 ),

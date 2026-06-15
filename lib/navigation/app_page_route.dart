@@ -135,6 +135,7 @@ Future<T?> pushThemedAppRoute<T>(
 
 const Duration kMainThemedPreNavDuration = Duration(milliseconds: 620);
 const Duration kEditorThemedPreNavDuration = Duration(milliseconds: 580);
+const Duration kReturnToHatcheryPreNavDuration = Duration(milliseconds: 550);
 
 /// Pre-navigation transition screen, then destination via pushReplacement.
 Future<T?> openWithThemedTransition<T>(
@@ -191,6 +192,79 @@ Future<T?> openShopWithTransition<T>(
     duration: kShopPreNavTransitionDuration,
     settings: settings,
   );
+}
+
+/// Shows a return cue, then pops back to Hatchery without leaving the cue on stack.
+Future<void> returnToHatcheryWithTransition(
+  BuildContext context, {
+  required BackgroundTheme theme,
+}) {
+  final navigator = Navigator.of(context);
+  if (!navigator.canPop()) return Future.value();
+
+  return navigator.push<void>(
+    appPageRoute<void>(
+      backgroundColor: theme.scaffoldColor,
+      backgroundTheme: theme,
+      instantTransition: true,
+      builder: (transitionContext) {
+        return ThemedRouteTransitionScreen(
+          theme: theme,
+          icon: '🏠',
+          label: 'Returning to Hatchery',
+          duration: kReturnToHatcheryPreNavDuration,
+          onComplete: () {
+            if (!transitionContext.mounted) return;
+            Navigator.of(transitionContext).popUntil((route) => route.isFirst);
+          },
+        );
+      },
+    ),
+  );
+}
+
+/// Back button that plays the return-to-Hatchery transition cue.
+class ReturnToHatcheryBackButton extends StatelessWidget {
+  const ReturnToHatcheryBackButton({
+    super.key,
+    required this.theme,
+    this.color,
+  });
+
+  final BackgroundTheme theme;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return BackButton(
+      color: color,
+      onPressed: () => returnToHatcheryWithTransition(context, theme: theme),
+    );
+  }
+}
+
+/// Intercepts system back and routes through [returnToHatcheryWithTransition].
+class ReturnToHatcheryPopScope extends StatelessWidget {
+  const ReturnToHatcheryPopScope({
+    super.key,
+    required this.theme,
+    required this.child,
+  });
+
+  final BackgroundTheme theme;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        returnToHatcheryWithTransition(context, theme: theme);
+      },
+      child: child,
+    );
+  }
 }
 
 /// Pushes Developer Tools with the terminal black background.

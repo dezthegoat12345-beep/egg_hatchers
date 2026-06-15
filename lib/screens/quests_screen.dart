@@ -6,6 +6,7 @@ import '../models/quest.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
+import '../navigation/app_page_route.dart';
 import '../utils/quest_logic.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
@@ -46,13 +47,20 @@ class QuestsScreen extends StatelessWidget {
         final readyIds = readyToClaim.map((q) => q.id).toSet();
         final readyCount = readyToClaim.length;
 
-        return Scaffold(
+        return ReturnToHatcheryPopScope(
+          theme: bg,
+          child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎯 Quests',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: ReturnToHatcheryBackButton(
+              theme: bg,
+              color: Colors.white,
+            ),
           ),
           body: GameBackground(
             theme: bg,
@@ -166,6 +174,7 @@ class QuestsScreen extends StatelessWidget {
                         ),
                       ),
           ),
+        ),
         );
       },
     );

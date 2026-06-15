@@ -6,6 +6,7 @@ import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../navigation/app_page_route.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
@@ -54,7 +55,9 @@ class CollectionScreen extends StatelessWidget {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
-        return QuestNotificationListener(
+        return ReturnToHatcheryPopScope(
+          theme: bg,
+          child: QuestNotificationListener(
           game: game,
           preferences: preferences,
           child: Scaffold(
@@ -64,6 +67,11 @@ class CollectionScreen extends StatelessWidget {
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: bg.appBarColor,
             foregroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: ReturnToHatcheryBackButton(
+              theme: bg,
+              color: Colors.white,
+            ),
           ),
           body: GameBackground(
             theme: bg,
@@ -97,6 +105,7 @@ class CollectionScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         ),
         );
       },

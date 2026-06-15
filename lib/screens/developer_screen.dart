@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../data/game_data.dart';
 import '../models/animal.dart';
+import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../models/forced_hatch_result.dart';
+import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
@@ -24,10 +26,12 @@ class DeveloperScreen extends StatefulWidget {
     super.key,
     required this.game,
     required this.customSprites,
+    this.returnTheme,
   });
 
   final GameService game;
   final CustomSpriteService customSprites;
+  final BackgroundTheme? returnTheme;
 
   @override
   State<DeveloperScreen> createState() => _DeveloperScreenState();
@@ -193,38 +197,52 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
     );
   }
 
+  Widget _wrapDevToolsReturn(Widget child) {
+    final returnTheme = widget.returnTheme;
+    if (returnTheme == null) return child;
+    return ReturnToHatcheryPopScope(theme: returnTheme, child: child);
+  }
+
+  PreferredSizeWidget _devToolsAppBar() {
+    final returnTheme = widget.returnTheme;
+    return PhoneWidthAppBar.widget(
+      titleWidget: Text(
+        '> Developer Tools',
+        style: DevToolsTheme.sectionTitle(size: 18),
+      ),
+      backgroundColor: DevToolsTheme.surface,
+      foregroundColor: DevToolsTheme.text,
+      automaticallyImplyLeading: returnTheme == null,
+      leading: returnTheme == null
+          ? null
+          : ReturnToHatcheryBackButton(
+              theme: returnTheme,
+              color: DevToolsTheme.text,
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([game, widget.customSprites]),
       builder: (context, _) {
         if (!_slotsLoaded) {
-          return Scaffold(
+          return _wrapDevToolsReturn(
+            Scaffold(
             backgroundColor: Colors.transparent,
-            appBar: PhoneWidthAppBar.widget(
-              titleWidget: Text(
-                '> Developer Tools',
-                style: DevToolsTheme.sectionTitle(size: 18),
-              ),
-              backgroundColor: DevToolsTheme.surface,
-              foregroundColor: DevToolsTheme.text,
-            ),
+            appBar: _devToolsAppBar(),
             body: const Center(
               child: CircularProgressIndicator(color: DevToolsTheme.primary),
             ),
+          ),
           );
         }
 
-        return Scaffold(
+        return _wrapDevToolsReturn(
+          Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: PhoneWidthAppBar.widget(
-        titleWidget: Text(
-          '> Developer Tools',
-          style: DevToolsTheme.sectionTitle(size: 18),
-        ),
-        backgroundColor: DevToolsTheme.surface,
-        foregroundColor: DevToolsTheme.text,
-      ),
+      appBar: _devToolsAppBar(),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -646,6 +664,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           ),
         ),
       ),
+    ),
         );
       },
     );

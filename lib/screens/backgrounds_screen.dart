@@ -48,13 +48,20 @@ class BackgroundsScreen extends StatelessWidget {
       builder: (context, _) {
         final selected = preferences.selectedTheme;
 
-        return Scaffold(
+        return ReturnToHatcheryPopScope(
+          theme: selected,
+          child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎨 Backgrounds',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: selected.appBarColor,
             foregroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: ReturnToHatcheryBackButton(
+              theme: selected,
+              color: Colors.white,
+            ),
           ),
           body: GameBackground(
             theme: selected,
@@ -117,6 +124,7 @@ class BackgroundsScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       },
     );
