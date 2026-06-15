@@ -4,6 +4,7 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_sprite_data.dart';
+import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
@@ -173,17 +174,16 @@ class CustomSpritesScreen extends StatelessWidget {
                       theme: theme,
                       hasCustom: customSprites.hasCustomSprite(animal.id),
                       customSprite: customSprites.getSprite(animal.id),
-                      onTap: () => Navigator.push(
+                      onTap: () => pushThemedAppRoute(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => SpriteEditorScreen(
-                            animal: animal,
-                            theme: theme,
-                            customSprites: customSprites,
-                            game: game,
-                            spriteRating: spriteRating,
-                            referenceOverlay: referenceOverlay,
-                          ),
+                        theme: theme,
+                        builder: (_) => SpriteEditorScreen(
+                          animal: animal,
+                          theme: theme,
+                          customSprites: customSprites,
+                          game: game,
+                          spriteRating: spriteRating,
+                          referenceOverlay: referenceOverlay,
                         ),
                       ),
                     ),

@@ -92,18 +92,30 @@ class _EggHatchersAppState extends State<EggHatchersApp>
 
   @override
   Widget build(BuildContext context) {
+    final theme = _isReady
+        ? _preferences.selectedTheme
+        : BackgroundThemes.defaultTheme;
+
     return MaterialApp(
       title: 'Egg Hatchers',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4DB6AC),
-          brightness: Brightness.light,
+          seedColor: theme.primaryColor,
+          brightness: theme.isDark ? Brightness.dark : Brightness.light,
         ),
-        scaffoldBackgroundColor: BackgroundThemes.defaultTheme.scaffoldColor,
+        scaffoldBackgroundColor: theme.scaffoldColor,
+        canvasColor: theme.scaffoldColor,
+        dialogTheme: DialogThemeData(backgroundColor: theme.cardColor),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
+      builder: (context, child) {
+        return ColoredBox(
+          color: theme.scaffoldColor,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: _isReady
           ? HatcheryScreen(
               game: _game,

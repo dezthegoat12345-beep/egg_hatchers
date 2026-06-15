@@ -7,6 +7,7 @@ import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
+import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
@@ -58,13 +59,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     _coinTapCount++;
     if (_coinTapCount >= 3) {
       _coinTapCount = 0;
-      Navigator.push(
+      pushDevToolsRoute(
         context,
-        MaterialPageRoute(
-          builder: (_) => DeveloperScreen(
-            game: game,
-            customSprites: customSprites,
-          ),
+        builder: (_) => DeveloperScreen(
+          game: game,
+          customSprites: customSprites,
         ),
       );
     }
@@ -135,74 +134,69 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '🛒 Shop',
                                   color: bg.secondaryColor,
-                                  onTap: () => Navigator.push(
+                                  onTap: () => pushThemedAppRoute(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ShopScreen(
-                                        game: game,
-                                        preferences: preferences,
-                                        customSprites: customSprites,
-                                        customEggs: customEggs,
-                                      ),
+                                    theme: bg,
+                                    builder: (_) => ShopScreen(
+                                      game: game,
+                                      preferences: preferences,
+                                      customSprites: customSprites,
+                                      customEggs: customEggs,
                                     ),
                                   ),
                                 ),
                                 _HatcheryNavItem(
                                   label: '🎯 Quests',
                                   color: bg.panelAccentColor,
-                                  onTap: () => Navigator.push(
+                                  onTap: () => pushThemedAppRoute(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => QuestsScreen(
-                                        game: game,
-                                        preferences: preferences,
-                                      ),
+                                    theme: bg,
+                                    builder: (_) => QuestsScreen(
+                                      game: game,
+                                      preferences: preferences,
                                     ),
                                   ),
                                 ),
                                 _HatcheryNavItem(
                                   label: '📚 Collection',
                                   color: bg.primaryColor,
-                                  onTap: () => Navigator.push(
+                                  onTap: () => pushThemedAppRoute(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CollectionScreen(
-                                        game: game,
-                                        preferences: preferences,
-                                        customSprites: customSprites,
-                                      ),
+                                    theme: bg,
+                                    builder: (_) => CollectionScreen(
+                                      game: game,
+                                      preferences: preferences,
+                                      customSprites: customSprites,
                                     ),
                                   ),
                                 ),
                                 _HatcheryNavItem(
                                   label: '🎨 Themes',
                                   color: bg.appBarColor,
-                                  onTap: () => Navigator.push(
+                                  onTap: () => pushThemedAppRoute(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BackgroundsScreen(
-                                        preferences: preferences,
-                                        customSprites: customSprites,
-                                        game: game,
-                                        spriteRating: widget.spriteRating,
-                                        referenceOverlay: widget.referenceOverlay,
-                                      ),
+                                    theme: bg,
+                                    builder: (_) => BackgroundsScreen(
+                                      preferences: preferences,
+                                      customSprites: customSprites,
+                                      game: game,
+                                      spriteRating: widget.spriteRating,
+                                      referenceOverlay: widget.referenceOverlay,
                                     ),
                                   ),
                                 ),
                                 _HatcheryNavItem(
                                   label: '✏️ Sprites',
                                   color: bg.secondaryColor.withValues(alpha: 0.85),
-                                  onTap: () => Navigator.push(
+                                  onTap: () => pushThemedAppRoute(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CustomSpritesScreen(
-                                        preferences: preferences,
-                                        customSprites: customSprites,
-                                        game: game,
-                                        spriteRating: widget.spriteRating,
-                                        referenceOverlay: widget.referenceOverlay,
-                                      ),
+                                    theme: bg,
+                                    builder: (_) => CustomSpritesScreen(
+                                      preferences: preferences,
+                                      customSprites: customSprites,
+                                      game: game,
+                                      spriteRating: widget.spriteRating,
+                                      referenceOverlay: widget.referenceOverlay,
                                     ),
                                   ),
                                 ),

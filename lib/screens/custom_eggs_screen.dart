@@ -4,6 +4,7 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/custom_egg.dart';
+import '../navigation/app_page_route.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
@@ -90,19 +91,18 @@ class CustomEggsScreen extends StatelessWidget {
   }
 
   void _openEditor(BuildContext context, {CustomEgg? egg}) {
-    Navigator.push(
+    pushThemedAppRoute(
       context,
-      MaterialPageRoute(
-        builder: (_) => CustomEggEditorScreen(
-          key: egg == null
-              ? ValueKey('create_${DateTime.now().microsecondsSinceEpoch}')
-              : ValueKey('edit_${egg.id}'),
-          game: game,
-          preferences: preferences,
-          customEggs: customEggs,
-          customSprites: customSprites,
-          existing: egg,
-        ),
+      theme: preferences.selectedTheme,
+      builder: (_) => CustomEggEditorScreen(
+        key: egg == null
+            ? ValueKey('create_${DateTime.now().microsecondsSinceEpoch}')
+            : ValueKey('edit_${egg.id}'),
+        game: game,
+        preferences: preferences,
+        customEggs: customEggs,
+        customSprites: customSprites,
+        existing: egg,
       ),
     );
   }

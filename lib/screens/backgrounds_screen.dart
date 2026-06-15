@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
+import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
@@ -82,16 +83,15 @@ class BackgroundsScreen extends StatelessWidget {
                       return SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () => Navigator.push(
+                          onPressed: () => pushThemedAppRoute(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => CustomSpritesScreen(
-                                preferences: preferences,
-                                customSprites: customSprites,
-                                game: game,
-                                spriteRating: spriteRating,
-                                referenceOverlay: referenceOverlay,
-                              ),
+                            theme: selected,
+                            builder: (_) => CustomSpritesScreen(
+                              preferences: preferences,
+                              customSprites: customSprites,
+                              game: game,
+                              spriteRating: spriteRating,
+                              referenceOverlay: referenceOverlay,
                             ),
                           ),
                           icon: const Icon(Icons.brush_rounded),

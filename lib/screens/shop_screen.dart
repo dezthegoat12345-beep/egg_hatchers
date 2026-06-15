@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/egg.dart';
 import '../utils/custom_egg_logic.dart';
+import '../navigation/app_page_route.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
@@ -37,30 +38,30 @@ class ShopScreen extends StatelessWidget {
   final CustomEggService customEggs;
 
   void _openCustomEggsScreen(BuildContext context) {
-    Navigator.push(
+    final theme = preferences.selectedTheme;
+    pushThemedAppRoute(
       context,
-      MaterialPageRoute(
-        builder: (_) => CustomEggsScreen(
-          game: game,
-          preferences: preferences,
-          customEggs: customEggs,
-          customSprites: customSprites,
-        ),
+      theme: theme,
+      builder: (_) => CustomEggsScreen(
+        game: game,
+        preferences: preferences,
+        customEggs: customEggs,
+        customSprites: customSprites,
       ),
     );
   }
 
   void _openCreateCustomEgg(BuildContext context) {
-    Navigator.push(
+    final theme = preferences.selectedTheme;
+    pushThemedAppRoute(
       context,
-      MaterialPageRoute(
-        builder: (_) => CustomEggEditorScreen(
-          key: ValueKey('create_${DateTime.now().microsecondsSinceEpoch}'),
-          game: game,
-          preferences: preferences,
-          customEggs: customEggs,
-          customSprites: customSprites,
-        ),
+      theme: theme,
+      builder: (_) => CustomEggEditorScreen(
+        key: ValueKey('create_${DateTime.now().microsecondsSinceEpoch}'),
+        game: game,
+        preferences: preferences,
+        customEggs: customEggs,
+        customSprites: customSprites,
       ),
     );
   }

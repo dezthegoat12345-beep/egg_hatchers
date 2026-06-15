@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
 import '../screens/quests_screen.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
@@ -33,13 +34,12 @@ void openQuestsScreen(
   required GameService game,
   required PreferencesService preferences,
 }) {
-  Navigator.push(
+  pushThemedAppRoute(
     context,
-    MaterialPageRoute(
-      builder: (_) => QuestsScreen(
-        game: game,
-        preferences: preferences,
-      ),
+    theme: preferences.selectedTheme,
+    builder: (_) => QuestsScreen(
+      game: game,
+      preferences: preferences,
     ),
   );
 }
