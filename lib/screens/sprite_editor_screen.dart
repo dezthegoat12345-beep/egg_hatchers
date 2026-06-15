@@ -305,55 +305,6 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     });
   }
 
-  Future<void> _startFromOriginal() async {
-    final reference = SpriteReferenceData.referenceFor(widget.animal.id);
-    if (reference == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.theme.cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
-        ),
-        title: Text(
-          'Start from Original?',
-          style: TextStyle(
-            color: widget.theme.cardTextPrimaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Replace your current drawing with the original reference?',
-          style: TextStyle(
-            color: widget.theme.cardTextSecondaryColor,
-            fontSize: 14,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: widget.theme.cardTextSecondaryColor),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: GameTheme.filledButton(widget.theme, height: 40),
-            child: const Text('Replace'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    _pushUndo();
-    _setData(reference.copyWith());
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
@@ -482,8 +433,6 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                             ? (value) =>
                                 setState(() => _overlayStrength = value)
                             : null,
-                        onStartFromOriginal:
-                            hasReference ? _startFromOriginal : null,
                       ),
                       const SizedBox(height: 16),
                       _RatingCard(
@@ -773,7 +722,6 @@ class _ReferenceToolsPanel extends StatelessWidget {
     required this.overlayStrength,
     required this.onShowOverlayChanged,
     required this.onOverlayStrengthChanged,
-    required this.onStartFromOriginal,
   });
 
   final BackgroundTheme theme;
@@ -782,7 +730,6 @@ class _ReferenceToolsPanel extends StatelessWidget {
   final ReferenceOverlayStrength overlayStrength;
   final ValueChanged<bool>? onShowOverlayChanged;
   final ValueChanged<ReferenceOverlayStrength>? onOverlayStrengthChanged;
-  final VoidCallback? onStartFromOriginal;
 
   @override
   Widget build(BuildContext context) {
@@ -853,17 +800,6 @@ class _ReferenceToolsPanel extends StatelessWidget {
                 ],
               ),
             ],
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: onStartFromOriginal,
-              style: GameTheme.filledButton(
-                theme,
-                color: theme.secondaryColor,
-                height: 48,
-              ),
-              icon: const Icon(Icons.copy_all_rounded, size: 18),
-              label: const Text('Start from Original'),
-            ),
           ],
         ],
       ),
