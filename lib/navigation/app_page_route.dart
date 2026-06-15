@@ -4,15 +4,23 @@ import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
 import '../widgets/app_theme_background.dart';
 import '../widgets/phone_width_layout.dart';
+import '../widgets/route_transition_cue.dart';
 
 const Duration kAppRouteForwardDuration = Duration(milliseconds: 300);
 const Duration kAppRouteReverseDuration = Duration(milliseconds: 250);
+
+/// Optional themed transition cues for specific navigation paths.
+enum AppRouteTransitionKind {
+  standard,
+  shop,
+}
 
 /// Opaque route with a stable backdrop and animated phone-width panel only.
 Route<T> appPageRoute<T>({
   required WidgetBuilder builder,
   required Color backgroundColor,
   BackgroundTheme? backgroundTheme,
+  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
 }) {
   return PageRouteBuilder<T>(
@@ -59,6 +67,23 @@ Route<T> appPageRoute<T>({
         ),
       );
 
+      final showShopCue = transitionKind == AppRouteTransitionKind.shop &&
+          backgroundTheme != null &&
+          animation.status != AnimationStatus.reverse;
+
+      Widget? transitionCue;
+      if (showShopCue) {
+        transitionCue = AppRoutePhonePanel(
+          maxWidth: kPhoneMaxContentWidth,
+          child: IgnorePointer(
+            child: ShopRouteTransitionCue(
+              theme: backgroundTheme,
+              animation: animation,
+            ),
+          ),
+        );
+      }
+
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -67,6 +92,7 @@ Route<T> appPageRoute<T>({
             color: backgroundTheme == null ? backgroundColor : null,
           ),
           animatedPanel,
+          ?transitionCue,
         ],
       );
     },
@@ -79,6 +105,7 @@ Future<T?> pushAppRoute<T>(
   required WidgetBuilder builder,
   required Color backgroundColor,
   BackgroundTheme? backgroundTheme,
+  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
 }) {
   return Navigator.of(context).push<T>(
@@ -86,6 +113,7 @@ Future<T?> pushAppRoute<T>(
       builder: builder,
       backgroundColor: backgroundColor,
       backgroundTheme: backgroundTheme,
+      transitionKind: transitionKind,
       settings: settings,
     ),
   );
@@ -96,6 +124,7 @@ Future<T?> pushThemedAppRoute<T>(
   BuildContext context, {
   required BackgroundTheme theme,
   required WidgetBuilder builder,
+  AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
 }) {
   return pushAppRoute<T>(
@@ -103,6 +132,23 @@ Future<T?> pushThemedAppRoute<T>(
     builder: builder,
     backgroundColor: theme.scaffoldColor,
     backgroundTheme: theme,
+    transitionKind: transitionKind,
+    settings: settings,
+  );
+}
+
+/// Hatchery -> Shop prototype with a short shop-themed transition cue.
+Future<T?> pushShopAppRoute<T>(
+  BuildContext context, {
+  required BackgroundTheme theme,
+  required WidgetBuilder builder,
+  RouteSettings? settings,
+}) {
+  return pushThemedAppRoute<T>(
+    context,
+    theme: theme,
+    transitionKind: AppRouteTransitionKind.shop,
+    builder: builder,
     settings: settings,
   );
 }

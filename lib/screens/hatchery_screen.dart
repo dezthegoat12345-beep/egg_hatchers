@@ -134,7 +134,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                 _HatcheryNavItem(
                                   label: '🛒 Shop',
                                   color: bg.secondaryColor,
-                                  onTap: () => pushThemedAppRoute(
+                                  onTap: () => pushShopAppRoute(
                                     context,
                                     theme: bg,
                                     builder: (_) => ShopScreen(
