@@ -37,11 +37,20 @@ class SpriteEditorScreen extends StatefulWidget {
 }
 
 class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
+  static const _maxHistory = 30;
+
   late CustomSpriteData _data;
   int? _selectedColor = SpritePalette.colors.first;
-  bool _eraserSelected = false;
+  SpriteEditorTool _tool = SpriteEditorTool.pencil;
+  int _brushSize = 1;
+  bool _showGrid = true;
   int? _ratedScore;
   int? _ratedReward;
+  final List<CustomSpriteData> _undoStack = [];
+  final List<CustomSpriteData> _redoStack = [];
+
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
 
   @override
   void initState() {
@@ -50,12 +59,48 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         CustomSpriteData.empty();
   }
 
-  void _clear() {
+  void _clearHistory() {
+    _undoStack.clear();
+    _redoStack.clear();
+  }
+
+  void _pushUndo() {
+    _undoStack.add(_data.copyWith());
+    if (_undoStack.length > _maxHistory) {
+      _undoStack.removeAt(0);
+    }
+    _redoStack.clear();
+  }
+
+  void _setData(CustomSpriteData next, {bool clearRating = true}) {
     setState(() {
-      _data = CustomSpriteData.empty();
-      _ratedScore = null;
-      _ratedReward = null;
+      _data = next;
+      if (clearRating) {
+        _ratedScore = null;
+        _ratedReward = null;
+      }
     });
+  }
+
+  void _onStrokeStart() => _pushUndo();
+
+  void _onEditorChanged(CustomSpriteData next) => _setData(next);
+
+  void _undo() {
+    if (!_canUndo) return;
+    _redoStack.add(_data.copyWith());
+    _setData(_undoStack.removeLast());
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+    _undoStack.add(_data.copyWith());
+    _setData(_redoStack.removeLast());
+  }
+
+  void _clear() {
+    _pushUndo();
+    _setData(CustomSpriteData.empty());
   }
 
   void _clearRating() {
@@ -202,6 +247,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   Future<void> _reset() async {
     await widget.customSprites.resetSprite(widget.animal.id);
     if (!mounted) return;
+    _clearHistory();
     setState(() {
       _data = CustomSpriteData.empty();
       _ratedScore = null;
@@ -217,17 +263,31 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   void _selectColor(int? color) {
     setState(() {
       _selectedColor = color;
-      _eraserSelected = color == SpritePalette.transparent;
+      if (color == SpritePalette.transparent) {
+        _tool = SpriteEditorTool.eraser;
+      } else if (_tool == SpriteEditorTool.eraser) {
+        _tool = SpriteEditorTool.pencil;
+      }
       _ratedScore = null;
       _ratedReward = null;
+    });
+  }
+
+  void _selectTool(SpriteEditorTool tool) {
+    setState(() {
+      _tool = tool;
+      if (tool == SpriteEditorTool.eraser) {
+        _selectedColor = SpritePalette.transparent;
+      } else if (tool == SpriteEditorTool.pencil &&
+          _selectedColor == SpritePalette.transparent) {
+        _selectedColor = SpritePalette.colors.first;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
-    final activeColor =
-        _eraserSelected ? SpritePalette.transparent : _selectedColor;
 
     return Scaffold(
       backgroundColor: theme.scaffoldColor,
@@ -244,13 +304,13 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       body: ListenableBuilder(
         listenable: Listenable.merge([widget.game, widget.spriteRating]),
         builder: (context, _) {
-          return _buildBody(theme, activeColor);
+          return _buildBody(theme);
         },
       ),
     );
   }
 
-  Widget _buildBody(BackgroundTheme theme, int? activeColor) {
+  Widget _buildBody(BackgroundTheme theme) {
     final hasReference = SpriteReferenceData.hasReference(widget.animal.id);
     final saved = _savedSprite;
     final savedHash = saved != null
@@ -288,22 +348,38 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                         child: Column(
                           children: [
                             Text(
-                              'Tap squares to draw. Choose a color below.',
+                              'Tap or drag to draw. Pick a tool, brush, and color.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: theme.cardTextSecondaryColor,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
+                            _ToolsPanel(
+                              theme: theme,
+                              tool: _tool,
+                              brushSize: _brushSize,
+                              showGrid: _showGrid,
+                              canUndo: _canUndo,
+                              canRedo: _canRedo,
+                              onToolSelected: _selectTool,
+                              onBrushSizeSelected: (size) =>
+                                  setState(() => _brushSize = size),
+                              onShowGridChanged: (value) =>
+                                  setState(() => _showGrid = value),
+                              onUndo: _undo,
+                              onRedo: _redo,
+                            ),
+                            const SizedBox(height: 14),
                             PixelSpriteEditor(
                               data: _data,
-                              selectedColor: activeColor,
-                              onChanged: (next) => setState(() {
-                                _data = next;
-                                _ratedScore = null;
-                                _ratedReward = null;
-                              }),
+                              selectedColor: _selectedColor,
+                              tool: _tool,
+                              brushSize: _brushSize,
+                              showGrid: _showGrid,
+                              onStrokeStart: _onStrokeStart,
+                              onChanged: _onEditorChanged,
                               canvasSize: 240,
                               themeColor: theme.primaryColor,
                             ),
@@ -378,10 +454,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                                 _PaletteSwatch(
                                   label: 'Eraser',
                                   color: Colors.transparent,
-                                  isSelected: _eraserSelected,
-                                  onTap: () => _selectColor(
-                                    SpritePalette.transparent,
-                                  ),
+                                  isSelected: _tool == SpriteEditorTool.eraser,
+                                  onTap: () => _selectTool(SpriteEditorTool.eraser),
                                   showEraserIcon: true,
                                   theme: theme,
                                 ),
@@ -391,11 +465,13 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                                   _PaletteSwatch(
                                     label: SpritePalette.labels[i],
                                     color: Color(SpritePalette.colors[i]!),
-                                    isSelected: !_eraserSelected &&
+                                    isSelected: _tool != SpriteEditorTool.eraser &&
                                         _selectedColor ==
                                             SpritePalette.colors[i],
-                                    onTap: () =>
-                                        _selectColor(SpritePalette.colors[i]),
+                                    onTap: () {
+                                      _selectTool(SpriteEditorTool.pencil);
+                                      _selectColor(SpritePalette.colors[i]);
+                                    },
                                     theme: theme,
                                   ),
                               ],
@@ -595,6 +671,205 @@ class _RatingCard extends StatelessWidget {
             ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _ToolsPanel extends StatelessWidget {
+  const _ToolsPanel({
+    required this.theme,
+    required this.tool,
+    required this.brushSize,
+    required this.showGrid,
+    required this.canUndo,
+    required this.canRedo,
+    required this.onToolSelected,
+    required this.onBrushSizeSelected,
+    required this.onShowGridChanged,
+    required this.onUndo,
+    required this.onRedo,
+  });
+
+  final BackgroundTheme theme;
+  final SpriteEditorTool tool;
+  final int brushSize;
+  final bool showGrid;
+  final bool canUndo;
+  final bool canRedo;
+  final ValueChanged<SpriteEditorTool> onToolSelected;
+  final ValueChanged<int> onBrushSizeSelected;
+  final ValueChanged<bool> onShowGridChanged;
+  final VoidCallback onUndo;
+  final VoidCallback onRedo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Tools', style: GameTheme.sectionTitle(theme, size: 15)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _ToolChip(
+              theme: theme,
+              label: 'Pencil',
+              icon: Icons.edit_rounded,
+              selected: tool == SpriteEditorTool.pencil,
+              onTap: () => onToolSelected(SpriteEditorTool.pencil),
+            ),
+            _ToolChip(
+              theme: theme,
+              label: 'Fill',
+              icon: Icons.format_color_fill_rounded,
+              selected: tool == SpriteEditorTool.fill,
+              onTap: () => onToolSelected(SpriteEditorTool.fill),
+            ),
+            _ToolChip(
+              theme: theme,
+              label: 'Eraser',
+              icon: Icons.auto_fix_off_rounded,
+              selected: tool == SpriteEditorTool.eraser,
+              onTap: () => onToolSelected(SpriteEditorTool.eraser),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Brush: ${brushSize}x$brushSize',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: theme.cardTextSecondaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final size in [1, 2, 3])
+              _ToolChip(
+                theme: theme,
+                label: '${size}x$size',
+                selected: brushSize == size,
+                onTap: () => onBrushSizeSelected(size),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: canUndo ? onUndo : null,
+                icon: const Icon(Icons.undo_rounded, size: 18),
+                label: const Text('Undo'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  foregroundColor: theme.cardTextPrimaryColor,
+                  side: BorderSide(color: theme.cardBorderColor),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: canRedo ? onRedo : null,
+                icon: const Icon(Icons.redo_rounded, size: 18),
+                label: const Text('Redo'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  foregroundColor: theme.cardTextPrimaryColor,
+                  side: BorderSide(color: theme.cardBorderColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            'Show Grid',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: theme.cardTextPrimaryColor,
+            ),
+          ),
+          value: showGrid,
+          activeThumbColor: theme.primaryColor,
+          onChanged: onShowGridChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _ToolChip extends StatelessWidget {
+  const _ToolChip({
+    required this.theme,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final BackgroundTheme theme;
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? theme.primaryColor.withValues(alpha: 0.15)
+                : theme.cardColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? theme.primaryColor : theme.cardBorderColor,
+              width: selected ? 2 : 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected
+                      ? theme.primaryColor
+                      : theme.cardTextSecondaryColor,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? theme.primaryColor
+                      : theme.cardTextPrimaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

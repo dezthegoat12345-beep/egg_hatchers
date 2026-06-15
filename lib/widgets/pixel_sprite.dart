@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../models/custom_sprite_data.dart';
 
+/// Active drawing tool in the sprite editor.
+enum SpriteEditorTool {
+  pencil,
+  fill,
+  eraser,
+}
+
 /// Renders a pixel grid with CustomPaint at any display size.
 class PixelSprite extends StatelessWidget {
   const PixelSprite({
@@ -92,41 +99,105 @@ class _PixelSpritePainter extends CustomPainter {
   }
 }
 
-/// Interactive 16×16 editor canvas.
-class PixelSpriteEditor extends StatelessWidget {
+/// Interactive 16×16 editor canvas with brush, fill, and drag painting.
+class PixelSpriteEditor extends StatefulWidget {
   const PixelSpriteEditor({
     super.key,
     required this.data,
     required this.selectedColor,
+    required this.tool,
+    required this.brushSize,
+    required this.showGrid,
     required this.onChanged,
+    this.onStrokeStart,
+    this.onStrokeEnd,
     this.canvasSize = 256,
     this.themeColor,
   });
 
   final CustomSpriteData data;
   final int? selectedColor;
+  final SpriteEditorTool tool;
+  final int brushSize;
+  final bool showGrid;
   final ValueChanged<CustomSpriteData> onChanged;
+  final VoidCallback? onStrokeStart;
+  final VoidCallback? onStrokeEnd;
   final double canvasSize;
   final Color? themeColor;
 
-  void _paintAt(Offset localPosition) {
-    final cell = canvasSize / CustomSpriteData.gridSize;
+  @override
+  State<PixelSpriteEditor> createState() => _PixelSpriteEditorState();
+}
+
+class _PixelSpriteEditorState extends State<PixelSpriteEditor> {
+  bool _strokeActive = false;
+
+  int? get _activeColor {
+    if (widget.tool == SpriteEditorTool.eraser) {
+      return SpritePalette.transparent;
+    }
+    return widget.selectedColor;
+  }
+
+  (int x, int y)? _cellAt(Offset localPosition) {
+    final cell = widget.canvasSize / CustomSpriteData.gridSize;
     final x = (localPosition.dx / cell).floor();
     final y = (localPosition.dy / cell).floor();
     if (x < 0 ||
         x >= CustomSpriteData.gridSize ||
         y < 0 ||
         y >= CustomSpriteData.gridSize) {
-      return;
+      return null;
+    }
+    return (x, y);
+  }
+
+  void _beginStroke() {
+    if (_strokeActive) return;
+    _strokeActive = true;
+    widget.onStrokeStart?.call();
+  }
+
+  void _endStroke() {
+    if (!_strokeActive) return;
+    _strokeActive = false;
+    widget.onStrokeEnd?.call();
+  }
+
+  void _applyAt(Offset localPosition) {
+    final cell = _cellAt(localPosition);
+    if (cell == null) return;
+
+    final color = _activeColor;
+    CustomSpriteData next;
+
+    if (widget.tool == SpriteEditorTool.fill) {
+      next = widget.data.floodFill(cell.$1, cell.$2, color);
+    } else {
+      next = widget.data.applyBrush(
+        cell.$1,
+        cell.$2,
+        widget.brushSize,
+        color,
+      );
     }
 
-    if (data.pixelAt(x, y) == selectedColor) return;
-    onChanged(data.setPixel(x, y, selectedColor));
+    if (next.pixels.toString() == widget.data.pixels.toString()) return;
+    widget.onChanged(next);
+  }
+
+  void _handleDown(Offset position) {
+    _beginStroke();
+    _applyAt(position);
+    if (widget.tool == SpriteEditorTool.fill) {
+      _endStroke();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = themeColor ?? Theme.of(context).colorScheme.primary;
+    final borderColor = widget.themeColor ?? Theme.of(context).colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -136,15 +207,23 @@ class PixelSpriteEditor extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: GestureDetector(
-          onPanDown: (details) => _paintAt(details.localPosition),
-          onPanUpdate: (details) => _paintAt(details.localPosition),
-          onTapDown: (details) => _paintAt(details.localPosition),
-          child: PixelSprite(
-            data: data,
-            size: canvasSize,
-            showGrid: true,
-            gridColor: borderColor.withValues(alpha: 0.2),
+        child: Listener(
+          onPointerUp: (_) => _endStroke(),
+          onPointerCancel: (_) => _endStroke(),
+          child: GestureDetector(
+            onPanDown: (details) => _handleDown(details.localPosition),
+            onPanUpdate: (details) {
+              if (widget.tool == SpriteEditorTool.fill) return;
+              _applyAt(details.localPosition);
+            },
+            onPanEnd: (_) => _endStroke(),
+            onPanCancel: () => _endStroke(),
+            child: PixelSprite(
+              data: widget.data,
+              size: widget.canvasSize,
+              showGrid: widget.showGrid,
+              gridColor: borderColor.withValues(alpha: 0.2),
+            ),
           ),
         ),
       ),
