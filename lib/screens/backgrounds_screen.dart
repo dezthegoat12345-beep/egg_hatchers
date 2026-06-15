@@ -93,6 +93,8 @@ class BackgroundsScreen extends StatelessWidget {
                           onPressed: () => pushThemedAppRoute(
                             context,
                             theme: selected,
+                            settings:
+                                const RouteSettings(name: kCustomSpritesRouteName),
                             builder: (_) => CustomSpritesScreen(
                               preferences: preferences,
                               customSprites: customSprites,

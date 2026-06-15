@@ -137,6 +137,45 @@ const Duration kMainThemedPreNavDuration = Duration(milliseconds: 620);
 const Duration kEditorThemedPreNavDuration = Duration(milliseconds: 580);
 const Duration kReturnToHatcheryPreNavDuration = Duration(milliseconds: 550);
 
+const String kQuestsRouteName = '/quests';
+const String kCustomSpritesRouteName = '/custom-sprites';
+
+/// Tracks the navigator's top route name for duplicate-route guards.
+class AppNavigationTracker extends NavigatorObserver {
+  AppNavigationTracker._();
+  static final AppNavigationTracker instance = AppNavigationTracker._();
+
+  String? topRouteName;
+
+  void _syncTop(Route<dynamic>? route) {
+    topRouteName = route?.settings.name;
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _syncTop(route);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _syncTop(previousRoute);
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _syncTop(previousRoute);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    _syncTop(newRoute);
+  }
+}
+
+bool isTopRouteNamed(String? name) {
+  return name != null && AppNavigationTracker.instance.topRouteName == name;
+}
+
 /// Pre-navigation transition screen, then destination via pushReplacement.
 Future<T?> openWithThemedTransition<T>(
   BuildContext context, {
@@ -199,6 +238,27 @@ Future<void> returnToHatcheryWithTransition(
   BuildContext context, {
   required BackgroundTheme theme,
 }) {
+  return returnToRouteWithTransition(
+    context,
+    theme: theme,
+    label: 'Returning to Hatchery',
+    icon: '🏠',
+    stopAtRouteName: null,
+    popUntilFirst: true,
+    duration: kReturnToHatcheryPreNavDuration,
+  );
+}
+
+/// Shows a return cue, then pops until a named route (or first route) is on top.
+Future<void> returnToRouteWithTransition(
+  BuildContext context, {
+  required BackgroundTheme theme,
+  required String label,
+  required String icon,
+  String? stopAtRouteName,
+  bool popUntilFirst = false,
+  Duration duration = kReturnToHatcheryPreNavDuration,
+}) {
   final navigator = Navigator.of(context);
   if (!navigator.canPop()) return Future.value();
 
@@ -210,16 +270,34 @@ Future<void> returnToHatcheryWithTransition(
       builder: (transitionContext) {
         return ThemedRouteTransitionScreen(
           theme: theme,
-          icon: '🏠',
-          label: 'Returning to Hatchery',
-          duration: kReturnToHatcheryPreNavDuration,
+          icon: icon,
+          label: label,
+          duration: duration,
           onComplete: () {
             if (!transitionContext.mounted) return;
-            Navigator.of(transitionContext).popUntil((route) => route.isFirst);
+            Navigator.of(transitionContext).popUntil((route) {
+              if (popUntilFirst) return route.isFirst;
+              if (route.settings.name == stopAtRouteName) return true;
+              return route.isFirst;
+            });
           },
         );
       },
     ),
+  );
+}
+
+/// Sprite Editor -> Custom Sprites list with a short return cue.
+Future<void> returnToCustomSpritesWithTransition(
+  BuildContext context, {
+  required BackgroundTheme theme,
+}) {
+  return returnToRouteWithTransition(
+    context,
+    theme: theme,
+    label: 'Returning to Sprites',
+    icon: '✏️',
+    stopAtRouteName: kCustomSpritesRouteName,
   );
 }
 
@@ -261,6 +339,51 @@ class ReturnToHatcheryPopScope extends StatelessWidget {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         returnToHatcheryWithTransition(context, theme: theme);
+      },
+      child: child,
+    );
+  }
+}
+
+/// Back button that returns to the Custom Sprites list with a transition cue.
+class ReturnToCustomSpritesBackButton extends StatelessWidget {
+  const ReturnToCustomSpritesBackButton({
+    super.key,
+    required this.theme,
+    this.color,
+  });
+
+  final BackgroundTheme theme;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return BackButton(
+      color: color,
+      onPressed: () =>
+          returnToCustomSpritesWithTransition(context, theme: theme),
+    );
+  }
+}
+
+/// Intercepts system back and routes through [returnToCustomSpritesWithTransition].
+class ReturnToCustomSpritesPopScope extends StatelessWidget {
+  const ReturnToCustomSpritesPopScope({
+    super.key,
+    required this.theme,
+    required this.child,
+  });
+
+  final BackgroundTheme theme;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        returnToCustomSpritesWithTransition(context, theme: theme);
       },
       child: child,
     );

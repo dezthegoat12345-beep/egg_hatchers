@@ -154,6 +154,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                     theme: bg,
                                     icon: '⭐',
                                     label: 'Opening Quests',
+                                    settings: const RouteSettings(name: kQuestsRouteName),
                                     builder: (_) => QuestsScreen(
                                       game: game,
                                       preferences: preferences,
@@ -200,6 +201,8 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                                     theme: bg,
                                     icon: '✏️',
                                     label: 'Opening Sprites',
+                                    settings:
+                                        const RouteSettings(name: kCustomSpritesRouteName),
                                     builder: (_) => CustomSpritesScreen(
                                       preferences: preferences,
                                       customSprites: customSprites,

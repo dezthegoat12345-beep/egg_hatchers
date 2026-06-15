@@ -9,6 +9,7 @@ import 'services/preferences_service.dart';
 import 'services/sprite_rating_service.dart';
 import 'services/sprite_reference_overlay_service.dart';
 import 'widgets/app_theme_background.dart';
+import 'navigation/app_page_route.dart';
 import 'widgets/game_background.dart';
 
 void main() {
@@ -100,6 +101,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     return MaterialApp(
       title: 'Egg Hatchers',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [AppNavigationTracker.instance],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primaryColor,

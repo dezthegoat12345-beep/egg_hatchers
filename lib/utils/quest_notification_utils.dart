@@ -34,9 +34,14 @@ void openQuestsScreen(
   required GameService game,
   required PreferencesService preferences,
 }) {
-  pushThemedAppRoute(
+  if (isTopRouteNamed(kQuestsRouteName)) return;
+
+  openWithThemedTransition(
     context,
     theme: preferences.selectedTheme,
+    icon: '⭐',
+    label: 'Opening Quests',
+    settings: const RouteSettings(name: kQuestsRouteName),
     builder: (_) => QuestsScreen(
       game: game,
       preferences: preferences,

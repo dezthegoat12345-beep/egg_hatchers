@@ -9,6 +9,7 @@ import '../services/game_service.dart';
 import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
+import '../navigation/app_page_route.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../utils/sprite_rating_logic.dart';
@@ -359,7 +360,9 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    return Scaffold(
+    return ReturnToCustomSpritesPopScope(
+      theme: theme,
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: PhoneWidthAppBar.widget(
         titleWidget: Text(
@@ -368,6 +371,11 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
         ),
         backgroundColor: theme.appBarColor,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        leading: ReturnToCustomSpritesBackButton(
+          theme: theme,
+          color: Colors.white,
+        ),
       ),
       body: ListenableBuilder(
         listenable: Listenable.merge([
@@ -379,6 +387,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
           return _buildBody(theme);
         },
       ),
+    ),
     );
   }
 
