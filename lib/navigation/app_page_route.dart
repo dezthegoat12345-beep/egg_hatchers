@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
@@ -23,27 +25,41 @@ Route<T> appPageRoute<T>({
   AppRouteTransitionKind transitionKind = AppRouteTransitionKind.standard,
   RouteSettings? settings,
 }) {
+  final isShop = transitionKind == AppRouteTransitionKind.shop;
+
   return PageRouteBuilder<T>(
     settings: settings,
     opaque: true,
-    transitionDuration: kAppRouteForwardDuration,
-    reverseTransitionDuration: kAppRouteReverseDuration,
+    transitionDuration:
+        isShop ? kShopRouteForwardDuration : kAppRouteForwardDuration,
+    reverseTransitionDuration:
+        isShop ? kShopRouteReverseDuration : kAppRouteReverseDuration,
     pageBuilder: (context, animation, secondaryAnimation) {
       return builder(context);
     },
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final slide = Tween<Offset>(
-        begin: const Offset(0.14, 0),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        ),
+      if (isShop && animation.value < 0.02) {
+        debugPrint('Shop themed transition active');
+      }
+
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
       );
 
-      final fade = Tween<double>(begin: 0.85, end: 1.0).animate(
+      final slideBegin = isShop
+          ? const Offset(0.20, 0.01)
+          : const Offset(0.14, 0);
+      final slide = Tween<Offset>(
+        begin: slideBegin,
+        end: Offset.zero,
+      ).animate(curved);
+
+      final fade = Tween<double>(
+        begin: isShop ? 0.75 : 0.85,
+        end: 1.0,
+      ).animate(
         CurvedAnimation(
           parent: animation,
           curve: Curves.easeOut,
@@ -51,7 +67,10 @@ Route<T> appPageRoute<T>({
         ),
       );
 
-      final scale = Tween<double>(begin: 0.985, end: 1.0).animate(fade);
+      final scale = Tween<double>(
+        begin: isShop ? 0.97 : 0.985,
+        end: 1.0,
+      ).animate(fade);
 
       final animatedPanel = AppRoutePhonePanel(
         maxWidth: kPhoneMaxContentWidth,
@@ -67,18 +86,26 @@ Route<T> appPageRoute<T>({
         ),
       );
 
-      final showShopCue = transitionKind == AppRouteTransitionKind.shop &&
-          backgroundTheme != null &&
-          animation.status != AnimationStatus.reverse;
+      final backdropTheme = backgroundTheme;
+      final isPopping = animation.status == AnimationStatus.reverse;
+      final showShopCue = isShop && backdropTheme != null && !isPopping;
 
       Widget? transitionCue;
       if (showShopCue) {
-        transitionCue = AppRoutePhonePanel(
-          maxWidth: kPhoneMaxContentWidth,
-          child: IgnorePointer(
-            child: ShopRouteTransitionCue(
-              theme: backgroundTheme,
-              animation: animation,
+        final panelWidth = math.min(
+          MediaQuery.sizeOf(context).width,
+          kPhoneMaxContentWidth,
+        );
+        transitionCue = IgnorePointer(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: panelWidth,
+              height: MediaQuery.sizeOf(context).height,
+              child: ShopRouteTransitionCue(
+                theme: backdropTheme,
+                animation: animation,
+              ),
             ),
           ),
         );
@@ -86,6 +113,7 @@ Route<T> appPageRoute<T>({
 
       return Stack(
         fit: StackFit.expand,
+        clipBehavior: Clip.none,
         children: [
           StableRouteBackdrop(
             theme: backgroundTheme,
@@ -137,7 +165,7 @@ Future<T?> pushThemedAppRoute<T>(
   );
 }
 
-/// Hatchery -> Shop prototype with a short shop-themed transition cue.
+/// Hatchery -> Shop prototype with a shop-themed transition cue.
 Future<T?> pushShopAppRoute<T>(
   BuildContext context, {
   required BackgroundTheme theme,
