@@ -200,7 +200,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
       builder: (context, _) {
         if (!_slotsLoaded) {
           return Scaffold(
-            backgroundColor: DevToolsTheme.background,
+            backgroundColor: Colors.transparent,
             appBar: PhoneWidthAppBar.widget(
               titleWidget: Text(
                 '> Developer Tools',
@@ -216,7 +216,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
         }
 
         return Scaffold(
-      backgroundColor: DevToolsTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: PhoneWidthAppBar.widget(
         titleWidget: Text(
           '> Developer Tools',

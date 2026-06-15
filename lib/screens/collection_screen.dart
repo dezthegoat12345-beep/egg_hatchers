@@ -58,7 +58,7 @@ class CollectionScreen extends StatelessWidget {
           game: game,
           preferences: preferences,
           child: Scaffold(
-          backgroundColor: bg.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '📚 Collection',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),

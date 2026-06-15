@@ -360,7 +360,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     final theme = widget.theme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldColor,
+      backgroundColor: Colors.transparent,
       appBar: PhoneWidthAppBar.widget(
         titleWidget: Text(
           '✏️ ${widget.animal.name}',

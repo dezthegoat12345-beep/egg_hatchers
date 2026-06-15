@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
 import '../widgets/app_theme_background.dart';
+import '../widgets/phone_width_layout.dart';
 
 const Duration kAppRouteForwardDuration = Duration(milliseconds: 300);
 const Duration kAppRouteReverseDuration = Duration(milliseconds: 250);
 
-/// Opaque route with a stable full-screen backdrop and animated screen content.
+/// Opaque route with a stable backdrop and animated phone-width panel only.
 Route<T> appPageRoute<T>({
   required WidgetBuilder builder,
   required Color backgroundColor,
@@ -23,32 +24,37 @@ Route<T> appPageRoute<T>({
       return builder(context);
     },
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-
       final slide = Tween<Offset>(
-        begin: const Offset(0.10, 0.012),
+        begin: const Offset(0.14, 0),
         end: Offset.zero,
-      ).animate(curved);
-
-      final fade = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOut,
-        reverseCurve: Curves.easeIn,
+      ).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
       );
 
-      final scale = Tween<double>(begin: 0.98, end: 1.0).animate(fade);
+      final fade = Tween<double>(begin: 0.85, end: 1.0).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOut,
+          reverseCurve: Curves.easeIn,
+        ),
+      );
 
-      final animatedContent = SlideTransition(
-        position: slide,
-        child: FadeTransition(
-          opacity: fade,
-          child: ScaleTransition(
-            scale: scale,
-            child: child,
+      final scale = Tween<double>(begin: 0.985, end: 1.0).animate(fade);
+
+      final animatedPanel = AppRoutePhonePanel(
+        maxWidth: kPhoneMaxContentWidth,
+        child: SlideTransition(
+          position: slide,
+          child: FadeTransition(
+            opacity: fade,
+            child: ScaleTransition(
+              scale: scale,
+              child: child,
+            ),
           ),
         ),
       );
@@ -56,11 +62,11 @@ Route<T> appPageRoute<T>({
       return Stack(
         fit: StackFit.expand,
         children: [
-          if (backgroundTheme != null)
-            AppThemeBackground(theme: backgroundTheme)
-          else
-            ColoredBox(color: backgroundColor),
-          animatedContent,
+          StableRouteBackdrop(
+            theme: backgroundTheme,
+            color: backgroundTheme == null ? backgroundColor : null,
+          ),
+          animatedPanel,
         ],
       );
     },

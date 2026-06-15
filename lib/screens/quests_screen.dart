@@ -47,7 +47,7 @@ class QuestsScreen extends StatelessWidget {
         final readyCount = readyToClaim.length;
 
         return Scaffold(
-          backgroundColor: bg.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎯 Quests',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),

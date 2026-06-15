@@ -102,7 +102,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
           game: game,
           preferences: preferences,
           child: Scaffold(
-          backgroundColor: bg.scaffoldColor,
+          backgroundColor: Colors.transparent,
           extendBody: true,
           appBar: PhoneWidthAppBar(
             title: '🐣 Egg Hatchers',

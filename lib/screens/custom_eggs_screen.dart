@@ -116,7 +116,7 @@ class CustomEggsScreen extends StatelessWidget {
         final eggs = customEggs.allEggs;
 
         return Scaffold(
-          backgroundColor: theme.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🥚 Custom Eggs',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),

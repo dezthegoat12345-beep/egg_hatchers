@@ -376,7 +376,7 @@ class _CustomEggEditorScreenState extends State<CustomEggEditorScreen> {
           game: widget.game,
           preferences: widget.preferences,
           child: Scaffold(
-          backgroundColor: theme.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar.widget(
             titleWidget: Text(
               _isEditing ? '✏️ Edit Egg' : '🥚 New Egg',

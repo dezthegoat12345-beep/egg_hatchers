@@ -49,7 +49,7 @@ class BackgroundsScreen extends StatelessWidget {
         final selected = preferences.selectedTheme;
 
         return Scaffold(
-          backgroundColor: selected.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎨 Backgrounds',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),

@@ -105,7 +105,7 @@ class CustomSpritesScreen extends StatelessWidget {
           });
 
         return Scaffold(
-          backgroundColor: theme.scaffoldColor,
+          backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎨 Custom Sprites',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
