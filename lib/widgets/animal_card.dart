@@ -25,6 +25,10 @@ class AnimalCard extends StatelessWidget {
     this.compact = false,
     this.customSprites,
     this.useBaseNameForTitle = false,
+    this.showSellButtons = false,
+    this.sellValue,
+    this.onSellOne,
+    this.onSellAll,
   });
 
   final Animal animal;
@@ -40,6 +44,10 @@ class AnimalCard extends StatelessWidget {
   final VoidCallback? onUpgrade;
   final bool compact;
   final bool useBaseNameForTitle;
+  final bool showSellButtons;
+  final int? sellValue;
+  final VoidCallback? onSellOne;
+  final VoidCallback? onSellAll;
 
   @override
   Widget build(BuildContext context) {
@@ -236,6 +244,97 @@ class AnimalCard extends StatelessWidget {
                           ),
                           child: const Text('Upgrade ⬆️'),
                         ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+            if (showSellButtons && sellValue != null && isOwned) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.secondaryColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.cardBorderColor.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stackActions = constraints.maxWidth < 340;
+                    final sellAllVisible =
+                        (quantity ?? 0) > 1 && onSellAll != null;
+
+                    final sellLabel = Text(
+                      'Sell: 🪙 $sellValue',
+                      style: TextStyle(
+                        fontSize: compact ? 14 : 16,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    );
+
+                    final sellOneButton = FilledButton(
+                      onPressed: onSellOne,
+                      style: GameTheme.filledButton(
+                        theme,
+                        color: theme.secondaryColor,
+                        height: compact ? 40 : 44,
+                      ).copyWith(
+                        padding: WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(
+                            horizontal: compact ? 12 : 16,
+                            vertical: compact ? 8 : 10,
+                          ),
+                        ),
+                        minimumSize: WidgetStatePropertyAll(
+                          Size(0, compact ? 40 : 44),
+                        ),
+                      ),
+                      child: const Text('Sell 1'),
+                    );
+
+                    final sellAllButton = sellAllVisible
+                        ? OutlinedButton(
+                            onPressed: onSellAll,
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: Size(0, compact ? 40 : 44),
+                              side: BorderSide(color: theme.secondaryColor),
+                              foregroundColor: theme.secondaryColor,
+                            ),
+                            child: const Text('Sell All'),
+                          )
+                        : null;
+
+                    if (stackActions) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          sellLabel,
+                          const SizedBox(height: 10),
+                          sellOneButton,
+                          if (sellAllButton != null) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: sellAllButton,
+                            ),
+                          ],
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: sellLabel),
+                        const SizedBox(width: 8),
+                        sellOneButton,
+                        if (sellAllButton != null) ...[
+                          const SizedBox(width: 8),
+                          sellAllButton,
+                        ],
                       ],
                     );
                   },

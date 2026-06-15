@@ -18,6 +18,9 @@ class OwnedAnimalList extends StatelessWidget {
     this.compact = false,
     this.separatorHeight = 8,
     this.customSprites,
+    this.showSellButtons = false,
+    this.onSellOne,
+    this.onSellAll,
   });
 
   final GameService game;
@@ -28,6 +31,20 @@ class OwnedAnimalList extends StatelessWidget {
     String mutationId,
     String displayName,
   ) onUpgrade;
+  final void Function(
+    String animalId,
+    String mutationId,
+    String displayName,
+    int coins,
+  )? onSellOne;
+  final void Function(
+    String animalId,
+    String mutationId,
+    String displayName,
+    int quantity,
+    int totalCoins,
+  )? onSellAll;
+  final bool showSellButtons;
   final bool compact;
   final double separatorHeight;
 
@@ -102,6 +119,30 @@ class OwnedAnimalList extends StatelessWidget {
       canAffordUpgrade:
           game.canAffordUpgrade(animal.id, owned.mutationId),
       onUpgrade: () => onUpgrade(animal.id, owned.mutationId, displayName),
+      showSellButtons: showSellButtons,
+      sellValue: showSellButtons
+          ? GameService.sellValueFor(animal, owned)
+          : null,
+      onSellOne: showSellButtons && onSellOne != null
+          ? () {
+              final coins = GameService.sellValueFor(animal, owned);
+              onSellOne!(animal.id, owned.mutationId, displayName, coins);
+            }
+          : null,
+      onSellAll: showSellButtons &&
+              owned.quantity > 1 &&
+              onSellAll != null
+          ? () {
+              final unit = GameService.sellValueFor(animal, owned);
+              onSellAll!(
+                animal.id,
+                owned.mutationId,
+                displayName,
+                owned.quantity,
+                unit * owned.quantity,
+              );
+            }
+          : null,
       compact: compact,
       customSprites: customSprites,
     );

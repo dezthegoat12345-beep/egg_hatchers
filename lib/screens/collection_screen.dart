@@ -5,6 +5,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/coin_header.dart';
@@ -44,6 +45,93 @@ class CollectionScreen extends StatelessWidget {
         context,
         message: 'Not enough coins to upgrade $displayName.',
         backgroundColor: Colors.red.shade400,
+      );
+    }
+  }
+
+  void _handleSellOne(
+    BuildContext context,
+    String animalId,
+    String mutationId,
+    String displayName,
+  ) {
+    final coins = game.sellOwnedAnimal(
+      animalId,
+      mutationId,
+      quantity: 1,
+    );
+    if (coins != null && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Sold $displayName for ${formatCoins(coins)} coins.',
+        backgroundColor: preferences.selectedTheme.secondaryColor,
+      );
+    }
+  }
+
+  Future<void> _handleSellAll(
+    BuildContext context,
+    String animalId,
+    String mutationId,
+    String displayName,
+    int quantity,
+    int totalCoins,
+  ) async {
+    final theme = preferences.selectedTheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+        ),
+        title: Text(
+          'Sell All?',
+          style: TextStyle(
+            color: theme.cardTextPrimaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Sell all $quantity $displayName for ${formatCoins(totalCoins)} coins?',
+          style: TextStyle(
+            color: theme.cardTextSecondaryColor,
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.cardTextSecondaryColor),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.secondaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sell All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final coins = game.sellOwnedAnimal(
+      animalId,
+      mutationId,
+      quantity: quantity,
+    );
+    if (coins != null && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Sold $displayName for ${formatCoins(coins)} coins.',
+        backgroundColor: theme.secondaryColor,
       );
     }
   }
@@ -92,12 +180,29 @@ class CollectionScreen extends StatelessWidget {
                             theme: bg,
                             separatorHeight: 12,
                             customSprites: customSprites,
+                            showSellButtons: true,
                             onUpgrade: (animalId, mutationId, name) =>
                                 _handleUpgrade(
                               context,
                               animalId,
                               mutationId,
                               name,
+                            ),
+                            onSellOne: (animalId, mutationId, name, _) =>
+                                _handleSellOne(
+                              context,
+                              animalId,
+                              mutationId,
+                              name,
+                            ),
+                            onSellAll: (animalId, mutationId, name, qty, total) =>
+                                _handleSellAll(
+                              context,
+                              animalId,
+                              mutationId,
+                              name,
+                              qty,
+                              total,
                             ),
                           ),
                   ),

@@ -19,6 +19,7 @@ import '../models/quest.dart';
 import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
+import '../utils/animal_sell_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
 import 'sprite_reference_overlay_service.dart';
@@ -61,6 +62,62 @@ class GameService extends ChangeNotifier {
   /// Upgrade cost: base × level × 30 (mutation does not affect cost).
   static int upgradeCostFor(Animal animal, OwnedAnimal owned) {
     return animal.coinsPerSecond * owned.level * 30;
+  }
+
+  /// Sell value for one animal from this owned stack.
+  static int sellValueFor(Animal animal, OwnedAnimal owned) {
+    return AnimalSellLogic.sellValueFor(animal, owned);
+  }
+
+  bool canSellOwnedAnimal(
+    String animalId,
+    String mutationId, {
+    int quantity = 1,
+  }) {
+    if (quantity < 1) return false;
+    final owned = ownedAnimal(animalId, mutationId: mutationId);
+    return owned != null && owned.quantity >= quantity;
+  }
+
+  /// Sells animals from a specific stack. Returns coins granted, or null.
+  int? sellOwnedAnimal(
+    String animalId,
+    String mutationId, {
+    int quantity = 1,
+  }) {
+    if (!canSellOwnedAnimal(animalId, mutationId, quantity: quantity)) {
+      return null;
+    }
+
+    final owned = ownedAnimal(animalId, mutationId: mutationId)!;
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return null;
+
+    final unitValue = sellValueFor(animal, owned);
+    final coinsGranted = unitValue * quantity;
+    if (coinsGranted <= 0) return null;
+
+    final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final index = updatedAnimals.indexWhere(
+      (entry) =>
+          entry.animalId == animalId && entry.mutationId == mutationId,
+    );
+    if (index < 0) return null;
+
+    final remaining = owned.quantity - quantity;
+    if (remaining <= 0) {
+      updatedAnimals.removeAt(index);
+    } else {
+      updatedAnimals[index] = owned.copyWith(quantity: remaining);
+    }
+
+    _state = _state.copyWith(
+      coins: _state.coins + coinsGranted,
+      ownedAnimals: updatedAnimals,
+    );
+    notifyListeners();
+    save();
+    return coinsGranted;
   }
 
   /// Total coins earned per second from all owned animals (includes rebirth).
