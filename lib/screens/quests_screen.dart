@@ -28,13 +28,58 @@ class QuestsScreen extends StatelessWidget {
 
   void _claimQuest(BuildContext context, Quest quest) {
     final reward = game.claimQuest(quest.id);
-    if (reward != null && context.mounted) {
+    if (reward == null || !context.mounted) return;
+
+    if (quest.showsSecretHintOnClaim) {
+      _showSecretHintDialog(context);
+      return;
+    }
+
+    if (reward > 0) {
       showGameSnackBar(
         context,
         message: 'Quest complete! +${formatCoins(reward)} coins',
         backgroundColor: preferences.selectedTheme.secondaryColor,
       );
     }
+  }
+
+  Future<void> _showSecretHintDialog(BuildContext context) async {
+    final theme = preferences.selectedTheme;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+        ),
+        title: Text(
+          'Secret Hint',
+          style: TextStyle(
+            color: theme.cardTextPrimaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Click the coin in Hatchery 3 times',
+          style: TextStyle(
+            color: theme.cardTextSecondaryColor,
+            fontSize: 15,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.secondaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

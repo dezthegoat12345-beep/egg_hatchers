@@ -391,6 +391,20 @@ class GameService extends ChangeNotifier {
     if (_state.questProgress.isQuestClaimed(questId)) return null;
     if (!QuestLogic.isComplete(quest, _state)) return null;
 
+    if (quest.showsSecretHintOnClaim) {
+      _state = _state.copyWith(
+        questProgress: _state.questProgress.copyWith(
+          claimedQuestIds: [
+            ..._state.questProgress.claimedQuestIds,
+            questId,
+          ],
+        ),
+      );
+      notifyListeners();
+      save();
+      return 0;
+    }
+
     _state = _state.copyWith(
       coins: _state.coins + quest.rewardCoins,
       questProgress: _state.questProgress.copyWith(
@@ -572,6 +586,25 @@ class GameService extends ChangeNotifier {
         totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
       ),
     );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  /// Grants one normal copy of every base animal not yet owned.
+  void devCollectAllAnimals() {
+    final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final ownedIds = updatedAnimals.map((owned) => owned.animalId).toSet();
+
+    for (final animal in GameData.animals) {
+      if (ownedIds.contains(animal.id)) continue;
+      updatedAnimals.add(
+        OwnedAnimal(animalId: animal.id, quantity: 1),
+      );
+      ownedIds.add(animal.id);
+    }
+
+    _state = _state.copyWith(ownedAnimals: updatedAnimals);
     _refreshQuestNotifications();
     notifyListeners();
     save();

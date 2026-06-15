@@ -37,6 +37,7 @@ enum QuestMetric {
   luckLevel,
   lifetimeCoinsEarned,
   rebirthLevel,
+  collectedBaseAnimals,
 }
 
 /// A quest definition with stable id and reward.
@@ -50,6 +51,8 @@ class Quest {
     required this.metric,
     required this.target,
     this.requiresCustomEggCreated = false,
+    this.rewardDisplayLabel,
+    this.showsSecretHintOnClaim = false,
   });
 
   final String id;
@@ -62,6 +65,15 @@ class Quest {
 
   /// When true, the quest only completes after at least one custom egg exists.
   final bool requiresCustomEggCreated;
+
+  /// Optional reward text instead of a coin amount (e.g. "???").
+  final String? rewardDisplayLabel;
+
+  /// When true, claiming shows a secret hint dialog and grants no coins.
+  final bool showsSecretHintOnClaim;
+
+  bool get grantsCoinsOnClaim =>
+      !showsSecretHintOnClaim && rewardCoins > 0;
 
   String get categoryLabel {
     switch (category) {

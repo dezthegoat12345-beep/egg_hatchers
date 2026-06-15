@@ -165,6 +165,18 @@ class QuestData {
       metric: QuestMetric.rebirthLevel,
       target: 1,
     ),
+    Quest(
+      id: 'late_complete_collection',
+      category: QuestCategory.lateGame,
+      title: 'Complete the Collection',
+      description:
+          'Collect every base animal at least once. Mutations do not matter.',
+      rewardCoins: 0,
+      rewardDisplayLabel: '???',
+      showsSecretHintOnClaim: true,
+      metric: QuestMetric.collectedBaseAnimals,
+      target: 33,
+    ),
 
     // Custom Egg Quests
     Quest(

@@ -1,6 +1,7 @@
 import '../data/quest_data.dart';
 import '../models/player_state.dart';
 import '../models/quest.dart';
+import 'collection_quest_logic.dart';
 import 'format_utils.dart';
 
 /// Evaluates quest progress and status from player state.
@@ -50,6 +51,8 @@ class QuestLogic {
         return state.lifetimeCoinsEarned;
       case QuestMetric.rebirthLevel:
         return state.rebirthLevel;
+      case QuestMetric.collectedBaseAnimals:
+        return CollectionQuestLogic.collectedBaseAnimalCount(state);
     }
   }
 
@@ -78,6 +81,9 @@ class QuestLogic {
   }
 
   static String progressText(Quest quest, PlayerState state) {
+    if (quest.metric == QuestMetric.collectedBaseAnimals) {
+      return CollectionQuestLogic.progressText(quest, state);
+    }
     final current = currentValue(quest, state).clamp(0, quest.target);
     if (quest.metric == QuestMetric.lifetimeCoinsEarned) {
       return '${formatCoins(current)} / ${formatCoins(quest.target)}';

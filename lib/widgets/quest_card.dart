@@ -95,7 +95,8 @@ class QuestCard extends StatelessWidget {
               const SizedBox(width: 8),
               _InfoChip(
                 label: 'Reward',
-                value: '🪙 ${formatCoins(quest.rewardCoins)}',
+                value: quest.rewardDisplayLabel ??
+                    '🪙 ${formatCoins(quest.rewardCoins)}',
                 theme: theme,
                 color: theme.secondaryColor,
               ),

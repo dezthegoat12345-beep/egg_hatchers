@@ -554,6 +554,15 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           ),
           const SizedBox(height: 12),
           _BigButton(
+            label: 'Collect All Animals',
+            color: DevToolsTheme.primaryDim,
+            onPressed: () {
+              game.devCollectAllAnimals();
+              _showMessage('Granted every missing base animal.');
+            },
+          ),
+          const SizedBox(height: 12),
+          _BigButton(
             label: 'Reset quest stats',
             color: DevToolsTheme.warning,
             onPressed: () {
