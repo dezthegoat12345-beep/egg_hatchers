@@ -49,10 +49,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   static const _eggSpeed = 420.0;
   static const _playerSize = 48.0;
   static const _bossSize = 80.0;
+  static const _bossTop = 8.0;
   static const _projectileRadius = 10.0;
   static const _playerHitRadius = 22.0;
   static const _bossHitHalfWidth = 36.0;
-  static const _bossHitTop = 72.0;
 
   late final Ticker _ticker;
   late final Random _random;
@@ -66,6 +66,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _lives = BossBattleLogic.manualBattleLives;
   var _bossHp = 0;
   var _playerX = 0.0;
+  var _bossX = 0.0;
+  var _bossDirection = 1.0;
   var _arenaWidth = 320.0;
   var _arenaHeight = 280.0;
   var _shieldActive = true;
@@ -81,6 +83,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _eggCooldownRemaining = 0.0;
   var _spawnAccumulator = 0.0;
   var _shieldFlash = 0.0;
+  var _bossSpeedBannerRemaining = 0.0;
   var _gameOver = false;
   var _won = false;
   var _rewardsApplied = false;
@@ -101,8 +104,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   double get _projectileSpeedMultiplier =>
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: _elapsedSeconds,
-        successfulEggHits: _successfulEggHits,
+        bossHitCount: _successfulEggHits,
       );
+
+  int get _currentProjectileIntervalMs =>
+      BossBattleLogic.manualProjectileIntervalMs(boss, _successfulEggHits);
+
+  double get _currentBossMoveSpeed =>
+      BossBattleLogic.manualBossMoveSpeed(boss, _successfulEggHits);
+
+  double get _bossCenterY => _bossTop + _bossSize / 2;
+
+  double get _bossSpawnY => _bossTop + _bossSize - 4;
 
   @override
   void initState() {
@@ -143,6 +156,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _eggCooldownRemaining = 0;
     _spawnAccumulator = 0;
     _shieldFlash = 0;
+    _bossSpeedBannerRemaining = 0;
     _gameOver = false;
     _won = false;
     _rewardsApplied = false;
@@ -152,6 +166,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _activeEgg = null;
     _floatingDamages.clear();
     _playerX = _arenaWidth / 2;
+    _bossX = _arenaWidth / 2;
+    _bossDirection = _random.nextBool() ? 1.0 : -1.0;
   }
 
   @override
@@ -207,11 +223,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       _shieldFlash = max(0, _shieldFlash - dt);
     }
 
+    if (_bossSpeedBannerRemaining > 0) {
+      _bossSpeedBannerRemaining = max(0, _bossSpeedBannerRemaining - dt);
+    }
+
+    _updateBossMovement(dt);
+
     _spawnAccumulator += dt * 1000;
-    while (_spawnAccumulator >= boss.projectileIntervalMs &&
+    final interval = _currentProjectileIntervalMs;
+    while (_spawnAccumulator >= interval &&
         _bossProjectiles.length <
             BossBattleLogic.manualMaxBossProjectiles) {
-      _spawnAccumulator -= boss.projectileIntervalMs;
+      _spawnAccumulator -= interval;
       _spawnBossProjectile();
     }
 
@@ -226,12 +249,26 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     }
   }
 
+  void _updateBossMovement(double dt) {
+    final half = _bossSize / 2 + 8;
+    final minBx = half;
+    final maxBx = max(half, _arenaWidth - half);
+
+    _bossX += _bossDirection * _currentBossMoveSpeed * dt;
+    if (_bossX <= minBx) {
+      _bossX = minBx;
+      _bossDirection = 1;
+    } else if (_bossX >= maxBx) {
+      _bossX = maxBx;
+      _bossDirection = -1;
+    }
+  }
+
   void _spawnBossProjectile() {
-    final spread = _arenaWidth * 0.35;
-    final center = _arenaWidth / 2;
-    final x = center + (_random.nextDouble() * 2 - 1) * spread;
+    final spread = 24.0 * (_random.nextDouble() * 2 - 1);
+    final x = (_bossX + spread).clamp(16.0, _arenaWidth - 16.0).toDouble();
     _bossProjectiles.add(
-      _FallingProjectile(x: x.clamp(16, _arenaWidth - 16), y: _bossHitTop),
+      _FallingProjectile(x: x, y: _bossSpawnY),
     );
   }
 
@@ -265,9 +302,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     egg.y -= _eggSpeed * dt;
 
-    final bossCenterX = _arenaWidth / 2;
-    final hitBoss = egg.y <= _bossHitTop + _bossSize / 2 &&
-        (egg.x - bossCenterX).abs() < _bossHitHalfWidth + _projectileRadius;
+    final hitBoss = egg.y <= _bossCenterY + _bossSize / 2 &&
+        (egg.x - _bossX).abs() < _bossHitHalfWidth + _projectileRadius;
 
     if (hitBoss) {
       _activeEgg = null;
@@ -320,8 +356,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _totalDamageDealt += amount;
     _floatingDamages.add(
       _FloatingDamage(
-        x: _arenaWidth / 2,
-        y: _bossHitTop + 8,
+        x: _bossX,
+        y: _bossTop + 8,
         amount: amount,
       ),
     );
@@ -330,6 +366,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       return;
     }
     _regenerateShieldAfterHit();
+    _bossSpeedBannerRemaining = 1.8;
   }
 
   void _shootEgg() {
@@ -509,12 +546,19 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                                 _playerX > _arenaWidth) {
                               _playerX = _arenaWidth / 2;
                             }
+                            if (_bossX == 0 || _bossX > _arenaWidth) {
+                              _bossX = _arenaWidth / 2;
+                            }
                             return _Arena(
                               theme: currentTheme,
                               boss: boss,
                               arenaWidth: _arenaWidth,
                               arenaHeight: _arenaHeight,
                               playerX: _playerX,
+                              bossX: _bossX,
+                              bossTop: _bossTop,
+                              bossSpeedBannerRemaining:
+                                  _bossSpeedBannerRemaining,
                               playerSize: _playerSize,
                               bossSize: _bossSize,
                               fighterCustomSprite: _fighterCustomSprite,
@@ -738,6 +782,9 @@ class _Arena extends StatelessWidget {
     required this.arenaWidth,
     required this.arenaHeight,
     required this.playerX,
+    required this.bossX,
+    required this.bossTop,
+    required this.bossSpeedBannerRemaining,
     required this.playerSize,
     required this.bossSize,
     required this.fighterCustomSprite,
@@ -759,6 +806,9 @@ class _Arena extends StatelessWidget {
   final double arenaWidth;
   final double arenaHeight;
   final double playerX;
+  final double bossX;
+  final double bossTop;
+  final double bossSpeedBannerRemaining;
   final double playerSize;
   final double bossSize;
   final CustomSpriteData? fighterCustomSprite;
@@ -777,7 +827,7 @@ class _Arena extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final playerY = arenaHeight - playerSize - 12;
-    final bossX = arenaWidth / 2 - bossSize / 2;
+    final bossLeft = bossX - bossSize / 2;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -816,8 +866,8 @@ class _Arena extends StatelessWidget {
               ),
             ),
           Positioned(
-            left: bossX,
-            top: 8,
+            left: bossLeft,
+            top: bossTop,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -842,6 +892,26 @@ class _Arena extends StatelessWidget {
               ],
             ),
           ),
+          if (bossSpeedBannerRemaining > 0)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: bossTop + bossSize + 4,
+              child: IgnorePointer(
+                child: Text(
+                  'Boss speed increased!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.orange.shade300,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 4),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           for (final p in bossProjectiles)
             Positioned(
               left: p.x - 11,

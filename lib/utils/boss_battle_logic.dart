@@ -27,7 +27,9 @@ class BossBattleLogic {
 
   static const int manualShieldBaseMisses = 5;
   static const int manualShieldMaxMisses = 12;
-  static const double manualProjectileSpeedCap = 2.5;
+  static const double manualBossMoveSpeedCap = 2.5;
+  static const double manualProjectileSpeedAbsoluteCap = 3.0;
+  static const int manualMinProjectileIntervalMs = 450;
   static const Duration manualEggCooldown = Duration(milliseconds: 850);
   static const int manualMaxBossProjectiles = 6;
   static const int manualBattleLives = 3;
@@ -36,14 +38,35 @@ class BossBattleLogic {
   static int manualRequiredMisses(int successfulEggHits) =>
       min(manualShieldMaxMisses, manualShieldBaseMisses + successfulEggHits);
 
-  /// Time-based scaling plus a small bump per successful egg hit.
+  /// Time-based scaling plus bumps per successful egg hit on the boss.
   static double manualProjectileSpeedMultiplier({
     required double elapsedSeconds,
-    required int successfulEggHits,
+    required int bossHitCount,
   }) {
-    final multiplier =
-        1.0 + (elapsedSeconds / 30.0) + successfulEggHits * 0.15;
-    return min(manualProjectileSpeedCap, multiplier);
+    final multiplier = 1.0 +
+        (elapsedSeconds / 30.0) +
+        bossHitCount * 0.15 +
+        bossHitCount * 0.10;
+    return min(manualProjectileSpeedAbsoluteCap, multiplier);
+  }
+
+  static double manualBossMoveSpeedMultiplier(int bossHitCount) =>
+      min(manualBossMoveSpeedCap, 1.0 + bossHitCount * 0.15);
+
+  static int manualProjectileIntervalMs(
+    BossBattleDefinition boss,
+    int bossHitCount,
+  ) {
+    final scaled = boss.projectileIntervalMs / (1 + bossHitCount * 0.12);
+    return max(manualMinProjectileIntervalMs, scaled.round());
+  }
+
+  static double manualBossMoveSpeed(
+    BossBattleDefinition boss,
+    int bossHitCount,
+  ) {
+    return boss.manualBossMoveSpeed *
+        manualBossMoveSpeedMultiplier(bossHitCount);
   }
 
   /// Legacy alias for the first shield break threshold.

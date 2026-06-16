@@ -16,6 +16,7 @@ class BossBattleDefinition {
     this.autoBattleSeconds = 10,
     this.projectileIntervalMs = 1000,
     this.projectileSpeed = 180,
+    this.manualBossMoveSpeed = 60,
   });
 
   final String id;
@@ -33,6 +34,8 @@ class BossBattleDefinition {
   final int projectileIntervalMs;
   /// Downward projectile speed in arena pixels per second.
   final double projectileSpeed;
+  /// Horizontal boss movement speed in manual battle (pixels per second).
+  final double manualBossMoveSpeed;
 }
 
 /// One line in the auto-battle log.

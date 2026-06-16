@@ -29,37 +29,60 @@ void main() {
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 0,
-        successfulEggHits: 0,
+        bossHitCount: 0,
       ),
       1.0,
     );
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 15,
-        successfulEggHits: 0,
+        bossHitCount: 0,
       ),
       1.5,
     );
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 30,
-        successfulEggHits: 0,
+        bossHitCount: 0,
       ),
       2.0,
     );
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 60,
-        successfulEggHits: 0,
+        bossHitCount: 0,
       ),
-      2.5,
+      3.0,
     );
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 0,
-        successfulEggHits: 2,
+        bossHitCount: 2,
       ),
-      closeTo(1.3, 0.001),
+      closeTo(1.5, 0.001),
+    );
+  });
+
+  test('manual boss move speed scales with hits capped at 2.5x', () {
+    final slime = BossData.bossById('slime_boss')!;
+    expect(BossBattleLogic.manualBossMoveSpeed(slime, 0), 45);
+    expect(BossBattleLogic.manualBossMoveSpeed(slime, 2), closeTo(58.5, 0.001));
+    expect(
+      BossBattleLogic.manualBossMoveSpeed(slime, 20),
+      closeTo(45 * 2.5, 0.001),
+    );
+  });
+
+  test('manual projectile interval speeds up with hits down to minimum', () {
+    final slime = BossData.bossById('slime_boss')!;
+    expect(BossBattleLogic.manualProjectileIntervalMs(slime, 0), 1200);
+    expect(
+      BossBattleLogic.manualProjectileIntervalMs(slime, 3),
+      lessThan(1200),
+    );
+    expect(
+      BossBattleLogic.manualProjectileIntervalMs(slime, 100),
+      BossBattleLogic.manualMinProjectileIntervalMs,
     );
   });
 
@@ -67,14 +90,15 @@ void main() {
     expect(BossBattleLogic.manualBattleLives, 3);
   });
 
-  test('boss definitions define manual projectile tuning', () {
+  test('boss definitions define manual projectile and movement tuning', () {
     for (final boss in BossData.bosses) {
       expect(boss.projectileIntervalMs, greaterThan(0));
       expect(boss.projectileSpeed, greaterThan(0));
+      expect(boss.manualBossMoveSpeed, greaterThan(0));
     }
 
-    expect(BossData.bossById('slime_boss')!.projectileIntervalMs, 1200);
-    expect(BossData.bossById('egg_golem')!.projectileIntervalMs, 950);
-    expect(BossData.bossById('shadow_rooster')!.projectileIntervalMs, 750);
+    expect(BossData.bossById('slime_boss')!.manualBossMoveSpeed, 45);
+    expect(BossData.bossById('egg_golem')!.manualBossMoveSpeed, 70);
+    expect(BossData.bossById('shadow_rooster')!.manualBossMoveSpeed, 95);
   });
 }

@@ -19,6 +19,7 @@ class BossData {
       autoBattleSeconds: 10,
       projectileIntervalMs: 1200,
       projectileSpeed: 120,
+      manualBossMoveSpeed: 45,
     ),
     BossBattleDefinition(
       id: 'egg_golem',
@@ -34,6 +35,7 @@ class BossData {
       autoBattleSeconds: 20,
       projectileIntervalMs: 950,
       projectileSpeed: 180,
+      manualBossMoveSpeed: 70,
     ),
     BossBattleDefinition(
       id: 'shadow_rooster',
@@ -50,6 +52,7 @@ class BossData {
       autoBattleSeconds: 35,
       projectileIntervalMs: 750,
       projectileSpeed: 260,
+      manualBossMoveSpeed: 95,
     ),
   ];
 
