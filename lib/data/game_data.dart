@@ -5,6 +5,7 @@ import '../models/egg.dart';
 import '../models/mutation.dart';
 import '../models/player_state.dart';
 import '../utils/luck_logic.dart';
+import 'elite_boss_sprite_paths.dart';
 
 /// Static game content: all animals, eggs, and helpers to look them up.
 class GameData {
@@ -414,7 +415,7 @@ class GameData {
       rarity: Rarity.legendary,
       coinsPerSecond: 1800000,
       emoji: '👑🟢',
-      spritePath: 'assets/images/animals/slime_king.png',
+      spritePath: EliteBossSpritePaths.slimeKing,
     ),
     Animal(
       id: 'egg_guardian',
@@ -422,7 +423,7 @@ class GameData {
       rarity: Rarity.unknown,
       coinsPerSecond: 2200000,
       emoji: '🛡️🥚',
-      spritePath: 'assets/images/animals/egg_guardian.png',
+      spritePath: EliteBossSpritePaths.eggGuardian,
     ),
     Animal(
       id: 'shadow_phoenix',
@@ -430,7 +431,7 @@ class GameData {
       rarity: Rarity.boss,
       coinsPerSecond: 3000000,
       emoji: '🔥🐦‍🔥',
-      spritePath: 'assets/images/animals/shadow_phoenix.png',
+      spritePath: EliteBossSpritePaths.shadowPhoenix,
     ),
   ];
 

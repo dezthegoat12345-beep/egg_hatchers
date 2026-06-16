@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:egg_hatchers/data/elite_boss_sprite_paths.dart';
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
@@ -166,7 +167,15 @@ void main() {
         isNotNull,
         reason: '${animal.id} is missing spritePath',
       );
-      expect(animal.spritePath, startsWith('assets/images/animals/'));
+      if (GameData.bossVictoryRewardAnimalIds.contains(animal.id)) {
+        expect(
+          animal.spritePath,
+          EliteBossSpritePaths.forId(animal.id),
+          reason: '${animal.id} should share elite boss sprite',
+        );
+      } else {
+        expect(animal.spritePath, startsWith('assets/images/animals/'));
+      }
     }
   });
 

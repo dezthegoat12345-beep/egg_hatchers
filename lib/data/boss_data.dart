@@ -1,4 +1,5 @@
 import '../models/boss_battle.dart';
+import 'elite_boss_sprite_paths.dart';
 
 /// Tunable boss battle definitions.
 class BossData {
@@ -74,7 +75,7 @@ class BossData {
       name: 'Slime King',
       description: 'A crowned slime lord from the deepest pit.',
       emoji: '👑🟢',
-      spritePath: 'assets/images/bosses/slime_king.png',
+      spritePath: EliteBossSpritePaths.slimeKing,
       maxHp: 50000,
       recommendedPower: 5000,
       coinReward: 500000,
@@ -101,7 +102,7 @@ class BossData {
       name: 'Egg Guardian',
       description: 'An ancient armored sentinel of the egg vault.',
       emoji: '🛡️🥚',
-      spritePath: 'assets/images/bosses/egg_guardian.png',
+      spritePath: EliteBossSpritePaths.eggGuardian,
       maxHp: 120000,
       recommendedPower: 12000,
       coinReward: 750000,
@@ -128,7 +129,7 @@ class BossData {
       name: 'Shadow Phoenix',
       description: 'A blazing dark phoenix risen from the coop ashes.',
       emoji: '🔥🐦‍🔥',
-      spritePath: 'assets/images/bosses/shadow_phoenix.png',
+      spritePath: EliteBossSpritePaths.shadowPhoenix,
       maxHp: 250000,
       recommendedPower: 25000,
       coinReward: 1000000,
