@@ -34,39 +34,109 @@ class BossBattleLogic {
   static const int manualMaxBossProjectiles = 6;
   static const int manualBattleLives = 3;
 
-  /// First shield break needs 5 misses; +1 per successful egg hit, capped at 12.
-  static int manualRequiredMisses(int successfulEggHits) =>
-      min(manualShieldMaxMisses, manualShieldBaseMisses + successfulEggHits);
+  static const int hardPhaseUnlockWins = 5;
+  static const int hardPhaseShieldBaseMisses = 7;
+  static const int hardPhaseShieldMaxMisses = 15;
+  static const int hardPhaseRewardMultiplier = 2;
+  static const double hardPhaseProjectileSpeedStart = 1.25;
+  static const double hardPhaseIntervalScale = 0.75;
+  static const double hardPhaseAimErrorScale = 0.65;
+  static const double hardPhasePredictionScale = 1.2;
+  static const double hardPhaseTrackingSpeedScale = 1.2;
+  static const double hardPhaseMoveHitScale = 0.18;
+  static const double hardPhaseFireHitScale = 0.138;
+  static const double hardPhaseProjectileHitScale = 0.1725;
+
+  static bool isHardPhaseUnlocked(int bossWinCount) =>
+      bossWinCount >= hardPhaseUnlockWins;
+
+  static int manualBossMaxHp(BossBattleDefinition boss, {bool isHardPhase = false}) {
+    if (!isHardPhase) return boss.maxHp;
+    return (boss.maxHp * 1.5).round();
+  }
+
+  /// First shield break needs 5 misses (7 in Hard Phase); +1 per egg hit.
+  static int manualRequiredMisses(
+    int successfulEggHits, {
+    bool isHardPhase = false,
+  }) {
+    final base =
+        isHardPhase ? hardPhaseShieldBaseMisses : manualShieldBaseMisses;
+    final cap = isHardPhase ? hardPhaseShieldMaxMisses : manualShieldMaxMisses;
+    return min(cap, base + successfulEggHits);
+  }
 
   /// Time-based scaling plus bumps per successful egg hit on the boss.
   static double manualProjectileSpeedMultiplier({
     required double elapsedSeconds,
     required int bossHitCount,
+    bool isHardPhase = false,
   }) {
-    final multiplier = 1.0 +
+    final base = isHardPhase ? hardPhaseProjectileSpeedStart : 1.0;
+    final hitPerBump = isHardPhase ? hardPhaseProjectileHitScale : 0.15;
+    final hitTimeBump = isHardPhase ? 0.115 : 0.10;
+    final multiplier = base +
         (elapsedSeconds / 30.0) +
-        bossHitCount * 0.15 +
-        bossHitCount * 0.10;
+        bossHitCount * hitPerBump +
+        bossHitCount * hitTimeBump;
     return min(manualProjectileSpeedAbsoluteCap, multiplier);
   }
 
-  static double manualBossMoveSpeedMultiplier(int bossHitCount) =>
-      min(manualBossMoveSpeedCap, 1.0 + bossHitCount * 0.15);
+  static double manualBossMoveSpeedMultiplier(
+    int bossHitCount, {
+    bool isHardPhase = false,
+  }) {
+    final perHit = isHardPhase ? hardPhaseMoveHitScale : 0.15;
+    return min(manualBossMoveSpeedCap, 1.0 + bossHitCount * perHit);
+  }
 
   static int manualProjectileIntervalMs(
     BossBattleDefinition boss,
-    int bossHitCount,
-  ) {
-    final scaled = boss.projectileIntervalMs / (1 + bossHitCount * 0.12);
+    int bossHitCount, {
+    bool isHardPhase = false,
+  }) {
+    final baseInterval = isHardPhase
+        ? (boss.projectileIntervalMs * hardPhaseIntervalScale).round()
+        : boss.projectileIntervalMs;
+    final hitScale = isHardPhase ? hardPhaseFireHitScale : 0.12;
+    final scaled = baseInterval / (1 + bossHitCount * hitScale);
     return max(manualMinProjectileIntervalMs, scaled.round());
   }
 
   static double manualBossMoveSpeed(
     BossBattleDefinition boss,
-    int bossHitCount,
-  ) {
+    int bossHitCount, {
+    bool isHardPhase = false,
+  }) {
     return boss.manualBossMoveSpeed *
-        manualBossMoveSpeedMultiplier(bossHitCount);
+        manualBossMoveSpeedMultiplier(bossHitCount, isHardPhase: isHardPhase) *
+        (isHardPhase ? hardPhaseTrackingSpeedScale : 1.0);
+  }
+
+  static double manualAimErrorMax(
+    BossBattleDefinition boss, {
+    bool isHardPhase = false,
+  }) {
+    return isHardPhase
+        ? boss.manualAimErrorMax * hardPhaseAimErrorScale
+        : boss.manualAimErrorMax;
+  }
+
+  static double manualPredictionStrength(
+    BossBattleDefinition boss, {
+    bool isHardPhase = false,
+  }) {
+    return isHardPhase
+        ? boss.manualPredictionStrength * hardPhasePredictionScale
+        : boss.manualPredictionStrength;
+  }
+
+  static double manualAimAccuracy(
+    BossBattleDefinition boss, {
+    bool isHardPhase = false,
+  }) {
+    if (!isHardPhase) return boss.manualAimAccuracy;
+    return min(1.0, boss.manualAimAccuracy * hardPhasePredictionScale);
   }
 
   /// Computes a clamped horizontal aim target for manual battle boss tracking.
@@ -77,10 +147,13 @@ class BossBattleLogic {
     required double minX,
     required double maxX,
     required double aimError,
+    bool isHardPhase = false,
   }) {
-    final predictedX = playerX + playerVelocityX * boss.manualPredictionStrength;
+    final prediction = manualPredictionStrength(boss, isHardPhase: isHardPhase);
+    final accuracy = manualAimAccuracy(boss, isHardPhase: isHardPhase);
+    final predictedX = playerX + playerVelocityX * prediction;
     final rawTarget = predictedX + aimError;
-    final blended = playerX + (rawTarget - playerX) * boss.manualAimAccuracy;
+    final blended = playerX + (rawTarget - playerX) * accuracy;
     return blended.clamp(minX, maxX);
   }
 

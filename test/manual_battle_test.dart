@@ -17,6 +17,60 @@ void main() {
     expect(BossBattleLogic.manualEggDamage(15000), 1875);
   });
 
+  test('hard phase unlock requires five boss wins', () {
+    expect(BossBattleLogic.isHardPhaseUnlocked(0), isFalse);
+    expect(BossBattleLogic.isHardPhaseUnlocked(4), isFalse);
+    expect(BossBattleLogic.isHardPhaseUnlocked(5), isTrue);
+    expect(BossBattleLogic.isHardPhaseUnlocked(10), isTrue);
+  });
+
+  test('hard phase boss hp is 1.5x normal rounded', () {
+    final slime = BossData.bossById('slime_boss')!;
+    expect(BossBattleLogic.manualBossMaxHp(slime), slime.maxHp);
+    expect(
+      BossBattleLogic.manualBossMaxHp(slime, isHardPhase: true),
+      (slime.maxHp * 1.5).round(),
+    );
+  });
+
+  test('hard phase shield misses start at 7 capped at 15', () {
+    expect(
+      BossBattleLogic.manualRequiredMisses(0, isHardPhase: true),
+      7,
+    );
+    expect(
+      BossBattleLogic.manualRequiredMisses(3, isHardPhase: true),
+      10,
+    );
+    expect(
+      BossBattleLogic.manualRequiredMisses(20, isHardPhase: true),
+      15,
+    );
+  });
+
+  test('hard phase projectile speed starts 25 percent faster', () {
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 0,
+        bossHitCount: 0,
+        isHardPhase: true,
+      ),
+      1.25,
+    );
+  });
+
+  test('hard phase firing interval is 75 percent of normal', () {
+    final slime = BossData.bossById('slime_boss')!;
+    expect(
+      BossBattleLogic.manualProjectileIntervalMs(slime, 0, isHardPhase: true),
+      (slime.projectileIntervalMs * 0.75).round(),
+    );
+  });
+
+  test('hard phase reward multiplier is 2', () {
+    expect(BossBattleLogic.hardPhaseRewardMultiplier, 2);
+  });
+
   test('manual shield misses scale with successful egg hits capped at 12', () {
     expect(BossBattleLogic.manualRequiredMisses(0), 5);
     expect(BossBattleLogic.manualRequiredMisses(1), 6);

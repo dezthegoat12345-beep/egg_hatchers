@@ -16,6 +16,7 @@ class PlayerState {
     this.fullDeveloperToolsUnlocked = false,
     this.battleTokens = 0,
     this.bossWins = const {},
+    this.hardPhaseWins = const {},
     this.bossMutationUnlocked = false,
     this.activeAutoBattle,
   });
@@ -31,6 +32,7 @@ class PlayerState {
   final bool fullDeveloperToolsUnlocked;
   final int battleTokens;
   final Map<String, int> bossWins;
+  final Map<String, int> hardPhaseWins;
   final bool bossMutationUnlocked;
   final ActiveAutoBattle? activeAutoBattle;
 
@@ -58,6 +60,7 @@ class PlayerState {
     bool? fullDeveloperToolsUnlocked,
     int? battleTokens,
     Map<String, int>? bossWins,
+    Map<String, int>? hardPhaseWins,
     bool? bossMutationUnlocked,
     ActiveAutoBattle? activeAutoBattle,
     bool clearActiveAutoBattle = false,
@@ -76,6 +79,7 @@ class PlayerState {
           fullDeveloperToolsUnlocked ?? this.fullDeveloperToolsUnlocked,
       battleTokens: battleTokens ?? this.battleTokens,
       bossWins: bossWins ?? this.bossWins,
+      hardPhaseWins: hardPhaseWins ?? this.hardPhaseWins,
       bossMutationUnlocked:
           bossMutationUnlocked ?? this.bossMutationUnlocked,
       activeAutoBattle: clearActiveAutoBattle
@@ -96,6 +100,7 @@ class PlayerState {
         'fullDeveloperToolsUnlocked': fullDeveloperToolsUnlocked,
         'battleTokens': battleTokens,
         'bossWins': bossWins,
+        'hardPhaseWins': hardPhaseWins,
         'bossMutationUnlocked': bossMutationUnlocked,
         if (activeAutoBattle != null)
           'activeAutoBattle': activeAutoBattle!.toJson(),
@@ -121,6 +126,7 @@ class PlayerState {
           json['fullDeveloperToolsUnlocked'] as bool? ?? false,
       battleTokens: json['battleTokens'] as int? ?? 0,
       bossWins: _bossWinsFromJson(json['bossWins']),
+      hardPhaseWins: _bossWinsFromJson(json['hardPhaseWins']),
       bossMutationUnlocked: json['bossMutationUnlocked'] as bool? ?? false,
       activeAutoBattle: json['activeAutoBattle'] is Map<String, dynamic>
           ? ActiveAutoBattle.fromJson(

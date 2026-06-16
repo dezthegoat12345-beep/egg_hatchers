@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../data/boss_data.dart';
 import '../data/game_data.dart';
 import '../data/quest_data.dart';
 import '../models/active_auto_battle.dart';
@@ -601,6 +602,14 @@ class GameService extends ChangeNotifier {
 
   int bossWinCount(String bossId) => _state.bossWins[bossId] ?? 0;
 
+  bool isHardPhaseUnlocked(String bossId) =>
+      BossBattleLogic.isHardPhaseUnlocked(bossWinCount(bossId));
+
+  int hardPhaseWinCount(String bossId) => _state.hardPhaseWins[bossId] ?? 0;
+
+  int get totalHardPhaseWins =>
+      _state.hardPhaseWins.values.fold<int>(0, (sum, count) => sum + count);
+
   bool isStackAutoBattling({
     required String animalId,
     required String mutationId,
@@ -946,7 +955,11 @@ class GameService extends ChangeNotifier {
   }
 
   /// Applies win rewards and records battle quest progress after animation.
-  bool applyBossBattleRewards(String bossId, BossBattleResult result) {
+  bool applyBossBattleRewards(
+    String bossId,
+    BossBattleResult result, {
+    bool isHardPhase = false,
+  }) {
     var progress = _state.questProgress;
     if (result.won) {
       progress = _questProgressAfterBossWin(
@@ -971,10 +984,16 @@ class GameService extends ChangeNotifier {
 
     final wins = Map<String, int>.from(_state.bossWins);
     wins[bossId] = (wins[bossId] ?? 0) + 1;
+    var hardPhaseWins = _state.hardPhaseWins;
+    if (isHardPhase) {
+      hardPhaseWins = Map<String, int>.from(hardPhaseWins);
+      hardPhaseWins[bossId] = (hardPhaseWins[bossId] ?? 0) + 1;
+    }
     _state = _state.copyWith(
       coins: _state.coins + result.coinReward,
       battleTokens: _state.battleTokens + result.battleTokenReward,
       bossWins: wins,
+      hardPhaseWins: hardPhaseWins,
     );
     _refreshQuestNotifications();
     notifyListeners();
@@ -1483,6 +1502,19 @@ class GameService extends ChangeNotifier {
     }
     _state = _state.copyWith(bossWins: wins, questProgress: progress);
     _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devUnlockHardPhases() {
+    final wins = Map<String, int>.from(_state.bossWins);
+    for (final boss in BossData.bosses) {
+      wins[boss.id] = max(
+        wins[boss.id] ?? 0,
+        BossBattleLogic.hardPhaseUnlockWins,
+      );
+    }
+    _state = _state.copyWith(bossWins: wins);
     notifyListeners();
     save();
   }

@@ -586,6 +586,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Unlock Hard Phases',
+                onPressed: () {
+                  game.devUnlockHardPhases();
+                  _showMessage('Set all boss wins to 5 for Hard Phase unlock.');
+                },
+              ),
+              _QuickButton(
                 label: 'Advance auto battle',
                 onPressed: () {
                   game.devAdvanceActiveAutoBattleFight();

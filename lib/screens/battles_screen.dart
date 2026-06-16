@@ -294,8 +294,9 @@ class BattlesScreen extends StatelessWidget {
   Future<void> _startManualBattle(
     BuildContext context,
     BossBattleDefinition boss,
-    BackgroundTheme theme,
-  ) async {
+    BackgroundTheme theme, {
+    bool isHardPhase = false,
+  }) async {
     if (game.ownedAnimals.isEmpty) {
       showGameSnackBar(
         context,
@@ -305,11 +306,23 @@ class BattlesScreen extends StatelessWidget {
       return;
     }
 
+    if (isHardPhase && !game.isHardPhaseUnlocked(boss.id)) {
+      showGameSnackBar(
+        context,
+        message:
+            'Beat ${boss.name} ${BossBattleLogic.hardPhaseUnlockWins} times to unlock Hard Phase.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
     final fighter = await _pickFighter(
       context,
       theme,
-      title: 'Choose Fighter',
-      subtitle: 'Dodge projectiles and shoot eggs at ${boss.name}.',
+      title: isHardPhase ? 'Choose Hard Phase Fighter' : 'Choose Fighter',
+      subtitle: isHardPhase
+          ? 'Hard Phase: dodge faster shots and earn 2× rewards from ${boss.name}.'
+          : 'Dodge projectiles and shoot eggs at ${boss.name}.',
     );
     if (fighter == null || !context.mounted) return;
 
@@ -326,6 +339,7 @@ class BattlesScreen extends StatelessWidget {
         customSprites: customSprites,
         boss: boss,
         fighter: fighter,
+        isHardPhase: isHardPhase,
       ),
     );
   }
@@ -506,6 +520,9 @@ class BattlesScreen extends StatelessWidget {
                                 game.state,
                               ),
                               winCount: game.bossWinCount(BossData.bosses[i].id),
+                              hardPhaseUnlocked: game.isHardPhaseUnlocked(
+                                BossData.bosses[i].id,
+                              ),
                               onAutoBattle: () => _startAutoBattle(
                                 context,
                                 BossData.bosses[i],
@@ -515,6 +532,12 @@ class BattlesScreen extends StatelessWidget {
                                 context,
                                 BossData.bosses[i],
                                 theme,
+                              ),
+                              onHardPhaseBattle: () => _startManualBattle(
+                                context,
+                                BossData.bosses[i],
+                                theme,
+                                isHardPhase: true,
                               ),
                             ),
                           ],
@@ -632,16 +655,20 @@ class _BossCard extends StatelessWidget {
     required this.theme,
     required this.isUnlocked,
     required this.winCount,
+    required this.hardPhaseUnlocked,
     required this.onAutoBattle,
     required this.onManualBattle,
+    required this.onHardPhaseBattle,
   });
 
   final BossBattleDefinition boss;
   final BackgroundTheme theme;
   final bool isUnlocked;
   final int winCount;
+  final bool hardPhaseUnlocked;
   final VoidCallback onAutoBattle;
   final VoidCallback onManualBattle;
+  final VoidCallback onHardPhaseBattle;
 
   @override
   Widget build(BuildContext context) {
@@ -754,7 +781,7 @@ class _BossCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          if (isUnlocked)
+          if (isUnlocked) ...[
             Row(
               children: [
                 Expanded(
@@ -783,8 +810,42 @@ class _BossCard extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-          else
+            ),
+            const SizedBox(height: 10),
+            if (hardPhaseUnlocked)
+              FilledButton(
+                onPressed: onHardPhaseBattle,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: Colors.deepOrange.shade700,
+                ),
+                child: const Text(
+                  'Hard Phase',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              )
+            else ...[
+              FilledButton(
+                onPressed: null,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: theme.disabledColor,
+                ),
+                child: const Text('Hard Phase'),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Hard Phase unlock: $winCount / '
+                '${BossBattleLogic.hardPhaseUnlockWins} wins',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+            ],
+          ] else
             FilledButton(
               onPressed: null,
               style: GameTheme.filledButton(
