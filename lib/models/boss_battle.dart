@@ -1,5 +1,12 @@
 import 'owned_animal.dart';
 
+/// Difficulty tier for manual boss battles only.
+enum ManualBattleMode {
+  normal,
+  hard,
+  nightmare,
+}
+
 /// Definition of a single-player boss fight.
 class BossBattleDefinition {
   const BossBattleDefinition({

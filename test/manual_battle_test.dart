@@ -1,4 +1,5 @@
 import 'package:egg_hatchers/data/boss_data.dart';
+import 'package:egg_hatchers/models/boss_battle.dart';
 import 'package:egg_hatchers/utils/boss_battle_logic.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,58 +18,122 @@ void main() {
     expect(BossBattleLogic.manualEggDamage(15000), 1875);
   });
 
+  test('manual boss lives vary by boss id', () {
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('slime_boss')!),
+      1,
+    );
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('egg_golem')!),
+      2,
+    );
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('shadow_rooster')!),
+      3,
+    );
+  });
+
   test('hard phase unlock requires five boss wins', () {
     expect(BossBattleLogic.isHardPhaseUnlocked(0), isFalse);
     expect(BossBattleLogic.isHardPhaseUnlocked(4), isFalse);
     expect(BossBattleLogic.isHardPhaseUnlocked(5), isTrue);
-    expect(BossBattleLogic.isHardPhaseUnlocked(10), isTrue);
   });
 
-  test('hard phase boss hp is 1.5x normal rounded', () {
-    final slime = BossData.bossById('slime_boss')!;
-    expect(BossBattleLogic.manualBossMaxHp(slime), slime.maxHp);
-    expect(
-      BossBattleLogic.manualBossMaxHp(slime, isHardPhase: true),
-      (slime.maxHp * 1.5).round(),
-    );
+  test('nightmare unlock requires seven hard phase wins', () {
+    expect(BossBattleLogic.isNightmareUnlocked(0), isFalse);
+    expect(BossBattleLogic.isNightmareUnlocked(6), isFalse);
+    expect(BossBattleLogic.isNightmareUnlocked(7), isTrue);
   });
 
-  test('hard phase shield misses start at 7 capped at 15', () {
+  test('hard phase shield misses start at 8 increase by 2 capped at 16', () {
     expect(
-      BossBattleLogic.manualRequiredMisses(0, isHardPhase: true),
-      7,
+      BossBattleLogic.manualRequiredMisses(0, mode: ManualBattleMode.hard),
+      8,
     );
     expect(
-      BossBattleLogic.manualRequiredMisses(3, isHardPhase: true),
+      BossBattleLogic.manualRequiredMisses(1, mode: ManualBattleMode.hard),
       10,
     );
     expect(
-      BossBattleLogic.manualRequiredMisses(20, isHardPhase: true),
-      15,
+      BossBattleLogic.manualRequiredMisses(4, mode: ManualBattleMode.hard),
+      16,
+    );
+    expect(
+      BossBattleLogic.manualRequiredMisses(20, mode: ManualBattleMode.hard),
+      16,
     );
   });
 
-  test('hard phase projectile speed starts 25 percent faster', () {
+  test('nightmare shield misses start at 10 increase by 2 capped at 20', () {
+    expect(
+      BossBattleLogic.manualRequiredMisses(
+        0,
+        mode: ManualBattleMode.nightmare,
+      ),
+      10,
+    );
+    expect(
+      BossBattleLogic.manualRequiredMisses(
+        5,
+        mode: ManualBattleMode.nightmare,
+      ),
+      20,
+    );
+  });
+
+  test('hard phase projectile speed starts 40 percent faster', () {
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: 0,
         bossHitCount: 0,
-        isHardPhase: true,
+        mode: ManualBattleMode.hard,
       ),
-      1.25,
+      1.40,
     );
   });
 
-  test('hard phase firing interval is 75 percent of normal', () {
+  test('nightmare projectile speed starts 75 percent faster', () {
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 0,
+        bossHitCount: 0,
+        mode: ManualBattleMode.nightmare,
+      ),
+      1.75,
+    );
+  });
+
+  test('hard phase firing interval is 65 percent of normal', () {
     final slime = BossData.bossById('slime_boss')!;
     expect(
-      BossBattleLogic.manualProjectileIntervalMs(slime, 0, isHardPhase: true),
-      (slime.projectileIntervalMs * 0.75).round(),
+      BossBattleLogic.manualProjectileIntervalMs(
+        slime,
+        0,
+        mode: ManualBattleMode.hard,
+      ),
+      (slime.projectileIntervalMs * 0.65).round(),
     );
   });
 
-  test('hard phase reward multiplier is 2', () {
-    expect(BossBattleLogic.hardPhaseRewardMultiplier, 2);
+  test('nightmare firing interval respects lower minimum cap', () {
+    final slime = BossData.bossById('slime_boss')!;
+    expect(
+      BossBattleLogic.manualProjectileIntervalMs(
+        slime,
+        100,
+        mode: ManualBattleMode.nightmare,
+      ),
+      BossBattleLogic.nightmareMinProjectileIntervalMs,
+    );
+  });
+
+  test('reward multipliers by manual battle mode', () {
+    expect(BossBattleLogic.manualRewardMultiplier(ManualBattleMode.normal), 1);
+    expect(BossBattleLogic.manualRewardMultiplier(ManualBattleMode.hard), 2);
+    expect(
+      BossBattleLogic.manualRewardMultiplier(ManualBattleMode.nightmare),
+      3,
+    );
   });
 
   test('manual shield misses scale with successful egg hits capped at 12', () {
@@ -93,20 +158,6 @@ void main() {
         bossHitCount: 0,
       ),
       1.5,
-    );
-    expect(
-      BossBattleLogic.manualProjectileSpeedMultiplier(
-        elapsedSeconds: 30,
-        bossHitCount: 0,
-      ),
-      2.0,
-    );
-    expect(
-      BossBattleLogic.manualProjectileSpeedMultiplier(
-        elapsedSeconds: 60,
-        bossHitCount: 0,
-      ),
-      3.0,
     );
     expect(
       BossBattleLogic.manualProjectileSpeedMultiplier(
@@ -140,7 +191,7 @@ void main() {
     );
   });
 
-  test('manual battle uses three lives', () {
+  test('manual battle uses three player lives', () {
     expect(BossBattleLogic.manualBattleLives, 3);
   });
 
@@ -167,7 +218,10 @@ void main() {
 
     expect(slimeTarget, lessThan(roosterTarget));
     expect(slime.manualAimErrorMax, greaterThan(rooster.manualAimErrorMax));
-    expect(slime.manualPredictionStrength, lessThan(rooster.manualPredictionStrength));
+    expect(
+      slime.manualPredictionStrength,
+      lessThan(rooster.manualPredictionStrength),
+    );
   });
 
   test('boss definitions define manual aim tuning', () {

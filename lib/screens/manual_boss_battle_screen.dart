@@ -31,7 +31,7 @@ class ManualBossBattleScreen extends StatefulWidget {
     required this.customSprites,
     required this.boss,
     required this.fighter,
-    this.isHardPhase = false,
+    this.mode = ManualBattleMode.normal,
   });
 
   final GameService game;
@@ -39,7 +39,7 @@ class ManualBossBattleScreen extends StatefulWidget {
   final CustomSpriteService customSprites;
   final BossBattleDefinition boss;
   final OwnedAnimal fighter;
-  final bool isHardPhase;
+  final ManualBattleMode mode;
 
   @override
   State<ManualBossBattleScreen> createState() => _ManualBossBattleScreenState();
@@ -59,14 +59,14 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   late final Ticker _ticker;
   late final Random _random;
   late int _battlePower;
-  late int _eggDamage;
   late String _fighterName;
   late String? _fighterSpritePath;
   late String _fighterEmoji;
   late CustomSpriteData? _fighterCustomSprite;
 
   var _lives = BossBattleLogic.manualBattleLives;
-  var _bossHp = 0;
+  var _bossLives = 0;
+  var _bossMaxLives = 0;
   var _playerX = 0.0;
   var _previousPlayerX = 0.0;
   var _playerVelocityX = 0.0;
@@ -80,7 +80,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _totalDodges = 0;
   var _successfulEggHits = 0;
   var _elapsedSeconds = 0.0;
-  var _totalDamageDealt = 0;
+  var _bossHitsLanded = 0;
   var _pointerActive = false;
   double? _targetX;
   var _moveLeft = false;
@@ -102,34 +102,31 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   BackgroundTheme get theme => widget.preferences.selectedTheme;
   BossBattleDefinition get boss => widget.boss;
-  bool get _isHardPhase => widget.isHardPhase;
-
-  int get _bossMaxHp =>
-      BossBattleLogic.manualBossMaxHp(boss, isHardPhase: _isHardPhase);
+  ManualBattleMode get _mode => widget.mode;
 
   int get _requiredMisses => BossBattleLogic.manualRequiredMisses(
         _successfulEggHits,
-        isHardPhase: _isHardPhase,
+        mode: _mode,
       );
 
   double get _projectileSpeedMultiplier =>
       BossBattleLogic.manualProjectileSpeedMultiplier(
         elapsedSeconds: _elapsedSeconds,
         bossHitCount: _successfulEggHits,
-        isHardPhase: _isHardPhase,
+        mode: _mode,
       );
 
   int get _currentProjectileIntervalMs =>
       BossBattleLogic.manualProjectileIntervalMs(
         boss,
         _successfulEggHits,
-        isHardPhase: _isHardPhase,
+        mode: _mode,
       );
 
   double get _currentBossMoveSpeed => BossBattleLogic.manualBossMoveSpeed(
         boss,
         _successfulEggHits,
-        isHardPhase: _isHardPhase,
+        mode: _mode,
       );
 
   double get _bossCenterY => _bossTop + _bossSize / 2;
@@ -156,18 +153,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _fighterCustomSprite =
         widget.customSprites.getDisplaySprite(animal.id);
     _battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(widget.fighter);
-    _eggDamage = BossBattleLogic.manualEggDamage(_battlePower);
   }
 
   void _resetBattleState() {
     _lives = BossBattleLogic.manualBattleLives;
-    _bossHp = _bossMaxHp;
+    _bossMaxLives = BossBattleLogic.manualBossLives(boss);
+    _bossLives = _bossMaxLives;
     _shieldActive = true;
     _missCount = 0;
     _totalDodges = 0;
     _successfulEggHits = 0;
     _elapsedSeconds = 0;
-    _totalDamageDealt = 0;
+    _bossHitsLanded = 0;
     _pointerActive = false;
     _targetX = null;
     _moveLeft = false;
@@ -200,7 +197,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     final minBx = _bossMinX();
     final maxBx = _bossMaxX();
     final aimError = (_random.nextDouble() * 2 - 1) *
-        BossBattleLogic.manualAimErrorMax(boss, isHardPhase: _isHardPhase);
+        BossBattleLogic.manualAimErrorMax(boss, mode: _mode);
     final newTarget = BossBattleLogic.manualBossAimTarget(
       boss: boss,
       playerX: _playerX,
@@ -208,7 +205,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       minX: minBx,
       maxX: maxBx,
       aimError: aimError,
-      isHardPhase: _isHardPhase,
+      mode: _mode,
     );
     _bossAimTargetX =
         (_bossAimTargetX * 0.35 + newTarget * 0.65).clamp(minBx, maxBx);
@@ -360,7 +357,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (hitBoss) {
       _activeEgg = null;
       if (!_shieldActive) {
-        _damageBoss(_eggDamage);
+        _hitBoss();
       }
       return;
     }
@@ -402,18 +399,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     }
   }
 
-  void _damageBoss(int amount) {
+  void _hitBoss() {
     if (_gameOver) return;
-    _bossHp = max(0, _bossHp - amount);
-    _totalDamageDealt += amount;
+    _bossLives = max(0, _bossLives - 1);
+    _bossHitsLanded++;
     _floatingDamages.add(
       _FloatingDamage(
         x: _bossX,
         y: _bossTop + 8,
-        amount: amount,
+        label: 'CRACK!',
       ),
     );
-    if (_bossHp <= 0) {
+    if (_bossLives <= 0) {
       _endBattle(won: true);
       return;
     }
@@ -449,7 +446,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _rewardsApplied = true;
 
     final rewardMultiplier =
-        _won && _isHardPhase ? BossBattleLogic.hardPhaseRewardMultiplier : 1;
+        _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
     final coinReward = _won ? boss.coinReward * rewardMultiplier : 0;
     final tokenReward = _won ? boss.battleTokenReward * rewardMultiplier : 0;
 
@@ -457,9 +454,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       won: _won,
       rounds: 0,
       initialPlayerHp: BossBattleLogic.manualBattleLives,
-      initialBossHp: _bossMaxHp,
+      initialBossHp: _bossMaxLives,
       finalPlayerHp: _won ? _lives : 0,
-      finalBossHp: _bossHp,
+      finalBossHp: _bossLives,
       damageLog: const [],
       roundSnapshots: const [],
       battlePower: _battlePower,
@@ -469,7 +466,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     widget.game.applyBossBattleRewards(
       boss.id,
       result,
-      isHardPhase: _isHardPhase && _won,
+      mode: _won ? _mode : ManualBattleMode.normal,
     );
   }
 
@@ -478,7 +475,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _resultDialogShown = true;
 
     final rewardMultiplier =
-        _won && _isHardPhase ? BossBattleLogic.hardPhaseRewardMultiplier : 1;
+        _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
 
     await showDialog<void>(
       context: context,
@@ -489,10 +486,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         boss: boss,
         fighterName: _fighterName,
         won: _won,
-        isHardPhase: _isHardPhase,
+        mode: _mode,
         livesRemaining: _lives,
+        bossLivesRemaining: _bossLives,
         missCount: _totalDodges,
-        damageDealt: _totalDamageDealt,
+        bossHitsLanded: _bossHitsLanded,
         coinReward: _won ? boss.coinReward * rewardMultiplier : 0,
         tokenReward: _won ? boss.battleTokenReward * rewardMultiplier : 0,
         onBackToBattles: () {
@@ -590,16 +588,16 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_isHardPhase)
+                      if (_mode != ManualBattleMode.normal)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
-                          child: _HardPhaseBadge(theme: currentTheme),
+                          child: _ModeBadge(theme: currentTheme, mode: _mode),
                         ),
                       _BattleHeader(
                         theme: currentTheme,
                         boss: boss,
-                        bossHp: _bossHp,
-                        bossMaxHp: _bossMaxHp,
+                        bossLives: _bossLives,
+                        bossMaxLives: _bossMaxLives,
                         lives: _lives,
                         shieldActive: _shieldActive,
                         shieldFlash: _shieldFlash,
@@ -689,29 +687,47 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 }
 
-class _HardPhaseBadge extends StatelessWidget {
-  const _HardPhaseBadge({required this.theme});
+class _ModeBadge extends StatelessWidget {
+  const _ModeBadge({
+    required this.theme,
+    required this.mode,
+  });
 
   final BackgroundTheme theme;
+  final ManualBattleMode mode;
 
   @override
   Widget build(BuildContext context) {
+    final (label, color, rewardLabel) = switch (mode) {
+      ManualBattleMode.hard => (
+          'Hard Phase',
+          Colors.deepOrange.shade700,
+          '2× rewards',
+        ),
+      ManualBattleMode.nightmare => (
+          'Nightmare Mode',
+          Colors.purple.shade800,
+          '3× rewards',
+        ),
+      ManualBattleMode.normal => ('', Colors.grey, ''),
+    };
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.deepOrange.shade700.withValues(alpha: 0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.deepOrange.shade400),
+        border: Border.all(color: color.withValues(alpha: 0.85)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Hard Phase',
+            label,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Colors.deepOrange.shade300,
+              color: color.withValues(alpha: 0.95),
             ),
           ),
           const SizedBox(width: 10),
@@ -722,7 +738,7 @@ class _HardPhaseBadge extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '2× rewards',
+              rewardLabel,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -740,8 +756,8 @@ class _BattleHeader extends StatelessWidget {
   const _BattleHeader({
     required this.theme,
     required this.boss,
-    required this.bossHp,
-    required this.bossMaxHp,
+    required this.bossLives,
+    required this.bossMaxLives,
     required this.lives,
     required this.shieldActive,
     required this.shieldFlash,
@@ -751,17 +767,23 @@ class _BattleHeader extends StatelessWidget {
 
   final BackgroundTheme theme;
   final BossBattleDefinition boss;
-  final int bossHp;
-  final int bossMaxHp;
+  final int bossLives;
+  final int bossMaxLives;
   final int lives;
   final bool shieldActive;
   final double shieldFlash;
   final int missCount;
   final int requiredMisses;
 
+  String _bossLivesDisplay(int remaining, int maxLives) {
+    final eggs = List.generate(maxLives, (index) {
+      return index < remaining ? '🥚' : '💀';
+    }).join();
+    return 'Boss Lives: $eggs';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bossRatio = bossMaxHp > 0 ? bossHp / bossMaxHp : 0.0;
     final maxLives = BossBattleLogic.manualBattleLives;
     final hearts = List.generate(maxLives, (index) {
       return index < lives ? '❤️' : '🖤';
@@ -786,18 +808,17 @@ class _BattleHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _HpBar(
-            theme: theme,
-            label: 'Boss HP',
-            ratio: bossRatio,
-            valueText:
-                '${formatCoins(bossHp)} / ${formatCoins(bossMaxHp)}',
-            color: Colors.red.shade400,
-            trackColor: theme.panelColor,
+          Text(
+            _bossLivesDisplay(bossLives, bossMaxLives),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: theme.cardTextPrimaryColor,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Lives: $hearts',
+            'Your Lives: $hearts',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -839,64 +860,6 @@ class _BattleHeader extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _HpBar extends StatelessWidget {
-  const _HpBar({
-    required this.theme,
-    required this.label,
-    required this.ratio,
-    required this.valueText,
-    required this.color,
-    required this.trackColor,
-  });
-
-  final BackgroundTheme theme;
-  final String label;
-  final double ratio;
-  final String valueText;
-  final Color color;
-  final Color trackColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: theme.cardTextSecondaryColor,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              valueText,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: theme.cardTextSecondaryColor,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: ratio.clamp(0.0, 1.0),
-            minHeight: 10,
-            backgroundColor: trackColor.withValues(alpha: 0.35),
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1141,10 +1104,11 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.boss,
     required this.fighterName,
     required this.won,
-    required this.isHardPhase,
+    required this.mode,
     required this.livesRemaining,
+    required this.bossLivesRemaining,
     required this.missCount,
-    required this.damageDealt,
+    required this.bossHitsLanded,
     required this.coinReward,
     required this.tokenReward,
     required this.onBackToBattles,
@@ -1155,21 +1119,42 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final BossBattleDefinition boss;
   final String fighterName;
   final bool won;
-  final bool isHardPhase;
+  final ManualBattleMode mode;
   final int livesRemaining;
+  final int bossLivesRemaining;
   final int missCount;
-  final int damageDealt;
+  final int bossHitsLanded;
   final int coinReward;
   final int tokenReward;
   final VoidCallback onBackToBattles;
   final VoidCallback onBattleAgain;
 
+  String get _title {
+    if (won) {
+      return switch (mode) {
+        ManualBattleMode.hard => '🏆 Hard Phase Victory!',
+        ManualBattleMode.nightmare => '🏆 Nightmare Victory!',
+        ManualBattleMode.normal => '🏆 Victory!',
+      };
+    }
+    return switch (mode) {
+      ManualBattleMode.hard => '💀 Hard Phase Defeat',
+      ManualBattleMode.nightmare => '💀 Nightmare Defeat',
+      ManualBattleMode.normal => '💀 Defeat',
+    };
+  }
+
+  String? get _rewardBadge {
+    if (!won) return null;
+    return switch (mode) {
+      ManualBattleMode.hard => '2× Rewards',
+      ManualBattleMode.nightmare => '3× Rewards',
+      ManualBattleMode.normal => null,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = won
-        ? (isHardPhase ? '🏆 Hard Phase Victory!' : '🏆 Victory!')
-        : (isHardPhase ? '💀 Hard Phase Defeat' : '💀 Defeat');
-
     return AlertDialog(
       backgroundColor: theme.cardColor,
       shape: RoundedRectangleBorder(
@@ -1177,7 +1162,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
         side: BorderSide(color: theme.cardBorderColor),
       ),
       title: Text(
-        title,
+        _title,
         style: TextStyle(
           color: theme.cardTextPrimaryColor,
           fontWeight: FontWeight.bold,
@@ -1188,11 +1173,11 @@ class _ManualBattleResultDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (won && isHardPhase)
+            if (_rewardBadge != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  '2× Rewards',
+                  _rewardBadge!,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.amber.shade600,
@@ -1201,9 +1186,9 @@ class _ManualBattleResultDialog extends StatelessWidget {
               ),
             if (!won)
               Text(
-                isHardPhase
-                    ? 'Try again after upgrading or choosing a stronger animal.'
-                    : 'You ran out of lives!',
+                mode == ManualBattleMode.normal
+                    ? 'You ran out of lives!'
+                    : 'Try again after upgrading or choosing a stronger animal.',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.red.shade400,
@@ -1224,7 +1209,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Dodges: $missCount · Damage dealt: ${formatCoins(damageDealt)}',
+              'Dodges: $missCount · Egg hits: $bossHitsLanded',
               style: TextStyle(
                 fontSize: 13,
                 color: theme.cardTextSecondaryColor,
@@ -1233,7 +1218,16 @@ class _ManualBattleResultDialog extends StatelessWidget {
             if (won) ...[
               const SizedBox(height: 6),
               Text(
-                'Lives left: $livesRemaining',
+                'Your lives left: $livesRemaining',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.secondaryColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Boss lives left: $bossLivesRemaining',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

@@ -295,7 +295,7 @@ class BattlesScreen extends StatelessWidget {
     BuildContext context,
     BossBattleDefinition boss,
     BackgroundTheme theme, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) async {
     if (game.ownedAnimals.isEmpty) {
       showGameSnackBar(
@@ -306,7 +306,7 @@ class BattlesScreen extends StatelessWidget {
       return;
     }
 
-    if (isHardPhase && !game.isHardPhaseUnlocked(boss.id)) {
+    if (mode == ManualBattleMode.hard && !game.isHardPhaseUnlocked(boss.id)) {
       showGameSnackBar(
         context,
         message:
@@ -316,13 +316,37 @@ class BattlesScreen extends StatelessWidget {
       return;
     }
 
+    if (mode == ManualBattleMode.nightmare &&
+        !game.isNightmareUnlocked(boss.id)) {
+      showGameSnackBar(
+        context,
+        message:
+            'Beat ${boss.name} in Hard Phase ${BossBattleLogic.nightmareUnlockHardWins} times to unlock Nightmare.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final (title, subtitle) = switch (mode) {
+      ManualBattleMode.hard => (
+          'Choose Hard Phase Fighter',
+          'Hard Phase: dodge faster shots and earn 2× rewards from ${boss.name}.',
+        ),
+      ManualBattleMode.nightmare => (
+          'Choose Nightmare Fighter',
+          'Nightmare: extreme difficulty with 3× rewards from ${boss.name}.',
+        ),
+      ManualBattleMode.normal => (
+          'Choose Fighter',
+          'Dodge projectiles and shoot eggs at ${boss.name}.',
+        ),
+    };
+
     final fighter = await _pickFighter(
       context,
       theme,
-      title: isHardPhase ? 'Choose Hard Phase Fighter' : 'Choose Fighter',
-      subtitle: isHardPhase
-          ? 'Hard Phase: dodge faster shots and earn 2× rewards from ${boss.name}.'
-          : 'Dodge projectiles and shoot eggs at ${boss.name}.',
+      title: title,
+      subtitle: subtitle,
     );
     if (fighter == null || !context.mounted) return;
 
@@ -339,7 +363,7 @@ class BattlesScreen extends StatelessWidget {
         customSprites: customSprites,
         boss: boss,
         fighter: fighter,
-        isHardPhase: isHardPhase,
+        mode: mode,
       ),
     );
   }
@@ -520,7 +544,12 @@ class BattlesScreen extends StatelessWidget {
                                 game.state,
                               ),
                               winCount: game.bossWinCount(BossData.bosses[i].id),
+                              hardPhaseWinCount:
+                                  game.hardPhaseWinCount(BossData.bosses[i].id),
                               hardPhaseUnlocked: game.isHardPhaseUnlocked(
+                                BossData.bosses[i].id,
+                              ),
+                              nightmareUnlocked: game.isNightmareUnlocked(
                                 BossData.bosses[i].id,
                               ),
                               onAutoBattle: () => _startAutoBattle(
@@ -537,7 +566,13 @@ class BattlesScreen extends StatelessWidget {
                                 context,
                                 BossData.bosses[i],
                                 theme,
-                                isHardPhase: true,
+                                mode: ManualBattleMode.hard,
+                              ),
+                              onNightmareBattle: () => _startManualBattle(
+                                context,
+                                BossData.bosses[i],
+                                theme,
+                                mode: ManualBattleMode.nightmare,
                               ),
                             ),
                           ],
@@ -655,20 +690,26 @@ class _BossCard extends StatelessWidget {
     required this.theme,
     required this.isUnlocked,
     required this.winCount,
+    required this.hardPhaseWinCount,
     required this.hardPhaseUnlocked,
+    required this.nightmareUnlocked,
     required this.onAutoBattle,
     required this.onManualBattle,
     required this.onHardPhaseBattle,
+    required this.onNightmareBattle,
   });
 
   final BossBattleDefinition boss;
   final BackgroundTheme theme;
   final bool isUnlocked;
   final int winCount;
+  final int hardPhaseWinCount;
   final bool hardPhaseUnlocked;
+  final bool nightmareUnlocked;
   final VoidCallback onAutoBattle;
   final VoidCallback onManualBattle;
   final VoidCallback onHardPhaseBattle;
+  final VoidCallback onNightmareBattle;
 
   @override
   Widget build(BuildContext context) {
@@ -833,7 +874,7 @@ class _BossCard extends StatelessWidget {
                 ),
                 child: const Text('Hard Phase'),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 'Hard Phase unlock: $winCount / '
                 '${BossBattleLogic.hardPhaseUnlockWins} wins',
@@ -845,6 +886,66 @@ class _BossCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (hardPhaseUnlocked)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Hard Phase unlocked',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.deepOrange.shade300,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 10),
+            if (nightmareUnlocked)
+              FilledButton(
+                onPressed: onNightmareBattle,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: Colors.purple.shade800,
+                ),
+                child: const Text(
+                  'Nightmare Mode',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              )
+            else ...[
+              FilledButton(
+                onPressed: null,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: theme.disabledColor,
+                ),
+                child: const Text('Nightmare'),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Nightmare unlock: $hardPhaseWinCount / '
+                '${BossBattleLogic.nightmareUnlockHardWins} Hard wins',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+            ],
+            if (nightmareUnlocked)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Nightmare unlocked',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.purple.shade200,
+                  ),
+                ),
+              ),
           ] else
             FilledButton(
               onPressed: null,

@@ -21,7 +21,7 @@ class BossBattleLogic {
   static int manualBossProjectileDamage(BossBattleDefinition boss) =>
       max(10, boss.recommendedPower ~/ 2);
 
-  /// Egg shot damage in manual dodge battle.
+  /// Egg shot damage in manual dodge battle (unused for lives-based manual fights).
   static int manualEggDamage(int battlePower) =>
       max(10, (battlePower / 8).round());
 
@@ -35,46 +35,109 @@ class BossBattleLogic {
   static const int manualBattleLives = 3;
 
   static const int hardPhaseUnlockWins = 5;
-  static const int hardPhaseShieldBaseMisses = 7;
-  static const int hardPhaseShieldMaxMisses = 15;
+  static const int hardPhaseShieldBaseMisses = 8;
+  static const int hardPhaseShieldMaxMisses = 16;
   static const int hardPhaseRewardMultiplier = 2;
-  static const double hardPhaseProjectileSpeedStart = 1.25;
-  static const double hardPhaseIntervalScale = 0.75;
-  static const double hardPhaseAimErrorScale = 0.65;
-  static const double hardPhasePredictionScale = 1.2;
-  static const double hardPhaseTrackingSpeedScale = 1.2;
-  static const double hardPhaseMoveHitScale = 0.18;
-  static const double hardPhaseFireHitScale = 0.138;
-  static const double hardPhaseProjectileHitScale = 0.1725;
+  static const double hardPhaseProjectileSpeedStart = 1.40;
+  static const double hardPhaseIntervalScale = 0.65;
+  static const double hardPhaseAimErrorScale = 0.50;
+  static const double hardPhasePredictionScale = 1.35;
+  static const double hardPhaseTrackingSpeedScale = 1.35;
+  static const double hardPhaseHitStrengthScale = 1.25;
+
+  static const int nightmareUnlockHardWins = 7;
+  static const int nightmareShieldBaseMisses = 10;
+  static const int nightmareShieldMaxMisses = 20;
+  static const int nightmareRewardMultiplier = 3;
+  static const double nightmareProjectileSpeedStart = 1.75;
+  static const double nightmareIntervalScale = 0.50;
+  static const double nightmareAimErrorScale = 0.25;
+  static const double nightmarePredictionScale = 1.60;
+  static const double nightmareTrackingSpeedScale = 1.60;
+  static const double nightmareHitStrengthScale = 1.40;
+  static const int nightmareMinProjectileIntervalMs = 325;
 
   static bool isHardPhaseUnlocked(int bossWinCount) =>
       bossWinCount >= hardPhaseUnlockWins;
 
-  static int manualBossMaxHp(BossBattleDefinition boss, {bool isHardPhase = false}) {
-    if (!isHardPhase) return boss.maxHp;
-    return (boss.maxHp * 1.5).round();
+  static bool isNightmareUnlocked(int hardPhaseWinCount) =>
+      hardPhaseWinCount >= nightmareUnlockHardWins;
+
+  /// Manual battle boss lives by id (Auto Battle still uses [BossBattleDefinition.maxHp]).
+  static int manualBossLives(BossBattleDefinition boss) {
+    switch (boss.id) {
+      case 'slime_boss':
+        return 1;
+      case 'egg_golem':
+        return 2;
+      case 'shadow_rooster':
+        return 3;
+      default:
+        return 3;
+    }
   }
 
-  /// First shield break needs 5 misses (7 in Hard Phase); +1 per egg hit.
+  static int manualRewardMultiplier(ManualBattleMode mode) {
+    switch (mode) {
+      case ManualBattleMode.hard:
+        return hardPhaseRewardMultiplier;
+      case ManualBattleMode.nightmare:
+        return nightmareRewardMultiplier;
+      case ManualBattleMode.normal:
+        return 1;
+    }
+  }
+
+  static double _hitStrengthScale(ManualBattleMode mode) {
+    switch (mode) {
+      case ManualBattleMode.hard:
+        return hardPhaseHitStrengthScale;
+      case ManualBattleMode.nightmare:
+        return nightmareHitStrengthScale;
+      case ManualBattleMode.normal:
+        return 1.0;
+    }
+  }
+
+  /// First shield break needs 5 misses (8 hard, 10 nightmare); scaling per egg hit.
   static int manualRequiredMisses(
     int successfulEggHits, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final base =
-        isHardPhase ? hardPhaseShieldBaseMisses : manualShieldBaseMisses;
-    final cap = isHardPhase ? hardPhaseShieldMaxMisses : manualShieldMaxMisses;
-    return min(cap, base + successfulEggHits);
+    final (base, increment, cap) = switch (mode) {
+      ManualBattleMode.hard => (
+          hardPhaseShieldBaseMisses,
+          2,
+          hardPhaseShieldMaxMisses,
+        ),
+      ManualBattleMode.nightmare => (
+          nightmareShieldBaseMisses,
+          2,
+          nightmareShieldMaxMisses,
+        ),
+      ManualBattleMode.normal => (
+          manualShieldBaseMisses,
+          1,
+          manualShieldMaxMisses,
+        ),
+    };
+    return min(cap, base + successfulEggHits * increment);
   }
 
   /// Time-based scaling plus bumps per successful egg hit on the boss.
   static double manualProjectileSpeedMultiplier({
     required double elapsedSeconds,
     required int bossHitCount,
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final base = isHardPhase ? hardPhaseProjectileSpeedStart : 1.0;
-    final hitPerBump = isHardPhase ? hardPhaseProjectileHitScale : 0.15;
-    final hitTimeBump = isHardPhase ? 0.115 : 0.10;
+    final base = switch (mode) {
+      ManualBattleMode.hard => hardPhaseProjectileSpeedStart,
+      ManualBattleMode.nightmare => nightmareProjectileSpeedStart,
+      ManualBattleMode.normal => 1.0,
+    };
+    final hitStrength = _hitStrengthScale(mode);
+    final hitPerBump = 0.15 * hitStrength;
+    final hitTimeBump = 0.10 * hitStrength;
     final multiplier = base +
         (elapsedSeconds / 30.0) +
         bossHitCount * hitPerBump +
@@ -84,59 +147,84 @@ class BossBattleLogic {
 
   static double manualBossMoveSpeedMultiplier(
     int bossHitCount, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final perHit = isHardPhase ? hardPhaseMoveHitScale : 0.15;
+    final perHit = 0.15 * _hitStrengthScale(mode);
     return min(manualBossMoveSpeedCap, 1.0 + bossHitCount * perHit);
   }
 
   static int manualProjectileIntervalMs(
     BossBattleDefinition boss,
     int bossHitCount, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final baseInterval = isHardPhase
-        ? (boss.projectileIntervalMs * hardPhaseIntervalScale).round()
-        : boss.projectileIntervalMs;
-    final hitScale = isHardPhase ? hardPhaseFireHitScale : 0.12;
+    final baseInterval = switch (mode) {
+      ManualBattleMode.hard =>
+        (boss.projectileIntervalMs * hardPhaseIntervalScale).round(),
+      ManualBattleMode.nightmare =>
+        (boss.projectileIntervalMs * nightmareIntervalScale).round(),
+      ManualBattleMode.normal => boss.projectileIntervalMs,
+    };
+    final hitScale = 0.12 * _hitStrengthScale(mode);
     final scaled = baseInterval / (1 + bossHitCount * hitScale);
-    return max(manualMinProjectileIntervalMs, scaled.round());
+    final minInterval = mode == ManualBattleMode.nightmare
+        ? nightmareMinProjectileIntervalMs
+        : manualMinProjectileIntervalMs;
+    return max(minInterval, scaled.round());
   }
 
   static double manualBossMoveSpeed(
     BossBattleDefinition boss,
     int bossHitCount, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
+    final trackingScale = switch (mode) {
+      ManualBattleMode.hard => hardPhaseTrackingSpeedScale,
+      ManualBattleMode.nightmare => nightmareTrackingSpeedScale,
+      ManualBattleMode.normal => 1.0,
+    };
     return boss.manualBossMoveSpeed *
-        manualBossMoveSpeedMultiplier(bossHitCount, isHardPhase: isHardPhase) *
-        (isHardPhase ? hardPhaseTrackingSpeedScale : 1.0);
+        manualBossMoveSpeedMultiplier(bossHitCount, mode: mode) *
+        trackingScale;
   }
 
   static double manualAimErrorMax(
     BossBattleDefinition boss, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    return isHardPhase
-        ? boss.manualAimErrorMax * hardPhaseAimErrorScale
-        : boss.manualAimErrorMax;
+    return switch (mode) {
+      ManualBattleMode.hard =>
+        boss.manualAimErrorMax * hardPhaseAimErrorScale,
+      ManualBattleMode.nightmare =>
+        boss.manualAimErrorMax * nightmareAimErrorScale,
+      ManualBattleMode.normal => boss.manualAimErrorMax,
+    };
   }
 
   static double manualPredictionStrength(
     BossBattleDefinition boss, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    return isHardPhase
-        ? boss.manualPredictionStrength * hardPhasePredictionScale
-        : boss.manualPredictionStrength;
+    return switch (mode) {
+      ManualBattleMode.hard =>
+        boss.manualPredictionStrength * hardPhasePredictionScale,
+      ManualBattleMode.nightmare =>
+        boss.manualPredictionStrength * nightmarePredictionScale,
+      ManualBattleMode.normal => boss.manualPredictionStrength,
+    };
   }
 
   static double manualAimAccuracy(
     BossBattleDefinition boss, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    if (!isHardPhase) return boss.manualAimAccuracy;
-    return min(1.0, boss.manualAimAccuracy * hardPhasePredictionScale);
+    final scale = switch (mode) {
+      ManualBattleMode.hard => hardPhasePredictionScale,
+      ManualBattleMode.nightmare => nightmarePredictionScale,
+      ManualBattleMode.normal => 1.0,
+    };
+    if (scale == 1.0) return boss.manualAimAccuracy;
+    return min(1.0, boss.manualAimAccuracy * scale);
   }
 
   /// Computes a clamped horizontal aim target for manual battle boss tracking.
@@ -147,10 +235,10 @@ class BossBattleLogic {
     required double minX,
     required double maxX,
     required double aimError,
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final prediction = manualPredictionStrength(boss, isHardPhase: isHardPhase);
-    final accuracy = manualAimAccuracy(boss, isHardPhase: isHardPhase);
+    final prediction = manualPredictionStrength(boss, mode: mode);
+    final accuracy = manualAimAccuracy(boss, mode: mode);
     final predictedX = playerX + playerVelocityX * prediction;
     final rawTarget = predictedX + aimError;
     final blended = playerX + (rawTarget - playerX) * accuracy;

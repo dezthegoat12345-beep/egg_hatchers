@@ -593,6 +593,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Unlock Nightmare Modes',
+                onPressed: () {
+                  game.devUnlockNightmareModes();
+                  _showMessage('Set all Hard Phase wins to 7 for Nightmare unlock.');
+                },
+              ),
+              _QuickButton(
                 label: 'Advance auto battle',
                 onPressed: () {
                   game.devAdvanceActiveAutoBattleFight();

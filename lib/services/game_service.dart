@@ -610,6 +610,14 @@ class GameService extends ChangeNotifier {
   int get totalHardPhaseWins =>
       _state.hardPhaseWins.values.fold<int>(0, (sum, count) => sum + count);
 
+  bool isNightmareUnlocked(String bossId) =>
+      BossBattleLogic.isNightmareUnlocked(hardPhaseWinCount(bossId));
+
+  int nightmareWinCount(String bossId) => _state.nightmareWins[bossId] ?? 0;
+
+  int get totalNightmareWins =>
+      _state.nightmareWins.values.fold<int>(0, (sum, count) => sum + count);
+
   bool isStackAutoBattling({
     required String animalId,
     required String mutationId,
@@ -958,7 +966,7 @@ class GameService extends ChangeNotifier {
   bool applyBossBattleRewards(
     String bossId,
     BossBattleResult result, {
-    bool isHardPhase = false,
+    ManualBattleMode mode = ManualBattleMode.normal,
   }) {
     var progress = _state.questProgress;
     if (result.won) {
@@ -985,15 +993,20 @@ class GameService extends ChangeNotifier {
     final wins = Map<String, int>.from(_state.bossWins);
     wins[bossId] = (wins[bossId] ?? 0) + 1;
     var hardPhaseWins = _state.hardPhaseWins;
-    if (isHardPhase) {
+    var nightmareWins = _state.nightmareWins;
+    if (mode == ManualBattleMode.hard) {
       hardPhaseWins = Map<String, int>.from(hardPhaseWins);
       hardPhaseWins[bossId] = (hardPhaseWins[bossId] ?? 0) + 1;
+    } else if (mode == ManualBattleMode.nightmare) {
+      nightmareWins = Map<String, int>.from(nightmareWins);
+      nightmareWins[bossId] = (nightmareWins[bossId] ?? 0) + 1;
     }
     _state = _state.copyWith(
       coins: _state.coins + result.coinReward,
       battleTokens: _state.battleTokens + result.battleTokenReward,
       bossWins: wins,
       hardPhaseWins: hardPhaseWins,
+      nightmareWins: nightmareWins,
     );
     _refreshQuestNotifications();
     notifyListeners();
@@ -1515,6 +1528,19 @@ class GameService extends ChangeNotifier {
       );
     }
     _state = _state.copyWith(bossWins: wins);
+    notifyListeners();
+    save();
+  }
+
+  void devUnlockNightmareModes() {
+    final hardWins = Map<String, int>.from(_state.hardPhaseWins);
+    for (final boss in BossData.bosses) {
+      hardWins[boss.id] = max(
+        hardWins[boss.id] ?? 0,
+        BossBattleLogic.nightmareUnlockHardWins,
+      );
+    }
+    _state = _state.copyWith(hardPhaseWins: hardWins);
     notifyListeners();
     save();
   }

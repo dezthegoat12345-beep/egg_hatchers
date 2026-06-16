@@ -17,6 +17,7 @@ class PlayerState {
     this.battleTokens = 0,
     this.bossWins = const {},
     this.hardPhaseWins = const {},
+    this.nightmareWins = const {},
     this.bossMutationUnlocked = false,
     this.activeAutoBattle,
   });
@@ -33,6 +34,7 @@ class PlayerState {
   final int battleTokens;
   final Map<String, int> bossWins;
   final Map<String, int> hardPhaseWins;
+  final Map<String, int> nightmareWins;
   final bool bossMutationUnlocked;
   final ActiveAutoBattle? activeAutoBattle;
 
@@ -61,6 +63,7 @@ class PlayerState {
     int? battleTokens,
     Map<String, int>? bossWins,
     Map<String, int>? hardPhaseWins,
+    Map<String, int>? nightmareWins,
     bool? bossMutationUnlocked,
     ActiveAutoBattle? activeAutoBattle,
     bool clearActiveAutoBattle = false,
@@ -80,6 +83,7 @@ class PlayerState {
       battleTokens: battleTokens ?? this.battleTokens,
       bossWins: bossWins ?? this.bossWins,
       hardPhaseWins: hardPhaseWins ?? this.hardPhaseWins,
+      nightmareWins: nightmareWins ?? this.nightmareWins,
       bossMutationUnlocked:
           bossMutationUnlocked ?? this.bossMutationUnlocked,
       activeAutoBattle: clearActiveAutoBattle
@@ -101,6 +105,7 @@ class PlayerState {
         'battleTokens': battleTokens,
         'bossWins': bossWins,
         'hardPhaseWins': hardPhaseWins,
+        'nightmareWins': nightmareWins,
         'bossMutationUnlocked': bossMutationUnlocked,
         if (activeAutoBattle != null)
           'activeAutoBattle': activeAutoBattle!.toJson(),
@@ -127,6 +132,7 @@ class PlayerState {
       battleTokens: json['battleTokens'] as int? ?? 0,
       bossWins: _bossWinsFromJson(json['bossWins']),
       hardPhaseWins: _bossWinsFromJson(json['hardPhaseWins']),
+      nightmareWins: _bossWinsFromJson(json['nightmareWins']),
       bossMutationUnlocked: json['bossMutationUnlocked'] as bool? ?? false,
       activeAutoBattle: json['activeAutoBattle'] is Map<String, dynamic>
           ? ActiveAutoBattle.fromJson(
