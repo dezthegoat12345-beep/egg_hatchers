@@ -25,9 +25,28 @@ class BossBattleLogic {
   static int manualEggDamage(int battlePower) =>
       max(10, (battlePower / 8).round());
 
-  static const int manualShieldMissThreshold = 5;
+  static const int manualShieldBaseMisses = 5;
+  static const int manualShieldMaxMisses = 12;
+  static const double manualProjectileSpeedCap = 2.5;
   static const Duration manualEggCooldown = Duration(milliseconds: 850);
   static const int manualMaxBossProjectiles = 6;
+
+  /// First shield break needs 5 misses; +1 per successful egg hit, capped at 12.
+  static int manualRequiredMisses(int successfulEggHits) =>
+      min(manualShieldMaxMisses, manualShieldBaseMisses + successfulEggHits);
+
+  /// Time-based scaling plus a small bump per successful egg hit.
+  static double manualProjectileSpeedMultiplier({
+    required double elapsedSeconds,
+    required int successfulEggHits,
+  }) {
+    final multiplier =
+        1.0 + (elapsedSeconds / 30.0) + successfulEggHits * 0.15;
+    return min(manualProjectileSpeedCap, multiplier);
+  }
+
+  /// Legacy alias for the first shield break threshold.
+  static const int manualShieldMissThreshold = manualShieldBaseMisses;
 
   static int uniqueBaseAnimalCount(PlayerState state) {
     return CollectionQuestLogic.collectedBaseAnimalCount(state);

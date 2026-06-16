@@ -71,7 +71,12 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _arenaHeight = 280.0;
   var _shieldActive = true;
   var _missCount = 0;
+  var _totalDodges = 0;
+  var _successfulEggHits = 0;
+  var _elapsedSeconds = 0.0;
   var _totalDamageDealt = 0;
+  var _pointerActive = false;
+  double? _targetX;
   var _moveLeft = false;
   var _moveRight = false;
   var _eggCooldownRemaining = 0.0;
@@ -90,6 +95,15 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   BackgroundTheme get theme => widget.preferences.selectedTheme;
   BossBattleDefinition get boss => widget.boss;
+
+  int get _requiredMisses =>
+      BossBattleLogic.manualRequiredMisses(_successfulEggHits);
+
+  double get _projectileSpeedMultiplier =>
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: _elapsedSeconds,
+        successfulEggHits: _successfulEggHits,
+      );
 
   @override
   void initState() {
@@ -121,7 +135,12 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _bossHp = boss.maxHp;
     _shieldActive = true;
     _missCount = 0;
+    _totalDodges = 0;
+    _successfulEggHits = 0;
+    _elapsedSeconds = 0;
     _totalDamageDealt = 0;
+    _pointerActive = false;
+    _targetX = null;
     _moveLeft = false;
     _moveRight = false;
     _eggCooldownRemaining = 0;
@@ -160,12 +179,28 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   void _updateGame(double dt) {
     if (_arenaWidth <= 0) return;
 
+    _elapsedSeconds += dt;
+
     final minX = _playerSize / 2 + 8;
     final maxX = _arenaWidth - _playerSize / 2 - 8;
-    var dx = 0.0;
-    if (_moveLeft) dx -= _playerSpeed * dt;
-    if (_moveRight) dx += _playerSpeed * dt;
-    _playerX = (_playerX + dx).clamp(minX, maxX);
+
+    if (_pointerActive && _targetX != null) {
+      final target = _targetX!.clamp(minX, maxX);
+      final diff = target - _playerX;
+      final step = _playerSpeed * dt;
+      if (diff.abs() <= step) {
+        _playerX = target;
+      } else {
+        _playerX += step * diff.sign;
+      }
+    } else {
+      var dx = 0.0;
+      if (_moveLeft) dx -= _playerSpeed * dt;
+      if (_moveRight) dx += _playerSpeed * dt;
+      if (dx != 0) {
+        _playerX = (_playerX + dx).clamp(minX, maxX);
+      }
+    }
 
     if (_eggCooldownRemaining > 0) {
       _eggCooldownRemaining = max(0, _eggCooldownRemaining - dt);
@@ -209,7 +244,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     for (var i = _bossProjectiles.length - 1; i >= 0; i--) {
       final p = _bossProjectiles[i];
-      p.y += boss.projectileSpeed * dt;
+      p.y += boss.projectileSpeed * _projectileSpeedMultiplier * dt;
 
       final hitPlayer = (p.x - _playerX).abs() < _playerHitRadius + _projectileRadius &&
           (p.y - playerY).abs() < _playerHitRadius + _projectileRadius;
@@ -251,12 +286,20 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _registerMiss() {
+    _totalDodges++;
+    if (!_shieldActive) return;
     _missCount++;
-    if (_shieldActive &&
-        _missCount >= BossBattleLogic.manualShieldMissThreshold) {
+    if (_missCount >= _requiredMisses) {
       _shieldActive = false;
       _shieldFlash = 0.35;
     }
+  }
+
+  void _regenerateShieldAfterHit() {
+    _successfulEggHits++;
+    _shieldActive = true;
+    _missCount = 0;
+    _shieldFlash = 0.35;
   }
 
   void _damagePlayer(int amount) {
@@ -289,7 +332,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     );
     if (_bossHp <= 0) {
       _endBattle(won: true);
+      return;
     }
+    _regenerateShieldAfterHit();
   }
 
   void _shootEgg() {
@@ -348,7 +393,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         boss: boss,
         fighterName: _fighterName,
         won: _won,
-        missCount: _missCount,
+        missCount: _totalDodges,
         damageDealt: _totalDamageDealt,
         coinReward: _won ? boss.coinReward : 0,
         tokenReward: _won ? boss.battleTokenReward : 0,
@@ -398,6 +443,28 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     return KeyEventResult.handled;
   }
 
+  void _onArenaPointerDown(double localX) {
+    if (_gameOver) return;
+    _pointerActive = true;
+    _updateTargetX(localX);
+  }
+
+  void _onArenaPointerMove(double localX) {
+    if (_gameOver || !_pointerActive) return;
+    _updateTargetX(localX);
+  }
+
+  void _onArenaPointerRelease() {
+    _pointerActive = false;
+    _targetX = null;
+  }
+
+  void _updateTargetX(double localX) {
+    final minX = _playerSize / 2 + 8;
+    final maxX = _arenaWidth - _playerSize / 2 - 8;
+    _targetX = localX.clamp(minX, maxX);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -434,6 +501,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                         playerMaxHp: _playerMaxHp,
                         shieldActive: _shieldActive,
                         shieldFlash: _shieldFlash,
+                        missCount: _missCount,
+                        requiredMisses: _requiredMisses,
                       ),
                       const SizedBox(height: 12),
                       Expanded(
@@ -462,12 +531,25 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                               floatingDamages: _floatingDamages,
                               shieldActive: _shieldActive,
                               shieldFlash: _shieldFlash,
+                              onPointerDown: _onArenaPointerDown,
+                              onPointerMove: _onArenaPointerMove,
+                              onPointerRelease: _onArenaPointerRelease,
                             );
                           },
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _ControlRow(
+                      const SizedBox(height: 8),
+                      Text(
+                        'Hold and drag to dodge.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: currentTheme.cardTextSecondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _ShootRow(
                         theme: currentTheme,
                         shieldActive: _shieldActive,
                         canShoot: !_gameOver &&
@@ -475,10 +557,6 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             _activeEgg == null &&
                             _eggCooldownRemaining <= 0,
                         eggOnCooldown: _eggCooldownRemaining > 0,
-                        onMoveLeftDown: () => _moveLeft = true,
-                        onMoveLeftUp: () => _moveLeft = false,
-                        onMoveRightDown: () => _moveRight = true,
-                        onMoveRightUp: () => _moveRight = false,
                         onShootEgg: _shootEgg,
                       ),
                     ],
@@ -503,6 +581,8 @@ class _BattleHeader extends StatelessWidget {
     required this.playerMaxHp,
     required this.shieldActive,
     required this.shieldFlash,
+    required this.missCount,
+    required this.requiredMisses,
   });
 
   final BackgroundTheme theme;
@@ -513,6 +593,8 @@ class _BattleHeader extends StatelessWidget {
   final int playerMaxHp;
   final bool shieldActive;
   final double shieldFlash;
+  final int missCount;
+  final int requiredMisses;
 
   @override
   Widget build(BuildContext context) {
@@ -578,6 +660,18 @@ class _BattleHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (shieldActive) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Break shield: $missCount / $requiredMisses',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.cardTextSecondaryColor,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -660,6 +754,9 @@ class _Arena extends StatelessWidget {
     required this.floatingDamages,
     required this.shieldActive,
     required this.shieldFlash,
+    required this.onPointerDown,
+    required this.onPointerMove,
+    required this.onPointerRelease,
   });
 
   final BackgroundTheme theme;
@@ -678,13 +775,22 @@ class _Arena extends StatelessWidget {
   final List<_FloatingDamage> floatingDamages;
   final bool shieldActive;
   final double shieldFlash;
+  final ValueChanged<double> onPointerDown;
+  final ValueChanged<double> onPointerMove;
+  final VoidCallback onPointerRelease;
 
   @override
   Widget build(BuildContext context) {
     final playerY = arenaHeight - playerSize - 12;
     final bossX = arenaWidth / 2 - bossSize / 2;
 
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanDown: (details) => onPointerDown(details.localPosition.dx),
+      onPanUpdate: (details) => onPointerMove(details.localPosition.dx),
+      onPanEnd: (_) => onPointerRelease(),
+      onPanCancel: () => onPointerRelease(),
+      child: Container(
       decoration: BoxDecoration(
         color: theme.panelColor.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(18),
@@ -807,20 +913,17 @@ class _Arena extends StatelessWidget {
             ),
         ],
       ),
+      ),
     );
   }
 }
 
-class _ControlRow extends StatelessWidget {
-  const _ControlRow({
+class _ShootRow extends StatelessWidget {
+  const _ShootRow({
     required this.theme,
     required this.shieldActive,
     required this.canShoot,
     required this.eggOnCooldown,
-    required this.onMoveLeftDown,
-    required this.onMoveLeftUp,
-    required this.onMoveRightDown,
-    required this.onMoveRightUp,
     required this.onShootEgg,
   });
 
@@ -828,80 +931,27 @@ class _ControlRow extends StatelessWidget {
   final bool shieldActive;
   final bool canShoot;
   final bool eggOnCooldown;
-  final VoidCallback onMoveLeftDown;
-  final VoidCallback onMoveLeftUp;
-  final VoidCallback onMoveRightDown;
-  final VoidCallback onMoveRightUp;
   final VoidCallback onShootEgg;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _HoldButton(
-            theme: theme,
-            label: '◀ Left',
-            onDown: onMoveLeftDown,
-            onUp: onMoveLeftUp,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _HoldButton(
-            theme: theme,
-            label: 'Right ▶',
-            onDown: onMoveRightDown,
-            onUp: onMoveRightUp,
-          ),
-        ),
-        if (!shieldActive) ...[
-          const SizedBox(width: 8),
-          Expanded(
-            child: FilledButton(
-              onPressed: canShoot ? onShootEgg : null,
-              style: GameTheme.filledButton(
-                theme,
-                color: canShoot ? theme.secondaryColor : theme.disabledColor,
-                height: 48,
-              ),
-              child: Text(
-                eggOnCooldown ? 'Egg...' : 'Shoot Egg 🥚',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
+    if (shieldActive) {
+      return const SizedBox.shrink();
+    }
 
-class _HoldButton extends StatelessWidget {
-  const _HoldButton({
-    required this.theme,
-    required this.label,
-    required this.onDown,
-    required this.onUp,
-  });
-
-  final BackgroundTheme theme;
-  final String label;
-  final VoidCallback onDown;
-  final VoidCallback onUp;
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => onDown(),
-      onPointerUp: (_) => onUp(),
-      onPointerCancel: (_) => onUp(),
+    return SizedBox(
+      width: double.infinity,
       child: FilledButton(
-        onPressed: () {},
-        style: GameTheme.filledButton(theme, height: 48).copyWith(
-          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        onPressed: canShoot ? onShootEgg : null,
+        style: GameTheme.filledButton(
+          theme,
+          color: canShoot ? theme.secondaryColor : theme.disabledColor,
+          height: 48,
         ),
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        child: Text(
+          eggOnCooldown ? 'Egg...' : 'Shoot Egg 🥚',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

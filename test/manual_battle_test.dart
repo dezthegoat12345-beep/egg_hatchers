@@ -17,6 +17,52 @@ void main() {
     expect(BossBattleLogic.manualEggDamage(15000), 1875);
   });
 
+  test('manual shield misses scale with successful egg hits capped at 12', () {
+    expect(BossBattleLogic.manualRequiredMisses(0), 5);
+    expect(BossBattleLogic.manualRequiredMisses(1), 6);
+    expect(BossBattleLogic.manualRequiredMisses(3), 8);
+    expect(BossBattleLogic.manualRequiredMisses(7), 12);
+    expect(BossBattleLogic.manualRequiredMisses(20), 12);
+  });
+
+  test('manual projectile speed multiplier scales with time and hits', () {
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 0,
+        successfulEggHits: 0,
+      ),
+      1.0,
+    );
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 15,
+        successfulEggHits: 0,
+      ),
+      1.5,
+    );
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 30,
+        successfulEggHits: 0,
+      ),
+      2.0,
+    );
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 60,
+        successfulEggHits: 0,
+      ),
+      2.5,
+    );
+    expect(
+      BossBattleLogic.manualProjectileSpeedMultiplier(
+        elapsedSeconds: 0,
+        successfulEggHits: 2,
+      ),
+      closeTo(1.3, 0.001),
+    );
+  });
+
   test('boss definitions define manual projectile tuning', () {
     for (final boss in BossData.bosses) {
       expect(boss.projectileIntervalMs, greaterThan(0));
