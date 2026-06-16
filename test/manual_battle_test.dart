@@ -63,6 +63,10 @@ void main() {
     );
   });
 
+  test('manual battle uses three lives', () {
+    expect(BossBattleLogic.manualBattleLives, 3);
+  });
+
   test('boss definitions define manual projectile tuning', () {
     for (final boss in BossData.bosses) {
       expect(boss.projectileIntervalMs, greaterThan(0));

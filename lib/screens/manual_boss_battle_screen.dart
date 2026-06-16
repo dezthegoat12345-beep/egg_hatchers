@@ -20,6 +20,7 @@ import '../widgets/boss_sprite.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
+import '../widgets/rotten_egg_projectile.dart';
 
 /// Top-view dodge boss fight: move side-to-side, break shield, shoot eggs.
 class ManualBossBattleScreen extends StatefulWidget {
@@ -56,15 +57,13 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   late final Ticker _ticker;
   late final Random _random;
   late int _battlePower;
-  late int _playerMaxHp;
-  late int _bossProjectileDamage;
   late int _eggDamage;
   late String _fighterName;
   late String? _fighterSpritePath;
   late String _fighterEmoji;
   late CustomSpriteData? _fighterCustomSprite;
 
-  var _playerHp = 0;
+  var _lives = BossBattleLogic.manualBattleLives;
   var _bossHp = 0;
   var _playerX = 0.0;
   var _arenaWidth = 320.0;
@@ -125,13 +124,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _fighterCustomSprite =
         widget.customSprites.getDisplaySprite(animal.id);
     _battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(widget.fighter);
-    _playerMaxHp = BossBattleLogic.maxAnimalHpFor(_battlePower);
-    _bossProjectileDamage = BossBattleLogic.manualBossProjectileDamage(boss);
     _eggDamage = BossBattleLogic.manualEggDamage(_battlePower);
   }
 
   void _resetBattleState() {
-    _playerHp = _playerMaxHp;
+    _lives = BossBattleLogic.manualBattleLives;
     _bossHp = boss.maxHp;
     _shieldActive = true;
     _missCount = 0;
@@ -251,7 +248,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
       if (hitPlayer) {
         _bossProjectiles.removeAt(i);
-        _damagePlayer(_bossProjectileDamage);
+        _loseLife();
         continue;
       }
 
@@ -302,18 +299,17 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _shieldFlash = 0.35;
   }
 
-  void _damagePlayer(int amount) {
+  void _loseLife() {
     if (_gameOver) return;
-    _playerHp = max(0, _playerHp - amount);
+    _lives = max(0, _lives - 1);
     _floatingDamages.add(
       _FloatingDamage(
         x: _playerX,
         y: _arenaHeight - _playerSize - 28,
-        amount: amount,
-        onPlayer: true,
+        label: '-1 life',
       ),
     );
-    if (_playerHp <= 0) {
+    if (_lives <= 0) {
       _endBattle(won: false);
     }
   }
@@ -327,7 +323,6 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         x: _arenaWidth / 2,
         y: _bossHitTop + 8,
         amount: amount,
-        onPlayer: false,
       ),
     );
     if (_bossHp <= 0) {
@@ -367,9 +362,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     final result = BossBattleResult(
       won: _won,
       rounds: 0,
-      initialPlayerHp: _playerMaxHp,
+      initialPlayerHp: BossBattleLogic.manualBattleLives,
       initialBossHp: boss.maxHp,
-      finalPlayerHp: _playerHp,
+      finalPlayerHp: _won ? _lives : 0,
       finalBossHp: _bossHp,
       damageLog: const [],
       roundSnapshots: const [],
@@ -393,6 +388,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         boss: boss,
         fighterName: _fighterName,
         won: _won,
+        livesRemaining: _lives,
         missCount: _totalDodges,
         damageDealt: _totalDamageDealt,
         coinReward: _won ? boss.coinReward : 0,
@@ -497,8 +493,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                         boss: boss,
                         bossHp: _bossHp,
                         bossMaxHp: boss.maxHp,
-                        playerHp: _playerHp,
-                        playerMaxHp: _playerMaxHp,
+                        lives: _lives,
                         shieldActive: _shieldActive,
                         shieldFlash: _shieldFlash,
                         missCount: _missCount,
@@ -577,8 +572,7 @@ class _BattleHeader extends StatelessWidget {
     required this.boss,
     required this.bossHp,
     required this.bossMaxHp,
-    required this.playerHp,
-    required this.playerMaxHp,
+    required this.lives,
     required this.shieldActive,
     required this.shieldFlash,
     required this.missCount,
@@ -589,8 +583,7 @@ class _BattleHeader extends StatelessWidget {
   final BossBattleDefinition boss;
   final int bossHp;
   final int bossMaxHp;
-  final int playerHp;
-  final int playerMaxHp;
+  final int lives;
   final bool shieldActive;
   final double shieldFlash;
   final int missCount;
@@ -599,7 +592,10 @@ class _BattleHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bossRatio = bossMaxHp > 0 ? bossHp / bossMaxHp : 0.0;
-    final playerRatio = playerMaxHp > 0 ? playerHp / playerMaxHp : 0.0;
+    final maxLives = BossBattleLogic.manualBattleLives;
+    final hearts = List.generate(maxLives, (index) {
+      return index < lives ? '❤️' : '🖤';
+    }).join();
     final shieldLabel = shieldActive ? 'Shielded' : 'Shield down!';
     final shieldColor = shieldActive
         ? theme.secondaryColor
@@ -630,14 +626,13 @@ class _BattleHeader extends StatelessWidget {
             trackColor: theme.panelColor,
           ),
           const SizedBox(height: 8),
-          _HpBar(
-            theme: theme,
-            label: 'Your HP',
-            ratio: playerRatio,
-            valueText:
-                '${formatCoins(playerHp)} / ${formatCoins(playerMaxHp)}',
-            color: theme.primaryColor,
-            trackColor: theme.panelColor,
+          Text(
+            'Lives: $hearts',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: theme.cardTextPrimaryColor,
+            ),
           ),
           const SizedBox(height: 8),
           AnimatedContainer(
@@ -849,22 +844,9 @@ class _Arena extends StatelessWidget {
           ),
           for (final p in bossProjectiles)
             Positioned(
-              left: p.x - 10,
-              top: p.y - 10,
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade400,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withValues(alpha: 0.4),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-              ),
+              left: p.x - 11,
+              top: p.y - 12,
+              child: const RottenEggProjectile(size: 22),
             ),
           if (activeEgg != null)
             Positioned(
@@ -901,10 +883,10 @@ class _Arena extends StatelessWidget {
               child: Opacity(
                 opacity: (1 - d.age / 0.9).clamp(0.0, 1.0),
                 child: Text(
-                  '-${formatCoins(d.amount)}',
+                  d.displayText,
                   style: TextStyle(
                     color: Colors.red.shade300,
-                    fontSize: 14,
+                    fontSize: d.label != null ? 13 : 14,
                     fontWeight: FontWeight.bold,
                     shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
                   ),
@@ -963,6 +945,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.boss,
     required this.fighterName,
     required this.won,
+    required this.livesRemaining,
     required this.missCount,
     required this.damageDealt,
     required this.coinReward,
@@ -975,6 +958,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final BossBattleDefinition boss;
   final String fighterName;
   final bool won;
+  final int livesRemaining;
   final int missCount;
   final int damageDealt;
   final int coinReward;
@@ -1002,6 +986,15 @@ class _ManualBattleResultDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (!won)
+              Text(
+                'You ran out of lives!',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade400,
+                ),
+              ),
+            if (!won) const SizedBox(height: 8),
             Text(
               boss.name,
               style: TextStyle(
@@ -1022,6 +1015,17 @@ class _ManualBattleResultDialog extends StatelessWidget {
                 color: theme.cardTextSecondaryColor,
               ),
             ),
+            if (won) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Lives left: $livesRemaining',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.secondaryColor,
+                ),
+              ),
+            ],
             if (won) ...[
               const SizedBox(height: 12),
               Text(
@@ -1073,13 +1077,16 @@ class _FloatingDamage {
   _FloatingDamage({
     required this.x,
     required this.y,
-    required this.amount,
-    required this.onPlayer,
-  });
+    this.amount,
+    this.label,
+  }) : assert(amount != null || label != null);
 
   final double x;
   final double y;
-  final int amount;
-  final bool onPlayer;
+  final int? amount;
+  final String? label;
   double age = 0;
+
+  String get displayText =>
+      label ?? '-${formatCoins(amount!)}';
 }

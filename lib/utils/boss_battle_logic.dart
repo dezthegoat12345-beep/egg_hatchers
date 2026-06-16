@@ -30,6 +30,7 @@ class BossBattleLogic {
   static const double manualProjectileSpeedCap = 2.5;
   static const Duration manualEggCooldown = Duration(milliseconds: 850);
   static const int manualMaxBossProjectiles = 6;
+  static const int manualBattleLives = 3;
 
   /// First shield break needs 5 misses; +1 per successful egg hit, capped at 12.
   static int manualRequiredMisses(int successfulEggHits) =>
