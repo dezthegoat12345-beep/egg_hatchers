@@ -51,7 +51,10 @@ class LuckPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final luckLevel = game.luckLevel;
-    final chances = LuckLogic.mutationPercentages(luckLevel);
+    final chances = LuckLogic.mutationPercentages(
+      luckLevel,
+      bossMutationUnlocked: game.bossMutationUnlocked,
+    );
     final cost = game.luckUpgradeCost;
     final isMaxed = game.isLuckMaxed;
     final canAfford = game.canAffordLuckUpgrade();
@@ -103,11 +106,12 @@ class LuckPanel extends StatelessWidget {
             runSpacing: 6,
             children: [
               for (final mutation in GameData.mutations)
-                _ChanceChip(
-                  label: mutation.isNormal
-                      ? 'Normal'
-                      : '${mutation.icon} ${mutation.displayName}',
-                  percent: _formatPercent(chances[mutation.id]!),
+                if (mutation.id != 'boss' || game.bossMutationUnlocked)
+                  _ChanceChip(
+                    label: mutation.isNormal
+                        ? 'Normal'
+                        : '${mutation.icon} ${mutation.displayName}',
+                    percent: _formatPercent(chances[mutation.id] ?? 0),
                   color: mutation.isNormal
                       ? theme.cardTextSecondaryColor
                       : GameTheme.mutationAccent(mutation.id),

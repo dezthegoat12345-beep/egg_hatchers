@@ -37,6 +37,8 @@ class GameTheme {
         return const Color(0xFFE040FB);
       case 'shadow':
         return const Color(0xFF5E35B1);
+      case 'boss':
+        return const Color(0xFFB71C1C);
       default:
         return Colors.transparent;
     }
@@ -50,6 +52,8 @@ class GameTheme {
         return const Color(0xFFF3E5F5);
       case 'shadow':
         return const Color(0xFFEDE7F6);
+      case 'boss':
+        return const Color(0xFFFFEBEE);
       default:
         return Colors.white;
     }

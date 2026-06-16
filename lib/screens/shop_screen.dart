@@ -85,7 +85,9 @@ class ShopScreen extends StatelessWidget {
     if (!game.canAffordTripleHatch(egg)) {
       showGameSnackBar(
         context,
-        message: 'Not enough coins for Triple Hatch.',
+        message: egg.usesBattleTokens
+            ? 'Not enough Battle Tokens.'
+            : 'Not enough coins for Triple Hatch.',
         backgroundColor: Colors.red.shade400,
       );
       return;
@@ -126,9 +128,11 @@ class ShopScreen extends StatelessWidget {
     if (!game.isEggUnlocked(egg)) {
       showGameSnackBar(
         context,
-        message: egg.unlockRebirthLevel > 0
-            ? egg.rebirthUnlockSnackbarMessage
-            : egg.unlockMessage,
+        message: egg.usesBattleTokens
+            ? 'Hatch an animal to unlock Boss Battles and Battle Eggs.'
+            : egg.unlockRebirthLevel > 0
+                ? egg.rebirthUnlockSnackbarMessage
+                : egg.unlockMessage,
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -137,8 +141,9 @@ class ShopScreen extends StatelessWidget {
     if (!game.canAfford(egg)) {
       showGameSnackBar(
         context,
-        message:
-            'You need ${egg.cost - game.coins} more coins for ${egg.name}!',
+        message: egg.usesBattleTokens
+            ? 'Not enough Battle Tokens.'
+            : 'You need ${egg.cost - game.coins} more coins for ${egg.name}!',
         backgroundColor: Colors.red.shade400,
       );
       return;
@@ -252,6 +257,48 @@ class ShopScreen extends StatelessWidget {
                                         GameData.eggs[i],
                                       ),
                                     ),
+                                  ],
+                                  if (GameData.battleEggs.isNotEmpty) ...[
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      'Battle Eggs',
+                                      style: GameTheme.sectionTitle(bg),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    for (var i = 0;
+                                        i < GameData.battleEggs.length;
+                                        i++) ...[
+                                      if (i > 0) const SizedBox(height: 14),
+                                      EggCard(
+                                        egg: GameData.battleEggs[i],
+                                        theme: bg,
+                                        isUnlocked: game.isEggUnlocked(
+                                          GameData.battleEggs[i],
+                                        ),
+                                        canAfford: game.canAfford(
+                                          GameData.battleEggs[i],
+                                        ),
+                                        lifetimeCoinsEarned:
+                                            game.lifetimeCoinsEarned,
+                                        battleTokens: game.battleTokens,
+                                        tripleHatchCost:
+                                            GameService.tripleHatchCost(
+                                          GameData.battleEggs[i],
+                                        ),
+                                        canAffordTripleHatch:
+                                            game.canAffordTripleHatch(
+                                          GameData.battleEggs[i],
+                                        ),
+                                        onBuy: () => _buyAndHatch(
+                                          context,
+                                          GameData.battleEggs[i],
+                                        ),
+                                        onTripleHatch: () => _tripleHatch(
+                                          context,
+                                          GameData.battleEggs[i],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                   const SizedBox(height: 24),
                                   Text(

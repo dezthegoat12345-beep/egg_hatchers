@@ -1,3 +1,9 @@
+/// Currency used to purchase an egg.
+enum EggCostCurrency {
+  coins,
+  battleTokens,
+}
+
 /// An egg the player can buy and hatch for a random animal.
 class Egg {
   const Egg({
@@ -11,6 +17,7 @@ class Egg {
     this.unlockRebirthLevel = 0,
     this.animalWeights = const {},
     this.spritePath,
+    this.costCurrency = EggCostCurrency.coins,
   });
 
   final String id;
@@ -31,6 +38,11 @@ class Egg {
 
   /// Relative hatch weights per animal id. Empty means equal chance.
   final Map<String, int> animalWeights;
+
+  /// Coins or Battle Tokens required to buy this egg.
+  final EggCostCurrency costCurrency;
+
+  bool get usesBattleTokens => costCurrency == EggCostCurrency.battleTokens;
 
   bool isUnlocked({
     required int lifetimeCoinsEarned,

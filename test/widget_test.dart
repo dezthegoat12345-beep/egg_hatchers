@@ -335,7 +335,7 @@ void main() {
         );
       }
     }
-    expect(GameData.animals.length, 45);
+    expect(GameData.animals.length, 48);
     expect(GameData.eggs.length, 13);
   });
 

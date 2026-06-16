@@ -326,25 +326,48 @@ class GameService extends ChangeNotifier {
     await _saveService.save(_state);
   }
 
-  bool isEggUnlocked(Egg egg) => egg.isUnlocked(
-        lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
-        rebirthLevel: _state.rebirthLevel,
-      );
+  bool isEggUnlocked(Egg egg) {
+    if (egg.usesBattleTokens) {
+      return _state.ownedAnimals.isNotEmpty;
+    }
+    return egg.isUnlocked(
+      lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+      rebirthLevel: _state.rebirthLevel,
+    );
+  }
 
-  bool canAfford(Egg egg) => _state.coins >= egg.cost;
+  bool get bossMutationUnlocked => _state.bossMutationUnlocked;
+
+  bool canAfford(Egg egg) {
+    if (egg.usesBattleTokens) {
+      return _state.battleTokens >= egg.cost;
+    }
+    return _state.coins >= egg.cost;
+  }
 
   bool canBuyEgg(Egg egg) => isEggUnlocked(egg) && canAfford(egg);
 
   /// Triple Hatch costs 3.5× the egg price, rounded up.
   static int tripleHatchCost(Egg egg) => (egg.cost * 3.5).ceil();
 
-  bool canAffordTripleHatch(Egg egg) =>
-      isEggUnlocked(egg) && _state.coins >= tripleHatchCost(egg);
+  bool canAffordTripleHatch(Egg egg) {
+    if (!isEggUnlocked(egg)) return false;
+    if (egg.usesBattleTokens) {
+      return _state.battleTokens >= tripleHatchCost(egg);
+    }
+    return _state.coins >= tripleHatchCost(egg);
+  }
 
   bool buyEgg(Egg egg) {
     if (!canBuyEgg(egg)) return false;
 
-    _state = _state.copyWith(coins: _state.coins - egg.cost);
+    if (egg.usesBattleTokens) {
+      _state = _state.copyWith(
+        battleTokens: _state.battleTokens - egg.cost,
+      );
+    } else {
+      _state = _state.copyWith(coins: _state.coins - egg.cost);
+    }
     notifyListeners();
     save();
     return true;
@@ -354,9 +377,13 @@ class GameService extends ChangeNotifier {
     if (!isEggUnlocked(egg)) return false;
 
     final cost = tripleHatchCost(egg);
-    if (_state.coins < cost) return false;
-
-    _state = _state.copyWith(coins: _state.coins - cost);
+    if (egg.usesBattleTokens) {
+      if (_state.battleTokens < cost) return false;
+      _state = _state.copyWith(battleTokens: _state.battleTokens - cost);
+    } else {
+      if (_state.coins < cost) return false;
+      _state = _state.copyWith(coins: _state.coins - cost);
+    }
     notifyListeners();
     save();
     return true;
@@ -440,6 +467,7 @@ class GameService extends ChangeNotifier {
     final devToolsUnlocked = _state.fullDeveloperToolsUnlocked;
     final battleTokens = _state.battleTokens;
     final bossWins = _state.bossWins;
+    final bossMutationUnlocked = _state.bossMutationUnlocked;
     final protectedAnimals = _state.ownedAnimals
         .where((owned) => owned.isProtected)
         .toList();
@@ -455,6 +483,7 @@ class GameService extends ChangeNotifier {
       fullDeveloperToolsUnlocked: devToolsUnlocked,
       battleTokens: battleTokens,
       bossWins: bossWins,
+      bossMutationUnlocked: bossMutationUnlocked,
     );
     _pendingQuestNotification = null;
     _questNotificationDeferred = false;
@@ -613,6 +642,108 @@ class GameService extends ChangeNotifier {
     save();
   }
 
+  void devUnlockBossMutation() {
+    _state = _state.copyWith(bossMutationUnlocked: true);
+    notifyListeners();
+    save();
+  }
+
+  void devAddBossMutationAnimal({String animalId = 'chicken'}) {
+    final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final existingIndex = _indexOfOwnedStack(
+      updated,
+      animalId,
+      'boss',
+      isProtected: false,
+    );
+    if (existingIndex >= 0) {
+      final existing = updated[existingIndex];
+      updated[existingIndex] =
+          existing.copyWith(quantity: existing.quantity + 1);
+    } else {
+      updated.add(
+        OwnedAnimal(animalId: animalId, quantity: 1, mutationId: 'boss'),
+      );
+    }
+    _state = _state.copyWith(ownedAnimals: updated);
+    notifyListeners();
+    save();
+  }
+
+  bool canUnlockBossMutation() =>
+      !_state.bossMutationUnlocked &&
+      _state.battleTokens >= GameData.unlockBossMutationCost;
+
+  bool unlockBossMutation() {
+    if (_state.bossMutationUnlocked) return false;
+    if (_state.battleTokens < GameData.unlockBossMutationCost) return false;
+    _state = _state.copyWith(
+      battleTokens: _state.battleTokens - GameData.unlockBossMutationCost,
+      bossMutationUnlocked: true,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool canApplyBossMutation() =>
+      _state.battleTokens >= GameData.applyBossMutationCost;
+
+  bool applyBossMutation(OwnedAnimal source) {
+    if (_state.battleTokens < GameData.applyBossMutationCost) return false;
+    if (source.mutationId == 'boss') return false;
+    if (source.quantity < 1) return false;
+
+    final sourceIndex = _state.ownedAnimals.indexWhere(
+      (owned) =>
+          owned.animalId == source.animalId &&
+          owned.mutationId == source.mutationId &&
+          owned.isProtected == source.isProtected &&
+          owned.level == source.level,
+    );
+    if (sourceIndex < 0) return false;
+
+    final stack = _state.ownedAnimals[sourceIndex];
+    final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
+
+    if (stack.quantity <= 1) {
+      updated.removeAt(sourceIndex);
+    } else {
+      updated[sourceIndex] = stack.copyWith(quantity: stack.quantity - 1);
+    }
+
+    final bossIndex = updated.indexWhere(
+      (owned) =>
+          owned.animalId == stack.animalId &&
+          owned.mutationId == 'boss' &&
+          owned.isProtected == stack.isProtected &&
+          owned.level == stack.level,
+    );
+    if (bossIndex >= 0) {
+      final bossStack = updated[bossIndex];
+      updated[bossIndex] =
+          bossStack.copyWith(quantity: bossStack.quantity + 1);
+    } else {
+      updated.add(
+        OwnedAnimal(
+          animalId: stack.animalId,
+          quantity: 1,
+          level: stack.level,
+          mutationId: 'boss',
+          isProtected: stack.isProtected,
+        ),
+      );
+    }
+
+    _state = _state.copyWith(
+      ownedAnimals: updated,
+      battleTokens: _state.battleTokens - GameData.applyBossMutationCost,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
   void devResetBossWins() {
     _state = _state.copyWith(bossWins: const {});
     notifyListeners();
@@ -631,7 +762,11 @@ class GameService extends ChangeNotifier {
       _state.luckLevel,
       multiplier: SecretVoidEggLogic.rewardLuckMultiplier,
     );
-    final mutation = LuckLogic.rollMutation(_random, boostedLuck);
+    final mutation = LuckLogic.rollMutation(
+      _random,
+      boostedLuck,
+      bossMutationUnlocked: _state.bossMutationUnlocked,
+    );
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
     final existingIndex = _indexOfOwnedStack(
@@ -1110,7 +1245,11 @@ class GameService extends ChangeNotifier {
         animalId = BuiltInEggLogic.rollAnimal(egg, _random);
       }
       animal = GameData.animalById(animalId)!;
-      mutation = LuckLogic.rollMutation(_random, _state.luckLevel);
+      mutation = LuckLogic.rollMutation(
+        _random,
+        _state.luckLevel,
+        bossMutationUnlocked: _state.bossMutationUnlocked,
+      );
     }
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);

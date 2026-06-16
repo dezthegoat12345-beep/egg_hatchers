@@ -34,6 +34,197 @@ class BattlesScreen extends StatelessWidget {
   final PreferencesService preferences;
   final CustomSpriteService customSprites;
 
+  Future<void> _unlockBossMutation(BuildContext context) async {
+    if (game.bossMutationUnlocked) return;
+
+    if (!game.canUnlockBossMutation()) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough Battle Tokens.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    if (game.unlockBossMutation() && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Boss Mutation unlocked!',
+        backgroundColor: Colors.green.shade700,
+      );
+    }
+  }
+
+  Future<void> _applyBossMutation(BuildContext context, BackgroundTheme theme) async {
+    if (!game.canApplyBossMutation()) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough Battle Tokens.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    final target = await _pickBossMutationTarget(context, theme);
+    if (target == null || !context.mounted) return;
+
+    if (target.mutationId == 'boss') {
+      showGameSnackBar(
+        context,
+        message: 'That animal already has Boss Mutation.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    if (!game.applyBossMutation(target)) {
+      showGameSnackBar(
+        context,
+        message: 'Could not apply Boss Mutation.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    if (context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Boss Mutation applied!',
+        backgroundColor: Colors.green.shade700,
+      );
+    }
+  }
+
+  Future<OwnedAnimal?> _pickBossMutationTarget(
+    BuildContext context,
+    BackgroundTheme theme,
+  ) {
+    final candidates = game.ownedAnimals
+        .where((owned) => owned.mutationId != 'boss' && owned.quantity > 0)
+        .toList();
+    candidates.sort(
+      (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
+    );
+
+    return showModalBottomSheet<OwnedAnimal>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.disabledColor.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Apply Boss Mutation',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.cardTextPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Cost: ${GameData.applyBossMutationCost} Battle Tokens · converts 1 animal',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.cardTextSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (candidates.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'No eligible animals.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.cardTextSecondaryColor),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: candidates.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final owned = candidates[index];
+                        final animal = GameData.animalById(owned.animalId);
+                        if (animal == null) return const SizedBox.shrink();
+                        final mutation = GameData.mutationById(owned.mutationId) ??
+                            GameData.mutations.first;
+                        final power =
+                            BattlePowerLogic.battlePowerForOwnedAnimal(owned);
+                        return ListTile(
+                          tileColor: theme.panelColor.withValues(alpha: 0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(color: theme.cardBorderColor),
+                          ),
+                          leading: GameAnimalPortrait(
+                            customSprite:
+                                customSprites.getDisplaySprite(animal.id),
+                            spritePath: animal.spritePath,
+                            fallbackEmoji: mutation.displayEmoji(animal),
+                            size: 48,
+                            mutation: mutation,
+                          ),
+                          title: Text(
+                            mutation.fullName(animal),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.cardTextPrimaryColor,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Lv ${owned.level} · x${owned.quantity} · '
+                            'Power ${formatCoins(power)}'
+                            '${owned.isProtected ? ' · Protected' : ''}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.cardTextSecondaryColor,
+                            ),
+                          ),
+                          trailing: FilledButton(
+                            onPressed: () =>
+                                Navigator.pop(sheetContext, owned),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: theme.primaryColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Mutate'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _startBoss(
     BuildContext context,
     BossBattleDefinition boss,
@@ -336,6 +527,14 @@ class BattlesScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    _BattleUpgradesCard(
+                      theme: theme,
+                      game: game,
+                      onUnlockBossMutation: () => _unlockBossMutation(context),
+                      onApplyBossMutation: () =>
+                          _applyBossMutation(context, theme),
+                    ),
                     const SizedBox(height: 18),
                     Expanded(
                       child: ListView(
@@ -367,6 +566,100 @@ class BattlesScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BattleUpgradesCard extends StatelessWidget {
+  const _BattleUpgradesCard({
+    required this.theme,
+    required this.game,
+    required this.onUnlockBossMutation,
+    required this.onApplyBossMutation,
+  });
+
+  final BackgroundTheme theme;
+  final GameService game;
+  final VoidCallback onUnlockBossMutation;
+  final VoidCallback onApplyBossMutation;
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked = game.bossMutationUnlocked;
+
+    return Container(
+      decoration: GameTheme.cardDecoration(theme),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Battle Upgrades',
+            style: GameTheme.sectionTitle(theme, size: 18),
+          ),
+          const SizedBox(height: 12),
+          if (unlocked)
+            Text(
+              'Boss Mutation unlocked',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: theme.secondaryColor,
+              ),
+            )
+          else ...[
+            Text(
+              'Unlock Boss Mutation',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: theme.cardTextPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Adds a tiny chance for Boss Mutation when hatching eggs.',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.cardTextSecondaryColor,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: onUnlockBossMutation,
+              style: GameTheme.filledButton(
+                theme,
+                color: game.canUnlockBossMutation()
+                    ? theme.primaryColor
+                    : theme.disabledColor,
+              ),
+              child: Text(
+                'Unlock · ⚔️ ${GameData.unlockBossMutationCost}',
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          OutlinedButton(
+            onPressed: onApplyBossMutation,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              foregroundColor: game.canApplyBossMutation()
+                  ? theme.secondaryColor
+                  : theme.disabledColor,
+              side: BorderSide(
+                color: game.canApplyBossMutation()
+                    ? theme.secondaryColor
+                    : theme.disabledColor,
+              ),
+            ),
+            child: Text(
+              'Apply Boss Mutation · ⚔️ ${GameData.applyBossMutationCost}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

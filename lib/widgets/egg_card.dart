@@ -25,6 +25,7 @@ class EggCard extends StatelessWidget {
     this.tripleHatchCost,
     this.canAffordTripleHatch = false,
     this.onTripleHatch,
+    this.battleTokens,
   });
 
   final Egg egg;
@@ -38,6 +39,12 @@ class EggCard extends StatelessWidget {
   final int? tripleHatchCost;
   final bool canAffordTripleHatch;
   final VoidCallback? onTripleHatch;
+  final int? battleTokens;
+
+  bool get _usesBattleTokens => egg.usesBattleTokens;
+
+  String get _notEnoughMessage =>
+      _usesBattleTokens ? 'Not enough Battle Tokens.' : 'Not enough coins';
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +77,7 @@ class EggCard extends StatelessWidget {
                 final priceChip = _PriceChip(
                   theme: theme,
                   cost: egg.cost,
+                  usesBattleTokens: _usesBattleTokens,
                 );
 
                 if (stackPrice) {
@@ -156,10 +164,23 @@ class EggCard extends StatelessWidget {
                 );
               },
             ),
+            if (_usesBattleTokens && battleTokens != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Your Battle Tokens: $battleTokens',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.secondaryColor,
+                ),
+              ),
+            ],
             if (!isUnlocked && !isCustomEgg) ...[
               const SizedBox(height: 14),
               Text(
-                egg.unlockMessage,
+                _usesBattleTokens
+                    ? 'Hatch an animal to unlock Boss Battles and Battle Eggs.'
+                    : egg.unlockMessage,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -247,7 +268,7 @@ class EggCard extends StatelessWidget {
                     ? 'Locked 🔒'
                     : canAfford
                         ? 'Buy & Hatch 🐣'
-                        : 'Not enough coins',
+                        : _notEnoughMessage,
               ),
             ),
             if (onTripleHatch != null && tripleHatchCost != null) ...[
@@ -277,7 +298,9 @@ class EggCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '🪙 ${formatCoins(tripleHatchCost!)}',
+                            _usesBattleTokens
+                                ? '⚔️ $tripleHatchCost'
+                                : '🪙 ${formatCoins(tripleHatchCost!)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -352,10 +375,12 @@ class _PriceChip extends StatelessWidget {
   const _PriceChip({
     required this.theme,
     required this.cost,
+    required this.usesBattleTokens,
   });
 
   final BackgroundTheme theme;
   final int cost;
+  final bool usesBattleTokens;
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +394,7 @@ class _PriceChip extends StatelessWidget {
         ),
       ),
       child: Text(
-        '🪙 ${formatCoins(cost)}',
+        usesBattleTokens ? '⚔️ $cost' : '🪙 ${formatCoins(cost)}',
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,

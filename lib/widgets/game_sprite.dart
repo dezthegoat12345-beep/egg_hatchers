@@ -100,10 +100,13 @@ class GameAnimalPortrait extends StatelessWidget {
     final accent = isMutated
         ? GameTheme.mutationAccent(activeMutation.id)
         : null;
+    final portraitScale = activeMutation?.displayScale ?? 1.0;
+    final innerSize = size * 0.82 * portraitScale;
 
     return Container(
       width: size,
       height: size,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.22),
         color: accent?.withValues(alpha: 0.08),
@@ -130,7 +133,7 @@ class GameAnimalPortrait extends StatelessWidget {
             customSprite: customSprite,
             spritePath: spritePath,
             fallbackEmoji: fallbackEmoji,
-            size: size * 0.82,
+            size: innerSize.clamp(size * 0.75, size * 0.98),
             semanticLabel: semanticLabel,
             emojiFontSize: emojiFontSize,
           ),

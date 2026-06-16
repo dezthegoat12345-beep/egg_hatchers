@@ -550,6 +550,20 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Boss win counts cleared.');
                 },
               ),
+              _QuickButton(
+                label: 'Unlock Boss Mutation',
+                onPressed: () {
+                  game.devUnlockBossMutation();
+                  _showMessage('Boss Mutation unlocked.');
+                },
+              ),
+              _QuickButton(
+                label: 'Add Boss mutation animal',
+                onPressed: () {
+                  game.devAddBossMutationAnimal();
+                  _showMessage('Added Boss mutation chicken.');
+                },
+              ),
             ],
           ),
           const SizedBox(height: 32),

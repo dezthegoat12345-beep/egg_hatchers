@@ -24,6 +24,11 @@ class Mutation {
 
   bool get isNormal => id == 'none';
 
+  bool get isBoss => id == 'boss';
+
+  /// Visual scale multiplier for portrait display.
+  double get displayScale => isBoss ? 1.2 : 1.0;
+
   /// Full display name, e.g. "Golden Chicken" or just "Chicken".
   String fullName(Animal animal) {
     if (isNormal) return animal.name;
@@ -48,6 +53,8 @@ class Mutation {
         return '🌈 Rare mutation! You hatched a $name!';
       case 'shadow':
         return '🌑 Ultra rare mutation! You hatched a $name!';
+      case 'boss':
+        return '👑 Boss mutation! You hatched a $name!';
       default:
         return 'You hatched a $name!';
     }

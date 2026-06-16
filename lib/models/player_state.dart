@@ -15,6 +15,7 @@ class PlayerState {
     this.fullDeveloperToolsUnlocked = false,
     this.battleTokens = 0,
     this.bossWins = const {},
+    this.bossMutationUnlocked = false,
   });
 
   final int coins;
@@ -28,6 +29,7 @@ class PlayerState {
   final bool fullDeveloperToolsUnlocked;
   final int battleTokens;
   final Map<String, int> bossWins;
+  final bool bossMutationUnlocked;
 
   static PlayerState initial() {
     return PlayerState(
@@ -53,6 +55,7 @@ class PlayerState {
     bool? fullDeveloperToolsUnlocked,
     int? battleTokens,
     Map<String, int>? bossWins,
+    bool? bossMutationUnlocked,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -68,6 +71,8 @@ class PlayerState {
           fullDeveloperToolsUnlocked ?? this.fullDeveloperToolsUnlocked,
       battleTokens: battleTokens ?? this.battleTokens,
       bossWins: bossWins ?? this.bossWins,
+      bossMutationUnlocked:
+          bossMutationUnlocked ?? this.bossMutationUnlocked,
     );
   }
 
@@ -83,6 +88,7 @@ class PlayerState {
         'fullDeveloperToolsUnlocked': fullDeveloperToolsUnlocked,
         'battleTokens': battleTokens,
         'bossWins': bossWins,
+        'bossMutationUnlocked': bossMutationUnlocked,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -105,6 +111,7 @@ class PlayerState {
           json['fullDeveloperToolsUnlocked'] as bool? ?? false,
       battleTokens: json['battleTokens'] as int? ?? 0,
       bossWins: _bossWinsFromJson(json['bossWins']),
+      bossMutationUnlocked: json['bossMutationUnlocked'] as bool? ?? false,
     );
   }
 

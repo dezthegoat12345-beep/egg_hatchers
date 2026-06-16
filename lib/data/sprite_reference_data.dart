@@ -907,9 +907,22 @@ class SpriteReferenceData {
     ),
   };
 
-  static bool hasReference(String animalId) =>
-      references.containsKey(animalId);
+  /// Boss Egg pets reuse similar built-in references for Rate Sprite Beta.
+  static const Map<String, String> _referenceAliases = {
+    'slime_pet': 'alien_slime',
+    'egg_golem_pet': 'stone_golem',
+    'night_rooster': 'eclipse_wolf',
+  };
 
-  static CustomSpriteData? referenceFor(String animalId) =>
-      references[animalId];
+  static bool hasReference(String animalId) =>
+      references.containsKey(animalId) ||
+      _referenceAliases.containsKey(animalId);
+
+  static CustomSpriteData? referenceFor(String animalId) {
+    final direct = references[animalId];
+    if (direct != null) return direct;
+    final alias = _referenceAliases[animalId];
+    if (alias == null) return null;
+    return references[alias];
+  }
 }

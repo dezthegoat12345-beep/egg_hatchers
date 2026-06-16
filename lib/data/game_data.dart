@@ -384,6 +384,30 @@ class GameData {
       emoji: '🐉🌌',
       spritePath: 'assets/images/animals/nebula_hydra.png',
     ),
+    Animal(
+      id: 'slime_pet',
+      name: 'Slime Pet',
+      rarity: Rarity.common,
+      coinsPerSecond: 600000,
+      emoji: '🟢💧',
+      spritePath: 'assets/images/animals/slime_pet.png',
+    ),
+    Animal(
+      id: 'egg_golem_pet',
+      name: 'Egg Golem Pet',
+      rarity: Rarity.rare,
+      coinsPerSecond: 900000,
+      emoji: '🪨🥚',
+      spritePath: 'assets/images/animals/egg_golem_pet.png',
+    ),
+    Animal(
+      id: 'night_rooster',
+      name: 'Night Rooster',
+      rarity: Rarity.mythic,
+      coinsPerSecond: 1500000,
+      emoji: '🌑🐓',
+      spritePath: 'assets/images/animals/night_rooster.png',
+    ),
   ];
 
   static const mutations = <Mutation>[
@@ -416,6 +440,14 @@ class GameData {
       incomeMultiplier: 10,
       icon: '🌑',
       prefix: 'Shadow',
+    ),
+    Mutation(
+      id: 'boss',
+      displayName: 'Boss',
+      chance: 0,
+      incomeMultiplier: 25,
+      icon: '👑',
+      prefix: 'Boss',
     ),
   ];
 
@@ -623,6 +655,27 @@ class GameData {
     ),
   ];
 
+  /// Battle Token eggs (shown separately in the shop).
+  static const battleEggs = <Egg>[
+    Egg(
+      id: 'boss_egg',
+      name: 'Boss Egg',
+      cost: 10,
+      possibleAnimalIds: ['slime_pet', 'egg_golem_pet', 'night_rooster'],
+      animalWeights: {
+        'slime_pet': 65,
+        'egg_golem_pet': 30,
+        'night_rooster': 5,
+      },
+      emoji: '⚔️🥚',
+      description: 'Battle-hardened companions',
+      costCurrency: EggCostCurrency.battleTokens,
+    ),
+  ];
+
+  static const int unlockBossMutationCost = 40;
+  static const int applyBossMutationCost = 100;
+
   static PlayerState startingPlayerState() => PlayerState.initial();
 
   /// First built-in egg in progression order that can hatch [animalId].
@@ -674,6 +727,9 @@ class GameData {
 
   static Egg? eggById(String id) {
     for (final egg in eggs) {
+      if (egg.id == id) return egg;
+    }
+    for (final egg in battleEggs) {
       if (egg.id == id) return egg;
     }
     return null;
