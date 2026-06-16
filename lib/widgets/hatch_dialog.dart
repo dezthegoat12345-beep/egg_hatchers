@@ -24,12 +24,14 @@ class HatchDialog extends StatefulWidget {
     required this.result,
     required this.theme,
     this.customSprites,
+    this.revealedTitle,
   });
 
   final Egg egg;
   final HatchResult result;
   final BackgroundTheme theme;
   final CustomSpriteService? customSprites;
+  final String? revealedTitle;
 
   static Future<void> show(
     BuildContext context, {
@@ -37,6 +39,7 @@ class HatchDialog extends StatefulWidget {
     required HatchResult result,
     required BackgroundTheme theme,
     CustomSpriteService? customSprites,
+    String? revealedTitle,
   }) {
     return showDialog<void>(
       context: context,
@@ -46,6 +49,7 @@ class HatchDialog extends StatefulWidget {
         result: result,
         theme: theme,
         customSprites: customSprites,
+        revealedTitle: revealedTitle,
       ),
     );
   }
@@ -155,6 +159,7 @@ class _HatchDialogState extends State<HatchDialog>
         return 'Pop!';
       case _HatchStage.revealed:
         final isMutated = !widget.result.mutation.isNormal;
+        if (widget.revealedTitle != null) return widget.revealedTitle!;
         if (isMutated) return 'Mutation!';
         return 'It hatched!';
     }

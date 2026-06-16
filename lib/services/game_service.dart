@@ -23,7 +23,7 @@ import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
 import '../utils/built_in_egg_logic.dart';
 import '../utils/boss_battle_logic.dart';
-import '../utils/secret_space_egg_logic.dart';
+import '../utils/secret_void_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
 import 'sprite_reference_overlay_service.dart';
@@ -619,17 +619,17 @@ class GameService extends ChangeNotifier {
     save();
   }
 
-  /// One-time Secret Hatchery Space Egg — free hatch with boosted luck.
-  HatchResult? claimSecretSpaceEggReward() {
+  /// One-time Secret Hatchery Void Egg — free hatch with boosted luck.
+  HatchResult? claimSecretVoidEggReward() {
     if (_state.secretSpaceEggClaimed) return null;
 
-    final animalId = SecretSpaceEggLogic.rollAnimal(_random);
+    final animalId = SecretVoidEggLogic.rollAnimal(_random);
     final animal = GameData.animalById(animalId);
     if (animal == null) return null;
 
     final boostedLuck = LuckLogic.boostedLuckLevel(
       _state.luckLevel,
-      multiplier: SecretSpaceEggLogic.rewardLuckMultiplier,
+      multiplier: SecretVoidEggLogic.rewardLuckMultiplier,
     );
     final mutation = LuckLogic.rollMutation(_random, boostedLuck);
 
@@ -666,6 +666,9 @@ class GameService extends ChangeNotifier {
     save();
     return HatchResult(animal: animal, mutation: mutation);
   }
+
+  /// Legacy alias — secret reward now hatches a Void Egg.
+  HatchResult? claimSecretSpaceEggReward() => claimSecretVoidEggReward();
 
   /// Test helper for injecting owned animals without changing hatch odds.
   @visibleForTesting

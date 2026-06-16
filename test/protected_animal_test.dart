@@ -12,7 +12,7 @@ void main() {
     final game = GameService();
     await game.initialize();
 
-    final result = game.claimSecretSpaceEggReward();
+    final result = game.claimSecretVoidEggReward();
     expect(result, isNotNull);
 
     final protected = game.ownedAnimals.where((owned) => owned.isProtected);

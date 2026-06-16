@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('secret space egg reward is one-time and free', () async {
+  test('secret void egg reward is one-time and free', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService();
     await game.initialize();
@@ -17,22 +17,22 @@ void main() {
 
     expect(game.secretSpaceEggClaimed, isFalse);
 
-    final result = game.claimSecretSpaceEggReward();
+    final result = game.claimSecretVoidEggReward();
     expect(result, isNotNull);
     expect(
-      GameData.eggById('space')!.possibleAnimalIds,
+      GameData.eggById('void')!.possibleAnimalIds,
       contains(result!.animal.id),
     );
     expect(game.ownedAnimals.length, greaterThanOrEqualTo(initialOwned));
     expect(game.coins, initialCoins);
     expect(game.lifetimeCoinsEarned, initialLifetime);
     expect(game.secretSpaceEggClaimed, isTrue);
-    expect(game.claimSecretSpaceEggReward(), isNull);
+    expect(game.claimSecretVoidEggReward(), isNull);
 
     game.dispose();
   });
 
-  test('old coin-claim saves can still claim secret space egg', () {
+  test('old coin-claim saves can still claim secret void egg', () {
     final restored = PlayerState.fromJson({
       'coins': 100,
       'ownedAnimals': <dynamic>[],

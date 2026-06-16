@@ -26,19 +26,20 @@ class SecretToolsScreen extends StatelessWidget {
   final CustomSpriteService customSprites;
   final BackgroundTheme theme;
 
-  Future<void> _claimSecretSpaceEgg(BuildContext context) async {
-    final result = game.claimSecretSpaceEggReward();
+  Future<void> _claimSecretVoidEgg(BuildContext context) async {
+    final result = game.claimSecretVoidEggReward();
     if (result == null || !context.mounted) return;
 
-    final spaceEgg = GameData.eggById('space');
-    if (spaceEgg == null) return;
+    final voidEgg = GameData.eggById('void') ?? GameData.eggById('space');
+    if (voidEgg == null) return;
 
     await HatchDialog.show(
       context,
-      egg: spaceEgg,
+      egg: voidEgg,
       result: result,
       theme: theme,
       customSprites: customSprites,
+      revealedTitle: 'Secret Void Egg!',
     );
   }
 
@@ -144,7 +145,7 @@ class SecretToolsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Free Space Egg with 3x luck.',
+                            'Free Void Egg with 3x luck.',
                             style: TextStyle(
                               color: theme.cardTextSecondaryColor,
                               fontSize: 14,
@@ -155,12 +156,12 @@ class SecretToolsScreen extends StatelessWidget {
                           FilledButton.icon(
                             onPressed: claimed
                                 ? null
-                                : () => _claimSecretSpaceEgg(context),
+                                : () => _claimSecretVoidEgg(context),
                             icon: Text(claimed ? '✅' : '🚀'),
                             label: Text(
                               claimed
-                                  ? 'Secret Space Egg claimed'
-                                  : 'Claim Secret Space Egg',
+                                  ? 'Secret Void Egg claimed'
+                                  : 'Claim Secret Void Egg',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: theme.secondaryColor,

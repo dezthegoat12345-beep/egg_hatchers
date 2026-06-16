@@ -71,6 +71,9 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
   var _bossFlash = false;
   var _finished = false;
   var _skipped = false;
+  int? _playerDamage;
+  int? _bossDamage;
+  var _damageTick = 0;
 
   BackgroundTheme get theme => widget.theme;
   BossBattleResult get result => widget.result;
@@ -101,6 +104,8 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
   Future<void> _playStep(BattleRoundSnapshot step) async {
     setState(() {
       _stepIndex++;
+      _playerDamage = null;
+      _bossDamage = null;
       if (step.isPlayerAttack) {
         _playerOffset = 24;
       } else {
@@ -114,10 +119,13 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
     setState(() {
       _playerHp = step.playerHpAfter;
       _bossHp = step.bossHpAfter;
+      _damageTick++;
       if (step.isPlayerAttack) {
         _bossFlash = true;
+        _bossDamage = step.damage;
       } else {
         _playerFlash = true;
+        _playerDamage = step.damage;
       }
     });
 
@@ -142,6 +150,8 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
       _bossOffset = 0;
       _playerFlash = false;
       _bossFlash = false;
+      _playerDamage = null;
+      _bossDamage = null;
     });
     _finish();
   }
@@ -152,6 +162,8 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
       _finished = true;
       _playerHp = result.finalPlayerHp;
       _bossHp = result.finalBossHp;
+      _playerDamage = null;
+      _bossDamage = null;
     });
     Navigator.of(context).pop();
   }
@@ -196,66 +208,53 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-              _HpBar(
-                theme: theme,
-                label: widget.fighterName,
-                current: _playerHp,
-                max: result.initialPlayerHp,
-                accent: theme.primaryColor,
-              ),
-              const SizedBox(height: 8),
-              _HpBar(
-                theme: theme,
-                label: widget.boss.name,
-                current: _bossHp,
-                max: result.initialBossHp,
-                accent: theme.secondaryColor,
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                height: bossSize + 12,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Transform.translate(
-                          offset: Offset(_playerOffset, 0),
-                          child: _FlashWrap(
-                            flash: _playerFlash,
-                            child: GameSprite(
-                              customSprite: widget.fighterCustomSprite,
-                              spritePath: widget.fighterSpritePath,
-                              fallbackEmoji: widget.fighterEmoji,
-                              size: playerSize,
-                              emojiFontSize: playerSize * 0.55,
-                            ),
-                          ),
-                        ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _FighterColumn(
+                      theme: theme,
+                      label: widget.fighterName,
+                      currentHp: _playerHp,
+                      maxHp: result.initialPlayerHp,
+                      accent: theme.primaryColor,
+                      spriteSize: playerSize,
+                      offsetX: _playerOffset,
+                      flash: _playerFlash,
+                      damage: _playerDamage,
+                      damageKey: 'p$_damageTick',
+                      sprite: GameSprite(
+                        customSprite: widget.fighterCustomSprite,
+                        spritePath: widget.fighterSpritePath,
+                        fallbackEmoji: widget.fighterEmoji,
+                        size: playerSize,
+                        emojiFontSize: playerSize * 0.55,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Transform.translate(
-                          offset: Offset(_bossOffset, 0),
-                          child: _FlashWrap(
-                            flash: _bossFlash,
-                            child: BossSprite(
-                              spritePath: widget.boss.spritePath,
-                              fallbackEmoji: widget.boss.emoji,
-                              size: bossSize,
-                              semanticLabel: widget.boss.name,
-                            ),
-                          ),
-                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _FighterColumn(
+                      theme: theme,
+                      label: widget.boss.name,
+                      currentHp: _bossHp,
+                      maxHp: result.initialBossHp,
+                      accent: theme.secondaryColor,
+                      spriteSize: bossSize,
+                      offsetX: _bossOffset,
+                      flash: _bossFlash,
+                      damage: _bossDamage,
+                      damageKey: 'b$_damageTick',
+                      sprite: BossSprite(
+                        spritePath: widget.boss.spritePath,
+                        fallbackEmoji: widget.boss.emoji,
+                        size: bossSize,
+                        semanticLabel: widget.boss.name,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               if (_stepIndex >= 0 && _stepIndex < _steps.length)
@@ -284,6 +283,82 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
   }
 }
 
+class _FighterColumn extends StatelessWidget {
+  const _FighterColumn({
+    required this.theme,
+    required this.label,
+    required this.currentHp,
+    required this.maxHp,
+    required this.accent,
+    required this.spriteSize,
+    required this.offsetX,
+    required this.flash,
+    required this.damage,
+    required this.damageKey,
+    required this.sprite,
+  });
+
+  final BackgroundTheme theme;
+  final String label;
+  final int currentHp;
+  final int maxHp;
+  final Color accent;
+  final double spriteSize;
+  final double offsetX;
+  final bool flash;
+  final int? damage;
+  final String damageKey;
+  final Widget sprite;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HpBar(
+          theme: theme,
+          label: label,
+          current: currentHp,
+          max: maxHp,
+          accent: accent,
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: spriteSize + 24,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Transform.translate(
+                  offset: Offset(offsetX, 0),
+                  child: _FlashWrap(
+                    flash: flash,
+                    child: sprite,
+                  ),
+                ),
+              ),
+              if (damage != null)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: _FloatingDamageNumber(
+                      key: ValueKey(damageKey),
+                      damage: damage!,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _HpBar extends StatelessWidget {
   const _HpBar({
     required this.theme,
@@ -303,42 +378,99 @@ class _HpBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final ratio = max <= 0 ? 0.0 : (current / max).clamp(0.0, 1.0);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: theme.cardTextPrimaryColor,
-                ),
-              ),
-            ),
-            Text(
-              '${formatCoins(current)} / ${formatCoins(max)}',
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.cardTextSecondaryColor,
-              ),
-            ),
-          ],
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: theme.cardTextPrimaryColor,
+          ),
         ),
         const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
             value: ratio,
-            minHeight: 10,
+            minHeight: 8,
             backgroundColor: theme.disabledColor.withValues(alpha: 0.2),
             color: accent,
           ),
         ),
+        const SizedBox(height: 2),
+        Text(
+          '${formatCoins(current)} / ${formatCoins(max)}',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 10,
+            color: theme.cardTextSecondaryColor,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _FloatingDamageNumber extends StatefulWidget {
+  const _FloatingDamageNumber({
+    super.key,
+    required this.damage,
+  });
+
+  final int damage;
+
+  @override
+  State<_FloatingDamageNumber> createState() => _FloatingDamageNumberState();
+}
+
+class _FloatingDamageNumberState extends State<_FloatingDamageNumber>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = Curves.easeOut.transform(_controller.value);
+        return Transform.translate(
+          offset: Offset(0, -22 * t),
+          child: Opacity(
+            opacity: (1 - t).clamp(0.0, 1.0),
+            child: child,
+          ),
+        );
+      },
+      child: Text(
+        '-${formatCoins(widget.damage)}',
+        style: const TextStyle(
+          color: Color(0xFFE53935),
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          shadows: [
+            Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
+          ],
+        ),
+      ),
     );
   }
 }
