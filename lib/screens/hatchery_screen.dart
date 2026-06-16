@@ -10,6 +10,7 @@ import '../services/sprite_reference_overlay_service.dart';
 import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/auto_battle_notification_listener.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/luck_panel.dart';
@@ -107,10 +108,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
-        return QuestNotificationListener(
+        return AutoBattleNotificationListener(
           game: game,
-          preferences: preferences,
-          child: Scaffold(
+          theme: bg,
+          child: QuestNotificationListener(
+            game: game,
+            preferences: preferences,
+            child: Scaffold(
           backgroundColor: Colors.transparent,
           extendBody: true,
           appBar: PhoneWidthAppBar(
@@ -270,6 +274,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
             ),
           ),
         ),
+          ),
         );
       },
     );

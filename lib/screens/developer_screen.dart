@@ -585,6 +585,27 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                   _showMessage('Added Slime Boss win.');
                 },
               ),
+              _QuickButton(
+                label: 'Advance auto battle',
+                onPressed: () {
+                  game.devAdvanceActiveAutoBattleFight();
+                  _showMessage('Advanced active auto battle one fight.');
+                },
+              ),
+              _QuickButton(
+                label: 'Complete auto battle',
+                onPressed: () {
+                  game.devCompleteActiveAutoBattle();
+                  _showMessage('Completed active auto battle.');
+                },
+              ),
+              _QuickButton(
+                label: 'Clear auto battle',
+                onPressed: () {
+                  game.devClearActiveAutoBattle();
+                  _showMessage('Cleared active auto battle.');
+                },
+              ),
             ],
           ),
           const SizedBox(height: 32),

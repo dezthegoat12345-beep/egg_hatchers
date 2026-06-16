@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../data/boss_data.dart';
 import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../models/owned_animal.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/snackbar_utils.dart';
 import 'animal_card.dart';
 
 /// Lists owned animals in separate Normal and Mutated sections.
@@ -70,7 +72,7 @@ class OwnedAnimalList extends StatelessWidget {
           theme: theme,
         ),
         SizedBox(height: separatorHeight),
-        ..._buildCards(normal),
+        ..._buildCards(context, normal),
       ],
       if (mutated.isNotEmpty) ...[
         SizedBox(height: separatorHeight * 2),
@@ -80,7 +82,7 @@ class OwnedAnimalList extends StatelessWidget {
           theme: theme,
         ),
         SizedBox(height: separatorHeight),
-        ..._buildCards(mutated),
+        ..._buildCards(context, mutated),
       ],
     ];
 
@@ -105,23 +107,28 @@ class OwnedAnimalList extends StatelessWidget {
     return copy;
   }
 
-  List<Widget> _buildCards(List<OwnedAnimal> entries) {
+  List<Widget> _buildCards(BuildContext context, List<OwnedAnimal> entries) {
     return [
       for (var i = 0; i < entries.length; i++) ...[
         if (i > 0) SizedBox(height: separatorHeight),
-        _buildCard(entries[i]),
+        _buildCard(context, entries[i]),
       ],
     ];
   }
 
-  Widget _buildCard(OwnedAnimal owned) {
+  Widget _buildCard(BuildContext context, OwnedAnimal owned) {
     final animal = GameData.animalById(owned.animalId);
     if (animal == null) return const SizedBox.shrink();
 
     final mutation = GameData.mutationById(owned.mutationId) ??
         GameData.mutations.first;
     final displayName = mutation.fullName(animal);
-    final canSell = showSellButtons && !owned.isProtected;
+    final isBattling = game.isOwnedStackAutoBattling(owned);
+    final activeBattle = game.activeAutoBattle;
+    final boss = activeBattle != null
+        ? BossData.bossById(activeBattle.bossId)
+        : null;
+    final canSell = showSellButtons && !owned.isProtected && !isBattling;
 
     return AnimalCard(
       animal: animal,
@@ -129,14 +136,16 @@ class OwnedAnimalList extends StatelessWidget {
       mutation: mutation,
       quantity: owned.quantity,
       level: owned.level,
-      typeIncome: GameService.incomeFor(animal, owned),
+      typeIncome:
+          isBattling ? 0 : GameService.incomeFor(animal, owned),
       upgradeCost: GameService.upgradeCostFor(animal, owned),
       showUpgradeButton: true,
-      canAffordUpgrade: game.canAffordUpgrade(
-        animal.id,
-        owned.mutationId,
-        isProtected: owned.isProtected,
-      ),
+      canAffordUpgrade: !isBattling &&
+          game.canAffordUpgrade(
+            animal.id,
+            owned.mutationId,
+            isProtected: owned.isProtected,
+          ),
       onUpgrade: () => onUpgrade(
         animal.id,
         owned.mutationId,
@@ -145,6 +154,23 @@ class OwnedAnimalList extends StatelessWidget {
       ),
       showSellButtons: canSell,
       isProtected: owned.isProtected,
+      isAutoBattling: isBattling,
+      autoBattleBossName: isBattling ? boss?.name : null,
+      autoBattleCurrentHp:
+          isBattling ? activeBattle?.currentHp : null,
+      autoBattleMaxHp: isBattling ? activeBattle?.maxHp : null,
+      autoBattleWins: isBattling ? activeBattle?.battlesWon : null,
+      autoBattleTimeRemaining:
+          isBattling ? game.timeUntilNextAutoBattleFight() : null,
+      onBattlingTap: isBattling
+          ? () {
+              showGameSnackBar(
+                context,
+                message: 'This animal is battling.',
+                backgroundColor: Colors.orange.shade700,
+              );
+            }
+          : null,
       sellValue: canSell ? GameService.sellValueFor(animal, owned) : null,
       onSellOne: canSell && onSellOne != null
           ? () {

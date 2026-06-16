@@ -13,6 +13,7 @@ class BossBattleDefinition {
     required this.battleTokenReward,
     required this.unlockRequirementText,
     this.spritePath,
+    this.autoBattleSeconds = 10,
   });
 
   final String id;
@@ -25,6 +26,7 @@ class BossBattleDefinition {
   final int battleTokenReward;
   final String unlockRequirementText;
   final String? spritePath;
+  final int autoBattleSeconds;
 }
 
 /// One line in the auto-battle log.

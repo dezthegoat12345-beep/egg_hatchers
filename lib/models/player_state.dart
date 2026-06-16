@@ -1,3 +1,4 @@
+import 'active_auto_battle.dart';
 import 'owned_animal.dart';
 import 'quest_progress.dart';
 
@@ -16,6 +17,7 @@ class PlayerState {
     this.battleTokens = 0,
     this.bossWins = const {},
     this.bossMutationUnlocked = false,
+    this.activeAutoBattle,
   });
 
   final int coins;
@@ -30,6 +32,7 @@ class PlayerState {
   final int battleTokens;
   final Map<String, int> bossWins;
   final bool bossMutationUnlocked;
+  final ActiveAutoBattle? activeAutoBattle;
 
   static PlayerState initial() {
     return PlayerState(
@@ -56,6 +59,8 @@ class PlayerState {
     int? battleTokens,
     Map<String, int>? bossWins,
     bool? bossMutationUnlocked,
+    ActiveAutoBattle? activeAutoBattle,
+    bool clearActiveAutoBattle = false,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -73,6 +78,9 @@ class PlayerState {
       bossWins: bossWins ?? this.bossWins,
       bossMutationUnlocked:
           bossMutationUnlocked ?? this.bossMutationUnlocked,
+      activeAutoBattle: clearActiveAutoBattle
+          ? null
+          : activeAutoBattle ?? this.activeAutoBattle,
     );
   }
 
@@ -89,6 +97,8 @@ class PlayerState {
         'battleTokens': battleTokens,
         'bossWins': bossWins,
         'bossMutationUnlocked': bossMutationUnlocked,
+        if (activeAutoBattle != null)
+          'activeAutoBattle': activeAutoBattle!.toJson(),
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -112,6 +122,11 @@ class PlayerState {
       battleTokens: json['battleTokens'] as int? ?? 0,
       bossWins: _bossWinsFromJson(json['bossWins']),
       bossMutationUnlocked: json['bossMutationUnlocked'] as bool? ?? false,
+      activeAutoBattle: json['activeAutoBattle'] is Map<String, dynamic>
+          ? ActiveAutoBattle.fromJson(
+              json['activeAutoBattle'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 

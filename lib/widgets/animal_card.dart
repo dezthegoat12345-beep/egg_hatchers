@@ -7,6 +7,7 @@ import '../models/mutation.dart';
 import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
 import 'game_sprite.dart';
+import 'battling_dots_text.dart';
 
 /// A rounded card showing one animal, mutation, stats, and an upgrade button.
 class AnimalCard extends StatelessWidget {
@@ -30,6 +31,13 @@ class AnimalCard extends StatelessWidget {
     this.onSellOne,
     this.onSellAll,
     this.isProtected = false,
+    this.isAutoBattling = false,
+    this.autoBattleBossName,
+    this.autoBattleCurrentHp,
+    this.autoBattleMaxHp,
+    this.autoBattleWins,
+    this.autoBattleTimeRemaining,
+    this.onBattlingTap,
   });
 
   final Animal animal;
@@ -50,6 +58,22 @@ class AnimalCard extends StatelessWidget {
   final VoidCallback? onSellOne;
   final VoidCallback? onSellAll;
   final bool isProtected;
+  final bool isAutoBattling;
+  final String? autoBattleBossName;
+  final int? autoBattleCurrentHp;
+  final int? autoBattleMaxHp;
+  final int? autoBattleWins;
+  final Duration? autoBattleTimeRemaining;
+  final VoidCallback? onBattlingTap;
+
+  String _formatCountdown(Duration duration) {
+    final totalSeconds = duration.inSeconds;
+    if (totalSeconds <= 0) return 'Resolving...';
+    if (totalSeconds >= 60) {
+      return '${totalSeconds ~/ 60}m ${totalSeconds % 60}s';
+    }
+    return '${totalSeconds}s';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +92,10 @@ class AnimalCard extends StatelessWidget {
     final textSecondary = activeMutation.isNormal
         ? theme.cardTextSecondaryColor
         : const Color(0xFF795548);
+    final showUpgrade = showUpgradeButton && !isAutoBattling;
+    final showSell = showSellButtons && !isAutoBattling;
 
-    return Container(
+    final card = Container(
       decoration: GameTheme.cardDecoration(
         theme,
         borderColor: borderColor,
@@ -168,7 +194,7 @@ class AnimalCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (showUpgradeButton && upgradeCost != null) ...[
+            if (showUpgrade && upgradeCost != null) ...[
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -260,7 +286,7 @@ class AnimalCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (showSellButtons && !isProtected && sellValue != null && isOwned) ...[
+            if (showSell && !isProtected && sellValue != null && isOwned) ...[
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -354,6 +380,97 @@ class AnimalCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (!isAutoBattling) return card;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Opacity(
+          opacity: 0.45,
+          child: IgnorePointer(child: card),
+        ),
+        Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onBattlingTap,
+              borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.28),
+                  borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BattlingDotsText(
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (autoBattleBossName != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'vs $autoBattleBossName',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    if (autoBattleCurrentHp != null &&
+                        autoBattleMaxHp != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'HP ${autoBattleCurrentHp!} / ${autoBattleMaxHp!}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    if (autoBattleWins != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Wins: $autoBattleWins',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    if (autoBattleTimeRemaining != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Next fight: ${_formatCountdown(autoBattleTimeRemaining!)}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

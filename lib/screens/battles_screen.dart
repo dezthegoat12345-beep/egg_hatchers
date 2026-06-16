@@ -16,8 +16,6 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
-import '../widgets/auto_battle_result_dialog.dart';
-import '../widgets/battle_animation_dialog.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
@@ -101,7 +99,10 @@ class BattlesScreen extends StatelessWidget {
     BackgroundTheme theme,
   ) {
     final candidates = game.ownedAnimals
-        .where((owned) => owned.mutationId != 'boss' && owned.quantity > 0)
+        .where((owned) =>
+            owned.mutationId != 'boss' &&
+            owned.quantity > 0 &&
+            !game.isOwnedStackAutoBattling(owned))
         .toList();
     candidates.sort(
       (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
@@ -231,6 +232,15 @@ class BattlesScreen extends StatelessWidget {
     BossBattleDefinition boss,
     BackgroundTheme theme,
   ) async {
+    if (game.hasActiveAutoBattle) {
+      showGameSnackBar(
+        context,
+        message: 'An animal is already battling.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
     if (game.ownedAnimals.isEmpty) {
       showGameSnackBar(
         context,
@@ -248,49 +258,36 @@ class BattlesScreen extends StatelessWidget {
     );
     if (fighter == null || !context.mounted) return;
 
-    game.pauseIdleIncomeForAutoBattle();
-    try {
-      final result = game.simulateAutoBattle(
-        bossId: boss.id,
-        animalId: fighter.animalId,
-        mutationId: fighter.mutationId,
-        isProtected: fighter.isProtected,
-      );
-      if (result == null || !context.mounted) return;
+    final animal = GameData.animalById(fighter.animalId);
+    if (animal == null || !context.mounted) return;
 
-      final animal = GameData.animalById(fighter.animalId);
-      if (animal == null || !context.mounted) return;
+    final mutation = GameData.mutationById(fighter.mutationId) ??
+        GameData.mutations.first;
+    final fighterName = mutation.fullName(animal);
 
-      final mutation = GameData.mutationById(fighter.mutationId) ??
-          GameData.mutations.first;
-
-      if (result.roundSummaries.isNotEmpty) {
-        final firstRound = result.roundSummaries.first;
-        await BattleAnimationDialog.show(
-          context,
-          theme: theme,
-          boss: boss,
-          result: firstRound.result,
-          fighterName: result.fighterDisplayName,
-          fighterSpritePath: animal.spritePath,
-          fighterEmoji: mutation.displayEmoji(animal),
-          fighterCustomSprite: customSprites.getDisplaySprite(animal.id),
-        );
-      }
-      if (!context.mounted) return;
-
-      game.applyAutoBattleResult(boss.id, result);
-      if (!context.mounted) return;
-
-      await AutoBattleResultDialog.show(
+    final started = game.startActiveAutoBattle(
+      bossId: boss.id,
+      animalId: fighter.animalId,
+      mutationId: fighter.mutationId,
+      isProtected: fighter.isProtected,
+    );
+    if (!started || !context.mounted) {
+      showGameSnackBar(
         context,
-        theme: theme,
-        result: result,
-        customSprites: customSprites,
+        message: 'Could not start auto battle.',
+        backgroundColor: Colors.red.shade400,
       );
-    } finally {
-      game.resumeIdleIncomeAfterAutoBattle();
+      return;
     }
+
+    showGameSnackBar(
+      context,
+      message: '$fighterName is battling ${boss.name}!',
+      backgroundColor: theme.primaryColor,
+    );
+
+    if (!context.mounted) return;
+    await returnToHatcheryWithTransition(context, theme: theme);
   }
 
   Future<OwnedAnimal?> _pickFighter(
@@ -299,7 +296,9 @@ class BattlesScreen extends StatelessWidget {
     String title = 'Choose Fighter',
     String? subtitle,
   }) {
-    final fighters = List<OwnedAnimal>.from(game.ownedAnimals);
+    final fighters = game.ownedAnimals
+        .where((owned) => !game.isOwnedStackAutoBattling(owned))
+        .toList();
     fighters.sort(
       (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
     );

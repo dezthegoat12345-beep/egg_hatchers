@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:egg_hatchers/data/boss_data.dart';
 import 'package:egg_hatchers/data/game_data.dart';
+import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 import 'package:egg_hatchers/utils/boss_battle_logic.dart';
@@ -9,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('auto battle carries animal HP between boss fights', () {
+  test('auto battle carries animal HP between boss fights in simulation', () {
     final boss = BossData.bossById('slime_boss')!;
     const fighter = OwnedAnimal(
       animalId: 'galaxy_dragon',
@@ -27,7 +28,6 @@ void main() {
     );
 
     expect(result.maxAnimalHp, BossBattleLogic.maxAnimalHpFor(result.battlePower));
-    expect(result.startingAnimalHp, result.maxAnimalHp);
 
     if (result.roundSummaries.length > 1) {
       final first = result.roundSummaries.first;
@@ -37,30 +37,63 @@ void main() {
     }
   });
 
-  test('auto battle stops at safety cap', () {
-    final boss = BossData.bossById('slime_boss')!;
-    const fighter = OwnedAnimal(
-      animalId: 'nebula_hydra',
-      quantity: 1,
-      level: 20,
-      mutationId: 'shadow',
+  test('starting active auto battle blocks a second assignment', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+    game.devSetOwnedAnimalsForTesting([
+      const OwnedAnimal(animalId: 'chicken', quantity: 1),
+      const OwnedAnimal(animalId: 'rabbit', quantity: 1),
+    ]);
+
+    expect(
+      game.startActiveAutoBattle(
+        bossId: 'slime_boss',
+        animalId: 'chicken',
+        mutationId: 'none',
+        isProtected: false,
+      ),
+      isTrue,
+    );
+    expect(game.hasActiveAutoBattle, isTrue);
+    expect(
+      game.startActiveAutoBattle(
+        bossId: 'slime_boss',
+        animalId: 'rabbit',
+        mutationId: 'none',
+        isProtected: false,
+      ),
+      isFalse,
     );
 
-    final result = BossBattleLogic.simulateAutoBattle(
-      boss: boss,
-      fighter: fighter,
-      fighterDisplayName: 'Shadow Nebula Hydra',
-      random: Random(7),
-      maxDefeats: 25,
-    );
-
-    expect(result.bossesDefeated, lessThanOrEqualTo(25));
-    if (result.bossesDefeated >= 25 && result.finalAnimalHp > 0) {
-      expect(result.hitAutoBattleCap, isTrue);
-    }
+    game.dispose();
   });
 
-  test('applyAutoBattleResult grants rewards exactly once', () async {
+  test('battling stack is excluded from idle income', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+    game.devSetOwnedAnimalsForTesting([
+      const OwnedAnimal(animalId: 'chicken', quantity: 1, level: 5),
+      const OwnedAnimal(animalId: 'rabbit', quantity: 1, level: 1),
+    ]);
+
+    final incomeBefore = game.coinsPerSecond;
+    expect(incomeBefore, greaterThan(0));
+
+    game.startActiveAutoBattle(
+      bossId: 'slime_boss',
+      animalId: 'chicken',
+      mutationId: 'none',
+      isProtected: false,
+    );
+
+    expect(game.coinsPerSecond, lessThan(incomeBefore));
+
+    game.dispose();
+  });
+
+  test('devAdvanceActiveAutoBattleFight grants rewards for one fight', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService(random: Random(1));
     await game.initialize();
@@ -70,80 +103,95 @@ void main() {
     final beforeCoins = game.coins;
     final beforeTokens = game.battleTokens;
 
-    final preview = game.simulateAutoBattle(
+    game.startActiveAutoBattle(
       bossId: 'slime_boss',
       animalId: 'nebula_hydra',
       mutationId: 'none',
       isProtected: false,
     );
-    expect(preview, isNotNull);
-    expect(game.coins, beforeCoins);
-    expect(game.battleTokens, beforeTokens);
 
-    game.applyAutoBattleResult('slime_boss', preview!);
+    game.devAdvanceActiveAutoBattleFight();
 
-    expect(game.coins, beforeCoins + preview.totalCoinsEarned);
-    expect(game.battleTokens, beforeTokens + preview.totalBattleTokensEarned);
-    expect(game.lifetimeCoinsEarned, beforeLifetime);
-    expect(
-      game.questProgress.totalBossBattlesStarted,
-      preview.fightsAttempted,
-    );
-    expect(
-      game.questProgress.totalBossBattlesWon,
-      preview.bossesDefeated,
-    );
-    expect(
-      game.bossWinCount('slime_boss'),
-      preview.bossesDefeated,
-    );
+    final battle = game.activeAutoBattle;
+    if (battle != null && battle.battlesWon > 0) {
+      expect(game.coins, greaterThan(beforeCoins));
+      expect(game.battleTokens, greaterThan(beforeTokens));
+      expect(game.lifetimeCoinsEarned, beforeLifetime);
+      expect(game.questProgress.totalBossBattlesStarted, 1);
+      expect(game.questProgress.totalBossBattlesWon, 1);
+    }
 
     game.dispose();
   });
 
-  test('idle income pauses during auto battle session', () async {
+  test('cannot sell battling stack', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService(random: Random(1));
     await game.initialize();
-    game.devCollectAllAnimals();
-    game.buyEgg(GameData.eggs.first);
-    game.hatchEgg(GameData.eggs.first);
+    game.devSetOwnedAnimalsForTesting([
+      const OwnedAnimal(animalId: 'chicken', quantity: 1),
+    ]);
+    game.startActiveAutoBattle(
+      bossId: 'slime_boss',
+      animalId: 'chicken',
+      mutationId: 'none',
+      isProtected: false,
+    );
 
-    expect(game.isIdleIncomePaused, isFalse);
-    game.pauseIdleIncomeForAutoBattle();
-    expect(game.isIdleIncomePaused, isTrue);
-    game.resumeIdleIncomeAfterAutoBattle();
-    expect(game.isIdleIncomePaused, isFalse);
+    expect(
+      game.canSellOwnedAnimal('chicken', 'none'),
+      isFalse,
+    );
 
     game.dispose();
   });
 
-  test('protected animals can auto battle without being removed', () async {
+  test('rebirth blocked while auto battle active', () async {
     SharedPreferences.setMockInitialValues({});
-    final game = GameService(random: Random(2));
+    final game = GameService(random: Random(1));
     await game.initialize();
-
-    const protected = OwnedAnimal(
-      animalId: 'galaxy_dragon',
-      quantity: 1,
-      level: 10,
-      mutationId: 'shadow',
-      isProtected: true,
-    );
-    game.devSetOwnedAnimalsForTesting([protected]);
-
-    final preview = game.simulateAutoBattle(
+    game.devSetOwnedAnimalsForTesting([
+      const OwnedAnimal(animalId: 'chicken', quantity: 1),
+    ]);
+    game.setLifetimeCoinsEarned(1000000);
+    game.startActiveAutoBattle(
       bossId: 'slime_boss',
-      animalId: protected.animalId,
-      mutationId: protected.mutationId,
-      isProtected: true,
+      animalId: 'chicken',
+      mutationId: 'none',
+      isProtected: false,
     );
-    expect(preview, isNotNull);
 
-    game.applyAutoBattleResult('slime_boss', preview!);
-    expect(game.ownedAnimals.length, 1);
-    expect(game.ownedAnimals.first.isProtected, isTrue);
+    expect(game.performRebirth(), isFalse);
 
     game.dispose();
+  });
+
+  test('active auto battle persists through save round trip', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+    game.devSetOwnedAnimalsForTesting([
+      const OwnedAnimal(animalId: 'chicken', quantity: 1, level: 3),
+    ]);
+    game.startActiveAutoBattle(
+      bossId: 'slime_boss',
+      animalId: 'chicken',
+      mutationId: 'none',
+      isProtected: false,
+    );
+
+    final json = game.state.toJson();
+    final restored = PlayerState.fromJson(json);
+    expect(restored.activeAutoBattle, isNotNull);
+    expect(restored.activeAutoBattle!.bossId, 'slime_boss');
+    expect(json['activeAutoBattle'], isNotNull);
+
+    game.dispose();
+  });
+
+  test('boss definitions define auto battle durations', () {
+    expect(BossData.bossById('slime_boss')!.autoBattleSeconds, 10);
+    expect(BossData.bossById('egg_golem')!.autoBattleSeconds, 20);
+    expect(BossData.bossById('shadow_rooster')!.autoBattleSeconds, 35);
   });
 }

@@ -29,6 +29,15 @@ class _RebirthPanelState extends State<RebirthPanel> {
   BackgroundTheme get theme => widget.theme;
 
   Future<void> _onRebirthPressed(BuildContext context) async {
+    if (game.hasActiveAutoBattle) {
+      showGameSnackBar(
+        context,
+        message: 'Finish auto battle before rebirthing.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
     if (!game.canRebirth) {
       showGameSnackBar(
         context,

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/game_data.dart';
 import '../data/quest_data.dart';
+import '../models/active_auto_battle.dart';
 import '../models/animal.dart';
 import '../models/boss_battle.dart';
 import '../models/custom_egg.dart';
@@ -23,6 +24,7 @@ import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
 import '../utils/built_in_egg_logic.dart';
+import '../utils/battle_power_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/secret_void_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
@@ -41,9 +43,9 @@ class GameService extends ChangeNotifier {
   PlayerState _state = GameData.startingPlayerState();
   Timer? _idleTimer;
   bool _isInitialized = false;
-  int _idleIncomePauseCount = 0;
   String? _pendingQuestNotification;
   bool _questNotificationDeferred = false;
+  AutoBattleCompletionSummary? _pendingAutoBattleCompletion;
 
   // In-memory only — for developer testing, not saved.
   ForcedHatchMode _forcedHatchMode = ForcedHatchMode.none;
@@ -51,7 +53,6 @@ class GameService extends ChangeNotifier {
 
   PlayerState get state => _state;
   bool get isInitialized => _isInitialized;
-  bool get isIdleIncomePaused => _idleIncomePauseCount > 0;
 
   static Mutation _mutationFor(OwnedAnimal owned) {
     return GameData.mutationById(owned.mutationId) ?? GameData.mutations.first;
@@ -83,6 +84,13 @@ class GameService extends ChangeNotifier {
     bool isProtected = false,
   }) {
     if (quantity < 1) return false;
+    if (isStackAutoBattling(
+      animalId: animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    )) {
+      return false;
+    }
     final owned = ownedAnimal(
       animalId,
       mutationId: mutationId,
@@ -149,6 +157,13 @@ class GameService extends ChangeNotifier {
   int get coinsPerSecond {
     var total = 0;
     for (final owned in _state.ownedAnimals) {
+      if (isStackAutoBattling(
+        animalId: owned.animalId,
+        mutationId: owned.mutationId,
+        isProtected: owned.isProtected,
+      )) {
+        continue;
+      }
       final animal = GameData.animalById(owned.animalId);
       if (animal != null) {
         total += incomeFor(animal, owned);
@@ -160,6 +175,13 @@ class GameService extends ChangeNotifier {
   int get baseCoinsPerSecond {
     var total = 0;
     for (final owned in _state.ownedAnimals) {
+      if (isStackAutoBattling(
+        animalId: owned.animalId,
+        mutationId: owned.mutationId,
+        isProtected: owned.isProtected,
+      )) {
+        continue;
+      }
       final animal = GameData.animalById(owned.animalId);
       if (animal != null) {
         total += incomeFor(animal, owned);
@@ -186,6 +208,8 @@ class GameService extends ChangeNotifier {
   int get totalBossWins =>
       _state.bossWins.values.fold<int>(0, (sum, count) => sum + count);
   QuestProgress get questProgress => _state.questProgress;
+  ActiveAutoBattle? get activeAutoBattle => _state.activeAutoBattle;
+  bool get hasActiveAutoBattle => _state.activeAutoBattle != null;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
   List<OwnedAnimal> get normalAnimals =>
@@ -213,6 +237,7 @@ class GameService extends ChangeNotifier {
     final saved = await _saveService.load();
     if (saved != null) {
       _state = saved;
+      _resolveActiveAutoBattle();
       _applyOfflineEarnings();
     } else {
       _state = GameData.startingPlayerState();
@@ -243,7 +268,7 @@ class GameService extends ChangeNotifier {
   }
 
   void _tickIdleIncome() {
-    if (_idleIncomePauseCount > 0) return;
+    _resolveActiveAutoBattle();
 
     final income = coinsPerSecond;
     if (income <= 0) return;
@@ -470,6 +495,7 @@ class GameService extends ChangeNotifier {
   /// Rebirth if eligible. Resets progress and increases rebirth level.
   bool performRebirth() {
     if (!canRebirth) return false;
+    if (_state.activeAutoBattle != null) return false;
 
     final newRebirthLevel = _state.rebirthLevel + 1;
     final secretClaimed = _state.secretSpaceEggClaimed;
@@ -575,92 +601,303 @@ class GameService extends ChangeNotifier {
 
   int bossWinCount(String bossId) => _state.bossWins[bossId] ?? 0;
 
-  /// Pauses idle income ticks while an auto battle session is active.
-  void pauseIdleIncomeForAutoBattle() {
-    _idleIncomePauseCount++;
+  bool isStackAutoBattling({
+    required String animalId,
+    required String mutationId,
+    required bool isProtected,
+  }) {
+    final battle = _state.activeAutoBattle;
+    if (battle == null) return false;
+    return battle.animalId == animalId &&
+        battle.mutationId == mutationId &&
+        battle.isProtected == isProtected;
   }
 
-  /// Resumes idle income after an auto battle session ends.
-  void resumeIdleIncomeAfterAutoBattle() {
-    if (_idleIncomePauseCount > 0) {
-      _idleIncomePauseCount--;
-    }
+  bool isOwnedStackAutoBattling(OwnedAnimal owned) =>
+      isStackAutoBattling(
+        animalId: owned.animalId,
+        mutationId: owned.mutationId,
+        isProtected: owned.isProtected,
+      );
+
+  Duration? timeUntilNextAutoBattleFight() {
+    final battle = _state.activeAutoBattle;
+    if (battle == null) return null;
+    final boss = BossBattleLogic.bossById(battle.bossId);
+    if (boss == null) return null;
+    final due = battle.lastResolvedAt.add(
+      Duration(seconds: boss.autoBattleSeconds),
+    );
+    final remaining = due.difference(DateTime.now());
+    if (remaining.isNegative) return Duration.zero;
+    return remaining;
   }
 
-  /// Simulates repeated boss fights without mutating player state.
-  AutoBattleResult? simulateAutoBattle({
+  AutoBattleCompletionSummary? consumePendingAutoBattleCompletion() {
+    final summary = _pendingAutoBattleCompletion;
+    _pendingAutoBattleCompletion = null;
+    return summary;
+  }
+
+  /// Starts a background auto battle assignment for one owned stack.
+  bool startActiveAutoBattle({
     required String bossId,
     required String animalId,
     required String mutationId,
     required bool isProtected,
   }) {
+    if (_state.activeAutoBattle != null) return false;
+
     final boss = BossBattleLogic.bossById(bossId);
-    if (boss == null) return null;
-    if (!BossBattleLogic.isBossUnlocked(boss, _state)) return null;
+    if (boss == null) return false;
+    if (!BossBattleLogic.isBossUnlocked(boss, _state)) return false;
 
     final owned = ownedAnimal(
       animalId,
       mutationId: mutationId,
       isProtected: isProtected,
     );
-    if (owned == null) return null;
+    if (owned == null) return false;
 
     final animal = GameData.animalById(animalId);
-    if (animal == null) return null;
+    if (animal == null) return false;
 
     final mutation =
         GameData.mutationById(mutationId) ?? GameData.mutations.first;
     final displayName = mutation.fullName(animal);
+    final battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(owned);
+    final maxHp = BossBattleLogic.maxAnimalHpFor(battlePower);
+    final now = DateTime.now();
 
-    return BossBattleLogic.simulateAutoBattle(
-      boss: boss,
-      fighter: owned,
-      fighterDisplayName: displayName,
-      random: _random,
+    _state = _state.copyWith(
+      activeAutoBattle: ActiveAutoBattle(
+        id: now.microsecondsSinceEpoch.toString(),
+        animalId: animalId,
+        mutationId: mutationId,
+        isProtected: isProtected,
+        bossId: bossId,
+        fighterDisplayName: displayName,
+        startedAt: now,
+        lastResolvedAt: now,
+        currentHp: maxHp,
+        maxHp: maxHp,
+        battlePower: battlePower,
+      ),
     );
+    notifyListeners();
+    save();
+    return true;
   }
 
-  /// Applies auto battle rewards and quest stats exactly once after the run.
-  bool applyAutoBattleResult(String bossId, AutoBattleResult result) {
-    if (result.roundSummaries.isEmpty) return false;
+  void _resolveActiveAutoBattle() {
+    var battle = _state.activeAutoBattle;
+    if (battle == null) return;
 
+    final boss = BossBattleLogic.bossById(battle.bossId);
+    if (boss == null) {
+      _finishActiveAutoBattle(
+        battle,
+        bossName: 'Boss',
+        reason: AutoBattleCompletionReason.defeated,
+        finalHp: 0,
+      );
+      return;
+    }
+
+    final owned = ownedAnimal(
+      battle.animalId,
+      mutationId: battle.mutationId,
+      isProtected: battle.isProtected,
+    );
+    if (owned == null) {
+      _finishActiveAutoBattle(
+        battle,
+        bossName: boss.name,
+        reason: AutoBattleCompletionReason.defeated,
+        finalHp: 0,
+      );
+      return;
+    }
+
+    final fightDuration = Duration(seconds: boss.autoBattleSeconds);
     var progress = _state.questProgress;
     var coins = _state.coins;
     var tokens = _state.battleTokens;
     final wins = Map<String, int>.from(_state.bossWins);
+    var changed = false;
+    AutoBattleCompletionSummary? completion;
 
-    for (final round in result.roundSummaries) {
+    while (battle != null) {
+      if (battle.battlesWon >= BossBattleLogic.maxAutoBattleDefeats) {
+        completion = _autoBattleCompletionSummary(
+          battle,
+          boss,
+          AutoBattleCompletionReason.capReached,
+        );
+        battle = null;
+        changed = true;
+        break;
+      }
+
+      final elapsed = DateTime.now().difference(battle.lastResolvedAt);
+      if (elapsed < fightDuration) break;
+
       progress = progress.copyWith(
         totalBossBattlesStarted: progress.totalBossBattlesStarted + 1,
       );
-      if (round.result.won) {
+      changed = true;
+
+      final result = BossBattleLogic.simulate(
+        boss: boss,
+        fighter: owned,
+        fighterDisplayName: battle.fighterDisplayName,
+        random: _random,
+        startingPlayerHp: battle.currentHp,
+      );
+
+      if (result.won) {
         progress = _questProgressAfterBossWin(
           progress,
-          bossId,
-          round.result.battleTokenReward,
+          boss.id,
+          boss.battleTokenReward,
         );
-        coins += round.result.coinReward;
-        tokens += round.result.battleTokenReward;
-        wins[bossId] = (wins[bossId] ?? 0) + 1;
+        coins += boss.coinReward;
+        tokens += boss.battleTokenReward;
+        wins[boss.id] = (wins[boss.id] ?? 0) + 1;
+
+        battle = battle.copyWith(
+          currentHp: result.finalPlayerHp,
+          battlesWon: battle.battlesWon + 1,
+          totalCoinsEarned: battle.totalCoinsEarned + boss.coinReward,
+          totalBattleTokensEarned:
+              battle.totalBattleTokensEarned + boss.battleTokenReward,
+          lastResolvedAt: battle.lastResolvedAt.add(fightDuration),
+        );
+
+        if (result.finalPlayerHp <= 0) {
+          completion = _autoBattleCompletionSummary(
+            battle,
+            boss,
+            AutoBattleCompletionReason.defeated,
+            finalHp: 0,
+          );
+          battle = null;
+          break;
+        }
+
+        if (battle.battlesWon >= BossBattleLogic.maxAutoBattleDefeats) {
+          completion = _autoBattleCompletionSummary(
+            battle,
+            boss,
+            AutoBattleCompletionReason.capReached,
+          );
+          battle = null;
+          break;
+        }
+      } else {
+        progress = progress.copyWith(
+          totalBossBattlesLost: progress.totalBossBattlesLost + 1,
+        );
+        completion = _autoBattleCompletionSummary(
+          battle.copyWith(currentHp: 0),
+          boss,
+          AutoBattleCompletionReason.defeated,
+          finalHp: 0,
+        );
+        battle = null;
+        break;
       }
     }
 
-    if (result.endedInDefeat) {
-      progress = progress.copyWith(
-        totalBossBattlesLost: progress.totalBossBattlesLost + 1,
-      );
-    }
+    if (!changed) return;
 
     _state = _state.copyWith(
       questProgress: progress,
       coins: coins,
       battleTokens: tokens,
       bossWins: wins,
+      activeAutoBattle: battle,
+      clearActiveAutoBattle: battle == null,
     );
+
+    if (completion != null) {
+      _pendingAutoBattleCompletion = completion;
+    }
+
     _refreshQuestNotifications();
     notifyListeners();
     save();
-    return result.wonAtLeastOne;
+  }
+
+  void _finishActiveAutoBattle(
+    ActiveAutoBattle battle, {
+    required String bossName,
+    required AutoBattleCompletionReason reason,
+    required int finalHp,
+  }) {
+    _pendingAutoBattleCompletion = AutoBattleCompletionSummary(
+      fighterDisplayName: battle.fighterDisplayName,
+      bossName: bossName,
+      battlesWon: battle.battlesWon,
+      totalCoinsEarned: battle.totalCoinsEarned,
+      totalBattleTokensEarned: battle.totalBattleTokensEarned,
+      finalHp: finalHp,
+      reason: reason,
+    );
+    _state = _state.copyWith(clearActiveAutoBattle: true);
+    notifyListeners();
+    save();
+  }
+
+  AutoBattleCompletionSummary _autoBattleCompletionSummary(
+    ActiveAutoBattle battle,
+    BossBattleDefinition boss,
+    AutoBattleCompletionReason reason, {
+    int? finalHp,
+  }) {
+    return AutoBattleCompletionSummary(
+      fighterDisplayName: battle.fighterDisplayName,
+      bossName: boss.name,
+      battlesWon: battle.battlesWon,
+      totalCoinsEarned: battle.totalCoinsEarned,
+      totalBattleTokensEarned: battle.totalBattleTokensEarned,
+      finalHp: finalHp ?? battle.currentHp,
+      reason: reason,
+    );
+  }
+
+  void devCompleteActiveAutoBattle() {
+    final battle = _state.activeAutoBattle;
+    if (battle == null) return;
+    final boss = BossBattleLogic.bossById(battle.bossId);
+    _finishActiveAutoBattle(
+      battle,
+      bossName: boss?.name ?? 'Boss',
+      reason: AutoBattleCompletionReason.capReached,
+      finalHp: battle.currentHp,
+    );
+  }
+
+  void devClearActiveAutoBattle() {
+    if (_state.activeAutoBattle == null) return;
+    _state = _state.copyWith(clearActiveAutoBattle: true);
+    notifyListeners();
+    save();
+  }
+
+  void devAdvanceActiveAutoBattleFight() {
+    final battle = _state.activeAutoBattle;
+    if (battle == null) return;
+    final boss = BossBattleLogic.bossById(battle.bossId);
+    if (boss == null) return;
+    _state = _state.copyWith(
+      activeAutoBattle: battle.copyWith(
+        lastResolvedAt: battle.lastResolvedAt.subtract(
+          Duration(seconds: boss.autoBattleSeconds),
+        ),
+      ),
+    );
+    _resolveActiveAutoBattle();
   }
 
   /// Simulates a boss battle without granting rewards.
@@ -857,6 +1094,7 @@ class GameService extends ChangeNotifier {
     if (_state.battleTokens < GameData.applyBossMutationCost) return false;
     if (source.mutationId == 'boss') return false;
     if (source.quantity < 1) return false;
+    if (isOwnedStackAutoBattling(source)) return false;
 
     final sourceIndex = _state.ownedAnimals.indexWhere(
       (owned) =>
@@ -1624,6 +1862,14 @@ class GameService extends ChangeNotifier {
     String mutationId, {
     bool isProtected = false,
   }) {
+    if (isStackAutoBattling(
+      animalId: animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    )) {
+      return null;
+    }
+
     final owned = ownedAnimal(
       animalId,
       mutationId: mutationId,
