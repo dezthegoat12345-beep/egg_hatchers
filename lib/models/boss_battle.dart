@@ -1,3 +1,5 @@
+import 'owned_animal.dart';
+
 /// Definition of a single-player boss fight.
 class BossBattleDefinition {
   const BossBattleDefinition({
@@ -47,6 +49,59 @@ class BattleRoundSnapshot {
   final int playerHpAfter;
   final int bossHpAfter;
   final String logText;
+}
+
+/// Summary of one boss fight within an auto battle run.
+class AutoBattleRoundSummary {
+  const AutoBattleRoundSummary({
+    required this.roundNumber,
+    required this.startingAnimalHp,
+    required this.result,
+  });
+
+  final int roundNumber;
+  final int startingAnimalHp;
+  final BossBattleResult result;
+}
+
+/// Outcome of a full auto battle run against one boss.
+class AutoBattleResult {
+  const AutoBattleResult({
+    required this.fighter,
+    required this.fighterDisplayName,
+    required this.boss,
+    required this.startingAnimalHp,
+    required this.maxAnimalHp,
+    required this.battlePower,
+    required this.bossesDefeated,
+    required this.totalCoinsEarned,
+    required this.totalBattleTokensEarned,
+    required this.finalAnimalHp,
+    required this.roundSummaries,
+    required this.wonAtLeastOne,
+    required this.hitAutoBattleCap,
+    this.lastFightResult,
+  });
+
+  final OwnedAnimal fighter;
+  final String fighterDisplayName;
+  final BossBattleDefinition boss;
+  final int startingAnimalHp;
+  final int maxAnimalHp;
+  final int battlePower;
+  final int bossesDefeated;
+  final int totalCoinsEarned;
+  final int totalBattleTokensEarned;
+  final int finalAnimalHp;
+  final List<AutoBattleRoundSummary> roundSummaries;
+  final BossBattleResult? lastFightResult;
+  final bool wonAtLeastOne;
+  final bool hitAutoBattleCap;
+
+  int get fightsAttempted => roundSummaries.length;
+
+  bool get endedInDefeat =>
+      roundSummaries.isNotEmpty && roundSummaries.last.result.won == false;
 }
 
 /// Outcome of a simulated boss battle.

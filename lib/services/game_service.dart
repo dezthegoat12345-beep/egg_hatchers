@@ -41,6 +41,7 @@ class GameService extends ChangeNotifier {
   PlayerState _state = GameData.startingPlayerState();
   Timer? _idleTimer;
   bool _isInitialized = false;
+  int _idleIncomePauseCount = 0;
   String? _pendingQuestNotification;
   bool _questNotificationDeferred = false;
 
@@ -50,6 +51,7 @@ class GameService extends ChangeNotifier {
 
   PlayerState get state => _state;
   bool get isInitialized => _isInitialized;
+  bool get isIdleIncomePaused => _idleIncomePauseCount > 0;
 
   static Mutation _mutationFor(OwnedAnimal owned) {
     return GameData.mutationById(owned.mutationId) ?? GameData.mutations.first;
@@ -241,6 +243,8 @@ class GameService extends ChangeNotifier {
   }
 
   void _tickIdleIncome() {
+    if (_idleIncomePauseCount > 0) return;
+
     final income = coinsPerSecond;
     if (income <= 0) return;
 
@@ -571,6 +575,94 @@ class GameService extends ChangeNotifier {
 
   int bossWinCount(String bossId) => _state.bossWins[bossId] ?? 0;
 
+  /// Pauses idle income ticks while an auto battle session is active.
+  void pauseIdleIncomeForAutoBattle() {
+    _idleIncomePauseCount++;
+  }
+
+  /// Resumes idle income after an auto battle session ends.
+  void resumeIdleIncomeAfterAutoBattle() {
+    if (_idleIncomePauseCount > 0) {
+      _idleIncomePauseCount--;
+    }
+  }
+
+  /// Simulates repeated boss fights without mutating player state.
+  AutoBattleResult? simulateAutoBattle({
+    required String bossId,
+    required String animalId,
+    required String mutationId,
+    required bool isProtected,
+  }) {
+    final boss = BossBattleLogic.bossById(bossId);
+    if (boss == null) return null;
+    if (!BossBattleLogic.isBossUnlocked(boss, _state)) return null;
+
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
+    if (owned == null) return null;
+
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return null;
+
+    final mutation =
+        GameData.mutationById(mutationId) ?? GameData.mutations.first;
+    final displayName = mutation.fullName(animal);
+
+    return BossBattleLogic.simulateAutoBattle(
+      boss: boss,
+      fighter: owned,
+      fighterDisplayName: displayName,
+      random: _random,
+    );
+  }
+
+  /// Applies auto battle rewards and quest stats exactly once after the run.
+  bool applyAutoBattleResult(String bossId, AutoBattleResult result) {
+    if (result.roundSummaries.isEmpty) return false;
+
+    var progress = _state.questProgress;
+    var coins = _state.coins;
+    var tokens = _state.battleTokens;
+    final wins = Map<String, int>.from(_state.bossWins);
+
+    for (final round in result.roundSummaries) {
+      progress = progress.copyWith(
+        totalBossBattlesStarted: progress.totalBossBattlesStarted + 1,
+      );
+      if (round.result.won) {
+        progress = _questProgressAfterBossWin(
+          progress,
+          bossId,
+          round.result.battleTokenReward,
+        );
+        coins += round.result.coinReward;
+        tokens += round.result.battleTokenReward;
+        wins[bossId] = (wins[bossId] ?? 0) + 1;
+      }
+    }
+
+    if (result.endedInDefeat) {
+      progress = progress.copyWith(
+        totalBossBattlesLost: progress.totalBossBattlesLost + 1,
+      );
+    }
+
+    _state = _state.copyWith(
+      questProgress: progress,
+      coins: coins,
+      battleTokens: tokens,
+      bossWins: wins,
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+    return result.wonAtLeastOne;
+  }
+
   /// Simulates a boss battle without granting rewards.
   BossBattleResult? simulateBossBattle({
     required String bossId,
@@ -618,7 +710,21 @@ class GameService extends ChangeNotifier {
 
   /// Applies win rewards and records battle quest progress after animation.
   bool applyBossBattleRewards(String bossId, BossBattleResult result) {
-    _recordBossBattleOutcome(bossId, result);
+    var progress = _state.questProgress;
+    if (result.won) {
+      progress = _questProgressAfterBossWin(
+        progress,
+        bossId,
+        result.battleTokenReward,
+      );
+    } else {
+      progress = progress.copyWith(
+        totalBossBattlesLost: progress.totalBossBattlesLost + 1,
+      );
+    }
+
+    _state = _state.copyWith(questProgress: progress);
+
     if (!result.won) {
       _refreshQuestNotifications();
       notifyListeners();
@@ -639,34 +745,31 @@ class GameService extends ChangeNotifier {
     return true;
   }
 
-  void _recordBossBattleOutcome(String bossId, BossBattleResult result) {
-    var progress = _state.questProgress;
-    if (result.won) {
-      progress = progress.copyWith(
-        totalBossBattlesWon: progress.totalBossBattlesWon + 1,
-        totalBattleTokensEarned:
-            progress.totalBattleTokensEarned + result.battleTokenReward,
-      );
-      switch (bossId) {
-        case 'slime_boss':
-          progress = progress.copyWith(
-            slimeBossWins: progress.slimeBossWins + 1,
-          );
-        case 'egg_golem':
-          progress = progress.copyWith(
-            eggGolemWins: progress.eggGolemWins + 1,
-          );
-        case 'shadow_rooster':
-          progress = progress.copyWith(
-            shadowRoosterWins: progress.shadowRoosterWins + 1,
-          );
-      }
-    } else {
-      progress = progress.copyWith(
-        totalBossBattlesLost: progress.totalBossBattlesLost + 1,
-      );
+  QuestProgress _questProgressAfterBossWin(
+    QuestProgress progress,
+    String bossId,
+    int battleTokenReward,
+  ) {
+    progress = progress.copyWith(
+      totalBossBattlesWon: progress.totalBossBattlesWon + 1,
+      totalBattleTokensEarned:
+          progress.totalBattleTokensEarned + battleTokenReward,
+    );
+    switch (bossId) {
+      case 'slime_boss':
+        progress = progress.copyWith(
+          slimeBossWins: progress.slimeBossWins + 1,
+        );
+      case 'egg_golem':
+        progress = progress.copyWith(
+          eggGolemWins: progress.eggGolemWins + 1,
+        );
+      case 'shadow_rooster':
+        progress = progress.copyWith(
+          shadowRoosterWins: progress.shadowRoosterWins + 1,
+        );
     }
-    _state = _state.copyWith(questProgress: progress);
+    return progress;
   }
 
   /// Runs an auto-battle and applies rewards immediately (testing helper).

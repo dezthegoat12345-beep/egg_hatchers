@@ -16,6 +16,7 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
+import '../widgets/auto_battle_result_dialog.dart';
 import '../widgets/battle_animation_dialog.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
@@ -225,7 +226,7 @@ class BattlesScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _startBoss(
+  Future<void> _startAutoBattle(
     BuildContext context,
     BossBattleDefinition boss,
     BackgroundTheme theme,
@@ -233,59 +234,71 @@ class BattlesScreen extends StatelessWidget {
     if (game.ownedAnimals.isEmpty) {
       showGameSnackBar(
         context,
-        message: 'Hatch an animal before battling.',
+        message: 'Hatch an animal before auto battling.',
         backgroundColor: Colors.orange.shade700,
       );
       return;
     }
 
-    final fighter = await _pickFighter(context, theme);
+    final fighter = await _pickFighter(
+      context,
+      theme,
+      title: 'Choose Auto Battler',
+      subtitle: 'One stack fights ${boss.name} until defeated.',
+    );
     if (fighter == null || !context.mounted) return;
 
-    final result = game.simulateBossBattle(
-      bossId: boss.id,
-      animalId: fighter.animalId,
-      mutationId: fighter.mutationId,
-      isProtected: fighter.isProtected,
-    );
-    if (result == null || !context.mounted) return;
+    game.pauseIdleIncomeForAutoBattle();
+    try {
+      final result = game.simulateAutoBattle(
+        bossId: boss.id,
+        animalId: fighter.animalId,
+        mutationId: fighter.mutationId,
+        isProtected: fighter.isProtected,
+      );
+      if (result == null || !context.mounted) return;
 
-    game.recordBossBattleStarted();
+      final animal = GameData.animalById(fighter.animalId);
+      if (animal == null || !context.mounted) return;
 
-    final animal = GameData.animalById(fighter.animalId);
-    if (animal == null || !context.mounted) return;
+      final mutation = GameData.mutationById(fighter.mutationId) ??
+          GameData.mutations.first;
 
-    final mutation =
-        GameData.mutationById(fighter.mutationId) ?? GameData.mutations.first;
-    final fighterName = mutation.fullName(animal);
+      if (result.roundSummaries.isNotEmpty) {
+        final firstRound = result.roundSummaries.first;
+        await BattleAnimationDialog.show(
+          context,
+          theme: theme,
+          boss: boss,
+          result: firstRound.result,
+          fighterName: result.fighterDisplayName,
+          fighterSpritePath: animal.spritePath,
+          fighterEmoji: mutation.displayEmoji(animal),
+          fighterCustomSprite: customSprites.getDisplaySprite(animal.id),
+        );
+      }
+      if (!context.mounted) return;
 
-    await BattleAnimationDialog.show(
-      context,
-      theme: theme,
-      boss: boss,
-      result: result,
-      fighterName: fighterName,
-      fighterSpritePath: animal.spritePath,
-      fighterEmoji: mutation.displayEmoji(animal),
-      fighterCustomSprite: customSprites.getDisplaySprite(animal.id),
-    );
-    if (!context.mounted) return;
+      game.applyAutoBattleResult(boss.id, result);
+      if (!context.mounted) return;
 
-    game.applyBossBattleRewards(boss.id, result);
-
-    await _showBattleResultDialog(
-      context,
-      theme: theme,
-      boss: boss,
-      fighter: fighter,
-      result: result,
-    );
+      await AutoBattleResultDialog.show(
+        context,
+        theme: theme,
+        result: result,
+        customSprites: customSprites,
+      );
+    } finally {
+      game.resumeIdleIncomeAfterAutoBattle();
+    }
   }
 
   Future<OwnedAnimal?> _pickFighter(
     BuildContext context,
-    BackgroundTheme theme,
-  ) {
+    BackgroundTheme theme, {
+    String title = 'Choose Fighter',
+    String? subtitle,
+  }) {
     final fighters = List<OwnedAnimal>.from(game.ownedAnimals);
     fighters.sort(
       (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
@@ -318,10 +331,22 @@ class BattlesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Choose Fighter',
+                  title,
                   textAlign: TextAlign.center,
                   style: GameTheme.sectionTitle(theme),
                 ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.cardTextSecondaryColor,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 ConstrainedBox(
                   constraints: BoxConstraints(
@@ -347,115 +372,6 @@ class BattlesScreen extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Future<void> _showBattleResultDialog(
-    BuildContext context, {
-    required BackgroundTheme theme,
-    required BossBattleDefinition boss,
-    required OwnedAnimal fighter,
-    required BossBattleResult result,
-  }) async {
-    final animal = GameData.animalById(fighter.animalId);
-    if (animal == null) return;
-
-    final mutation =
-        GameData.mutationById(fighter.mutationId) ?? GameData.mutations.first;
-    final fighterName = mutation.fullName(animal);
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
-        ),
-        title: Text(
-          result.won ? 'Victory!' : 'Defeat',
-          style: TextStyle(
-            color: result.won ? theme.secondaryColor : theme.disabledColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                boss.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: theme.cardTextPrimaryColor,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$fighterName · Power ${formatCoins(result.battlePower)}',
-                style: TextStyle(
-                  color: theme.cardTextSecondaryColor,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Rounds: ${result.rounds} · Boss HP left: ${formatCoins(result.finalBossHp)}',
-                style: TextStyle(
-                  color: theme.cardTextSecondaryColor,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Battle log',
-                style: GameTheme.sectionTitle(theme, size: 14),
-              ),
-              const SizedBox(height: 6),
-              for (final entry in result.damageLog.take(8))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    entry.text,
-                    style: TextStyle(
-                      color: theme.cardTextSecondaryColor,
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              if (result.damageLog.length > 8)
-                Text(
-                  '…',
-                  style: TextStyle(color: theme.cardTextSecondaryColor),
-                ),
-              if (result.won) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Rewards: 🪙 ${formatCoins(result.coinReward)}, '
-                  'Battle Tokens +${result.battleTokenReward}',
-                  style: TextStyle(
-                    color: theme.secondaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Awesome'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -551,7 +467,7 @@ class BattlesScreen extends StatelessWidget {
                                 game.state,
                               ),
                               winCount: game.bossWinCount(BossData.bosses[i].id),
-                              onStart: () => _startBoss(
+                              onStart: () => _startAutoBattle(
                                 context,
                                 BossData.bosses[i],
                                 theme,
@@ -798,7 +714,7 @@ class _BossCard extends StatelessWidget {
               theme,
               color: isUnlocked ? theme.primaryColor : theme.disabledColor,
             ),
-            child: Text(isUnlocked ? 'Start Battle' : 'Locked 🔒'),
+            child: Text(isUnlocked ? 'Auto Battle' : 'Locked 🔒'),
           ),
         ],
       ),

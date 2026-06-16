@@ -13,6 +13,9 @@ class BossBattleLogic {
 
   static const int maxRounds = 12;
   static const int maxVisibleAnimationSteps = 8;
+  static const int maxAutoBattleDefeats = 25;
+
+  static int maxAnimalHpFor(int battlePower) => max(100, battlePower * 6);
 
   static int uniqueBaseAnimalCount(PlayerState state) {
     return CollectionQuestLogic.collectedBaseAnimalCount(state);
@@ -36,9 +39,11 @@ class BossBattleLogic {
     required OwnedAnimal fighter,
     required String fighterDisplayName,
     required Random random,
+    int? startingPlayerHp,
   }) {
     final battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(fighter);
-    final initialPlayerHp = max(100, battlePower * 6);
+    final initialPlayerHp =
+        startingPlayerHp ?? maxAnimalHpFor(battlePower);
     var playerHp = initialPlayerHp;
     var bossHp = boss.maxHp;
     final log = <BattleLogEntry>[];
@@ -113,4 +118,74 @@ class BossBattleLogic {
   }
 
   static BossBattleDefinition? bossById(String id) => BossData.bossById(id);
+
+  /// Simulates repeated boss fights until the animal loses, HP reaches 0, or
+  /// [maxDefeats] bosses are defeated.
+  static AutoBattleResult simulateAutoBattle({
+    required BossBattleDefinition boss,
+    required OwnedAnimal fighter,
+    required String fighterDisplayName,
+    required Random random,
+    int maxDefeats = maxAutoBattleDefeats,
+  }) {
+    final battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(fighter);
+    final maxAnimalHp = maxAnimalHpFor(battlePower);
+    var animalHp = maxAnimalHp;
+    var bossesDefeated = 0;
+    var totalCoins = 0;
+    var totalTokens = 0;
+    final roundSummaries = <AutoBattleRoundSummary>[];
+    BossBattleResult? lastFightResult;
+    var hitCap = false;
+
+    while (animalHp > 0 && bossesDefeated < maxDefeats) {
+      final roundNumber = roundSummaries.length + 1;
+      final result = simulate(
+        boss: boss,
+        fighter: fighter,
+        fighterDisplayName: fighterDisplayName,
+        random: random,
+        startingPlayerHp: animalHp,
+      );
+
+      roundSummaries.add(
+        AutoBattleRoundSummary(
+          roundNumber: roundNumber,
+          startingAnimalHp: animalHp,
+          result: result,
+        ),
+      );
+      lastFightResult = result;
+      animalHp = result.finalPlayerHp;
+
+      if (!result.won) break;
+
+      bossesDefeated++;
+      totalCoins += boss.coinReward;
+      totalTokens += boss.battleTokenReward;
+
+      if (animalHp <= 0) break;
+    }
+
+    if (bossesDefeated >= maxDefeats && animalHp > 0) {
+      hitCap = true;
+    }
+
+    return AutoBattleResult(
+      fighter: fighter,
+      fighterDisplayName: fighterDisplayName,
+      boss: boss,
+      startingAnimalHp: maxAnimalHp,
+      maxAnimalHp: maxAnimalHp,
+      battlePower: battlePower,
+      bossesDefeated: bossesDefeated,
+      totalCoinsEarned: totalCoins,
+      totalBattleTokensEarned: totalTokens,
+      finalAnimalHp: animalHp,
+      roundSummaries: roundSummaries,
+      lastFightResult: lastFightResult,
+      wonAtLeastOne: bossesDefeated > 0,
+      hitAutoBattleCap: hitCap,
+    );
+  }
 }
