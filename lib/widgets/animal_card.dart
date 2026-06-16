@@ -6,6 +6,7 @@ import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/format_utils.dart';
 import 'game_sprite.dart';
 import 'battling_dots_text.dart';
 
@@ -95,7 +96,28 @@ class AnimalCard extends StatelessWidget {
     final showUpgrade = showUpgradeButton && !isAutoBattling;
     final showSell = showSellButtons && !isAutoBattling;
 
-    final card = Container(
+    if (isAutoBattling) {
+      return _BattlingAnimalCard(
+        animal: animal,
+        theme: theme,
+        activeMutation: activeMutation,
+        displayName: displayName,
+        borderColor: borderColor,
+        rarityColor: rarityColor,
+        compact: compact,
+        customSprites: customSprites,
+        isProtected: isProtected,
+        autoBattleBossName: autoBattleBossName,
+        autoBattleCurrentHp: autoBattleCurrentHp,
+        autoBattleMaxHp: autoBattleMaxHp,
+        autoBattleWins: autoBattleWins,
+        autoBattleTimeRemaining: autoBattleTimeRemaining,
+        onBattlingTap: onBattlingTap,
+        formatCountdown: _formatCountdown,
+      );
+    }
+
+    return Container(
       decoration: GameTheme.cardDecoration(
         theme,
         borderColor: borderColor,
@@ -381,96 +403,203 @@ class AnimalCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
 
-    if (!isAutoBattling) return card;
+/// Compact battle-focused card layout while an animal is auto battling.
+class _BattlingAnimalCard extends StatelessWidget {
+  const _BattlingAnimalCard({
+    required this.animal,
+    required this.theme,
+    required this.activeMutation,
+    required this.displayName,
+    required this.borderColor,
+    required this.rarityColor,
+    required this.compact,
+    required this.customSprites,
+    required this.isProtected,
+    required this.autoBattleBossName,
+    required this.autoBattleCurrentHp,
+    required this.autoBattleMaxHp,
+    required this.autoBattleWins,
+    required this.autoBattleTimeRemaining,
+    required this.onBattlingTap,
+    required this.formatCountdown,
+  });
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Opacity(
-          opacity: 0.45,
-          child: IgnorePointer(child: card),
+  final Animal animal;
+  final BackgroundTheme theme;
+  final Mutation activeMutation;
+  final String displayName;
+  final Color borderColor;
+  final Color rarityColor;
+  final bool compact;
+  final CustomSpriteService? customSprites;
+  final bool isProtected;
+  final String? autoBattleBossName;
+  final int? autoBattleCurrentHp;
+  final int? autoBattleMaxHp;
+  final int? autoBattleWins;
+  final Duration? autoBattleTimeRemaining;
+  final VoidCallback? onBattlingTap;
+  final String Function(Duration) formatCountdown;
+
+  @override
+  Widget build(BuildContext context) {
+    final spriteSize = compact ? 52.0 : 58.0;
+    final wins = autoBattleWins ?? 0;
+    final nextText = autoBattleTimeRemaining != null
+        ? formatCountdown(autoBattleTimeRemaining!)
+        : null;
+
+    return Container(
+      decoration: GameTheme.cardDecoration(
+        theme,
+        borderColor: borderColor.withValues(alpha: 0.65),
+        backgroundColor: Color.alphaBlend(
+          Colors.black.withValues(alpha: 0.42),
+          activeMutation.isNormal
+              ? theme.cardColor
+              : GameTheme.mutationTint(activeMutation.id),
         ),
-        Positioned.fill(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onBattlingTap,
-              borderRadius: BorderRadius.circular(GameTheme.cardRadius),
-              child: Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  borderRadius: BorderRadius.circular(GameTheme.cardRadius),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+        extraShadows: activeMutation.isNormal
+            ? GameTheme.rarityCardShadows(animal.rarity, theme)
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onBattlingTap,
+          borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 12 : 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    BattlingDotsText(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 6,
+                    Container(
+                      width: spriteSize + 8,
+                      height: spriteSize + 8,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: rarityColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: borderColor.withValues(alpha: 0.55),
+                          width: animal.rarity == Rarity.unknown ? 2 : 1.5,
+                        ),
+                      ),
+                      child: Opacity(
+                        opacity: 0.85,
+                        child: GameSprite(
+                          customSprite:
+                              customSprites?.getDisplaySprite(animal.id),
+                          spritePath: animal.spritePath,
+                          fallbackEmoji: animal.emoji,
+                          size: spriteSize,
+                          semanticLabel: displayName,
+                          emojiFontSize: compact ? 30 : 34,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: compact ? 15 : 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white.withValues(alpha: 0.95),
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: [
+                              _RarityBadge(rarity: animal.rarity, theme: theme),
+                              if (!activeMutation.isNormal)
+                                _MutationBadge(mutation: activeMutation),
+                              if (isProtected) const _ProtectedBadge(),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    if (autoBattleBossName != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'vs $autoBattleBossName',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    if (autoBattleCurrentHp != null &&
-                        autoBattleMaxHp != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'HP ${autoBattleCurrentHp!} / ${autoBattleMaxHp!}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    if (autoBattleWins != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Wins: $autoBattleWins',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                    if (autoBattleTimeRemaining != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Next fight: ${_formatCountdown(autoBattleTimeRemaining!)}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                BattlingDotsText(
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: compact ? 18 : 20,
+                    fontWeight: FontWeight.bold,
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 6),
+                    ],
+                  ),
+                ),
+                if (autoBattleBossName != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'vs $autoBattleBossName',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontSize: compact ? 12 : 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if (autoBattleCurrentHp != null &&
+                    autoBattleMaxHp != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'HP: ${formatCoins(autoBattleCurrentHp!)} / '
+                    '${formatCoins(autoBattleMaxHp!)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: compact ? 11 : 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if (nextText != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Wins: $wins · Next: $nextText',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      fontSize: compact ? 11 : 12,
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Wins: $wins',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      fontSize: compact ? 11 : 12,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
