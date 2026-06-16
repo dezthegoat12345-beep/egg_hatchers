@@ -22,7 +22,8 @@ class RebirthPanel extends StatelessWidget {
     if (!game.canRebirth) {
       showGameSnackBar(
         context,
-        message: 'Earn 1,000,000 lifetime coins to rebirth.',
+        message:
+            'Earn ${formatCoins(game.rebirthRequirement)} lifetime coins to rebirth.',
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -55,7 +56,7 @@ class RebirthPanel extends StatelessWidget {
     final nextMultiplier = RebirthLogic.nextIncomeMultiplier(rebirthLevel);
     final canRebirth = game.canRebirth;
     final lifetime = game.lifetimeCoinsEarned;
-    final requirement = RebirthLogic.unlockLifetimeCoins;
+    final requirement = game.rebirthRequirement;
 
     return Container(
       decoration: GameTheme.cardDecoration(
@@ -85,7 +86,7 @@ class RebirthPanel extends StatelessWidget {
                     Text(
                       canRebirth
                           ? 'Ready to rebirth for a permanent income boost'
-                          : 'Reach 1M lifetime coins to unlock rebirth',
+                          : 'Earn ${formatCoins(requirement)} lifetime coins to rebirth',
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.cardTextSecondaryColor,
@@ -137,7 +138,7 @@ class RebirthPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Lifetime Coins Earned: ${formatCoins(lifetime.clamp(0, requirement))} / ${formatCoins(requirement)}',
+            'Lifetime Coins Earned: ${formatCoins(lifetime)} / ${formatCoins(requirement)}',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -181,6 +182,7 @@ class _RebirthConfirmDialog extends StatelessWidget {
     final newLevel = currentLevel + 1;
     final currentMultiplier = game.incomeMultiplier;
     final newMultiplier = RebirthLogic.incomeMultiplier(newLevel);
+    final requirement = game.rebirthRequirement;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -211,6 +213,16 @@ class _RebirthConfirmDialog extends StatelessWidget {
               label: 'Income Multiplier',
               current: RebirthLogic.formatMultiplier(currentMultiplier),
               next: RebirthLogic.formatMultiplier(newMultiplier),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Requirement met: ${formatCoins(game.lifetimeCoinsEarned)} / '
+              '${formatCoins(requirement)} lifetime coins',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.cardTextSecondaryColor,
+                height: 1.35,
+              ),
             ),
           ],
         ),

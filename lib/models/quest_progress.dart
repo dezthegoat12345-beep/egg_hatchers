@@ -18,6 +18,15 @@ class QuestProgress {
     this.bestSpriteRatingScore = 0,
     this.totalPerfectSpriteRatings = 0,
     this.totalReferenceOverlaysUnlocked = 0,
+    this.totalBossBattlesStarted = 0,
+    this.totalBossBattlesWon = 0,
+    this.totalBossBattlesLost = 0,
+    this.slimeBossWins = 0,
+    this.eggGolemWins = 0,
+    this.shadowRoosterWins = 0,
+    this.totalBattleTokensEarned = 0,
+    this.totalBossEggsHatched = 0,
+    this.totalBossMutationsApplied = 0,
     this.perfectRatedSpriteKeys = const [],
     this.claimedQuestIds = const [],
     this.notifiedCompletedQuestIds = const [],
@@ -40,6 +49,15 @@ class QuestProgress {
   final int bestSpriteRatingScore;
   final int totalPerfectSpriteRatings;
   final int totalReferenceOverlaysUnlocked;
+  final int totalBossBattlesStarted;
+  final int totalBossBattlesWon;
+  final int totalBossBattlesLost;
+  final int slimeBossWins;
+  final int eggGolemWins;
+  final int shadowRoosterWins;
+  final int totalBattleTokensEarned;
+  final int totalBossEggsHatched;
+  final int totalBossMutationsApplied;
 
   /// Tracks sprite versions already counted toward perfect rating quests.
   final List<String> perfectRatedSpriteKeys;
@@ -71,6 +89,15 @@ class QuestProgress {
     int? bestSpriteRatingScore,
     int? totalPerfectSpriteRatings,
     int? totalReferenceOverlaysUnlocked,
+    int? totalBossBattlesStarted,
+    int? totalBossBattlesWon,
+    int? totalBossBattlesLost,
+    int? slimeBossWins,
+    int? eggGolemWins,
+    int? shadowRoosterWins,
+    int? totalBattleTokensEarned,
+    int? totalBossEggsHatched,
+    int? totalBossMutationsApplied,
     List<String>? perfectRatedSpriteKeys,
     List<String>? claimedQuestIds,
     List<String>? notifiedCompletedQuestIds,
@@ -101,6 +128,20 @@ class QuestProgress {
           totalPerfectSpriteRatings ?? this.totalPerfectSpriteRatings,
       totalReferenceOverlaysUnlocked: totalReferenceOverlaysUnlocked ??
           this.totalReferenceOverlaysUnlocked,
+      totalBossBattlesStarted:
+          totalBossBattlesStarted ?? this.totalBossBattlesStarted,
+      totalBossBattlesWon: totalBossBattlesWon ?? this.totalBossBattlesWon,
+      totalBossBattlesLost:
+          totalBossBattlesLost ?? this.totalBossBattlesLost,
+      slimeBossWins: slimeBossWins ?? this.slimeBossWins,
+      eggGolemWins: eggGolemWins ?? this.eggGolemWins,
+      shadowRoosterWins: shadowRoosterWins ?? this.shadowRoosterWins,
+      totalBattleTokensEarned:
+          totalBattleTokensEarned ?? this.totalBattleTokensEarned,
+      totalBossEggsHatched:
+          totalBossEggsHatched ?? this.totalBossEggsHatched,
+      totalBossMutationsApplied:
+          totalBossMutationsApplied ?? this.totalBossMutationsApplied,
       perfectRatedSpriteKeys:
           perfectRatedSpriteKeys ?? this.perfectRatedSpriteKeys,
       claimedQuestIds: claimedQuestIds ?? this.claimedQuestIds,
@@ -127,6 +168,15 @@ class QuestProgress {
         'bestSpriteRatingScore': bestSpriteRatingScore,
         'totalPerfectSpriteRatings': totalPerfectSpriteRatings,
         'totalReferenceOverlaysUnlocked': totalReferenceOverlaysUnlocked,
+        'totalBossBattlesStarted': totalBossBattlesStarted,
+        'totalBossBattlesWon': totalBossBattlesWon,
+        'totalBossBattlesLost': totalBossBattlesLost,
+        'slimeBossWins': slimeBossWins,
+        'eggGolemWins': eggGolemWins,
+        'shadowRoosterWins': shadowRoosterWins,
+        'totalBattleTokensEarned': totalBattleTokensEarned,
+        'totalBossEggsHatched': totalBossEggsHatched,
+        'totalBossMutationsApplied': totalBossMutationsApplied,
         'perfectRatedSpriteKeys': perfectRatedSpriteKeys,
         'claimedQuestIds': claimedQuestIds,
         'notifiedCompletedQuestIds': notifiedCompletedQuestIds,
@@ -156,6 +206,16 @@ class QuestProgress {
           json['totalPerfectSpriteRatings'] as int? ?? 0,
       totalReferenceOverlaysUnlocked:
           json['totalReferenceOverlaysUnlocked'] as int? ?? 0,
+      totalBossBattlesStarted: json['totalBossBattlesStarted'] as int? ?? 0,
+      totalBossBattlesWon: json['totalBossBattlesWon'] as int? ?? 0,
+      totalBossBattlesLost: json['totalBossBattlesLost'] as int? ?? 0,
+      slimeBossWins: json['slimeBossWins'] as int? ?? 0,
+      eggGolemWins: json['eggGolemWins'] as int? ?? 0,
+      shadowRoosterWins: json['shadowRoosterWins'] as int? ?? 0,
+      totalBattleTokensEarned: json['totalBattleTokensEarned'] as int? ?? 0,
+      totalBossEggsHatched: json['totalBossEggsHatched'] as int? ?? 0,
+      totalBossMutationsApplied:
+          json['totalBossMutationsApplied'] as int? ?? 0,
       perfectRatedSpriteKeys:
           (json['perfectRatedSpriteKeys'] as List<dynamic>?)
                   ?.map((key) => key as String)

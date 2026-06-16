@@ -250,6 +250,8 @@ class BattlesScreen extends StatelessWidget {
     );
     if (result == null || !context.mounted) return;
 
+    game.recordBossBattleStarted();
+
     final animal = GameData.animalById(fighter.animalId);
     if (animal == null || !context.mounted) return;
 

@@ -56,7 +56,7 @@ void main() {
     final quest = collectionQuest();
     final reward = game.claimQuest(quest.id);
 
-    expect(reward, 0);
+    expect(reward?.coins, 0);
     expect(game.coins, beforeCoins);
     expect(game.lifetimeCoinsEarned, beforeLifetime);
     expect(game.questProgress.isQuestClaimed(quest.id), isTrue);

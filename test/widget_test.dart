@@ -762,7 +762,7 @@ void main() {
 
     final reward = game.claimQuest('beginner_hatch_1');
 
-    expect(reward, 100);
+    expect(reward?.coins, 100);
     expect(game.coins, coinsBefore + 100);
     expect(game.lifetimeCoinsEarned, lifetimeBefore);
     expect(game.questProgress.isQuestClaimed('beginner_hatch_1'), isTrue);
@@ -923,14 +923,44 @@ void main() {
     expect(RebirthLogic.applyMultiplier(100, 4), 200);
   });
 
-  test('rebirth is unavailable below 1 million lifetime coins', () async {
+  test('rebirth is unavailable below requirement at level 0', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService();
     await game.initialize();
 
+    expect(game.rebirthRequirement, 1000000);
     game.setLifetimeCoinsEarned(999999);
     expect(game.canRebirth, isFalse);
     expect(game.performRebirth(), isFalse);
+
+    game.dispose();
+  });
+
+  test('rebirth requirement scales with rebirth level', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    expect(game.rebirthRequirement, 1000000);
+    game.setRebirthLevel(1);
+    expect(game.rebirthRequirement, 4000000);
+    game.setRebirthLevel(2);
+    expect(game.rebirthRequirement, 9000000);
+
+    game.dispose();
+  });
+
+  test('rebirth at level 1 requires 4 million lifetime coins', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.setRebirthLevel(1);
+    game.setLifetimeCoinsEarned(3999999);
+    expect(game.canRebirth, isFalse);
+
+    game.setLifetimeCoinsEarned(4000000);
+    expect(game.canRebirth, isTrue);
 
     game.dispose();
   });
@@ -955,6 +985,8 @@ void main() {
     expect(game.ownedAnimals, isEmpty);
     expect(game.luckLevel, 1);
     expect(game.rebirthLevel, 1);
+    expect(game.rebirthRequirement, 4000000);
+    expect(game.canRebirth, isFalse);
     expect(game.questProgress.totalEggsHatched, 0);
     expect(game.questProgress.claimedQuestIds, isEmpty);
 

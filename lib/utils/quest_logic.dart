@@ -45,6 +45,26 @@ class QuestLogic {
         return progress.totalPerfectSpriteRatings;
       case QuestMetric.totalReferenceOverlaysUnlocked:
         return progress.totalReferenceOverlaysUnlocked;
+      case QuestMetric.totalBossBattlesStarted:
+        return progress.totalBossBattlesStarted;
+      case QuestMetric.totalBossBattlesWon:
+        return progress.totalBossBattlesWon;
+      case QuestMetric.totalBossBattlesLost:
+        return progress.totalBossBattlesLost;
+      case QuestMetric.slimeBossWins:
+        return progress.slimeBossWins;
+      case QuestMetric.eggGolemWins:
+        return progress.eggGolemWins;
+      case QuestMetric.shadowRoosterWins:
+        return progress.shadowRoosterWins;
+      case QuestMetric.totalBattleTokensEarned:
+        return progress.totalBattleTokensEarned;
+      case QuestMetric.totalBossEggsHatched:
+        return progress.totalBossEggsHatched;
+      case QuestMetric.totalBossMutationsApplied:
+        return progress.totalBossMutationsApplied;
+      case QuestMetric.bossMutationUnlocked:
+        return state.bossMutationUnlocked ? 1 : 0;
       case QuestMetric.luckLevel:
         return state.luckLevel;
       case QuestMetric.lifetimeCoinsEarned:

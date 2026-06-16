@@ -129,7 +129,7 @@ void main() {
 
     final reward = game.claimQuest('sprite_rate_1');
 
-    expect(reward, 250);
+    expect(reward?.coins, 250);
     expect(game.coins, coinsBefore + 250);
     expect(game.lifetimeCoinsEarned, lifetimeBefore);
   });

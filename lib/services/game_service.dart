@@ -17,6 +17,7 @@ import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../models/player_state.dart';
 import '../models/quest.dart';
+import '../models/quest_claim_result.dart';
 import '../models/quest_progress.dart';
 import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
@@ -171,8 +172,12 @@ class GameService extends ChangeNotifier {
   int get rebirthLevel => _state.rebirthLevel;
   double get incomeMultiplier =>
       RebirthLogic.incomeMultiplier(_state.rebirthLevel);
-  bool get canRebirth => RebirthLogic.canRebirth(_state.lifetimeCoinsEarned);
-  int get rebirthRequirement => RebirthLogic.unlockLifetimeCoins;
+  bool get canRebirth => RebirthLogic.canRebirth(
+        lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+        rebirthLevel: _state.rebirthLevel,
+      );
+  int get rebirthRequirement =>
+      RebirthLogic.nextRebirthRequirement(_state.rebirthLevel);
   bool get secretSpaceEggClaimed => _state.secretSpaceEggClaimed;
   int get battleTokens => _state.battleTokens;
   Map<String, int> get bossWins => Map.unmodifiable(_state.bossWins);
@@ -504,8 +509,8 @@ class GameService extends ChangeNotifier {
 
   void resetRebirthLevel() => setRebirthLevel(0);
 
-  /// Claim a completed quest reward. Returns coins granted, or null on failure.
-  int? claimQuest(String questId) {
+  /// Claim a completed quest reward. Returns null on failure.
+  QuestClaimResult? claimQuest(String questId) {
     Quest? quest;
     for (final candidate in QuestData.all) {
       if (candidate.id == questId) {
@@ -528,11 +533,12 @@ class GameService extends ChangeNotifier {
       );
       notifyListeners();
       save();
-      return 0;
+      return const QuestClaimResult();
     }
 
     _state = _state.copyWith(
       coins: _state.coins + quest.rewardCoins,
+      battleTokens: _state.battleTokens + quest.rewardBattleTokens,
       questProgress: _state.questProgress.copyWith(
         claimedQuestIds: [
           ..._state.questProgress.claimedQuestIds,
@@ -542,7 +548,10 @@ class GameService extends ChangeNotifier {
     );
     notifyListeners();
     save();
-    return quest.rewardCoins;
+    return QuestClaimResult(
+      coins: quest.rewardCoins,
+      battleTokens: quest.rewardBattleTokens,
+    );
   }
 
   /// Grants sprite rating bonus coins without affecting lifetime earnings.
@@ -595,9 +604,27 @@ class GameService extends ChangeNotifier {
     );
   }
 
-  /// Applies win rewards once after the battle animation completes.
+  void recordBossBattleStarted() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalBossBattlesStarted:
+            _state.questProgress.totalBossBattlesStarted + 1,
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  /// Applies win rewards and records battle quest progress after animation.
   bool applyBossBattleRewards(String bossId, BossBattleResult result) {
-    if (!result.won) return false;
+    _recordBossBattleOutcome(bossId, result);
+    if (!result.won) {
+      _refreshQuestNotifications();
+      notifyListeners();
+      save();
+      return false;
+    }
 
     final wins = Map<String, int>.from(_state.bossWins);
     wins[bossId] = (wins[bossId] ?? 0) + 1;
@@ -606,9 +633,40 @@ class GameService extends ChangeNotifier {
       battleTokens: _state.battleTokens + result.battleTokenReward,
       bossWins: wins,
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return true;
+  }
+
+  void _recordBossBattleOutcome(String bossId, BossBattleResult result) {
+    var progress = _state.questProgress;
+    if (result.won) {
+      progress = progress.copyWith(
+        totalBossBattlesWon: progress.totalBossBattlesWon + 1,
+        totalBattleTokensEarned:
+            progress.totalBattleTokensEarned + result.battleTokenReward,
+      );
+      switch (bossId) {
+        case 'slime_boss':
+          progress = progress.copyWith(
+            slimeBossWins: progress.slimeBossWins + 1,
+          );
+        case 'egg_golem':
+          progress = progress.copyWith(
+            eggGolemWins: progress.eggGolemWins + 1,
+          );
+        case 'shadow_rooster':
+          progress = progress.copyWith(
+            shadowRoosterWins: progress.shadowRoosterWins + 1,
+          );
+      }
+    } else {
+      progress = progress.copyWith(
+        totalBossBattlesLost: progress.totalBossBattlesLost + 1,
+      );
+    }
+    _state = _state.copyWith(questProgress: progress);
   }
 
   /// Runs an auto-battle and applies rewards immediately (testing helper).
@@ -625,6 +683,7 @@ class GameService extends ChangeNotifier {
       isProtected: isProtected,
     );
     if (result == null) return null;
+    recordBossBattleStarted();
     applyBossBattleRewards(bossId, result);
     return result;
   }
@@ -644,6 +703,7 @@ class GameService extends ChangeNotifier {
 
   void devUnlockBossMutation() {
     _state = _state.copyWith(bossMutationUnlocked: true);
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -681,6 +741,7 @@ class GameService extends ChangeNotifier {
       battleTokens: _state.battleTokens - GameData.unlockBossMutationCost,
       bossMutationUnlocked: true,
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return true;
@@ -738,7 +799,12 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       ownedAnimals: updated,
       battleTokens: _state.battleTokens - GameData.applyBossMutationCost,
+      questProgress: _state.questProgress.copyWith(
+        totalBossMutationsApplied:
+            _state.questProgress.totalBossMutationsApplied + 1,
+      ),
     );
+    _refreshQuestNotifications();
     notifyListeners();
     save();
     return true;
@@ -1015,10 +1081,67 @@ class GameService extends ChangeNotifier {
         bestSpriteRatingScore: 0,
         totalPerfectSpriteRatings: 0,
         totalReferenceOverlaysUnlocked: 0,
+        totalBossBattlesStarted: 0,
+        totalBossBattlesWon: 0,
+        totalBossBattlesLost: 0,
+        slimeBossWins: 0,
+        eggGolemWins: 0,
+        shadowRoosterWins: 0,
+        totalBattleTokensEarned: 0,
+        totalBossEggsHatched: 0,
+        totalBossMutationsApplied: 0,
         perfectRatedSpriteKeys: const [],
         notifiedCompletedQuestIds: const [],
       ),
     );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devResetBattleQuestStats() {
+    _state = _state.copyWith(
+      questProgress: _state.questProgress.copyWith(
+        totalBossBattlesStarted: 0,
+        totalBossBattlesWon: 0,
+        totalBossBattlesLost: 0,
+        slimeBossWins: 0,
+        eggGolemWins: 0,
+        shadowRoosterWins: 0,
+        totalBattleTokensEarned: 0,
+        totalBossEggsHatched: 0,
+        totalBossMutationsApplied: 0,
+        notifiedCompletedQuestIds: const [],
+      ),
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
+  void devAddBossWin(String bossId) {
+    final wins = Map<String, int>.from(_state.bossWins);
+    wins[bossId] = (wins[bossId] ?? 0) + 1;
+    var progress = _state.questProgress.copyWith(
+      totalBossBattlesStarted: _state.questProgress.totalBossBattlesStarted + 1,
+      totalBossBattlesWon: _state.questProgress.totalBossBattlesWon + 1,
+    );
+    switch (bossId) {
+      case 'slime_boss':
+        progress = progress.copyWith(
+          slimeBossWins: progress.slimeBossWins + 1,
+        );
+      case 'egg_golem':
+        progress = progress.copyWith(
+          eggGolemWins: progress.eggGolemWins + 1,
+        );
+      case 'shadow_rooster':
+        progress = progress.copyWith(
+          shadowRoosterWins: progress.shadowRoosterWins + 1,
+        );
+    }
+    _state = _state.copyWith(bossWins: wins, questProgress: progress);
+    _refreshQuestNotifications();
     notifyListeners();
     save();
   }
@@ -1139,6 +1262,7 @@ class GameService extends ChangeNotifier {
       results: [result],
       isTripleHatch: false,
       isCustomEgg: customEgg != null,
+      eggId: egg.id,
     );
     _refreshQuestNotifications(deferDisplay: true);
     notifyListeners();
@@ -1171,6 +1295,7 @@ class GameService extends ChangeNotifier {
       results: results,
       isTripleHatch: isTripleHatchSession,
       isCustomEgg: customEgg != null,
+      eggId: egg.id,
     );
     _refreshQuestNotifications(deferDisplay: true);
     notifyListeners();
@@ -1300,6 +1425,7 @@ class GameService extends ChangeNotifier {
     required List<HatchResult> results,
     required bool isTripleHatch,
     required bool isCustomEgg,
+    String? eggId,
   }) {
     if (results.isEmpty) return;
 
@@ -1345,6 +1471,13 @@ class GameService extends ChangeNotifier {
             totalShadowHatched: progress.totalShadowHatched + 1,
           );
       }
+    }
+
+    if (eggId == 'boss_egg') {
+      progress = progress.copyWith(
+        totalBossEggsHatched:
+            progress.totalBossEggsHatched + results.length,
+      );
     }
 
     _state = _state.copyWith(questProgress: progress);

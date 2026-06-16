@@ -11,6 +11,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
 import '../utils/luck_logic.dart';
+import '../utils/format_utils.dart';
 import '../utils/rebirth_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
@@ -450,7 +451,8 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           _SectionTitle('Rebirth Testing'),
           Text(
             'Current: Rebirth Level ${game.rebirthLevel} · '
-            '${RebirthLogic.formatMultiplier(game.incomeMultiplier)} income',
+            '${RebirthLogic.formatMultiplier(game.incomeMultiplier)} income · '
+            'Next rebirth: ${formatCoins(game.rebirthRequirement)} lifetime',
             style: DevToolsTheme.bodyText(),
           ),
           const SizedBox(height: 12),
@@ -498,11 +500,14 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
-                label: '1M lifetime',
+                label: 'Next rebirth lifetime',
                 onPressed: () {
-                  game.setLifetimeCoinsEarned(1000000);
+                  final requirement = game.rebirthRequirement;
+                  game.setLifetimeCoinsEarned(requirement);
                   _lifetimeController.text = '${game.lifetimeCoinsEarned}';
-                  _showMessage('Lifetime coins set to 1,000,000.');
+                  _showMessage(
+                    'Lifetime coins set to ${formatCoins(requirement)}.',
+                  );
                 },
               ),
             ],
@@ -512,7 +517,9 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             label: 'Perform Rebirth (if eligible)',
             onPressed: () {
               if (!game.canRebirth) {
-                _showMessage('Need 1,000,000 lifetime coins to rebirth.');
+                _showMessage(
+                  'Need ${formatCoins(game.rebirthRequirement)} lifetime coins to rebirth.',
+                );
                 return;
               }
               game.performRebirth();
@@ -562,6 +569,20 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 onPressed: () {
                   game.devAddBossMutationAnimal();
                   _showMessage('Added Boss mutation chicken.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Battle quest stats',
+                onPressed: () {
+                  game.devResetBattleQuestStats();
+                  _showMessage('Battle quest stats reset.');
+                },
+              ),
+              _QuickButton(
+                label: '+1 Slime Boss win',
+                onPressed: () {
+                  game.devAddBossWin('slime_boss');
+                  _showMessage('Added Slime Boss win.');
                 },
               ),
             ],

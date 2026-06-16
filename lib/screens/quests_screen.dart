@@ -35,10 +35,17 @@ class QuestsScreen extends StatelessWidget {
       return;
     }
 
-    if (reward > 0) {
+    if (reward.coins > 0) {
       showGameSnackBar(
         context,
-        message: 'Quest complete! +${formatCoins(reward)} coins',
+        message: 'Quest complete! +${formatCoins(reward.coins)} coins',
+        backgroundColor: preferences.selectedTheme.secondaryColor,
+      );
+    } else if (reward.battleTokens > 0) {
+      showGameSnackBar(
+        context,
+        message:
+            'Quest complete! +${reward.battleTokens} Battle Tokens',
         backgroundColor: preferences.selectedTheme.secondaryColor,
       );
     }

@@ -84,7 +84,9 @@ class QuestCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _InfoChip(
                 label: 'Progress',
@@ -92,13 +94,13 @@ class QuestCard extends StatelessWidget {
                 theme: theme,
                 color: accent,
               ),
-              const SizedBox(width: 8),
               _InfoChip(
                 label: 'Reward',
-                value: quest.rewardDisplayLabel ??
-                    '🪙 ${formatCoins(quest.rewardCoins)}',
+                value: quest.rewardDisplayLabel ?? _rewardText(quest),
                 theme: theme,
-                color: theme.secondaryColor,
+                color: quest.grantsBattleTokensOnClaim
+                    ? theme.primaryColor
+                    : theme.secondaryColor,
               ),
             ],
           ),
@@ -141,6 +143,17 @@ class QuestCard extends StatelessWidget {
       ),
     );
   }
+
+  String _rewardText(Quest quest) {
+    if (quest.grantsBattleTokensOnClaim && quest.grantsCoinsOnClaim) {
+      return '🪙 ${formatCoins(quest.rewardCoins)} · '
+          '⚔️ +${quest.rewardBattleTokens}';
+    }
+    if (quest.grantsBattleTokensOnClaim) {
+      return '⚔️ +${quest.rewardBattleTokens} Battle Tokens';
+    }
+    return '🪙 ${formatCoins(quest.rewardCoins)}';
+  }
 }
 
 class _InfoChip extends StatelessWidget {
@@ -158,7 +171,8 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return SizedBox(
+      width: 148,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(

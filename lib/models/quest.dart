@@ -4,6 +4,7 @@ enum QuestCategory {
   regular,
   advanced,
   lateGame,
+  battle,
   customEgg,
   customSprite,
 }
@@ -34,6 +35,16 @@ enum QuestMetric {
   bestSpriteRatingScore,
   totalPerfectSpriteRatings,
   totalReferenceOverlaysUnlocked,
+  totalBossBattlesStarted,
+  totalBossBattlesWon,
+  totalBossBattlesLost,
+  slimeBossWins,
+  eggGolemWins,
+  shadowRoosterWins,
+  totalBattleTokensEarned,
+  totalBossEggsHatched,
+  totalBossMutationsApplied,
+  bossMutationUnlocked,
   luckLevel,
   lifetimeCoinsEarned,
   rebirthLevel,
@@ -50,6 +61,7 @@ class Quest {
     required this.rewardCoins,
     required this.metric,
     required this.target,
+    this.rewardBattleTokens = 0,
     this.requiresCustomEggCreated = false,
     this.rewardDisplayLabel,
     this.showsSecretHintOnClaim = false,
@@ -60,6 +72,7 @@ class Quest {
   final String title;
   final String description;
   final int rewardCoins;
+  final int rewardBattleTokens;
   final QuestMetric metric;
   final int target;
 
@@ -75,6 +88,11 @@ class Quest {
   bool get grantsCoinsOnClaim =>
       !showsSecretHintOnClaim && rewardCoins > 0;
 
+  bool get grantsBattleTokensOnClaim => rewardBattleTokens > 0;
+
+  bool get hasClaimableReward =>
+      grantsCoinsOnClaim || grantsBattleTokensOnClaim;
+
   String get categoryLabel {
     switch (category) {
       case QuestCategory.beginner:
@@ -85,6 +103,8 @@ class Quest {
         return 'Advanced Quests';
       case QuestCategory.lateGame:
         return 'Late Game Quests';
+      case QuestCategory.battle:
+        return 'Battle';
       case QuestCategory.customEgg:
         return 'Custom Egg Quests';
       case QuestCategory.customSprite:
@@ -102,6 +122,8 @@ class Quest {
         return '💎';
       case QuestCategory.lateGame:
         return '👑';
+      case QuestCategory.battle:
+        return '⚔️';
       case QuestCategory.customEgg:
         return '🎨';
       case QuestCategory.customSprite:
@@ -120,6 +142,8 @@ class Quest {
         return 'Advanced';
       case QuestCategory.lateGame:
         return 'Late Game';
+      case QuestCategory.battle:
+        return 'Battle';
       case QuestCategory.customEgg:
         return 'Custom Egg';
       case QuestCategory.customSprite:
@@ -138,6 +162,8 @@ class Quest {
         return '💎';
       case QuestCategory.lateGame:
         return '👑';
+      case QuestCategory.battle:
+        return '⚔️';
       case QuestCategory.customEgg:
         return '🥚';
       case QuestCategory.customSprite:
