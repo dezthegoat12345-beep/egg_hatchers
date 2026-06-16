@@ -20,7 +20,7 @@ void main() {
   });
 
   test('elite boss reward animals exist', () {
-    expect(GameData.animalById('slime_king')!.rarity, Rarity.legendary);
+    expect(GameData.animalById('slime_king')!.rarity, Rarity.mythic);
     expect(GameData.animalById('egg_guardian')!.rarity, Rarity.unknown);
   });
 

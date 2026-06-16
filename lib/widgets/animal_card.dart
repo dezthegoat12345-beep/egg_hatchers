@@ -33,6 +33,7 @@ class AnimalCard extends StatelessWidget {
     this.onSellAll,
     this.isProtected = false,
     this.isSecretReward = false,
+    this.isEliteReward = false,
     this.isAutoBattling = false,
     this.autoBattleBossName,
     this.autoBattleCurrentHp,
@@ -61,6 +62,7 @@ class AnimalCard extends StatelessWidget {
   final VoidCallback? onSellAll;
   final bool isProtected;
   final bool isSecretReward;
+  final bool isEliteReward;
   final bool isAutoBattling;
   final String? autoBattleBossName;
   final int? autoBattleCurrentHp;
@@ -110,6 +112,7 @@ class AnimalCard extends StatelessWidget {
         customSprites: customSprites,
         isProtected: isProtected,
         isSecretReward: isSecretReward,
+        isEliteReward: isEliteReward,
         autoBattleBossName: autoBattleBossName,
         autoBattleCurrentHp: autoBattleCurrentHp,
         autoBattleMaxHp: autoBattleMaxHp,
@@ -190,7 +193,10 @@ class AnimalCard extends StatelessWidget {
                           _RarityBadge(rarity: animal.rarity, theme: theme),
                           if (!activeMutation.isNormal)
                             _MutationBadge(mutation: activeMutation),
-                          if (isSecretReward) const _ProtectedBadge(),
+                          if (isEliteReward)
+                            const _EliteBadge()
+                          else if (isSecretReward)
+                            const _SecretRewardBadge(),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -428,6 +434,7 @@ class _BattlingAnimalCard extends StatelessWidget {
     required this.customSprites,
     required this.isProtected,
     required this.isSecretReward,
+    required this.isEliteReward,
     required this.autoBattleBossName,
     required this.autoBattleCurrentHp,
     required this.autoBattleMaxHp,
@@ -447,6 +454,7 @@ class _BattlingAnimalCard extends StatelessWidget {
   final CustomSpriteService? customSprites;
   final bool isProtected;
   final bool isSecretReward;
+  final bool isEliteReward;
   final String? autoBattleBossName;
   final int? autoBattleCurrentHp;
   final int? autoBattleMaxHp;
@@ -544,7 +552,10 @@ class _BattlingAnimalCard extends StatelessWidget {
                               _RarityBadge(rarity: animal.rarity, theme: theme),
                               if (!activeMutation.isNormal)
                                 _MutationBadge(mutation: activeMutation),
-                              if (isSecretReward) const _ProtectedBadge(),
+                              if (isEliteReward)
+                                const _EliteBadge()
+                              else if (isSecretReward)
+                                const _SecretRewardBadge(),
                             ],
                           ),
                         ],
@@ -733,8 +744,8 @@ class _MutationBadge extends StatelessWidget {
   }
 }
 
-class _ProtectedBadge extends StatelessWidget {
-  const _ProtectedBadge();
+class _SecretRewardBadge extends StatelessWidget {
+  const _SecretRewardBadge();
 
   @override
   Widget build(BuildContext context) {
@@ -749,6 +760,30 @@ class _ProtectedBadge extends StatelessWidget {
         'Secret Reward',
         style: TextStyle(
           color: Color(0xFF7E57C2),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _EliteBadge extends StatelessWidget {
+  const _EliteBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF8F00).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFF8F00), width: 1.5),
+      ),
+      child: const Text(
+        'Elite',
+        style: TextStyle(
+          color: Color(0xFFE65100),
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),

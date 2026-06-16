@@ -133,7 +133,8 @@ class SecretToolsScreen extends StatelessWidget {
                         if (animal == null) return const SizedBox.shrink();
                         final mutation = GameData.mutationById(owned.mutationId) ??
                             GameData.mutations.first;
-                        final alreadyBadged = owned.isSecretReward;
+                        final alreadyBadged =
+                            owned.isSecretReward || owned.isEliteReward;
 
                         return ListTile(
                           tileColor: theme.panelColor.withValues(alpha: 0.5),

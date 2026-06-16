@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/services/game_service.dart';
@@ -98,6 +100,54 @@ void main() {
     expect(game.luckLevel, 1);
 
     game.dispose();
+  });
+
+  test('elite boss reward animals are marked elite and protected on grant', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.grantBossRewardAnimal('slime_king');
+    expect(game.ownedAnimals.single.isEliteReward, isTrue);
+    expect(game.ownedAnimals.single.isProtected, isTrue);
+    expect(game.ownedAnimals.single.isSecretReward, isFalse);
+
+    game.grantBossRewardAnimal('slime_king');
+    expect(game.ownedAnimals.single.quantity, 2);
+    expect(game.ownedAnimals.single.isEliteReward, isTrue);
+
+    game.dispose();
+  });
+
+  test('existing elite reward animals migrate to elite on load', () async {
+    final preMigration = PlayerState.initial().copyWith(
+      ownedAnimals: const [
+        OwnedAnimal(animalId: 'shadow_phoenix', quantity: 1),
+      ],
+    );
+    SharedPreferences.setMockInitialValues({
+      'egg_hatchers_player_state': jsonEncode(preMigration.toJson()),
+    });
+
+    final game = GameService();
+    await game.initialize();
+
+    expect(game.ownedAnimals.single.isEliteReward, isTrue);
+    expect(game.ownedAnimals.single.isProtected, isTrue);
+    expect(game.ownedAnimals.single.isSecretReward, isFalse);
+
+    game.dispose();
+  });
+
+  test('elite boss reward animals deserialize as elite', () {
+    final restored = OwnedAnimal.fromJson({
+      'animalId': 'egg_guardian',
+      'quantity': 2,
+      'mutationId': 'none',
+    });
+    expect(restored.isEliteReward, isTrue);
+    expect(restored.isProtected, isTrue);
+    expect(restored.isSecretReward, isFalse);
   });
 
   test('isProtected defaults false for older owned animal saves', () {

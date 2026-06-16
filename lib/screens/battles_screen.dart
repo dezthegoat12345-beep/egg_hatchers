@@ -201,7 +201,13 @@ class BattlesScreen extends StatelessWidget {
                           subtitle: Text(
                             'Lv ${owned.level} · x${owned.quantity} · '
                             'Power ${formatCoins(power)}'
-                            '${owned.isProtected ? ' · Protected' : ''}',
+                            '${owned.isEliteReward
+                                ? ' · Elite'
+                                : owned.isSecretReward
+                                    ? ' · Secret Reward'
+                                    : owned.isProtected
+                                        ? ' · Protected'
+                                        : ''}',
                             style: TextStyle(
                               fontSize: 12,
                               color: theme.cardTextSecondaryColor,
@@ -1114,7 +1120,16 @@ class _FighterTile extends StatelessWidget {
                         color: theme.cardTextSecondaryColor,
                       ),
                     ),
-                    if (owned.isProtected)
+                    if (owned.isEliteReward)
+                      Text(
+                        'Elite',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange.shade700,
+                        ),
+                      )
+                    else if (owned.isSecretReward)
                       Text(
                         'Secret Reward',
                         style: TextStyle(

@@ -59,12 +59,19 @@ class CollectionScreen extends StatelessWidget {
     String animalId,
     String mutationId,
     String displayName,
-    bool isProtected,
-  ) {
+    bool isProtected, {
+    bool isEliteReward = false,
+    bool isSecretReward = false,
+  }) {
     if (isProtected) {
+      final message = isEliteReward
+          ? 'Elite animals cannot be sold.'
+          : isSecretReward
+              ? 'Secret reward animals cannot be sold.'
+              : 'Protected animals cannot be sold.';
       showGameSnackBar(
         context,
-        message: 'Secret reward animals cannot be sold.',
+        message: message,
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -92,12 +99,19 @@ class CollectionScreen extends StatelessWidget {
     String displayName,
     int quantity,
     int totalCoins,
-    bool isProtected,
-  ) async {
+    bool isProtected, {
+    bool isEliteReward = false,
+    bool isSecretReward = false,
+  }) async {
     if (isProtected) {
+      final message = isEliteReward
+          ? 'Elite animals cannot be sold.'
+          : isSecretReward
+              ? 'Secret reward animals cannot be sold.'
+              : 'Protected animals cannot be sold.';
       showGameSnackBar(
         context,
-        message: 'Secret reward animals cannot be sold.',
+        message: message,
         backgroundColor: Colors.orange.shade700,
       );
       return;

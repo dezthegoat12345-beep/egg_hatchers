@@ -245,7 +245,7 @@ class GameService extends ChangeNotifier {
   Future<void> initialize() async {
     final saved = await _saveService.load();
     if (saved != null) {
-      _state = saved;
+      _state = _migrateEliteRewardAnimals(saved);
       _resolveActiveAutoBattle();
       _applyOfflineEarnings();
     } else {
@@ -977,22 +977,36 @@ class GameService extends ChangeNotifier {
     save();
   }
 
+  PlayerState _migrateEliteRewardAnimals(PlayerState state) {
+    final animals = state.ownedAnimals.map((owned) {
+      if (!GameData.bossVictoryRewardAnimalIds.contains(owned.animalId)) {
+        return owned;
+      }
+      return owned.copyWith(
+        isEliteReward: true,
+        isProtected: true,
+        isSecretReward: false,
+      );
+    }).toList();
+    return state.copyWith(ownedAnimals: animals);
+  }
+
   void grantBossRewardAnimal(String animalId) {
     final animal = GameData.animalById(animalId);
     if (animal == null) return;
 
+    final isElite = GameData.bossVictoryRewardAnimalIds.contains(animalId);
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex = _indexOfOwnedStack(
-      updatedAnimals,
-      animalId,
-      'none',
-      isProtected: false,
-    );
+    final existingIndex = _indexOfBossRewardStack(updatedAnimals, animalId);
 
     if (existingIndex >= 0) {
       final existing = updatedAnimals[existingIndex];
-      updatedAnimals[existingIndex] =
-          existing.copyWith(quantity: existing.quantity + 1);
+      updatedAnimals[existingIndex] = existing.copyWith(
+        quantity: existing.quantity + 1,
+        isProtected: isElite ? true : existing.isProtected,
+        isEliteReward: isElite ? true : existing.isEliteReward,
+        isSecretReward: isElite ? false : existing.isSecretReward,
+      );
     } else {
       updatedAnimals.add(
         OwnedAnimal(
@@ -1000,6 +1014,8 @@ class GameService extends ChangeNotifier {
           quantity: 1,
           level: 1,
           mutationId: 'none',
+          isProtected: isElite,
+          isEliteReward: isElite,
         ),
       );
     }
@@ -1007,6 +1023,16 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(ownedAnimals: updatedAnimals);
   }
 
+  int _indexOfBossRewardStack(List<OwnedAnimal> animals, String animalId) {
+    var fallback = -1;
+    for (var i = 0; i < animals.length; i++) {
+      final owned = animals[i];
+      if (owned.animalId != animalId || owned.mutationId != 'none') continue;
+      if (owned.isEliteReward) return i;
+      fallback = i;
+    }
+    return fallback;
+  }
   /// Applies win rewards and records battle quest progress after animation.
   bool applyBossBattleRewards(
     String bossId,
@@ -1214,6 +1240,8 @@ class GameService extends ChangeNotifier {
           level: stack.level,
           mutationId: 'boss',
           isProtected: stack.isProtected,
+          isSecretReward: stack.isSecretReward,
+          isEliteReward: stack.isEliteReward,
         ),
       );
     }
@@ -1260,7 +1288,7 @@ class GameService extends ChangeNotifier {
     if (index < 0) return null;
 
     final stack = updatedAnimals[index];
-    if (stack.isSecretReward) return null;
+    if (stack.isSecretReward || stack.isEliteReward) return null;
 
     updatedAnimals[index] = stack.copyWith(
       isProtected: true,
@@ -1607,6 +1635,12 @@ class GameService extends ChangeNotifier {
       );
     }
     _state = _state.copyWith(nightmareWins: nightmareWins);
+    notifyListeners();
+    save();
+  }
+
+  void devMarkEliteRewardAnimals() {
+    _state = _migrateEliteRewardAnimals(_state);
     notifyListeners();
     save();
   }

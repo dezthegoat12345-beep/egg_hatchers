@@ -614,6 +614,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Mark Elite Reward Animals',
+                onPressed: () {
+                  game.devMarkEliteRewardAnimals();
+                  _showMessage('Marked elite boss reward animals as Elite.');
+                },
+              ),
+              _QuickButton(
                 label: 'Grant Elite Boss Animals',
                 onPressed: () {
                   game.devGrantEliteBossAnimals();

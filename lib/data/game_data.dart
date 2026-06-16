@@ -412,7 +412,7 @@ class GameData {
     Animal(
       id: 'slime_king',
       name: 'Slime King',
-      rarity: Rarity.legendary,
+      rarity: Rarity.mythic,
       coinsPerSecond: 1800000,
       emoji: '👑🟢',
       spritePath: EliteBossSpritePaths.slimeKing,

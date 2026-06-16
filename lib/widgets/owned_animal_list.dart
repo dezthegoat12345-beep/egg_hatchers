@@ -155,6 +155,7 @@ class OwnedAnimalList extends StatelessWidget {
       showSellButtons: canSell,
       isProtected: owned.isProtected,
       isSecretReward: owned.isSecretReward,
+      isEliteReward: owned.isEliteReward,
       isAutoBattling: isBattling,
       autoBattleBossName: isBattling ? boss?.name : null,
       autoBattleCurrentHp:
