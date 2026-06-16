@@ -539,6 +539,7 @@ class BattlesScreen extends StatelessWidget {
                             _BossCard(
                               boss: BossData.bosses[i],
                               theme: theme,
+                              game: game,
                               isUnlocked: BossBattleLogic.isBossUnlocked(
                                 BossData.bosses[i],
                                 game.state,
@@ -546,6 +547,9 @@ class BattlesScreen extends StatelessWidget {
                               winCount: game.bossWinCount(BossData.bosses[i].id),
                               hardPhaseWinCount:
                                   game.hardPhaseWinCount(BossData.bosses[i].id),
+                              eliteUnlockProgress: game.eliteBossUnlockProgress(
+                                BossData.bosses[i].id,
+                              ),
                               hardPhaseUnlocked: game.isHardPhaseUnlocked(
                                 BossData.bosses[i].id,
                               ),
@@ -688,9 +692,11 @@ class _BossCard extends StatelessWidget {
   const _BossCard({
     required this.boss,
     required this.theme,
+    required this.game,
     required this.isUnlocked,
     required this.winCount,
     required this.hardPhaseWinCount,
+    required this.eliteUnlockProgress,
     required this.hardPhaseUnlocked,
     required this.nightmareUnlocked,
     required this.onAutoBattle,
@@ -701,9 +707,11 @@ class _BossCard extends StatelessWidget {
 
   final BossBattleDefinition boss;
   final BackgroundTheme theme;
+  final GameService game;
   final bool isUnlocked;
   final int winCount;
   final int hardPhaseWinCount;
+  final int eliteUnlockProgress;
   final bool hardPhaseUnlocked;
   final bool nightmareUnlocked;
   final VoidCallback onAutoBattle;
@@ -713,6 +721,10 @@ class _BossCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rewardAnimal = boss.rewardAnimalId != null
+        ? GameData.animalById(boss.rewardAnimalId!)
+        : null;
+
     return Container(
       decoration: GameTheme.cardDecoration(theme, locked: !isUnlocked),
       padding: const EdgeInsets.all(18),
@@ -822,7 +834,52 @@ class _BossCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          if (isUnlocked) ...[
+          if (boss.manualBattleOnly) ...[
+            if (isUnlocked) ...[
+              if (rewardAnimal != null) ...[
+                Text(
+                  'Reward: ${rewardAnimal.name} animal',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: theme.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              FilledButton(
+                onPressed: onManualBattle,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: const Color(0xFF1565C0),
+                ),
+                child: const Text(
+                  'Battle',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ] else ...[
+              FilledButton(
+                onPressed: null,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: theme.disabledColor,
+                ),
+                child: Text(boss.name),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Unlock: ${BossData.unlockProgressLabel(boss)} '
+                '$eliteUnlockProgress / ${boss.unlockNightmareWinsRequired}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+            ],
+          ] else if (isUnlocked) ...[
             Row(
               children: [
                 Expanded(

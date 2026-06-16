@@ -28,15 +28,20 @@ class GameTheme {
         return const Color(0xFF00ACC1);
       case Rarity.unknown:
         return const Color(0xFF121212);
+      case Rarity.boss:
+        return const Color(0xFF1565C0);
     }
   }
 
-  /// Border color for cards/chips; ??? uses a light outline on dark themes.
+  /// Border color for cards/chips; ??? and Boss use theme-aware outlines.
   static Color rarityBorderColor(Rarity rarity, BackgroundTheme theme) {
     if (rarity == Rarity.unknown) {
       return theme.isDark
           ? const Color(0xFFE8E8E8)
           : const Color(0xFF0A0A0A);
+    }
+    if (rarity == Rarity.boss) {
+      return const Color(0xFF42A5F5);
     }
     return rarityAccent(rarity);
   }
@@ -45,12 +50,18 @@ class GameTheme {
     if (rarity == Rarity.unknown) {
       return const Color(0xFF1A1A1A);
     }
+    if (rarity == Rarity.boss) {
+      return const Color(0xFF0D2137);
+    }
     return rarityAccent(rarity).withValues(alpha: 0.15);
   }
 
   static Color rarityBadgeTextColor(Rarity rarity, BackgroundTheme theme) {
     if (rarity == Rarity.unknown) {
       return theme.isDark ? Colors.white : const Color(0xFFF5F5F5);
+    }
+    if (rarity == Rarity.boss) {
+      return const Color(0xFF90CAF9);
     }
     return rarityAccent(rarity);
   }
@@ -59,16 +70,32 @@ class GameTheme {
     Rarity rarity,
     BackgroundTheme theme,
   ) {
-    if (rarity != Rarity.unknown) return const [];
-    return [
-      BoxShadow(
-        color: theme.isDark
-            ? Colors.white.withValues(alpha: 0.14)
-            : Colors.black.withValues(alpha: 0.35),
-        blurRadius: 10,
-        spreadRadius: 0.5,
-      ),
-    ];
+    if (rarity == Rarity.unknown) {
+      return [
+        BoxShadow(
+          color: theme.isDark
+              ? Colors.white.withValues(alpha: 0.14)
+              : Colors.black.withValues(alpha: 0.35),
+          blurRadius: 10,
+          spreadRadius: 0.5,
+        ),
+      ];
+    }
+    if (rarity == Rarity.boss) {
+      return [
+        BoxShadow(
+          color: const Color(0xFF1565C0).withValues(alpha: 0.55),
+          blurRadius: 12,
+          spreadRadius: 0.5,
+        ),
+        BoxShadow(
+          color: const Color(0xFF42A5F5).withValues(alpha: 0.25),
+          blurRadius: 18,
+          spreadRadius: 1,
+        ),
+      ];
+    }
+    return const [];
   }
 
   static Color mutationAccent(String mutationId) {

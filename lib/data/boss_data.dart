@@ -4,7 +4,7 @@ import '../models/boss_battle.dart';
 class BossData {
   BossData._();
 
-  static const bosses = <BossBattleDefinition>[
+  static const standardBosses = <BossBattleDefinition>[
     BossBattleDefinition(
       id: 'slime_boss',
       name: 'Slime Boss',
@@ -68,10 +68,104 @@ class BossData {
     ),
   ];
 
+  static const eliteBosses = <BossBattleDefinition>[
+    BossBattleDefinition(
+      id: 'slime_king',
+      name: 'Slime King',
+      description: 'A crowned slime lord from the deepest pit.',
+      emoji: '👑🟢',
+      spritePath: 'assets/images/bosses/slime_king.png',
+      maxHp: 50000,
+      recommendedPower: 5000,
+      coinReward: 500000,
+      battleTokenReward: 10,
+      unlockRequirementText:
+          'Defeat Slime Boss in Nightmare Mode 3 times',
+      autoBattleSeconds: 40,
+      projectileIntervalMs: 700,
+      projectileSpeed: 280,
+      manualBossMoveSpeed: 88,
+      manualAimAccuracy: 0.72,
+      manualPredictionStrength: 11,
+      manualAimErrorMax: 42,
+      manualAimRecalcMs: 300,
+      isEliteBoss: true,
+      manualBattleOnly: true,
+      unlockNightmareWinsBossId: 'slime_boss',
+      unlockNightmareWinsRequired: 3,
+      rewardAnimalId: 'slime_king',
+      eliteShieldBaseMisses: 9,
+    ),
+    BossBattleDefinition(
+      id: 'egg_guardian',
+      name: 'Egg Guardian',
+      description: 'An ancient armored sentinel of the egg vault.',
+      emoji: '🛡️🥚',
+      spritePath: 'assets/images/bosses/egg_guardian.png',
+      maxHp: 120000,
+      recommendedPower: 12000,
+      coinReward: 750000,
+      battleTokenReward: 12,
+      unlockRequirementText:
+          'Defeat Egg Golem in Nightmare Mode 3 times',
+      autoBattleSeconds: 45,
+      projectileIntervalMs: 620,
+      projectileSpeed: 310,
+      manualBossMoveSpeed: 102,
+      manualAimAccuracy: 0.82,
+      manualPredictionStrength: 13,
+      manualAimErrorMax: 32,
+      manualAimRecalcMs: 280,
+      isEliteBoss: true,
+      manualBattleOnly: true,
+      unlockNightmareWinsBossId: 'egg_golem',
+      unlockNightmareWinsRequired: 3,
+      rewardAnimalId: 'egg_guardian',
+      eliteShieldBaseMisses: 10,
+    ),
+    BossBattleDefinition(
+      id: 'shadow_phoenix',
+      name: 'Shadow Phoenix',
+      description: 'A blazing dark phoenix risen from the coop ashes.',
+      emoji: '🔥🐦‍🔥',
+      spritePath: 'assets/images/bosses/shadow_phoenix.png',
+      maxHp: 250000,
+      recommendedPower: 25000,
+      coinReward: 1000000,
+      battleTokenReward: 15,
+      unlockRequirementText:
+          'Defeat Shadow Rooster in Nightmare Mode 3 times',
+      autoBattleSeconds: 50,
+      projectileIntervalMs: 550,
+      projectileSpeed: 340,
+      manualBossMoveSpeed: 115,
+      manualAimAccuracy: 0.94,
+      manualPredictionStrength: 16,
+      manualAimErrorMax: 18,
+      manualAimRecalcMs: 250,
+      isEliteBoss: true,
+      manualBattleOnly: true,
+      unlockNightmareWinsBossId: 'shadow_rooster',
+      unlockNightmareWinsRequired: 3,
+      rewardAnimalId: 'shadow_phoenix',
+      eliteShieldBaseMisses: 11,
+    ),
+  ];
+
+  static List<BossBattleDefinition> get bosses =>
+      [...standardBosses, ...eliteBosses];
+
   static BossBattleDefinition? bossById(String id) {
     for (final boss in bosses) {
       if (boss.id == id) return boss;
     }
     return null;
+  }
+
+  static String unlockProgressLabel(BossBattleDefinition boss) {
+    if (boss.unlockNightmareWinsBossId == null) return '';
+    final prerequisite = bossById(boss.unlockNightmareWinsBossId!);
+    final name = prerequisite?.name ?? boss.unlockNightmareWinsBossId!;
+    return '$name Nightmare wins';
   }
 }

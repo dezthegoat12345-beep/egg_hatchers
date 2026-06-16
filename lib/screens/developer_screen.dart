@@ -600,6 +600,20 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Unlock Elite Bosses',
+                onPressed: () {
+                  game.devUnlockEliteBosses();
+                  _showMessage('Set Nightmare wins to 3 for elite boss unlock.');
+                },
+              ),
+              _QuickButton(
+                label: 'Grant Elite Boss Animals',
+                onPressed: () {
+                  game.devGrantEliteBossAnimals();
+                  _showMessage('Granted Slime King, Egg Guardian, Shadow Phoenix.');
+                },
+              ),
+              _QuickButton(
                 label: 'Advance auto battle',
                 onPressed: () {
                   game.devAdvanceActiveAutoBattleFight();

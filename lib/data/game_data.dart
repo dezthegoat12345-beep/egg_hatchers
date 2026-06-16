@@ -408,7 +408,42 @@ class GameData {
       emoji: '🌑🐓',
       spritePath: 'assets/images/animals/night_rooster.png',
     ),
+    Animal(
+      id: 'slime_king',
+      name: 'Slime King',
+      rarity: Rarity.legendary,
+      coinsPerSecond: 1800000,
+      emoji: '👑🟢',
+      spritePath: 'assets/images/animals/slime_king.png',
+    ),
+    Animal(
+      id: 'egg_guardian',
+      name: 'Egg Guardian',
+      rarity: Rarity.unknown,
+      coinsPerSecond: 2200000,
+      emoji: '🛡️🥚',
+      spritePath: 'assets/images/animals/egg_guardian.png',
+    ),
+    Animal(
+      id: 'shadow_phoenix',
+      name: 'Shadow Phoenix',
+      rarity: Rarity.boss,
+      coinsPerSecond: 3000000,
+      emoji: '🔥🐦‍🔥',
+      spritePath: 'assets/images/animals/shadow_phoenix.png',
+    ),
   ];
+
+  /// Boss victory rewards are not hatchable and excluded from collection quest totals.
+  static const bossVictoryRewardAnimalIds = {
+    'slime_king',
+    'egg_guardian',
+    'shadow_phoenix',
+  };
+
+  static Iterable<Animal> get collectionQuestAnimals => animals.where(
+        (animal) => !bossVictoryRewardAnimalIds.contains(animal.id),
+      );
 
   static const mutations = <Mutation>[
     Mutation(

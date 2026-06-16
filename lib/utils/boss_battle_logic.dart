@@ -57,11 +57,39 @@ class BossBattleLogic {
   static const double nightmareHitStrengthScale = 1.40;
   static const int nightmareMinProjectileIntervalMs = 325;
 
+  static const int eliteUnlockNightmareWins = 3;
+  static const int eliteShieldMaxMisses = 22;
+  static const double eliteProjectileSpeedStart = 1.85;
+  static const double eliteIntervalScale = 0.45;
+  static const double eliteHitStrengthScale = 1.50;
+  static const int eliteMinProjectileIntervalMs = 300;
+
   static bool isHardPhaseUnlocked(int bossWinCount) =>
       bossWinCount >= hardPhaseUnlockWins;
 
   static bool isNightmareUnlocked(int hardPhaseWinCount) =>
       hardPhaseWinCount >= nightmareUnlockHardWins;
+
+  static bool isEliteBossUnlocked(
+    BossBattleDefinition boss,
+    PlayerState state,
+  ) {
+    if (boss.unlockNightmareWinsBossId == null) return false;
+    final wins =
+        state.nightmareWins[boss.unlockNightmareWinsBossId] ?? 0;
+    return wins >= boss.unlockNightmareWinsRequired;
+  }
+
+  static int eliteUnlockProgress(
+    BossBattleDefinition boss,
+    PlayerState state,
+  ) {
+    if (boss.unlockNightmareWinsBossId == null) return 0;
+    return state.nightmareWins[boss.unlockNightmareWinsBossId] ?? 0;
+  }
+
+  static bool _isEliteDifficulty(BossBattleDefinition? boss) =>
+      boss?.isEliteBoss == true;
 
   /// Manual battle boss lives by id (Auto Battle still uses [BossBattleDefinition.maxHp]).
   static int manualBossLives(BossBattleDefinition boss) {
@@ -72,6 +100,12 @@ class BossBattleLogic {
         return 2;
       case 'shadow_rooster':
         return 3;
+      case 'slime_king':
+        return 3;
+      case 'egg_guardian':
+        return 4;
+      case 'shadow_phoenix':
+        return 5;
       default:
         return 3;
     }
@@ -88,7 +122,11 @@ class BossBattleLogic {
     }
   }
 
-  static double _hitStrengthScale(ManualBattleMode mode) {
+  static double _hitStrengthScale(
+    ManualBattleMode mode, {
+    BossBattleDefinition? boss,
+  }) {
+    if (_isEliteDifficulty(boss)) return eliteHitStrengthScale;
     switch (mode) {
       case ManualBattleMode.hard:
         return hardPhaseHitStrengthScale;
@@ -103,7 +141,14 @@ class BossBattleLogic {
   static int manualRequiredMisses(
     int successfulEggHits, {
     ManualBattleMode mode = ManualBattleMode.normal,
+    BossBattleDefinition? boss,
   }) {
+    if (_isEliteDifficulty(boss) && boss!.eliteShieldBaseMisses != null) {
+      return min(
+        eliteShieldMaxMisses,
+        boss.eliteShieldBaseMisses! + successfulEggHits * 2,
+      );
+    }
     final (base, increment, cap) = switch (mode) {
       ManualBattleMode.hard => (
           hardPhaseShieldBaseMisses,
@@ -129,13 +174,16 @@ class BossBattleLogic {
     required double elapsedSeconds,
     required int bossHitCount,
     ManualBattleMode mode = ManualBattleMode.normal,
+    BossBattleDefinition? boss,
   }) {
-    final base = switch (mode) {
-      ManualBattleMode.hard => hardPhaseProjectileSpeedStart,
-      ManualBattleMode.nightmare => nightmareProjectileSpeedStart,
-      ManualBattleMode.normal => 1.0,
-    };
-    final hitStrength = _hitStrengthScale(mode);
+    final base = _isEliteDifficulty(boss)
+        ? eliteProjectileSpeedStart
+        : switch (mode) {
+            ManualBattleMode.hard => hardPhaseProjectileSpeedStart,
+            ManualBattleMode.nightmare => nightmareProjectileSpeedStart,
+            ManualBattleMode.normal => 1.0,
+          };
+    final hitStrength = _hitStrengthScale(mode, boss: boss);
     final hitPerBump = 0.15 * hitStrength;
     final hitTimeBump = 0.10 * hitStrength;
     final multiplier = base +
@@ -148,83 +196,106 @@ class BossBattleLogic {
   static double manualBossMoveSpeedMultiplier(
     int bossHitCount, {
     ManualBattleMode mode = ManualBattleMode.normal,
+    BossBattleDefinition? boss,
   }) {
-    final perHit = 0.15 * _hitStrengthScale(mode);
+    final perHit = 0.15 * _hitStrengthScale(mode, boss: boss);
     return min(manualBossMoveSpeedCap, 1.0 + bossHitCount * perHit);
   }
 
   static int manualProjectileIntervalMs(
-    BossBattleDefinition boss,
+    BossBattleDefinition bossDef,
     int bossHitCount, {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final baseInterval = switch (mode) {
-      ManualBattleMode.hard =>
-        (boss.projectileIntervalMs * hardPhaseIntervalScale).round(),
-      ManualBattleMode.nightmare =>
-        (boss.projectileIntervalMs * nightmareIntervalScale).round(),
-      ManualBattleMode.normal => boss.projectileIntervalMs,
-    };
-    final hitScale = 0.12 * _hitStrengthScale(mode);
+    final baseInterval = _isEliteDifficulty(bossDef)
+        ? (bossDef.projectileIntervalMs * eliteIntervalScale).round()
+        : switch (mode) {
+            ManualBattleMode.hard =>
+              (bossDef.projectileIntervalMs * hardPhaseIntervalScale).round(),
+            ManualBattleMode.nightmare => (bossDef.projectileIntervalMs *
+                    nightmareIntervalScale)
+                .round(),
+            ManualBattleMode.normal => bossDef.projectileIntervalMs,
+          };
+    final hitScale = 0.12 * _hitStrengthScale(mode, boss: bossDef);
     final scaled = baseInterval / (1 + bossHitCount * hitScale);
-    final minInterval = mode == ManualBattleMode.nightmare
-        ? nightmareMinProjectileIntervalMs
-        : manualMinProjectileIntervalMs;
+    final minInterval = _isEliteDifficulty(bossDef)
+        ? eliteMinProjectileIntervalMs
+        : mode == ManualBattleMode.nightmare
+            ? nightmareMinProjectileIntervalMs
+            : manualMinProjectileIntervalMs;
     return max(minInterval, scaled.round());
   }
 
   static double manualBossMoveSpeed(
-    BossBattleDefinition boss,
+    BossBattleDefinition bossDef,
     int bossHitCount, {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) {
-    final trackingScale = switch (mode) {
-      ManualBattleMode.hard => hardPhaseTrackingSpeedScale,
-      ManualBattleMode.nightmare => nightmareTrackingSpeedScale,
-      ManualBattleMode.normal => 1.0,
-    };
-    return boss.manualBossMoveSpeed *
-        manualBossMoveSpeedMultiplier(bossHitCount, mode: mode) *
+    final trackingScale = _isEliteDifficulty(bossDef)
+        ? nightmareTrackingSpeedScale * 1.08
+        : switch (mode) {
+            ManualBattleMode.hard => hardPhaseTrackingSpeedScale,
+            ManualBattleMode.nightmare => nightmareTrackingSpeedScale,
+            ManualBattleMode.normal => 1.0,
+          };
+    return bossDef.manualBossMoveSpeed *
+        manualBossMoveSpeedMultiplier(
+          bossHitCount,
+          mode: mode,
+          boss: bossDef,
+        ) *
         trackingScale;
   }
 
   static double manualAimErrorMax(
-    BossBattleDefinition boss, {
+    BossBattleDefinition bossDef, {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) {
+    if (_isEliteDifficulty(bossDef)) {
+      return bossDef.manualAimErrorMax * nightmareAimErrorScale * 0.85;
+    }
     return switch (mode) {
       ManualBattleMode.hard =>
-        boss.manualAimErrorMax * hardPhaseAimErrorScale,
+        bossDef.manualAimErrorMax * hardPhaseAimErrorScale,
       ManualBattleMode.nightmare =>
-        boss.manualAimErrorMax * nightmareAimErrorScale,
-      ManualBattleMode.normal => boss.manualAimErrorMax,
+        bossDef.manualAimErrorMax * nightmareAimErrorScale,
+      ManualBattleMode.normal => bossDef.manualAimErrorMax,
     };
   }
 
   static double manualPredictionStrength(
-    BossBattleDefinition boss, {
+    BossBattleDefinition bossDef, {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) {
+    if (_isEliteDifficulty(bossDef)) {
+      return bossDef.manualPredictionStrength *
+          nightmarePredictionScale *
+          1.05;
+    }
     return switch (mode) {
       ManualBattleMode.hard =>
-        boss.manualPredictionStrength * hardPhasePredictionScale,
+        bossDef.manualPredictionStrength * hardPhasePredictionScale,
       ManualBattleMode.nightmare =>
-        boss.manualPredictionStrength * nightmarePredictionScale,
-      ManualBattleMode.normal => boss.manualPredictionStrength,
+        bossDef.manualPredictionStrength * nightmarePredictionScale,
+      ManualBattleMode.normal => bossDef.manualPredictionStrength,
     };
   }
 
   static double manualAimAccuracy(
-    BossBattleDefinition boss, {
+    BossBattleDefinition bossDef, {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) {
+    if (_isEliteDifficulty(bossDef)) {
+      return min(1.0, bossDef.manualAimAccuracy * nightmarePredictionScale);
+    }
     final scale = switch (mode) {
       ManualBattleMode.hard => hardPhasePredictionScale,
       ManualBattleMode.nightmare => nightmarePredictionScale,
       ManualBattleMode.normal => 1.0,
     };
-    if (scale == 1.0) return boss.manualAimAccuracy;
-    return min(1.0, boss.manualAimAccuracy * scale);
+    if (scale == 1.0) return bossDef.manualAimAccuracy;
+    return min(1.0, bossDef.manualAimAccuracy * scale);
   }
 
   /// Computes a clamped horizontal aim target for manual battle boss tracking.
@@ -253,6 +324,9 @@ class BossBattleLogic {
   }
 
   static bool isBossUnlocked(BossBattleDefinition boss, PlayerState state) {
+    if (boss.unlockNightmareWinsBossId != null) {
+      return isEliteBossUnlocked(boss, state);
+    }
     switch (boss.id) {
       case 'slime_boss':
         return true;

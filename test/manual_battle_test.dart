@@ -1,9 +1,36 @@
 import 'package:egg_hatchers/data/boss_data.dart';
 import 'package:egg_hatchers/models/boss_battle.dart';
+import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/utils/boss_battle_logic.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('elite boss unlock requires three nightmare wins on prerequisite', () {
+    final slimeKing = BossData.bossById('slime_king')!;
+    final empty = PlayerState.initial();
+    expect(BossBattleLogic.isEliteBossUnlocked(slimeKing, empty), isFalse);
+
+    final unlocked = empty.copyWith(
+      nightmareWins: const {'slime_boss': 3},
+    );
+    expect(BossBattleLogic.isEliteBossUnlocked(slimeKing, unlocked), isTrue);
+  });
+
+  test('elite boss lives', () {
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('slime_king')!),
+      3,
+    );
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('egg_guardian')!),
+      4,
+    );
+    expect(
+      BossBattleLogic.manualBossLives(BossData.bossById('shadow_phoenix')!),
+      5,
+    );
+  });
+
   test('manual boss projectile damage uses half recommended power minimum 10', () {
     final slime = BossData.bossById('slime_boss')!;
     expect(BossBattleLogic.manualBossProjectileDamage(slime), 50);

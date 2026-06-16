@@ -28,6 +28,12 @@ class BossBattleDefinition {
     this.manualPredictionStrength = 8,
     this.manualAimErrorMax = 60,
     this.manualAimRecalcMs = 400,
+    this.isEliteBoss = false,
+    this.manualBattleOnly = false,
+    this.unlockNightmareWinsBossId,
+    this.unlockNightmareWinsRequired = 3,
+    this.rewardAnimalId,
+    this.eliteShieldBaseMisses,
   });
 
   final String id;
@@ -55,6 +61,17 @@ class BossBattleDefinition {
   final double manualAimErrorMax;
   /// Milliseconds between aim target recalculations.
   final int manualAimRecalcMs;
+  /// Post-Nightmare elite boss unlocked via nightmare wins on another boss.
+  final bool isEliteBoss;
+  /// When true, only manual Battle is offered (no Auto/Hard/Nightmare).
+  final bool manualBattleOnly;
+  /// Boss id whose nightmare win count gates this boss.
+  final String? unlockNightmareWinsBossId;
+  final int unlockNightmareWinsRequired;
+  /// Animal id granted on victory (base mutation stack).
+  final String? rewardAnimalId;
+  /// Initial shield miss requirement for elite bosses.
+  final int? eliteShieldBaseMisses;
 }
 
 /// One line in the auto-battle log.

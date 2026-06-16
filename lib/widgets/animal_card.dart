@@ -145,9 +145,15 @@ class AnimalCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: borderColor.withValues(
-                        alpha: animal.rarity == Rarity.unknown ? 0.95 : 0.45,
+                        alpha: (animal.rarity == Rarity.unknown ||
+                                animal.rarity == Rarity.boss)
+                            ? 0.95
+                            : 0.45,
                       ),
-                      width: animal.rarity == Rarity.unknown ? 2.5 : 2,
+                      width: (animal.rarity == Rarity.unknown ||
+                              animal.rarity == Rarity.boss)
+                          ? 2.5
+                          : 2,
                     ),
                   ),
                   child: GameSprite(
@@ -489,7 +495,10 @@ class _BattlingAnimalCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: borderColor.withValues(alpha: 0.55),
-                          width: animal.rarity == Rarity.unknown ? 2 : 1.5,
+                          width: (animal.rarity == Rarity.unknown ||
+                                  animal.rarity == Rarity.boss)
+                              ? 2
+                              : 1.5,
                         ),
                       ),
                       child: Opacity(
@@ -651,7 +660,8 @@ class _RarityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUnknown = rarity == Rarity.unknown;
+    final isSpecialRarity =
+        rarity == Rarity.unknown || rarity == Rarity.boss;
     final color = GameTheme.rarityAccent(rarity);
     final borderColor = GameTheme.rarityBorderColor(rarity, theme);
     final textColor = GameTheme.rarityBadgeTextColor(rarity, theme);
@@ -659,7 +669,7 @@ class _RarityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: isUnknown
+        gradient: isSpecialRarity
             ? null
             : LinearGradient(
                 colors: [
@@ -667,13 +677,13 @@ class _RarityBadge extends StatelessWidget {
                   color.withValues(alpha: 0.08),
                 ],
               ),
-        color: isUnknown ? GameTheme.rarityBadgeFill(rarity) : null,
+        color: isSpecialRarity ? GameTheme.rarityBadgeFill(rarity) : null,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: borderColor,
-          width: isUnknown ? 2 : 1.5,
+          width: rarity == Rarity.boss ? 2 : isSpecialRarity ? 2 : 1.5,
         ),
-        boxShadow: isUnknown
+        boxShadow: isSpecialRarity
             ? GameTheme.rarityCardShadows(rarity, theme)
             : null,
       ),
@@ -683,7 +693,7 @@ class _RarityBadge extends StatelessWidget {
           color: textColor,
           fontWeight: FontWeight.bold,
           fontSize: 12,
-          letterSpacing: isUnknown ? 0.5 : 0,
+          letterSpacing: isSpecialRarity ? 0.5 : 0,
         ),
       ),
     );

@@ -172,6 +172,7 @@ void main() {
 
   test('every animal has a sprite rating reference', () {
     for (final animal in GameData.animals) {
+      if (GameData.bossVictoryRewardAnimalIds.contains(animal.id)) continue;
       expect(
         SpriteReferenceData.hasReference(animal.id),
         isTrue,
@@ -184,6 +185,7 @@ void main() {
     const currentCoins = 1_000_000;
 
     for (final animal in GameData.animals) {
+      if (GameData.bossVictoryRewardAnimalIds.contains(animal.id)) continue;
       final perfectReward = SpriteRatingLogic.calculateReward(
         animalId: animal.id,
         score: 10,

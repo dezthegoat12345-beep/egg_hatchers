@@ -356,7 +356,11 @@ void main() {
       ids.sublist(45, 48),
       ['slime_pet', 'egg_golem_pet', 'night_rooster'],
     );
-    expect(ids.last, 'night_rooster');
+    expect(
+      ids.sublist(48, 51),
+      ['slime_king', 'egg_guardian', 'shadow_phoenix'],
+    );
+    expect(ids.last, 'shadow_phoenix');
   });
 
   test('hatchable animals exclude locked selections for shop', () {

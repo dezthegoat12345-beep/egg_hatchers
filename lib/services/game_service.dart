@@ -615,6 +615,12 @@ class GameService extends ChangeNotifier {
 
   int nightmareWinCount(String bossId) => _state.nightmareWins[bossId] ?? 0;
 
+  int eliteBossUnlockProgress(String eliteBossId) {
+    final boss = BossData.bossById(eliteBossId);
+    if (boss?.unlockNightmareWinsBossId == null) return 0;
+    return nightmareWinCount(boss!.unlockNightmareWinsBossId!);
+  }
+
   int get totalNightmareWins =>
       _state.nightmareWins.values.fold<int>(0, (sum, count) => sum + count);
 
@@ -667,6 +673,7 @@ class GameService extends ChangeNotifier {
 
     final boss = BossBattleLogic.bossById(bossId);
     if (boss == null) return false;
+    if (boss.manualBattleOnly) return false;
     if (!BossBattleLogic.isBossUnlocked(boss, _state)) return false;
 
     final owned = ownedAnimal(
@@ -962,11 +969,42 @@ class GameService extends ChangeNotifier {
     save();
   }
 
+  void grantBossRewardAnimal(String animalId) {
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return;
+
+    final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final existingIndex = _indexOfOwnedStack(
+      updatedAnimals,
+      animalId,
+      'none',
+      isProtected: false,
+    );
+
+    if (existingIndex >= 0) {
+      final existing = updatedAnimals[existingIndex];
+      updatedAnimals[existingIndex] =
+          existing.copyWith(quantity: existing.quantity + 1);
+    } else {
+      updatedAnimals.add(
+        OwnedAnimal(
+          animalId: animalId,
+          quantity: 1,
+          level: 1,
+          mutationId: 'none',
+        ),
+      );
+    }
+
+    _state = _state.copyWith(ownedAnimals: updatedAnimals);
+  }
+
   /// Applies win rewards and records battle quest progress after animation.
   bool applyBossBattleRewards(
     String bossId,
     BossBattleResult result, {
     ManualBattleMode mode = ManualBattleMode.normal,
+    String? rewardAnimalId,
   }) {
     var progress = _state.questProgress;
     if (result.won) {
@@ -1000,6 +1038,9 @@ class GameService extends ChangeNotifier {
     } else if (mode == ManualBattleMode.nightmare) {
       nightmareWins = Map<String, int>.from(nightmareWins);
       nightmareWins[bossId] = (nightmareWins[bossId] ?? 0) + 1;
+    }
+    if (rewardAnimalId != null) {
+      grantBossRewardAnimal(rewardAnimalId);
     }
     _state = _state.copyWith(
       coins: _state.coins + result.coinReward,
@@ -1521,7 +1562,7 @@ class GameService extends ChangeNotifier {
 
   void devUnlockHardPhases() {
     final wins = Map<String, int>.from(_state.bossWins);
-    for (final boss in BossData.bosses) {
+    for (final boss in BossData.standardBosses) {
       wins[boss.id] = max(
         wins[boss.id] ?? 0,
         BossBattleLogic.hardPhaseUnlockWins,
@@ -1534,13 +1575,37 @@ class GameService extends ChangeNotifier {
 
   void devUnlockNightmareModes() {
     final hardWins = Map<String, int>.from(_state.hardPhaseWins);
-    for (final boss in BossData.bosses) {
+    for (final boss in BossData.standardBosses) {
       hardWins[boss.id] = max(
         hardWins[boss.id] ?? 0,
         BossBattleLogic.nightmareUnlockHardWins,
       );
     }
     _state = _state.copyWith(hardPhaseWins: hardWins);
+    notifyListeners();
+    save();
+  }
+
+  void devUnlockEliteBosses() {
+    final nightmareWins = Map<String, int>.from(_state.nightmareWins);
+    for (final boss in BossData.standardBosses) {
+      nightmareWins[boss.id] = max(
+        nightmareWins[boss.id] ?? 0,
+        BossBattleLogic.eliteUnlockNightmareWins,
+      );
+    }
+    _state = _state.copyWith(nightmareWins: nightmareWins);
+    notifyListeners();
+    save();
+  }
+
+  void devGrantEliteBossAnimals() {
+    for (final boss in BossData.eliteBosses) {
+      final animalId = boss.rewardAnimalId;
+      if (animalId != null) {
+        grantBossRewardAnimal(animalId);
+      }
+    }
     notifyListeners();
     save();
   }

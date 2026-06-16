@@ -6,6 +6,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Boss rarity is above ??? in sort order', () {
+    expect(Rarity.boss.sortOrder, greaterThan(Rarity.unknown.sortOrder));
+    expect(Rarity.boss.label, 'Boss');
+    expect(Rarity.boss.id, 'boss');
+  });
+
+  test('shadow phoenix uses Boss rarity', () {
+    expect(
+      GameData.animalById('shadow_phoenix')!.rarity,
+      Rarity.boss,
+    );
+  });
+
+  test('elite boss reward animals exist', () {
+    expect(GameData.animalById('slime_king')!.rarity, Rarity.legendary);
+    expect(GameData.animalById('egg_guardian')!.rarity, Rarity.unknown);
+  });
+
   test('??? rarity is above mythic in sort order', () {
     expect(Rarity.unknown.sortOrder, greaterThan(Rarity.mythic.sortOrder));
     expect(Rarity.unknown.label, '???');

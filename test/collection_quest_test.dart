@@ -16,7 +16,8 @@ void main() {
       QuestData.all.firstWhere((q) => q.id == 'late_complete_collection');
 
   test('collection quest target matches total base animals', () {
-    expect(collectionQuest().target, GameData.animals.length);
+    expect(collectionQuest().target, CollectionQuestLogic.totalBaseAnimalCount);
+    expect(collectionQuest().target, 48);
   });
 
   test('mutation variants count toward base animal collection', () {
@@ -30,7 +31,7 @@ void main() {
     expect(CollectionQuestLogic.collectedBaseAnimalCount(state), 2);
     expect(
       QuestLogic.progressText(collectionQuest(), state),
-      'Collected 2 / ${GameData.animals.length} animals',
+      'Collected 2 / ${collectionQuest().target} animals',
     );
   });
 

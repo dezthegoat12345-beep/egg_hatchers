@@ -8,13 +8,16 @@ enum Rarity {
   epic,
   legendary,
   mythic,
-  unknown;
+  unknown,
+  boss;
 
   /// Stable id string (used for display keys).
   String get id {
     switch (this) {
       case Rarity.unknown:
         return '???';
+      case Rarity.boss:
+        return 'boss';
       default:
         return name;
     }
@@ -36,6 +39,8 @@ enum Rarity {
         return 'Mythic';
       case Rarity.unknown:
         return '???';
+      case Rarity.boss:
+        return 'Boss';
     }
   }
 
@@ -56,12 +61,16 @@ enum Rarity {
         return Colors.cyan;
       case Rarity.unknown:
         return Colors.black;
+      case Rarity.boss:
+        return const Color(0xFF0D47A1);
     }
   }
 
   /// Higher sort values appear first in collection lists.
   int get sortOrder {
     switch (this) {
+      case Rarity.boss:
+        return 8;
       case Rarity.unknown:
         return 7;
       case Rarity.mythic:

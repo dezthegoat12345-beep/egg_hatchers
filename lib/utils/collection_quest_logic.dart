@@ -9,13 +9,13 @@ class CollectionQuestLogic {
   static int collectedBaseAnimalCount(PlayerState state) {
     final ownedIds = state.ownedAnimals.map((owned) => owned.animalId).toSet();
     var count = 0;
-    for (final animal in GameData.animals) {
+    for (final animal in GameData.collectionQuestAnimals) {
       if (ownedIds.contains(animal.id)) count++;
     }
     return count;
   }
 
-  static int get totalBaseAnimalCount => GameData.animals.length;
+  static int get totalBaseAnimalCount => GameData.collectionQuestAnimals.length;
 
   static bool hasCollectedAllBaseAnimals(PlayerState state) {
     return collectedBaseAnimalCount(state) >= totalBaseAnimalCount;

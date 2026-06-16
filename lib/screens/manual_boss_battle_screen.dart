@@ -49,6 +49,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     with SingleTickerProviderStateMixin {
   static const _playerSpeed = 280.0;
   static const _eggSpeed = 420.0;
+  static const _eggHomingLerp = 0.08;
+  static const _eggMaxHomingSpeed = 220.0;
   static const _playerSize = 48.0;
   static const _bossSize = 80.0;
   static const _bossTop = 8.0;
@@ -93,6 +95,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _won = false;
   var _rewardsApplied = false;
   var _resultDialogShown = false;
+  String? _earnedRewardAnimalName;
 
   Duration? _lastTickElapsed;
 
@@ -107,6 +110,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   int get _requiredMisses => BossBattleLogic.manualRequiredMisses(
         _successfulEggHits,
         mode: _mode,
+        boss: boss,
       );
 
   double get _projectileSpeedMultiplier =>
@@ -114,6 +118,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         elapsedSeconds: _elapsedSeconds,
         bossHitCount: _successfulEggHits,
         mode: _mode,
+        boss: boss,
       );
 
   int get _currentProjectileIntervalMs =>
@@ -177,6 +182,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _won = false;
     _rewardsApplied = false;
     _resultDialogShown = false;
+    _earnedRewardAnimalName = null;
     _lastTickElapsed = null;
     _bossProjectiles.clear();
     _activeEgg = null;
@@ -351,6 +357,13 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     egg.y -= _eggSpeed * dt;
 
+    final dx = _bossX - egg.x;
+    if (dx.abs() > 0.5) {
+      final maxStep = _eggMaxHomingSpeed * dt;
+      final homingStep = (dx * _eggHomingLerp).clamp(-maxStep, maxStep);
+      egg.x += homingStep;
+    }
+
     final hitBoss = egg.y <= _bossCenterY + _bossSize / 2 &&
         (egg.x - _bossX).abs() < _bossHitHalfWidth + _projectileRadius;
 
@@ -450,6 +463,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     final coinReward = _won ? boss.coinReward * rewardMultiplier : 0;
     final tokenReward = _won ? boss.battleTokenReward * rewardMultiplier : 0;
 
+    final rewardAnimal = _won && boss.rewardAnimalId != null
+        ? GameData.animalById(boss.rewardAnimalId!)
+        : null;
+
     final result = BossBattleResult(
       won: _won,
       rounds: 0,
@@ -467,7 +484,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       boss.id,
       result,
       mode: _won ? _mode : ManualBattleMode.normal,
+      rewardAnimalId: _won ? boss.rewardAnimalId : null,
     );
+    _earnedRewardAnimalName = rewardAnimal?.name;
   }
 
   Future<void> _showResultDialog() async {
@@ -493,6 +512,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         bossHitsLanded: _bossHitsLanded,
         coinReward: _won ? boss.coinReward * rewardMultiplier : 0,
         tokenReward: _won ? boss.battleTokenReward * rewardMultiplier : 0,
+        rewardAnimalName: _earnedRewardAnimalName,
         onBackToBattles: () {
           Navigator.pop(dialogContext);
           if (mounted) Navigator.pop(context);
@@ -1111,6 +1131,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.bossHitsLanded,
     required this.coinReward,
     required this.tokenReward,
+    this.rewardAnimalName,
     required this.onBackToBattles,
     required this.onBattleAgain,
   });
@@ -1126,6 +1147,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final int bossHitsLanded;
   final int coinReward;
   final int tokenReward;
+  final String? rewardAnimalName;
   final VoidCallback onBackToBattles;
   final VoidCallback onBattleAgain;
 
@@ -1249,6 +1271,16 @@ class _ManualBattleResultDialog extends StatelessWidget {
                 '🪙 ${formatCoins(coinReward)} · ⚔️ +$tokenReward',
                 style: TextStyle(color: theme.cardTextPrimaryColor),
               ),
+              if (rewardAnimalName != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'You earned $rewardAnimalName!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.secondaryColor,
+                  ),
+                ),
+              ],
             ],
           ],
         ),
