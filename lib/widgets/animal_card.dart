@@ -59,8 +59,9 @@ class AnimalCard extends StatelessWidget {
         ? animal.name
         : activeMutation.fullName(animal);
     final rarityColor = GameTheme.rarityAccent(animal.rarity);
+    final rarityBorder = GameTheme.rarityBorderColor(animal.rarity, theme);
     final mutationColor = GameTheme.mutationAccent(activeMutation.id);
-    final borderColor = activeMutation.isNormal ? rarityColor : mutationColor;
+    final borderColor = activeMutation.isNormal ? rarityBorder : mutationColor;
     final textPrimary = activeMutation.isNormal
         ? theme.cardTextPrimaryColor
         : const Color(0xFF5D4037);
@@ -75,6 +76,9 @@ class AnimalCard extends StatelessWidget {
         backgroundColor: activeMutation.isNormal
             ? null
             : GameTheme.mutationTint(activeMutation.id),
+        extraShadows: activeMutation.isNormal
+            ? GameTheme.rarityCardShadows(animal.rarity, theme)
+            : null,
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? 14 : 18),
@@ -92,8 +96,10 @@ class AnimalCard extends StatelessWidget {
                     color: rarityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: borderColor.withValues(alpha: 0.45),
-                      width: 2,
+                      color: borderColor.withValues(
+                        alpha: animal.rarity == Rarity.unknown ? 0.95 : 0.45,
+                      ),
+                      width: animal.rarity == Rarity.unknown ? 2.5 : 2,
                     ),
                   ),
                   child: GameSprite(
@@ -123,7 +129,7 @@ class AnimalCard extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          _RarityBadge(rarity: animal.rarity),
+                          _RarityBadge(rarity: animal.rarity, theme: theme),
                           if (!activeMutation.isNormal)
                             _MutationBadge(mutation: activeMutation),
                           if (isProtected)
@@ -389,31 +395,49 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _RarityBadge extends StatelessWidget {
-  const _RarityBadge({required this.rarity});
+  const _RarityBadge({
+    required this.rarity,
+    required this.theme,
+  });
 
   final Rarity rarity;
+  final BackgroundTheme theme;
 
   @override
   Widget build(BuildContext context) {
+    final isUnknown = rarity == Rarity.unknown;
     final color = GameTheme.rarityAccent(rarity);
+    final borderColor = GameTheme.rarityBorderColor(rarity, theme);
+    final textColor = GameTheme.rarityBadgeTextColor(rarity, theme);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.2),
-            color.withValues(alpha: 0.08),
-          ],
-        ),
+        gradient: isUnknown
+            ? null
+            : LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.2),
+                  color.withValues(alpha: 0.08),
+                ],
+              ),
+        color: isUnknown ? GameTheme.rarityBadgeFill(rarity) : null,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color, width: 1.5),
+        border: Border.all(
+          color: borderColor,
+          width: isUnknown ? 2 : 1.5,
+        ),
+        boxShadow: isUnknown
+            ? GameTheme.rarityCardShadows(rarity, theme)
+            : null,
       ),
       child: Text(
         rarity.label,
         style: TextStyle(
-          color: color,
+          color: textColor,
           fontWeight: FontWeight.bold,
           fontSize: 12,
+          letterSpacing: isUnknown ? 0.5 : 0,
         ),
       ),
     );

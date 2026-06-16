@@ -240,15 +240,19 @@ class EggCard extends StatelessWidget {
                       '${animal.name} · '
                       '${BuiltInEggLogic.roundedChancePercent(egg, animal.id)}%',
                     ),
-                    backgroundColor: GameTheme.rarityAccent(animal.rarity)
-                        .withValues(alpha: 0.12),
+                    backgroundColor: animal.rarity == Rarity.unknown
+                        ? GameTheme.rarityBadgeFill(animal.rarity)
+                        : GameTheme.rarityAccent(animal.rarity)
+                            .withValues(alpha: 0.12),
                     side: BorderSide(
-                      color: GameTheme.rarityAccent(animal.rarity),
-                      width: 1.5,
+                      color: GameTheme.rarityBorderColor(animal.rarity, theme),
+                      width: animal.rarity == Rarity.unknown ? 2 : 1.5,
                     ),
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: GameTheme.rarityAccent(animal.rarity),
+                      color: animal.rarity == Rarity.unknown
+                          ? GameTheme.rarityBadgeTextColor(animal.rarity, theme)
+                          : GameTheme.rarityAccent(animal.rarity),
                       fontSize: 13,
                     ),
                   ),

@@ -379,7 +379,7 @@ class GameData {
     Animal(
       id: 'nebula_hydra',
       name: 'Nebula Hydra',
-      rarity: Rarity.mythic,
+      rarity: Rarity.unknown,
       coinsPerSecond: 450000,
       emoji: '🐉🌌',
       spritePath: 'assets/images/animals/nebula_hydra.png',
@@ -395,7 +395,7 @@ class GameData {
     Animal(
       id: 'egg_golem_pet',
       name: 'Egg Golem Pet',
-      rarity: Rarity.rare,
+      rarity: Rarity.legendary,
       coinsPerSecond: 900000,
       emoji: '🪨🥚',
       spritePath: 'assets/images/animals/egg_golem_pet.png',
@@ -403,7 +403,7 @@ class GameData {
     Animal(
       id: 'night_rooster',
       name: 'Night Rooster',
-      rarity: Rarity.mythic,
+      rarity: Rarity.unknown,
       coinsPerSecond: 1500000,
       emoji: '🌑🐓',
       spritePath: 'assets/images/animals/night_rooster.png',
