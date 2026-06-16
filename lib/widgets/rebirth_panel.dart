@@ -8,7 +8,7 @@ import '../utils/rebirth_logic.dart';
 import '../utils/snackbar_utils.dart';
 
 /// Hatchery panel for rebirth status and confirmation.
-class RebirthPanel extends StatelessWidget {
+class RebirthPanel extends StatefulWidget {
   const RebirthPanel({
     super.key,
     required this.game,
@@ -17,6 +17,16 @@ class RebirthPanel extends StatelessWidget {
 
   final GameService game;
   final BackgroundTheme theme;
+
+  @override
+  State<RebirthPanel> createState() => _RebirthPanelState();
+}
+
+class _RebirthPanelState extends State<RebirthPanel> {
+  bool _rebirthDialogOpen = false;
+
+  GameService get game => widget.game;
+  BackgroundTheme get theme => widget.theme;
 
   Future<void> _onRebirthPressed(BuildContext context) async {
     if (!game.canRebirth) {
@@ -29,23 +39,33 @@ class RebirthPanel extends StatelessWidget {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => _RebirthConfirmDialog(
-        game: game,
-        theme: theme,
-      ),
-    );
+    if (_rebirthDialogOpen) return;
 
-    if (confirmed == true && context.mounted) {
-      final success = game.performRebirth();
-      if (success && context.mounted) {
-        showGameSnackBar(
-          context,
-          message: 'Rebirth complete! Permanent income boost increased.',
-          backgroundColor: theme.primaryColor,
-        );
+    _rebirthDialogOpen = true;
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => _RebirthConfirmDialog(
+          game: game,
+          theme: theme,
+        ),
+      );
+
+      if (!context.mounted) return;
+
+      if (confirmed == true) {
+        final success = game.performRebirth();
+        if (success && context.mounted) {
+          showGameSnackBar(
+            context,
+            message: 'Rebirth complete! Permanent income boost increased.',
+            backgroundColor: theme.primaryColor,
+          );
+        }
       }
+    } finally {
+      _rebirthDialogOpen = false;
     }
   }
 
@@ -185,56 +205,79 @@ class _RebirthConfirmDialog extends StatelessWidget {
     final requirement = game.rebirthRequirement;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text(
-        'Rebirth?',
-        style: TextStyle(fontWeight: FontWeight.bold),
+      backgroundColor: theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GameTheme.cardRadius),
       ),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Rebirth resets your coins, animals, upgrades, Luck, and quest '
-              'progress, but gives a permanent +25% income boost. Secret '
-              'reward animals are kept.',
-              style: TextStyle(height: 1.4),
+      title: Text(
+        'Rebirth?',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: theme.cardTextPrimaryColor,
+        ),
+      ),
+      content: SafeArea(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rebirth resets your coins, animals, upgrades, Luck, and quest '
+                  'progress, but gives a permanent +25% income boost. Secret '
+                  'reward animals are kept.',
+                  style: TextStyle(
+                    height: 1.4,
+                    color: theme.cardTextSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _DialogRow(
+                  label: 'Rebirth Level',
+                  current: '$currentLevel',
+                  next: '$newLevel',
+                  theme: theme,
+                ),
+                const SizedBox(height: 8),
+                _DialogRow(
+                  label: 'Income Multiplier',
+                  current: RebirthLogic.formatMultiplier(currentMultiplier),
+                  next: RebirthLogic.formatMultiplier(newMultiplier),
+                  theme: theme,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Requirement met: ${formatCoins(game.lifetimeCoinsEarned)} / '
+                  '${formatCoins(requirement)} lifetime coins',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.cardTextSecondaryColor,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _DialogRow(
-              label: 'Rebirth Level',
-              current: '$currentLevel',
-              next: '$newLevel',
-            ),
-            const SizedBox(height: 8),
-            _DialogRow(
-              label: 'Income Multiplier',
-              current: RebirthLogic.formatMultiplier(currentMultiplier),
-              next: RebirthLogic.formatMultiplier(newMultiplier),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Requirement met: ${formatCoins(game.lifetimeCoinsEarned)} / '
-              '${formatCoins(requirement)} lifetime coins',
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.cardTextSecondaryColor,
-                height: 1.35,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(
+            foregroundColor: theme.cardTextSecondaryColor,
+          ),
           child: const Text('Cancel'),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          style: GameTheme.filledButton(theme, height: 40),
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.panelAccentColor,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+          ),
           child: const Text('Rebirth'),
         ),
       ],
@@ -247,66 +290,40 @@ class _DialogRow extends StatelessWidget {
     required this.label,
     required this.current,
     required this.next,
+    required this.theme,
   });
 
   final String label;
   final String current;
   final String next;
+  final BackgroundTheme theme;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final stackValues = constraints.maxWidth < 300;
-
-        if (stackValues) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Expanded(child: Text(current)),
-                  const Text('→'),
-                  Expanded(
-                    child: Text(
-                      next,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        }
-
-        return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: theme.cardTextPrimaryColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
           children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            Expanded(
-              child: Text(current, textAlign: TextAlign.center),
-            ),
+            Expanded(child: Text(current)),
             const Text('→'),
             Expanded(
               child: Text(
                 next,
-                textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }
