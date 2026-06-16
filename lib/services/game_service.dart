@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../data/game_data.dart';
 import '../data/quest_data.dart';
 import '../models/animal.dart';
+import '../models/boss_battle.dart';
 import '../models/custom_egg.dart';
 import '../models/egg.dart';
 import '../models/forced_hatch_result.dart';
@@ -21,6 +22,7 @@ import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
 import '../utils/built_in_egg_logic.dart';
+import '../utils/boss_battle_logic.dart';
 import '../utils/secret_space_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
@@ -172,6 +174,10 @@ class GameService extends ChangeNotifier {
   bool get canRebirth => RebirthLogic.canRebirth(_state.lifetimeCoinsEarned);
   int get rebirthRequirement => RebirthLogic.unlockLifetimeCoins;
   bool get secretSpaceEggClaimed => _state.secretSpaceEggClaimed;
+  int get battleTokens => _state.battleTokens;
+  Map<String, int> get bossWins => Map.unmodifiable(_state.bossWins);
+  int get totalBossWins =>
+      _state.bossWins.values.fold<int>(0, (sum, count) => sum + count);
   QuestProgress get questProgress => _state.questProgress;
   List<OwnedAnimal> get ownedAnimals => List.unmodifiable(_state.ownedAnimals);
 
@@ -432,6 +438,8 @@ class GameService extends ChangeNotifier {
     final newRebirthLevel = _state.rebirthLevel + 1;
     final secretClaimed = _state.secretSpaceEggClaimed;
     final devToolsUnlocked = _state.fullDeveloperToolsUnlocked;
+    final battleTokens = _state.battleTokens;
+    final bossWins = _state.bossWins;
     final protectedAnimals = _state.ownedAnimals
         .where((owned) => owned.isProtected)
         .toList();
@@ -445,6 +453,8 @@ class GameService extends ChangeNotifier {
       questProgress: QuestProgress.initial(),
       secretSpaceEggClaimed: secretClaimed,
       fullDeveloperToolsUnlocked: devToolsUnlocked,
+      battleTokens: battleTokens,
+      bossWins: bossWins,
     );
     _pendingQuestNotification = null;
     _questNotificationDeferred = false;
@@ -513,6 +523,80 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return coins;
+  }
+
+  bool isBossUnlocked(String bossId) {
+    final boss = BossBattleLogic.bossById(bossId);
+    if (boss == null) return false;
+    return BossBattleLogic.isBossUnlocked(boss, _state);
+  }
+
+  int bossWinCount(String bossId) => _state.bossWins[bossId] ?? 0;
+
+  /// Runs an auto-battle. Applies rewards on win without lifetime coin gain.
+  BossBattleResult? fightBoss({
+    required String bossId,
+    required String animalId,
+    required String mutationId,
+    required bool isProtected,
+  }) {
+    final boss = BossBattleLogic.bossById(bossId);
+    if (boss == null) return null;
+    if (!BossBattleLogic.isBossUnlocked(boss, _state)) return null;
+
+    final owned = ownedAnimal(
+      animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
+    if (owned == null) return null;
+
+    final animal = GameData.animalById(animalId);
+    if (animal == null) return null;
+
+    final mutation =
+        GameData.mutationById(mutationId) ?? GameData.mutations.first;
+    final displayName = mutation.fullName(animal);
+
+    final result = BossBattleLogic.simulate(
+      boss: boss,
+      fighter: owned,
+      fighterDisplayName: displayName,
+      random: _random,
+    );
+
+    if (result.won) {
+      final wins = Map<String, int>.from(_state.bossWins);
+      wins[bossId] = (wins[bossId] ?? 0) + 1;
+      _state = _state.copyWith(
+        coins: _state.coins + result.coinReward,
+        battleTokens: _state.battleTokens + result.battleTokenReward,
+        bossWins: wins,
+      );
+      save();
+    }
+
+    notifyListeners();
+    return result;
+  }
+
+  void devAddBattleTokens(int amount) {
+    if (amount <= 0) return;
+    _state = _state.copyWith(battleTokens: _state.battleTokens + amount);
+    notifyListeners();
+    save();
+  }
+
+  void devResetBattleTokens() {
+    _state = _state.copyWith(battleTokens: 0);
+    notifyListeners();
+    save();
+  }
+
+  void devResetBossWins() {
+    _state = _state.copyWith(bossWins: const {});
+    notifyListeners();
+    save();
   }
 
   /// One-time Secret Hatchery Space Egg — free hatch with boosted luck.

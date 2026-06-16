@@ -13,6 +13,8 @@ class PlayerState {
     this.questProgress = const QuestProgress(),
     this.secretSpaceEggClaimed = false,
     this.fullDeveloperToolsUnlocked = false,
+    this.battleTokens = 0,
+    this.bossWins = const {},
   });
 
   final int coins;
@@ -24,6 +26,8 @@ class PlayerState {
   final QuestProgress questProgress;
   final bool secretSpaceEggClaimed;
   final bool fullDeveloperToolsUnlocked;
+  final int battleTokens;
+  final Map<String, int> bossWins;
 
   static PlayerState initial() {
     return PlayerState(
@@ -47,6 +51,8 @@ class PlayerState {
     QuestProgress? questProgress,
     bool? secretSpaceEggClaimed,
     bool? fullDeveloperToolsUnlocked,
+    int? battleTokens,
+    Map<String, int>? bossWins,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -60,6 +66,8 @@ class PlayerState {
           secretSpaceEggClaimed ?? this.secretSpaceEggClaimed,
       fullDeveloperToolsUnlocked:
           fullDeveloperToolsUnlocked ?? this.fullDeveloperToolsUnlocked,
+      battleTokens: battleTokens ?? this.battleTokens,
+      bossWins: bossWins ?? this.bossWins,
     );
   }
 
@@ -73,6 +81,8 @@ class PlayerState {
         'questProgress': questProgress.toJson(),
         'secretSpaceEggClaimed': secretSpaceEggClaimed,
         'fullDeveloperToolsUnlocked': fullDeveloperToolsUnlocked,
+        'battleTokens': battleTokens,
+        'bossWins': bossWins,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -93,6 +103,16 @@ class PlayerState {
       secretSpaceEggClaimed: json['secretSpaceEggClaimed'] as bool? ?? false,
       fullDeveloperToolsUnlocked:
           json['fullDeveloperToolsUnlocked'] as bool? ?? false,
+      battleTokens: json['battleTokens'] as int? ?? 0,
+      bossWins: _bossWinsFromJson(json['bossWins']),
     );
+  }
+
+  static Map<String, int> _bossWinsFromJson(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        entry.key.toString(): (entry.value as num).toInt(),
+    };
   }
 }

@@ -18,6 +18,7 @@ import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
 import 'backgrounds_screen.dart';
+import 'battles_screen.dart';
 import 'collection_screen.dart';
 import 'custom_sprites_screen.dart';
 import 'quests_screen.dart';
@@ -140,6 +141,19 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                     _HatcheryNavGrid(
                       theme: bg,
                       items: [
+                        _HatcheryNavItem(
+                          label: '⚔️ Battles',
+                          color: bg.panelAccentColor.withValues(alpha: 0.9),
+                          onTap: () => openBattlesWithTransition(
+                            context,
+                            theme: bg,
+                            builder: (_) => BattlesScreen(
+                              game: game,
+                              preferences: preferences,
+                              customSprites: customSprites,
+                            ),
+                          ),
+                        ),
                         _HatcheryNavItem(
                           label: '🛒 Shop',
                           color: bg.secondaryColor,

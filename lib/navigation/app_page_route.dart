@@ -139,6 +139,7 @@ const Duration kEditorThemedPreNavDuration = Duration(milliseconds: 580);
 const Duration kReturnToHatcheryPreNavDuration = Duration(milliseconds: 550);
 
 const String kQuestsRouteName = '/quests';
+const String kBattlesRouteName = '/battles';
 const String kCustomSpritesRouteName = '/custom-sprites';
 const String kSecretToolsRouteName = '/secret-tools';
 
@@ -232,6 +233,23 @@ Future<T?> openShopWithTransition<T>(
     icon: '🛒',
     duration: kShopPreNavTransitionDuration,
     settings: settings,
+  );
+}
+
+/// Hatchery -> Battles: pre-navigation transition screen, then Battles.
+Future<T?> openBattlesWithTransition<T>(
+  BuildContext context, {
+  required BackgroundTheme theme,
+  required WidgetBuilder builder,
+  RouteSettings? settings,
+}) {
+  return openWithThemedTransition<T>(
+    context,
+    theme: theme,
+    builder: builder,
+    label: 'Opening Battles',
+    icon: '⚔️',
+    settings: settings ?? const RouteSettings(name: kBattlesRouteName),
   );
 }
 

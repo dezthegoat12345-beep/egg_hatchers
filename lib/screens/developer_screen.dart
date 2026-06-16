@@ -524,6 +524,35 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             },
           ),
           const SizedBox(height: 32),
+          _SectionTitle('Boss Battle Testing'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+10 battle tokens',
+                onPressed: () {
+                  game.devAddBattleTokens(10);
+                  _showMessage('Added 10 battle tokens.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset tokens',
+                onPressed: () {
+                  game.devResetBattleTokens();
+                  _showMessage('Battle tokens reset to 0.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset boss wins',
+                onPressed: () {
+                  game.devResetBossWins();
+                  _showMessage('Boss win counts cleared.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
           _SectionTitle('Quest Testing'),
           Wrap(
             spacing: 8,
