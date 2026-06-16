@@ -6,6 +6,7 @@ class OwnedAnimal {
     this.level = 1,
     this.mutationId = 'none',
     this.isProtected = false,
+    this.isSecretReward = false,
   });
 
   final String animalId;
@@ -13,12 +14,14 @@ class OwnedAnimal {
   final int level;
   final String mutationId;
   final bool isProtected;
+  final bool isSecretReward;
 
   OwnedAnimal copyWith({
     int? quantity,
     int? level,
     String? mutationId,
     bool? isProtected,
+    bool? isSecretReward,
   }) {
     return OwnedAnimal(
       animalId: animalId,
@@ -26,6 +29,7 @@ class OwnedAnimal {
       level: level ?? this.level,
       mutationId: mutationId ?? this.mutationId,
       isProtected: isProtected ?? this.isProtected,
+      isSecretReward: isSecretReward ?? this.isSecretReward,
     );
   }
 
@@ -35,16 +39,21 @@ class OwnedAnimal {
         'level': level,
         'mutationId': mutationId,
         'isProtected': isProtected,
+        'isSecretReward': isSecretReward,
       };
 
   factory OwnedAnimal.fromJson(Map<String, dynamic> json) {
+    final isProtected = json['isProtected'] as bool? ?? false;
     return OwnedAnimal(
       animalId: json['animalId'] as String,
       quantity: json['quantity'] as int,
       // Older saves may not have level or mutationId.
       level: json['level'] as int? ?? 1,
       mutationId: json['mutationId'] as String? ?? 'none',
-      isProtected: json['isProtected'] as bool? ?? false,
+      isProtected: isProtected,
+      // Legacy protected Secret Void Egg animals count as secret reward badge holders.
+      isSecretReward:
+          json['isSecretReward'] as bool? ?? (isProtected ? true : false),
     );
   }
 }

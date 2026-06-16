@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 
 import '../data/game_data.dart';
 import '../models/background_theme.dart';
+import '../models/owned_animal.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/collection_quest_logic.dart';
 import '../widgets/game_background.dart';
-import '../widgets/hatch_dialog.dart';
+import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
 import 'developer_screen.dart';
 
@@ -26,20 +27,163 @@ class SecretToolsScreen extends StatelessWidget {
   final CustomSpriteService customSprites;
   final BackgroundTheme theme;
 
-  Future<void> _claimSecretVoidEgg(BuildContext context) async {
-    final result = game.claimSecretVoidEggReward();
-    if (result == null || !context.mounted) return;
+  Future<void> _useSecretRewardBadge(BuildContext context) async {
+    if (!game.canUseSecretRewardBadge) {
+      if (game.ownedAnimals.isEmpty && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Hatch an animal first.')),
+        );
+      }
+      return;
+    }
 
-    final voidEgg = GameData.eggById('void') ?? GameData.eggById('space');
-    if (voidEgg == null) return;
+    final chosen = await _pickSecretRewardTarget(context);
+    if (chosen == null || !context.mounted) return;
 
-    await HatchDialog.show(
-      context,
-      egg: voidEgg,
-      result: result,
-      theme: theme,
-      customSprites: customSprites,
-      revealedTitle: 'Secret Void Egg!',
+    final name = game.applySecretRewardBadge(
+      animalId: chosen.animalId,
+      mutationId: chosen.mutationId,
+      isProtected: chosen.isProtected,
+    );
+    if (!context.mounted) return;
+
+    if (name == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not apply Secret Reward Badge.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Secret Reward Badge applied to $name!')),
+    );
+  }
+
+  Future<OwnedAnimal?> _pickSecretRewardTarget(BuildContext context) {
+    final candidates = game.ownedAnimals
+        .where((owned) => owned.quantity > 0)
+        .toList()
+      ..sort(
+        (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
+      );
+
+    return showModalBottomSheet<OwnedAnimal>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.disabledColor.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Choose Animal',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.cardTextPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pick one animal to protect forever.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.cardTextSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (candidates.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'Hatch an animal first.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.cardTextSecondaryColor),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: candidates.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final owned = candidates[index];
+                        final animal = GameData.animalById(owned.animalId);
+                        if (animal == null) return const SizedBox.shrink();
+                        final mutation = GameData.mutationById(owned.mutationId) ??
+                            GameData.mutations.first;
+                        final alreadyBadged = owned.isSecretReward;
+
+                        return ListTile(
+                          tileColor: theme.panelColor.withValues(alpha: 0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(color: theme.cardBorderColor),
+                          ),
+                          leading: GameAnimalPortrait(
+                            customSprite:
+                                customSprites.getDisplaySprite(animal.id),
+                            spritePath: animal.spritePath,
+                            fallbackEmoji: mutation.displayEmoji(animal),
+                            size: 48,
+                            mutation: mutation,
+                          ),
+                          title: Text(
+                            mutation.fullName(animal),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.cardTextPrimaryColor,
+                            ),
+                          ),
+                          subtitle: Text(
+                            alreadyBadged
+                                ? 'Already has badge'
+                                : 'Lv ${owned.level} · x${owned.quantity}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.cardTextSecondaryColor,
+                            ),
+                          ),
+                          trailing: FilledButton(
+                            onPressed: alreadyBadged
+                                ? null
+                                : () => Navigator.pop(sheetContext, owned),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: theme.secondaryColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Choose'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -50,7 +194,8 @@ class SecretToolsScreen extends StatelessWidget {
       builder: (context, _) {
         final collected = CollectionQuestLogic.collectedBaseAnimalCount(game.state);
         final total = CollectionQuestLogic.totalBaseAnimalCount;
-        final claimed = game.secretSpaceEggClaimed;
+        final claimed = game.secretRewardBadgeClaimed;
+        final hasAnimals = game.ownedAnimals.isNotEmpty;
 
         return ReturnToHatcheryPopScope(
           theme: theme,
@@ -145,7 +290,8 @@ class SecretToolsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Free Void Egg with 3x luck.',
+                            'Secret Reward Badge\n'
+                            'Choose one animal to protect forever.',
                             style: TextStyle(
                               color: theme.cardTextSecondaryColor,
                               fontSize: 14,
@@ -156,12 +302,14 @@ class SecretToolsScreen extends StatelessWidget {
                           FilledButton.icon(
                             onPressed: claimed
                                 ? null
-                                : () => _claimSecretVoidEgg(context),
-                            icon: Text(claimed ? '✅' : '🚀'),
+                                : () => _useSecretRewardBadge(context),
+                            icon: Text(claimed ? '✅' : '🏅'),
                             label: Text(
                               claimed
-                                  ? 'Secret Void Egg claimed'
-                                  : 'Claim Secret Void Egg',
+                                  ? 'Secret Reward Badge used'
+                                  : hasAnimals
+                                      ? 'Use Badge'
+                                      : 'Choose Animal',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: theme.secondaryColor,
@@ -173,6 +321,17 @@ class SecretToolsScreen extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                           ),
+                          if (!claimed && !hasAnimals) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Hatch an animal first.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.cardTextSecondaryColor,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

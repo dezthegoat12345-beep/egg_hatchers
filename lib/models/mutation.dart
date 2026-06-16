@@ -27,7 +27,7 @@ class Mutation {
   bool get isBoss => id == 'boss';
 
   /// Visual scale multiplier for portrait display.
-  double get displayScale => isBoss ? 1.2 : 1.0;
+  double get displayScale => isBoss ? 1.28 : 1.0;
 
   /// Full display name, e.g. "Golden Chicken" or just "Chicken".
   String fullName(Animal animal) {

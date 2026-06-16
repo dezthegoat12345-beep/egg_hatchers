@@ -8,6 +8,7 @@ import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/custom_sprite_data.dart';
+import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
@@ -48,9 +49,9 @@ class ManualBossBattleScreen extends StatefulWidget {
 class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     with SingleTickerProviderStateMixin {
   static const _playerSpeed = 280.0;
-  static const _eggSpeed = 420.0;
-  static const _eggHomingLerp = 0.08;
-  static const _eggMaxHomingSpeed = 220.0;
+  static const _eggSpeed = 550.0;
+  static const _eggHomingLerp = 0.04;
+  static const _eggMaxHomingSpeed = 110.0;
   static const _playerSize = 48.0;
   static const _bossSize = 80.0;
   static const _bossTop = 8.0;
@@ -65,6 +66,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   late String? _fighterSpritePath;
   late String _fighterEmoji;
   late CustomSpriteData? _fighterCustomSprite;
+  late Mutation _fighterMutation;
 
   var _lives = BossBattleLogic.manualBattleLives;
   var _bossLives = 0;
@@ -150,11 +152,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   void _initFighterInfo() {
     final animal = GameData.animalById(widget.fighter.animalId)!;
-    final mutation =
+    _fighterMutation =
         GameData.mutationById(widget.fighter.mutationId) ?? GameData.mutations.first;
-    _fighterName = mutation.fullName(animal);
+    _fighterName = _fighterMutation.fullName(animal);
     _fighterSpritePath = animal.spritePath;
-    _fighterEmoji = mutation.displayEmoji(animal);
+    _fighterEmoji = _fighterMutation.displayEmoji(animal);
     _fighterCustomSprite =
         widget.customSprites.getDisplaySprite(animal.id);
     _battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(widget.fighter);
@@ -652,6 +654,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                               fighterCustomSprite: _fighterCustomSprite,
                               fighterSpritePath: _fighterSpritePath,
                               fighterEmoji: _fighterEmoji,
+                              fighterMutation: _fighterMutation,
                               fighterName: _fighterName,
                               bossProjectiles: _bossProjectiles,
                               activeEgg: _activeEgg,
@@ -899,6 +902,7 @@ class _Arena extends StatelessWidget {
     required this.fighterCustomSprite,
     required this.fighterSpritePath,
     required this.fighterEmoji,
+    required this.fighterMutation,
     required this.fighterName,
     required this.bossProjectiles,
     required this.activeEgg,
@@ -923,6 +927,7 @@ class _Arena extends StatelessWidget {
   final CustomSpriteData? fighterCustomSprite;
   final String? fighterSpritePath;
   final String fighterEmoji;
+  final Mutation fighterMutation;
   final String fighterName;
   final List<_FallingProjectile> bossProjectiles;
   final _EggProjectile? activeEgg;
@@ -1047,11 +1052,12 @@ class _Arena extends StatelessWidget {
           Positioned(
             left: playerX - playerSize / 2,
             top: playerY,
-            child: GameSprite(
+            child: GameAnimalPortrait(
               customSprite: fighterCustomSprite,
               spritePath: fighterSpritePath,
               fallbackEmoji: fighterEmoji,
               size: playerSize,
+              mutation: fighterMutation,
               semanticLabel: fighterName,
             ),
           ),

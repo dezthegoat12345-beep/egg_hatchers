@@ -1083,12 +1083,12 @@ class _FighterTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              GameSprite(
+              GameAnimalPortrait(
                 customSprite: customSprites.getDisplaySprite(animal.id),
                 spritePath: animal.spritePath,
                 fallbackEmoji: mutation.displayEmoji(animal),
                 size: 40,
-                emojiFontSize: 24,
+                mutation: mutation,
               ),
               const SizedBox(width: 12),
               Expanded(

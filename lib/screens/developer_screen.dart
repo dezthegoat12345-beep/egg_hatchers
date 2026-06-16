@@ -600,6 +600,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Grant Secret Reward Badge',
+                onPressed: () {
+                  game.devGrantSecretRewardBadge();
+                  _showMessage('Secret Reward Badge claim reset for testing.');
+                },
+              ),
+              _QuickButton(
                 label: 'Unlock Elite Bosses',
                 onPressed: () {
                   game.devUnlockEliteBosses();

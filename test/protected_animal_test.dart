@@ -7,18 +7,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('secret space egg reward marks animal as protected', () async {
+  test('secret reward badge marks chosen animal as protected', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService();
     await game.initialize();
 
-    final result = game.claimSecretVoidEggReward();
-    expect(result, isNotNull);
+    game.devSetOwnedAnimalsForTesting(const [
+      OwnedAnimal(animalId: 'chicken', quantity: 1),
+    ]);
+
+    final name = game.applySecretRewardBadge(
+      animalId: 'chicken',
+      mutationId: 'none',
+      isProtected: false,
+    );
+    expect(name, isNotNull);
 
     final protected = game.ownedAnimals.where((owned) => owned.isProtected);
     expect(protected.length, 1);
-    expect(protected.first.animalId, result!.animal.id);
-    expect(protected.first.mutationId, result.mutation.id);
+    expect(protected.first.animalId, 'chicken');
+    expect(protected.first.isSecretReward, isTrue);
 
     game.dispose();
   });
@@ -35,6 +43,7 @@ void main() {
         level: 2,
         mutationId: 'shadow',
         isProtected: true,
+        isSecretReward: true,
       ),
       OwnedAnimal(
         animalId: 'chicken',
@@ -71,6 +80,7 @@ void main() {
         level: 3,
         mutationId: 'golden',
         isProtected: true,
+        isSecretReward: true,
       ),
       OwnedAnimal(animalId: 'chicken', quantity: 5, mutationId: 'none'),
     ]);
@@ -82,6 +92,7 @@ void main() {
     expect(game.ownedAnimals.first.mutationId, 'golden');
     expect(game.ownedAnimals.first.level, 3);
     expect(game.ownedAnimals.first.isProtected, isTrue);
+    expect(game.ownedAnimals.first.isSecretReward, isTrue);
     expect(game.coins, 250);
     expect(game.lifetimeCoinsEarned, 0);
     expect(game.luckLevel, 1);
@@ -97,6 +108,18 @@ void main() {
       'mutationId': 'none',
     });
     expect(restored.isProtected, isFalse);
+    expect(restored.isSecretReward, isFalse);
+  });
+
+  test('legacy protected animals default isSecretReward true', () {
+    final restored = OwnedAnimal.fromJson({
+      'animalId': 'void_mouse',
+      'quantity': 1,
+      'level': 1,
+      'mutationId': 'none',
+      'isProtected': true,
+    });
+    expect(restored.isSecretReward, isTrue);
   });
 
   test('isProtected round-trips through player state json', () {
@@ -107,10 +130,12 @@ void main() {
           quantity: 1,
           mutationId: 'rainbow',
           isProtected: true,
+          isSecretReward: true,
         ),
       ],
     );
     final restored = PlayerState.fromJson(state.toJson());
     expect(restored.ownedAnimals.first.isProtected, isTrue);
+    expect(restored.ownedAnimals.first.isSecretReward, isTrue);
   });
 }

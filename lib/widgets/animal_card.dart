@@ -32,6 +32,7 @@ class AnimalCard extends StatelessWidget {
     this.onSellOne,
     this.onSellAll,
     this.isProtected = false,
+    this.isSecretReward = false,
     this.isAutoBattling = false,
     this.autoBattleBossName,
     this.autoBattleCurrentHp,
@@ -59,6 +60,7 @@ class AnimalCard extends StatelessWidget {
   final VoidCallback? onSellOne;
   final VoidCallback? onSellAll;
   final bool isProtected;
+  final bool isSecretReward;
   final bool isAutoBattling;
   final String? autoBattleBossName;
   final int? autoBattleCurrentHp;
@@ -107,6 +109,7 @@ class AnimalCard extends StatelessWidget {
         compact: compact,
         customSprites: customSprites,
         isProtected: isProtected,
+        isSecretReward: isSecretReward,
         autoBattleBossName: autoBattleBossName,
         autoBattleCurrentHp: autoBattleCurrentHp,
         autoBattleMaxHp: autoBattleMaxHp,
@@ -156,11 +159,12 @@ class AnimalCard extends StatelessWidget {
                           : 2,
                     ),
                   ),
-                  child: GameSprite(
+                  child: GameAnimalPortrait(
                     customSprite: customSprites?.getDisplaySprite(animal.id),
                     spritePath: animal.spritePath,
-                    fallbackEmoji: animal.emoji,
+                    fallbackEmoji: activeMutation.displayEmoji(animal),
                     size: compact ? 48 : 58,
+                    mutation: activeMutation,
                     semanticLabel: displayName,
                     emojiFontSize: compact ? 34 : 42,
                   ),
@@ -186,8 +190,7 @@ class AnimalCard extends StatelessWidget {
                           _RarityBadge(rarity: animal.rarity, theme: theme),
                           if (!activeMutation.isNormal)
                             _MutationBadge(mutation: activeMutation),
-                          if (isProtected)
-                            const _ProtectedBadge(),
+                          if (isSecretReward) const _ProtectedBadge(),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -424,6 +427,7 @@ class _BattlingAnimalCard extends StatelessWidget {
     required this.compact,
     required this.customSprites,
     required this.isProtected,
+    required this.isSecretReward,
     required this.autoBattleBossName,
     required this.autoBattleCurrentHp,
     required this.autoBattleMaxHp,
@@ -442,6 +446,7 @@ class _BattlingAnimalCard extends StatelessWidget {
   final bool compact;
   final CustomSpriteService? customSprites;
   final bool isProtected;
+  final bool isSecretReward;
   final String? autoBattleBossName;
   final int? autoBattleCurrentHp;
   final int? autoBattleMaxHp;
@@ -503,12 +508,13 @@ class _BattlingAnimalCard extends StatelessWidget {
                       ),
                       child: Opacity(
                         opacity: 0.85,
-                        child: GameSprite(
+                        child: GameAnimalPortrait(
                           customSprite:
                               customSprites?.getDisplaySprite(animal.id),
                           spritePath: animal.spritePath,
-                          fallbackEmoji: animal.emoji,
+                          fallbackEmoji: activeMutation.displayEmoji(animal),
                           size: spriteSize,
+                          mutation: activeMutation,
                           semanticLabel: displayName,
                           emojiFontSize: compact ? 30 : 34,
                         ),
@@ -538,7 +544,7 @@ class _BattlingAnimalCard extends StatelessWidget {
                               _RarityBadge(rarity: animal.rarity, theme: theme),
                               if (!activeMutation.isNormal)
                                 _MutationBadge(mutation: activeMutation),
-                              if (isProtected) const _ProtectedBadge(),
+                              if (isSecretReward) const _ProtectedBadge(),
                             ],
                           ),
                         ],

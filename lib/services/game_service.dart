@@ -27,7 +27,6 @@ import '../utils/animal_sell_logic.dart';
 import '../utils/built_in_egg_logic.dart';
 import '../utils/battle_power_logic.dart';
 import '../utils/boss_battle_logic.dart';
-import '../utils/secret_void_egg_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
 import 'sprite_reference_overlay_service.dart';
@@ -204,6 +203,15 @@ class GameService extends ChangeNotifier {
   int get rebirthRequirement =>
       RebirthLogic.nextRebirthRequirement(_state.rebirthLevel);
   bool get secretSpaceEggClaimed => _state.secretSpaceEggClaimed;
+
+  /// True when the one-time Secret Reward Badge has been applied or legacy void egg claimed.
+  bool get secretRewardBadgeClaimed => _state.secretSpaceEggClaimed;
+
+  bool get hasSecretRewardAnimal =>
+      _state.ownedAnimals.any((owned) => owned.isSecretReward);
+
+  bool get canUseSecretRewardBadge =>
+      !_state.secretSpaceEggClaimed && _state.ownedAnimals.isNotEmpty;
   int get battleTokens => _state.battleTokens;
   Map<String, int> get bossWins => Map.unmodifiable(_state.bossWins);
   int get totalBossWins =>
@@ -1230,48 +1238,37 @@ class GameService extends ChangeNotifier {
     save();
   }
 
-  /// One-time Secret Hatchery Void Egg — free hatch with boosted luck.
-  HatchResult? claimSecretVoidEggReward() {
+  /// Applies the one-time Secret Reward Badge to an owned animal stack.
+  /// Returns the display name on success, or null if unavailable.
+  String? applySecretRewardBadge({
+    required String animalId,
+    required String mutationId,
+    required bool isProtected,
+  }) {
     if (_state.secretSpaceEggClaimed) return null;
 
-    final animalId = SecretVoidEggLogic.rollAnimal(_random);
     final animal = GameData.animalById(animalId);
     if (animal == null) return null;
 
-    final boostedLuck = LuckLogic.boostedLuckLevel(
-      _state.luckLevel,
-      multiplier: SecretVoidEggLogic.rewardLuckMultiplier,
-    );
-    final mutation = LuckLogic.rollMutation(
-      _random,
-      boostedLuck,
-      bossMutationUnlocked: _state.bossMutationUnlocked,
-    );
-
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex = _indexOfOwnedStack(
+    final index = _indexOfOwnedStack(
       updatedAnimals,
-      animal.id,
-      mutation.id,
+      animalId,
+      mutationId,
+      isProtected: isProtected,
+    );
+    if (index < 0) return null;
+
+    final stack = updatedAnimals[index];
+    if (stack.isSecretReward) return null;
+
+    updatedAnimals[index] = stack.copyWith(
       isProtected: true,
+      isSecretReward: true,
     );
 
-    if (existingIndex >= 0) {
-      final existing = updatedAnimals[existingIndex];
-      updatedAnimals[existingIndex] =
-          existing.copyWith(quantity: existing.quantity + 1);
-    } else {
-      updatedAnimals.add(
-        OwnedAnimal(
-          animalId: animal.id,
-          quantity: 1,
-          level: 1,
-          mutationId: mutation.id,
-          isProtected: true,
-        ),
-      );
-    }
-
+    final mutation =
+        GameData.mutationById(mutationId) ?? GameData.mutations.first;
     _state = _state.copyWith(
       ownedAnimals: updatedAnimals,
       secretSpaceEggClaimed: true,
@@ -1279,11 +1276,26 @@ class GameService extends ChangeNotifier {
     _refreshQuestNotifications();
     notifyListeners();
     save();
-    return HatchResult(animal: animal, mutation: mutation);
+    return mutation.fullName(animal);
   }
 
-  /// Legacy alias — secret reward now hatches a Void Egg.
-  HatchResult? claimSecretSpaceEggReward() => claimSecretVoidEggReward();
+  /// Legacy void-egg claim — retired; badge flow replaces this reward.
+  @Deprecated('Use applySecretRewardBadge instead')
+  HatchResult? claimSecretVoidEggReward() => null;
+
+  /// Legacy alias — secret reward is now a badge applied to one animal.
+  @Deprecated('Use applySecretRewardBadge instead')
+  HatchResult? claimSecretSpaceEggReward() => null;
+
+  /// Debug: allow claiming/applying the secret badge again.
+  void devResetSecretRewardBadgeClaim() {
+    _state = _state.copyWith(secretSpaceEggClaimed: false);
+    notifyListeners();
+    save();
+  }
+
+  /// Debug: mark badge as unclaimed so it can be applied again in testing.
+  void devGrantSecretRewardBadge() => devResetSecretRewardBadgeClaim();
 
   /// Test helper for injecting owned animals without changing hatch odds.
   @visibleForTesting
