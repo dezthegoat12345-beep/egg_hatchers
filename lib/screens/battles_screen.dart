@@ -19,6 +19,7 @@ import '../widgets/game_background.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
+import 'manual_boss_battle_screen.dart';
 
 /// Boss battle selection and auto-battle results.
 class BattlesScreen extends StatelessWidget {
@@ -290,6 +291,45 @@ class BattlesScreen extends StatelessWidget {
     await returnToHatcheryWithTransition(context, theme: theme);
   }
 
+  Future<void> _startManualBattle(
+    BuildContext context,
+    BossBattleDefinition boss,
+    BackgroundTheme theme,
+  ) async {
+    if (game.ownedAnimals.isEmpty) {
+      showGameSnackBar(
+        context,
+        message: 'Hatch an animal before battling.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    final fighter = await _pickFighter(
+      context,
+      theme,
+      title: 'Choose Fighter',
+      subtitle: 'Dodge projectiles and shoot eggs at ${boss.name}.',
+    );
+    if (fighter == null || !context.mounted) return;
+
+    game.recordBossBattleStarted();
+
+    if (!context.mounted) return;
+    await pushThemedAppRoute<void>(
+      context,
+      theme: theme,
+      settings: const RouteSettings(name: '/manual-boss-battle'),
+      builder: (_) => ManualBossBattleScreen(
+        game: game,
+        preferences: preferences,
+        customSprites: customSprites,
+        boss: boss,
+        fighter: fighter,
+      ),
+    );
+  }
+
   Future<OwnedAnimal?> _pickFighter(
     BuildContext context,
     BackgroundTheme theme, {
@@ -466,7 +506,12 @@ class BattlesScreen extends StatelessWidget {
                                 game.state,
                               ),
                               winCount: game.bossWinCount(BossData.bosses[i].id),
-                              onStart: () => _startAutoBattle(
+                              onAutoBattle: () => _startAutoBattle(
+                                context,
+                                BossData.bosses[i],
+                                theme,
+                              ),
+                              onManualBattle: () => _startManualBattle(
                                 context,
                                 BossData.bosses[i],
                                 theme,
@@ -587,14 +632,16 @@ class _BossCard extends StatelessWidget {
     required this.theme,
     required this.isUnlocked,
     required this.winCount,
-    required this.onStart,
+    required this.onAutoBattle,
+    required this.onManualBattle,
   });
 
   final BossBattleDefinition boss;
   final BackgroundTheme theme;
   final bool isUnlocked;
   final int winCount;
-  final VoidCallback onStart;
+  final VoidCallback onAutoBattle;
+  final VoidCallback onManualBattle;
 
   @override
   Widget build(BuildContext context) {
@@ -707,14 +754,45 @@ class _BossCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          FilledButton(
-            onPressed: isUnlocked ? onStart : null,
-            style: GameTheme.filledButton(
-              theme,
-              color: isUnlocked ? theme.primaryColor : theme.disabledColor,
+          if (isUnlocked)
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onAutoBattle,
+                    style: GameTheme.filledButton(
+                      theme,
+                      color: theme.primaryColor,
+                    ),
+                    child: const Text('Auto Battle'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onManualBattle,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      foregroundColor: theme.secondaryColor,
+                      side: BorderSide(color: theme.secondaryColor),
+                    ),
+                    child: const Text(
+                      'Battle',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            FilledButton(
+              onPressed: null,
+              style: GameTheme.filledButton(
+                theme,
+                color: theme.disabledColor,
+              ),
+              child: const Text('Locked 🔒'),
             ),
-            child: Text(isUnlocked ? 'Auto Battle' : 'Locked 🔒'),
-          ),
         ],
       ),
     );

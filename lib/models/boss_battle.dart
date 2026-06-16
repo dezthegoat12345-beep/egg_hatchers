@@ -14,6 +14,8 @@ class BossBattleDefinition {
     required this.unlockRequirementText,
     this.spritePath,
     this.autoBattleSeconds = 10,
+    this.projectileIntervalMs = 1000,
+    this.projectileSpeed = 180,
   });
 
   final String id;
@@ -27,6 +29,10 @@ class BossBattleDefinition {
   final String unlockRequirementText;
   final String? spritePath;
   final int autoBattleSeconds;
+  /// Milliseconds between boss projectile spawns in manual battle.
+  final int projectileIntervalMs;
+  /// Downward projectile speed in arena pixels per second.
+  final double projectileSpeed;
 }
 
 /// One line in the auto-battle log.

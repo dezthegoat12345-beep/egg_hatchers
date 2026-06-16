@@ -17,6 +17,8 @@ class BossData {
       battleTokenReward: 1,
       unlockRequirementText: 'Hatch at least one animal',
       autoBattleSeconds: 10,
+      projectileIntervalMs: 1200,
+      projectileSpeed: 120,
     ),
     BossBattleDefinition(
       id: 'egg_golem',
@@ -30,6 +32,8 @@ class BossData {
       battleTokenReward: 3,
       unlockRequirementText: 'Collect 10 unique base animals',
       autoBattleSeconds: 20,
+      projectileIntervalMs: 950,
+      projectileSpeed: 180,
     ),
     BossBattleDefinition(
       id: 'shadow_rooster',
@@ -44,6 +48,8 @@ class BossData {
       unlockRequirementText:
           'Reach Rebirth Level 1 or collect 25 unique base animals',
       autoBattleSeconds: 35,
+      projectileIntervalMs: 750,
+      projectileSpeed: 260,
     ),
   ];
 

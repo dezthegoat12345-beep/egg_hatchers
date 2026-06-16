@@ -17,6 +17,18 @@ class BossBattleLogic {
 
   static int maxAnimalHpFor(int battlePower) => max(100, battlePower * 6);
 
+  /// Boss projectile hit damage in manual dodge battle.
+  static int manualBossProjectileDamage(BossBattleDefinition boss) =>
+      max(10, boss.recommendedPower ~/ 2);
+
+  /// Egg shot damage in manual dodge battle.
+  static int manualEggDamage(int battlePower) =>
+      max(10, (battlePower / 8).round());
+
+  static const int manualShieldMissThreshold = 5;
+  static const Duration manualEggCooldown = Duration(milliseconds: 850);
+  static const int manualMaxBossProjectiles = 6;
+
   static int uniqueBaseAnimalCount(PlayerState state) {
     return CollectionQuestLogic.collectedBaseAnimalCount(state);
   }
