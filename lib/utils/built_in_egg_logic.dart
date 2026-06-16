@@ -20,6 +20,20 @@ class BuiltInEggLogic {
     return effectiveWeights(egg).values.fold(0, (sum, weight) => sum + weight);
   }
 
+  /// Hatch chance as 0–100 percent from configured weights.
+  static double chancePercentForAnimal(Egg egg, String animalId) {
+    final weights = effectiveWeights(egg);
+    if (!weights.containsKey(animalId)) return 0;
+    final total = totalWeight(egg);
+    if (total <= 0) return 0;
+    return weights[animalId]! / total * 100;
+  }
+
+  /// Rounded display percent for shop UI.
+  static int roundedChancePercent(Egg egg, String animalId) {
+    return chancePercentForAnimal(egg, animalId).round();
+  }
+
   /// Rolls one animal from a built-in egg using configured weights.
   static String rollAnimal(Egg egg, Random random) {
     final weights = effectiveWeights(egg);

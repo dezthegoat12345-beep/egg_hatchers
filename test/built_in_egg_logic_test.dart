@@ -30,6 +30,30 @@ void main() {
     final weights = BuiltInEggLogic.effectiveWeights(egg);
     expect(weights['chicken'], 1);
     expect(weights['mouse'], 1);
+    expect(BuiltInEggLogic.roundedChancePercent(egg, 'chicken'), 50);
+    expect(BuiltInEggLogic.roundedChancePercent(egg, 'mouse'), 50);
+  });
+
+  test('basic egg shop percents match configured weights', () {
+    final basic = GameData.eggById('basic')!;
+    expect(BuiltInEggLogic.roundedChancePercent(basic, 'chicken'), 60);
+    expect(BuiltInEggLogic.roundedChancePercent(basic, 'mouse'), 30);
+    expect(BuiltInEggLogic.roundedChancePercent(basic, 'rabbit'), 10);
+  });
+
+  test('space egg shop percents match configured weights', () {
+    final space = GameData.eggById('space')!;
+    expect(BuiltInEggLogic.roundedChancePercent(space, 'moon_cat'), 40);
+    expect(BuiltInEggLogic.roundedChancePercent(space, 'star_fox'), 30);
+    expect(BuiltInEggLogic.roundedChancePercent(space, 'alien_slime'), 20);
+    expect(BuiltInEggLogic.roundedChancePercent(space, 'galaxy_dragon'), 10);
+  });
+
+  test('rebirth egg shop percents match configured weights', () {
+    final ancient = GameData.eggById('ancient')!;
+    expect(BuiltInEggLogic.roundedChancePercent(ancient, 'scarab_beetle'), 50);
+    expect(BuiltInEggLogic.roundedChancePercent(ancient, 'saber_cub'), 35);
+    expect(BuiltInEggLogic.roundedChancePercent(ancient, 'stone_golem'), 15);
   });
 
   test('basic egg favors chicken over rabbit in weighted rolls', () {

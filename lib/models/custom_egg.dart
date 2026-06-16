@@ -83,11 +83,15 @@ class CustomEgg {
       rebirthLevel: rebirthLevel,
     );
     final chanceText = summary.isNotEmpty ? ' · $summary' : '';
+    final weights = {
+      for (final id in activeIds) id: animalWeights[id] ?? 1,
+    };
     return Egg(
       id: id,
       name: name,
       cost: cost,
       possibleAnimalIds: List<String>.from(activeIds),
+      animalWeights: weights,
       emoji: emoji.isNotEmpty ? emoji : '🥚',
       description: 'Custom egg · $count animal${count == 1 ? '' : 's'}$chanceText',
       unlockLifetimeCoins: 0,

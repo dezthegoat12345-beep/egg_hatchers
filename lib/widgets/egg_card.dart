@@ -5,6 +5,7 @@ import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../services/custom_sprite_service.dart';
+import '../utils/built_in_egg_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import 'game_sprite.dart';
@@ -214,7 +215,10 @@ class EggCard extends StatelessWidget {
                         emojiFontSize: 16,
                       ),
                     ),
-                    label: Text(animal.name),
+                    label: Text(
+                      '${animal.name} · '
+                      '${BuiltInEggLogic.roundedChancePercent(egg, animal.id)}%',
+                    ),
                     backgroundColor: GameTheme.rarityAccent(animal.rarity)
                         .withValues(alpha: 0.12),
                     side: BorderSide(
@@ -224,6 +228,7 @@ class EggCard extends StatelessWidget {
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: GameTheme.rarityAccent(animal.rarity),
+                      fontSize: 13,
                     ),
                   ),
               ],
