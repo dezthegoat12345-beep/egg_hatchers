@@ -84,6 +84,58 @@ void main() {
     expect(wins, greaterThan(10));
   });
 
+  test('simulation includes round snapshots with hp tracking', () {
+    final boss = BossData.bossById('slime_boss')!;
+    const fighter = OwnedAnimal(
+      animalId: 'chicken',
+      quantity: 1,
+      level: 5,
+      mutationId: 'none',
+    );
+    final result = BossBattleLogic.simulate(
+      boss: boss,
+      fighter: fighter,
+      fighterDisplayName: 'Chicken',
+      random: Random(3),
+    );
+
+    expect(result.initialPlayerHp, greaterThan(0));
+    expect(result.initialBossHp, boss.maxHp);
+    expect(result.roundSnapshots, isNotEmpty);
+    expect(result.roundSnapshots.first.isPlayerAttack, isTrue);
+    expect(result.roundSnapshots.first.bossHpAfter, lessThan(boss.maxHp));
+  });
+
+  test('simulate does not grant rewards until applied', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService(random: Random(1));
+    await game.initialize();
+
+    game.devCollectAllAnimals();
+    final beforeLifetime = game.lifetimeCoinsEarned;
+    final beforeCoins = game.coins;
+    final beforeTokens = game.battleTokens;
+
+    final result = game.simulateBossBattle(
+      bossId: 'slime_boss',
+      animalId: 'nebula_hydra',
+      mutationId: 'none',
+      isProtected: false,
+    );
+    expect(result, isNotNull);
+    expect(result!.won, isTrue);
+    expect(game.coins, beforeCoins);
+    expect(game.battleTokens, beforeTokens);
+
+    expect(game.applyBossBattleRewards('slime_boss', result), isTrue);
+    expect(game.coins, beforeCoins + 2500);
+    expect(game.battleTokens, beforeTokens + 1);
+    expect(game.lifetimeCoinsEarned, beforeLifetime);
+    expect(game.bossWinCount('slime_boss'), 1);
+
+    game.dispose();
+  });
+
   test('boss win grants coins and tokens without lifetime earnings', () async {
     SharedPreferences.setMockInitialValues({});
     final game = GameService(random: Random(1));

@@ -16,6 +16,8 @@ import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
+import '../widgets/battle_animation_dialog.dart';
+import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
 
@@ -49,13 +51,34 @@ class BattlesScreen extends StatelessWidget {
     final fighter = await _pickFighter(context, theme);
     if (fighter == null || !context.mounted) return;
 
-    final result = game.fightBoss(
+    final result = game.simulateBossBattle(
       bossId: boss.id,
       animalId: fighter.animalId,
       mutationId: fighter.mutationId,
       isProtected: fighter.isProtected,
     );
     if (result == null || !context.mounted) return;
+
+    final animal = GameData.animalById(fighter.animalId);
+    if (animal == null || !context.mounted) return;
+
+    final mutation =
+        GameData.mutationById(fighter.mutationId) ?? GameData.mutations.first;
+    final fighterName = mutation.fullName(animal);
+
+    await BattleAnimationDialog.show(
+      context,
+      theme: theme,
+      boss: boss,
+      result: result,
+      fighterName: fighterName,
+      fighterSpritePath: animal.spritePath,
+      fighterEmoji: mutation.displayEmoji(animal),
+      fighterCustomSprite: customSprites.getDisplaySprite(animal.id),
+    );
+    if (!context.mounted) return;
+
+    game.applyBossBattleRewards(boss.id, result);
 
     await _showBattleResultDialog(
       context,
@@ -168,7 +191,7 @@ class BattlesScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${boss.emoji} ${boss.name}',
+                boss.name,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: theme.cardTextPrimaryColor,
@@ -375,8 +398,8 @@ class _BossCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 64,
+                height: 64,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isUnlocked
@@ -384,10 +407,20 @@ class _BossCard extends StatelessWidget {
                       : theme.disabledColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
-                  isUnlocked ? boss.emoji : '🔒',
-                  style: const TextStyle(fontSize: 32),
-                ),
+                child: isUnlocked
+                    ? BossSprite(
+                        spritePath: boss.spritePath,
+                        fallbackEmoji: boss.emoji,
+                        size: 52,
+                        semanticLabel: boss.name,
+                      )
+                    : Text(
+                        '🔒',
+                        style: TextStyle(
+                          fontSize: 28,
+                          color: theme.disabledColor,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

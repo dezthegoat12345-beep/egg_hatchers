@@ -59,6 +59,7 @@ flutter:
     - assets/images/eggs/
     - assets/images/mutations/
     - assets/images/ui/
+    - assets/images/bosses/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -533,8 +533,8 @@ class GameService extends ChangeNotifier {
 
   int bossWinCount(String bossId) => _state.bossWins[bossId] ?? 0;
 
-  /// Runs an auto-battle. Applies rewards on win without lifetime coin gain.
-  BossBattleResult? fightBoss({
+  /// Simulates a boss battle without granting rewards.
+  BossBattleResult? simulateBossBattle({
     required String bossId,
     required String animalId,
     required String mutationId,
@@ -558,25 +558,45 @@ class GameService extends ChangeNotifier {
         GameData.mutationById(mutationId) ?? GameData.mutations.first;
     final displayName = mutation.fullName(animal);
 
-    final result = BossBattleLogic.simulate(
+    return BossBattleLogic.simulate(
       boss: boss,
       fighter: owned,
       fighterDisplayName: displayName,
       random: _random,
     );
+  }
 
-    if (result.won) {
-      final wins = Map<String, int>.from(_state.bossWins);
-      wins[bossId] = (wins[bossId] ?? 0) + 1;
-      _state = _state.copyWith(
-        coins: _state.coins + result.coinReward,
-        battleTokens: _state.battleTokens + result.battleTokenReward,
-        bossWins: wins,
-      );
-      save();
-    }
+  /// Applies win rewards once after the battle animation completes.
+  bool applyBossBattleRewards(String bossId, BossBattleResult result) {
+    if (!result.won) return false;
 
+    final wins = Map<String, int>.from(_state.bossWins);
+    wins[bossId] = (wins[bossId] ?? 0) + 1;
+    _state = _state.copyWith(
+      coins: _state.coins + result.coinReward,
+      battleTokens: _state.battleTokens + result.battleTokenReward,
+      bossWins: wins,
+    );
     notifyListeners();
+    save();
+    return true;
+  }
+
+  /// Runs an auto-battle and applies rewards immediately (testing helper).
+  BossBattleResult? fightBoss({
+    required String bossId,
+    required String animalId,
+    required String mutationId,
+    required bool isProtected,
+  }) {
+    final result = simulateBossBattle(
+      bossId: bossId,
+      animalId: animalId,
+      mutationId: mutationId,
+      isProtected: isProtected,
+    );
+    if (result == null) return null;
+    applyBossBattleRewards(bossId, result);
     return result;
   }
 
