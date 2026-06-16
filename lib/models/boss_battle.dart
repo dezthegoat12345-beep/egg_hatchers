@@ -17,6 +17,10 @@ class BossBattleDefinition {
     this.projectileIntervalMs = 1000,
     this.projectileSpeed = 180,
     this.manualBossMoveSpeed = 60,
+    this.manualAimAccuracy = 0.5,
+    this.manualPredictionStrength = 8,
+    this.manualAimErrorMax = 60,
+    this.manualAimRecalcMs = 400,
   });
 
   final String id;
@@ -36,6 +40,14 @@ class BossBattleDefinition {
   final double projectileSpeed;
   /// Horizontal boss movement speed in manual battle (pixels per second).
   final double manualBossMoveSpeed;
+  /// How strongly the boss weights predicted aim (0–1).
+  final double manualAimAccuracy;
+  /// Ticks ahead to predict player movement.
+  final double manualPredictionStrength;
+  /// Max random aim error in pixels (±).
+  final double manualAimErrorMax;
+  /// Milliseconds between aim target recalculations.
+  final int manualAimRecalcMs;
 }
 
 /// One line in the auto-battle log.

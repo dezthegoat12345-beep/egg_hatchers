@@ -66,8 +66,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _lives = BossBattleLogic.manualBattleLives;
   var _bossHp = 0;
   var _playerX = 0.0;
+  var _previousPlayerX = 0.0;
+  var _playerVelocityX = 0.0;
   var _bossX = 0.0;
-  var _bossDirection = 1.0;
+  var _bossAimTargetX = 0.0;
+  var _aimRecalcAccumulator = 0.0;
   var _arenaWidth = 320.0;
   var _arenaHeight = 280.0;
   var _shieldActive = true;
@@ -166,8 +169,32 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _activeEgg = null;
     _floatingDamages.clear();
     _playerX = _arenaWidth / 2;
+    _previousPlayerX = _playerX;
+    _playerVelocityX = 0;
     _bossX = _arenaWidth / 2;
-    _bossDirection = _random.nextBool() ? 1.0 : -1.0;
+    _bossAimTargetX = _bossX;
+    _aimRecalcAccumulator = 0;
+  }
+
+  double _bossMinX() => _bossSize / 2 + 8;
+
+  double _bossMaxX() => max(_bossMinX(), _arenaWidth - _bossSize / 2 - 8);
+
+  void _recalculateBossAimTarget() {
+    final minBx = _bossMinX();
+    final maxBx = _bossMaxX();
+    final aimError =
+        (_random.nextDouble() * 2 - 1) * boss.manualAimErrorMax;
+    final newTarget = BossBattleLogic.manualBossAimTarget(
+      boss: boss,
+      playerX: _playerX,
+      playerVelocityX: _playerVelocityX,
+      minX: minBx,
+      maxX: maxBx,
+      aimError: aimError,
+    );
+    _bossAimTargetX =
+        (_bossAimTargetX * 0.35 + newTarget * 0.65).clamp(minBx, maxBx);
   }
 
   @override
@@ -215,6 +242,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       }
     }
 
+    _playerVelocityX = _playerX - _previousPlayerX;
+    _previousPlayerX = _playerX;
+
     if (_eggCooldownRemaining > 0) {
       _eggCooldownRemaining = max(0, _eggCooldownRemaining - dt);
     }
@@ -250,18 +280,23 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _updateBossMovement(double dt) {
-    final half = _bossSize / 2 + 8;
-    final minBx = half;
-    final maxBx = max(half, _arenaWidth - half);
+    final minBx = _bossMinX();
+    final maxBx = _bossMaxX();
 
-    _bossX += _bossDirection * _currentBossMoveSpeed * dt;
-    if (_bossX <= minBx) {
-      _bossX = minBx;
-      _bossDirection = 1;
-    } else if (_bossX >= maxBx) {
-      _bossX = maxBx;
-      _bossDirection = -1;
+    _aimRecalcAccumulator += dt * 1000;
+    if (_aimRecalcAccumulator >= boss.manualAimRecalcMs) {
+      _aimRecalcAccumulator -= boss.manualAimRecalcMs;
+      _recalculateBossAimTarget();
     }
+
+    final diff = _bossAimTargetX - _bossX;
+    final step = _currentBossMoveSpeed * dt;
+    if (diff.abs() <= step) {
+      _bossX = _bossAimTargetX;
+    } else {
+      _bossX += step * diff.sign;
+    }
+    _bossX = _bossX.clamp(minBx, maxBx);
   }
 
   void _spawnBossProjectile() {
@@ -584,6 +619,15 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
+                          color: currentTheme.cardTextSecondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Harder bosses aim better.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
                           color: currentTheme.cardTextSecondaryColor,
                         ),
                       ),

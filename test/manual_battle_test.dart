@@ -90,6 +90,41 @@ void main() {
     expect(BossBattleLogic.manualBattleLives, 3);
   });
 
+  test('manual boss aim target predicts player velocity with per-boss error', () {
+    final slime = BossData.bossById('slime_boss')!;
+    final rooster = BossData.bossById('shadow_rooster')!;
+
+    final slimeTarget = BossBattleLogic.manualBossAimTarget(
+      boss: slime,
+      playerX: 160,
+      playerVelocityX: 8,
+      minX: 40,
+      maxX: 280,
+      aimError: 0,
+    );
+    final roosterTarget = BossBattleLogic.manualBossAimTarget(
+      boss: rooster,
+      playerX: 160,
+      playerVelocityX: 8,
+      minX: 40,
+      maxX: 280,
+      aimError: 0,
+    );
+
+    expect(slimeTarget, lessThan(roosterTarget));
+    expect(slime.manualAimErrorMax, greaterThan(rooster.manualAimErrorMax));
+    expect(slime.manualPredictionStrength, lessThan(rooster.manualPredictionStrength));
+  });
+
+  test('boss definitions define manual aim tuning', () {
+    for (final boss in BossData.bosses) {
+      expect(boss.manualAimAccuracy, inInclusiveRange(0.0, 1.0));
+      expect(boss.manualPredictionStrength, greaterThan(0));
+      expect(boss.manualAimErrorMax, greaterThan(0));
+      expect(boss.manualAimRecalcMs, inInclusiveRange(200, 600));
+    }
+  });
+
   test('boss definitions define manual projectile and movement tuning', () {
     for (final boss in BossData.bosses) {
       expect(boss.projectileIntervalMs, greaterThan(0));

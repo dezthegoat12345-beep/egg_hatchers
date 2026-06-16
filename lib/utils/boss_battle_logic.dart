@@ -69,6 +69,21 @@ class BossBattleLogic {
         manualBossMoveSpeedMultiplier(bossHitCount);
   }
 
+  /// Computes a clamped horizontal aim target for manual battle boss tracking.
+  static double manualBossAimTarget({
+    required BossBattleDefinition boss,
+    required double playerX,
+    required double playerVelocityX,
+    required double minX,
+    required double maxX,
+    required double aimError,
+  }) {
+    final predictedX = playerX + playerVelocityX * boss.manualPredictionStrength;
+    final rawTarget = predictedX + aimError;
+    final blended = playerX + (rawTarget - playerX) * boss.manualAimAccuracy;
+    return blended.clamp(minX, maxX);
+  }
+
   /// Legacy alias for the first shield break threshold.
   static const int manualShieldMissThreshold = manualShieldBaseMisses;
 

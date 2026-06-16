@@ -20,6 +20,10 @@ class BossData {
       projectileIntervalMs: 1200,
       projectileSpeed: 120,
       manualBossMoveSpeed: 45,
+      manualAimAccuracy: 0.35,
+      manualPredictionStrength: 6,
+      manualAimErrorMax: 100,
+      manualAimRecalcMs: 450,
     ),
     BossBattleDefinition(
       id: 'egg_golem',
@@ -36,6 +40,10 @@ class BossData {
       projectileIntervalMs: 950,
       projectileSpeed: 180,
       manualBossMoveSpeed: 70,
+      manualAimAccuracy: 0.65,
+      manualPredictionStrength: 10,
+      manualAimErrorMax: 55,
+      manualAimRecalcMs: 350,
     ),
     BossBattleDefinition(
       id: 'shadow_rooster',
@@ -53,6 +61,10 @@ class BossData {
       projectileIntervalMs: 750,
       projectileSpeed: 260,
       manualBossMoveSpeed: 95,
+      manualAimAccuracy: 0.9,
+      manualPredictionStrength: 14,
+      manualAimErrorMax: 25,
+      manualAimRecalcMs: 275,
     ),
   ];
 
