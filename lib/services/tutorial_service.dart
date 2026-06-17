@@ -130,13 +130,21 @@ class TutorialService extends ChangeNotifier {
     final step = currentStep;
     if (step == null) return;
 
-    if (step.advanceOnRoute != null && routeName == step.advanceOnRoute) {
+    if (step.advanceOnRoute != null && _routeMatches(step.advanceOnRoute, routeName)) {
       _advanceAfterAction();
       return;
     }
 
     _scheduleRemeasure();
     notifyListeners();
+  }
+
+  bool _routeMatches(String? expected, String? routeName) {
+    if (expected == null) return false;
+    if (expected == kHatcheryRouteName) {
+      return _isHatcheryRoute(routeName);
+    }
+    return routeName == expected;
   }
 
   void notifyEggPurchased() {
@@ -155,12 +163,7 @@ class TutorialService extends ChangeNotifier {
   void notifyHatchDialogClosed() {
     _pausedForDialog = false;
     if (_phase != TutorialPhase.guided) return;
-    final step = currentStep;
-    if (step?.id == 'hatch') {
-      _advanceAfterAction();
-    } else {
-      _scheduleRemeasure();
-    }
+    _scheduleRemeasure();
     notifyListeners();
   }
 
@@ -226,6 +229,14 @@ class TutorialService extends ChangeNotifier {
     if (step.manualNext) return true;
     if (isFallbackMode(step, targetFound: targetFound)) return true;
     return false;
+  }
+
+  bool showReturnToHatcheryButton(GuidedTutorialStep step, {required bool targetFound}) {
+    return step.isBackStep && !targetFound;
+  }
+
+  void invokeReturnToHatcheryFallback() {
+    TutorialTargetRegistry.handlerFor(TutorialTargetIds.screenBackButton)?.call();
   }
 
   bool allowsProxyTargetTap(GuidedTutorialStep step, {required bool targetFound}) {

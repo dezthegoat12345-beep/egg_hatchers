@@ -14,6 +14,8 @@ import '../utils/battle_power_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/tutorial_screen_bindings.dart';
+import '../widgets/tutorial_targets.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/boss_sprite.dart';
@@ -465,7 +467,10 @@ class BattlesScreen extends StatelessWidget {
       builder: (context, _) {
         final theme = preferences.selectedTheme;
 
-        return ReturnToHatcheryPopScope(
+        return TutorialScreenBindings(
+          onReturnToHatchery: () =>
+              returnToHatcheryWithTransition(context, theme: theme),
+          child: ReturnToHatcheryPopScope(
           theme: theme,
           child: Scaffold(
             backgroundColor: Colors.transparent,
@@ -479,6 +484,7 @@ class BattlesScreen extends StatelessWidget {
               leading: ReturnToHatcheryBackButton(
                 theme: theme,
                 color: Colors.white,
+                tutorialKey: TutorialTargets.screenBackButton,
               ),
             ),
             body: GameBackground(
@@ -542,7 +548,11 @@ class BattlesScreen extends StatelessWidget {
                         children: [
                           for (var i = 0; i < BossData.bosses.length; i++) ...[
                             if (i > 0) const SizedBox(height: 14),
-                            _BossCard(
+                            KeyedSubtree(
+                              key: i == 0
+                                  ? TutorialTargets.battlesExplainSection
+                                  : null,
+                              child: _BossCard(
                               boss: BossData.bosses[i],
                               theme: theme,
                               game: game,
@@ -585,6 +595,7 @@ class BattlesScreen extends StatelessWidget {
                                 mode: ManualBattleMode.nightmare,
                               ),
                             ),
+                            ),
                           ],
                         ],
                       ),
@@ -594,6 +605,7 @@ class BattlesScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       },
     );

@@ -364,17 +364,21 @@ class ReturnToHatcheryBackButton extends StatelessWidget {
     super.key,
     required this.theme,
     this.color,
+    this.tutorialKey,
   });
 
   final BackgroundTheme theme;
   final Color? color;
+  final Key? tutorialKey;
 
   @override
   Widget build(BuildContext context) {
-    return BackButton(
+    final button = BackButton(
       color: color,
       onPressed: () => returnToHatcheryWithTransition(context, theme: theme),
     );
+    if (tutorialKey == null) return button;
+    return KeyedSubtree(key: tutorialKey, child: button);
   }
 }
 

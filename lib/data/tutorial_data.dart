@@ -13,6 +13,9 @@ class TutorialData {
 
   static const finishButtonLabel = 'Start Hatching!';
 
+  static const returnToHatcheryText = 'Tap back to return to the Hatchery!';
+  static const returnToHatcheryFallbackLabel = 'Return to Hatchery';
+
   static const steps = <GuidedTutorialStep>[
     GuidedTutorialStep(
       id: 'shop',
@@ -20,6 +23,7 @@ class TutorialData {
       targetId: TutorialTargetIds.shopButton,
       requiresTargetTap: true,
       advanceOnRoute: kShopRouteName,
+      requiredRoute: kHatcheryRouteName,
     ),
     GuidedTutorialStep(
       id: 'buyEgg',
@@ -31,10 +35,21 @@ class TutorialData {
       requiredRoute: kShopRouteName,
     ),
     GuidedTutorialStep(
+      id: 'shopBack',
+      text: returnToHatcheryText,
+      targetId: TutorialTargetIds.screenBackButton,
+      fallbackText: returnToHatcheryText,
+      requiresTargetTap: true,
+      advanceOnRoute: kHatcheryRouteName,
+      requiredRoute: kShopRouteName,
+      isBackStep: true,
+    ),
+    GuidedTutorialStep(
       id: 'hatch',
       text: 'Now hatch your egg!',
       fallbackText: 'Eggs hatch into animals that earn coins.',
       manualNext: true,
+      requiredRoute: kHatcheryRouteName,
     ),
     GuidedTutorialStep(
       id: 'animalIncome',
@@ -47,7 +62,8 @@ class TutorialData {
       id: 'upgrade',
       text: 'Upgrade animals to make more coins!',
       targetId: TutorialTargetIds.upgradeButton,
-      fallbackText: 'This button upgrades animals when you have enough coins.',
+      fallbackText:
+          'Upgrade buttons appear on your animals when you have enough coins.',
       requiresTargetTap: true,
       advanceOnAction: TutorialAction.animalUpgraded,
       requiredRoute: kHatcheryRouteName,
@@ -61,20 +77,58 @@ class TutorialData {
       requiredRoute: kHatcheryRouteName,
     ),
     GuidedTutorialStep(
+      id: 'collectionBack',
+      text: returnToHatcheryText,
+      targetId: TutorialTargetIds.screenBackButton,
+      fallbackText: returnToHatcheryText,
+      requiresTargetTap: true,
+      advanceOnRoute: kHatcheryRouteName,
+      requiredRoute: kCollectionRouteName,
+      isBackStep: true,
+    ),
+    GuidedTutorialStep(
       id: 'quests',
-      text: 'Quests give extra rewards!',
+      text: 'Open Quests for extra rewards!',
       targetId: TutorialTargetIds.questsButton,
       requiresTargetTap: true,
       advanceOnRoute: kQuestsRouteName,
       requiredRoute: kHatcheryRouteName,
     ),
     GuidedTutorialStep(
+      id: 'questsBack',
+      text: returnToHatcheryText,
+      targetId: TutorialTargetIds.screenBackButton,
+      fallbackText: returnToHatcheryText,
+      requiresTargetTap: true,
+      advanceOnRoute: kHatcheryRouteName,
+      requiredRoute: kQuestsRouteName,
+      isBackStep: true,
+    ),
+    GuidedTutorialStep(
       id: 'battles',
-      text: 'Battle bosses for special rewards!',
+      text: 'Open Battles to fight bosses!',
       targetId: TutorialTargetIds.battlesButton,
       requiresTargetTap: true,
       advanceOnRoute: kBattlesRouteName,
       requiredRoute: kHatcheryRouteName,
+    ),
+    GuidedTutorialStep(
+      id: 'battlesExplain',
+      text:
+          'Auto Battle fights over time. Battle lets you dodge rotten eggs yourself!',
+      targetId: TutorialTargetIds.battlesExplainSection,
+      manualNext: true,
+      requiredRoute: kBattlesRouteName,
+    ),
+    GuidedTutorialStep(
+      id: 'battlesBack',
+      text: returnToHatcheryText,
+      targetId: TutorialTargetIds.screenBackButton,
+      fallbackText: returnToHatcheryText,
+      requiresTargetTap: true,
+      advanceOnRoute: kHatcheryRouteName,
+      requiredRoute: kBattlesRouteName,
+      isBackStep: true,
     ),
     GuidedTutorialStep(
       id: 'rebirth',
@@ -89,6 +143,7 @@ class TutorialData {
       text: finishText,
       manualNext: true,
       isFinish: true,
+      requiredRoute: kHatcheryRouteName,
     ),
   ];
 }
@@ -99,11 +154,13 @@ class TutorialTargetIds {
 
   static const shopButton = 'shopButton';
   static const basicEggBuyButton = 'basicEggBuyButton';
+  static const screenBackButton = 'screenBackButton';
   static const animalsSection = 'animalsSection';
   static const upgradeButton = 'upgradeButton';
   static const collectionButton = 'collectionButton';
   static const questsButton = 'questsButton';
   static const battlesButton = 'battlesButton';
+  static const battlesExplainSection = 'battlesExplainSection';
   static const rebirthPanel = 'rebirthPanel';
 }
 
@@ -121,6 +178,7 @@ class GuidedTutorialStep {
     this.advanceOnAction,
     this.requiredRoute,
     this.isFinish = false,
+    this.isBackStep = false,
   });
 
   final String id;
@@ -133,6 +191,7 @@ class GuidedTutorialStep {
   final TutorialAction? advanceOnAction;
   final String? requiredRoute;
   final bool isFinish;
+  final bool isBackStep;
 
   bool get allowsManualNext =>
       manualNext || fallbackText != null || targetId == null;

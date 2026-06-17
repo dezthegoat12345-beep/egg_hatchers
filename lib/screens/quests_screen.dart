@@ -9,6 +9,8 @@ import '../theme/game_theme.dart';
 import '../navigation/app_page_route.dart';
 import '../utils/quest_logic.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/tutorial_screen_bindings.dart';
+import '../widgets/tutorial_targets.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
@@ -99,7 +101,10 @@ class QuestsScreen extends StatelessWidget {
         final readyIds = readyToClaim.map((q) => q.id).toSet();
         final readyCount = readyToClaim.length;
 
-        return ReturnToHatcheryPopScope(
+        return TutorialScreenBindings(
+          onReturnToHatchery: () =>
+              returnToHatcheryWithTransition(context, theme: bg),
+          child: ReturnToHatcheryPopScope(
           theme: bg,
           child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -112,6 +117,7 @@ class QuestsScreen extends StatelessWidget {
             leading: ReturnToHatcheryBackButton(
               theme: bg,
               color: Colors.white,
+              tutorialKey: TutorialTargets.screenBackButton,
             ),
           ),
           body: GameBackground(
@@ -226,6 +232,7 @@ class QuestsScreen extends StatelessWidget {
                         ),
                       ),
           ),
+        ),
         ),
         );
       },

@@ -141,6 +141,10 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
       step,
       targetFound: targetFound,
     );
+    final showReturn = service.showReturnToHatcheryButton(
+      step,
+      targetFound: targetFound,
+    );
 
     if (targetRect == null) {
       return _FallbackCardOverlay(
@@ -149,6 +153,10 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
         text: text,
         showNext: showNext,
         isFinish: step.isFinish,
+        showReturnToHatchery: showReturn,
+        onReturnToHatchery: showReturn
+            ? service.invokeReturnToHatcheryFallback
+            : null,
       );
     }
 
@@ -245,6 +253,8 @@ class _FallbackCardOverlay extends StatelessWidget {
     required this.text,
     required this.showNext,
     required this.isFinish,
+    this.showReturnToHatchery = false,
+    this.onReturnToHatchery,
   });
 
   final TutorialService service;
@@ -252,6 +262,8 @@ class _FallbackCardOverlay extends StatelessWidget {
   final String text;
   final bool showNext;
   final bool isFinish;
+  final bool showReturnToHatchery;
+  final VoidCallback? onReturnToHatchery;
 
   @override
   Widget build(BuildContext context) {
@@ -278,6 +290,8 @@ class _FallbackCardOverlay extends StatelessWidget {
                   nextLabel: isFinish
                       ? TutorialData.finishButtonLabel
                       : 'Next',
+                  showReturnToHatchery: showReturnToHatchery,
+                  onReturnToHatchery: onReturnToHatchery,
                 ),
               ),
             ),
@@ -584,6 +598,8 @@ class _CalloutCard extends StatelessWidget {
     required this.onSkip,
     required this.nextLabel,
     this.arrowDirection,
+    this.showReturnToHatchery = false,
+    this.onReturnToHatchery,
   });
 
   final BackgroundTheme theme;
@@ -594,6 +610,8 @@ class _CalloutCard extends StatelessWidget {
   final VoidCallback onSkip;
   final String nextLabel;
   final _ArrowDirection? arrowDirection;
+  final bool showReturnToHatchery;
+  final VoidCallback? onReturnToHatchery;
 
   @override
   Widget build(BuildContext context) {
@@ -653,6 +671,21 @@ class _CalloutCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (showReturnToHatchery && onReturnToHatchery != null) ...[
+                const SizedBox(height: 10),
+                FilledButton(
+                  onPressed: onReturnToHatchery,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.secondaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  child: Text(
+                    TutorialData.returnToHatcheryFallbackLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
               if (showNext) ...[
                 const SizedBox(height: 10),
                 FilledButton(

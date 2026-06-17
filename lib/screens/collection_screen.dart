@@ -8,6 +8,8 @@ import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../navigation/app_page_route.dart';
+import '../widgets/tutorial_screen_bindings.dart';
+import '../widgets/tutorial_targets.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
@@ -184,7 +186,10 @@ class CollectionScreen extends StatelessWidget {
       builder: (context, _) {
         final bg = preferences.selectedTheme;
 
-        return ReturnToHatcheryPopScope(
+        return TutorialScreenBindings(
+          onReturnToHatchery: () =>
+              returnToHatcheryWithTransition(context, theme: bg),
+          child: ReturnToHatcheryPopScope(
           theme: bg,
           child: QuestNotificationListener(
           game: game,
@@ -200,6 +205,7 @@ class CollectionScreen extends StatelessWidget {
             leading: ReturnToHatcheryBackButton(
               theme: bg,
               color: Colors.white,
+              tutorialKey: TutorialTargets.screenBackButton,
             ),
           ),
           body: GameBackground(
@@ -255,6 +261,7 @@ class CollectionScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         ),
         ),
         );

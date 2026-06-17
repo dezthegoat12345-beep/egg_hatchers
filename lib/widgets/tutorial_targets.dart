@@ -10,6 +10,8 @@ class TutorialTargets {
   static final GlobalKey shopButton = GlobalKey(debugLabel: 'tutorialShop');
   static final GlobalKey basicEggBuyButton =
       GlobalKey(debugLabel: 'tutorialBasicEggBuy');
+  static final GlobalKey screenBackButton =
+      GlobalKey(debugLabel: 'tutorialScreenBack');
   static final GlobalKey animalsSection =
       GlobalKey(debugLabel: 'tutorialAnimals');
   static final GlobalKey upgradeButton =
@@ -19,6 +21,8 @@ class TutorialTargets {
   static final GlobalKey questsButton = GlobalKey(debugLabel: 'tutorialQuests');
   static final GlobalKey battlesButton =
       GlobalKey(debugLabel: 'tutorialBattles');
+  static final GlobalKey battlesExplainSection =
+      GlobalKey(debugLabel: 'tutorialBattlesExplain');
   static final GlobalKey rebirthPanel =
       GlobalKey(debugLabel: 'tutorialRebirth');
 
@@ -28,6 +32,8 @@ class TutorialTargets {
         return shopButton;
       case TutorialTargetIds.basicEggBuyButton:
         return basicEggBuyButton;
+      case TutorialTargetIds.screenBackButton:
+        return screenBackButton;
       case TutorialTargetIds.animalsSection:
         return animalsSection;
       case TutorialTargetIds.upgradeButton:
@@ -38,6 +44,8 @@ class TutorialTargets {
         return questsButton;
       case TutorialTargetIds.battlesButton:
         return battlesButton;
+      case TutorialTargetIds.battlesExplainSection:
+        return battlesExplainSection;
       case TutorialTargetIds.rebirthPanel:
         return rebirthPanel;
       default:
