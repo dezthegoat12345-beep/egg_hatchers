@@ -6,6 +6,7 @@ import '../services/game_service.dart';
 import '../services/tutorial_service.dart';
 import '../theme/game_theme.dart';
 import 'phone_width_layout.dart';
+import 'tutorial_highlight.dart';
 import 'tutorial_targets.dart';
 
 /// Dim overlay with circular spotlight, callout bubble, and tap blocking.
@@ -312,9 +313,10 @@ class _SpotlightLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hole = _circleHole(targetRect);
+    final metrics = TutorialHighlightMetrics.forTarget(targetRect);
+    final highlightBounds = metrics.bounds;
     final calloutPlacement = _CalloutPlacement.forTarget(
-      hole,
+      highlightBounds,
       layerSize,
     );
 
@@ -324,22 +326,33 @@ class _SpotlightLayer extends StatelessWidget {
         IgnorePointer(
           child: CustomPaint(
             size: layerSize,
-            painter: _DimSpotlightPainter(
-              hole: hole,
-              dimColor: Colors.black.withValues(alpha: 0.58),
+            painter: TutorialDimSpotlightPainter(
+              metrics: metrics,
+              dimColor: Colors.black.withValues(alpha: 0.68),
             ),
           ),
         ),
-        ..._TapBlockers.build(hole: hole, layerSize: layerSize),
+        ..._TapBlockers.build(hole: highlightBounds, layerSize: layerSize),
+        IgnorePointer(
+          child: TutorialTargetHighlight(
+            metrics: metrics,
+            layerSize: layerSize,
+          ),
+        ),
         if (proxyTapEnabled && targetId != null)
           Positioned.fromRect(
-            rect: hole,
+            rect: highlightBounds,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => service.invokeTargetTap(targetId!),
               child: const ColoredBox(color: Colors.transparent),
             ),
           ),
+        _TargetDirectionArrow(
+          layerSize: layerSize,
+          targetCenter: highlightBounds.center,
+          placement: calloutPlacement,
+        ),
         Positioned(
           left: calloutPlacement.left,
           top: calloutPlacement.top,
@@ -358,15 +371,6 @@ class _SpotlightLayer extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Rect _circleHole(Rect target) {
-    final center = target.center;
-    final diameter = target.width > target.height
-        ? target.width
-        : target.height;
-    final radius = (diameter / 2).clamp(32.0, 80.0);
-    return Rect.fromCircle(center: center, radius: radius);
   }
 }
 
@@ -420,30 +424,94 @@ class _TapBlocker extends StatelessWidget {
   }
 }
 
-class _DimSpotlightPainter extends CustomPainter {
-  _DimSpotlightPainter({
-    required this.hole,
-    required this.dimColor,
+enum _ArrowDirection { up, down, left, right }
+class _TargetDirectionArrow extends StatelessWidget {
+  const _TargetDirectionArrow({
+    required this.layerSize,
+    required this.targetCenter,
+    required this.placement,
   });
 
-  final Rect hole;
-  final Color dimColor;
+  final Size layerSize;
+  final Offset targetCenter;
+  final _CalloutPlacement placement;
+
+  static const _arrowColor = Color(0xFFFFEB3B);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final overlay = Path()..addRect(Offset.zero & size);
-    final cutout = Path()..addOval(hole);
-    final dimPath = Path.combine(PathOperation.difference, overlay, cutout);
-    canvas.drawPath(dimPath, Paint()..color = dimColor);
-  }
+  Widget build(BuildContext context) {
+    final start = placement.arrowAnchor;
+    if (start == null) return const SizedBox.shrink();
 
-  @override
-  bool shouldRepaint(covariant _DimSpotlightPainter oldDelegate) {
-    return oldDelegate.hole != hole || oldDelegate.dimColor != dimColor;
+    return IgnorePointer(
+      child: CustomPaint(
+        size: layerSize,
+        painter: _TargetArrowPainter(
+          from: start,
+          to: targetCenter,
+          color: _arrowColor,
+        ),
+      ),
+    );
   }
 }
 
-enum _ArrowDirection { up, down, left, right }
+class _TargetArrowPainter extends CustomPainter {
+  _TargetArrowPainter({
+    required this.from,
+    required this.to,
+    required this.color,
+  });
+
+  final Offset from;
+  final Offset to;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final direction = (to - from);
+    if (direction.distance < 24) return;
+
+    final unit = direction / direction.distance;
+    final tip = to - unit * 12;
+    final tail = from + unit * 8;
+
+    final shaftPaint = Paint()
+      ..color = color.withValues(alpha: 0.95)
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(tail, tip, shaftPaint);
+
+    final perpendicular = Offset(-unit.dy, unit.dx);
+    const headSize = 10.0;
+    final head = Path()
+      ..moveTo(to.dx, to.dy)
+      ..lineTo(
+        tip.dx - perpendicular.dx * headSize * 0.55,
+        tip.dy - perpendicular.dy * headSize * 0.55,
+      )
+      ..lineTo(
+        tip.dx + perpendicular.dx * headSize * 0.55,
+        tip.dy + perpendicular.dy * headSize * 0.55,
+      )
+      ..close();
+
+    canvas.drawPath(
+      head,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _TargetArrowPainter oldDelegate) {
+    return oldDelegate.from != from ||
+        oldDelegate.to != to ||
+        oldDelegate.color != color;
+  }
+}
 
 class _CalloutPlacement {
   const _CalloutPlacement({
@@ -451,12 +519,28 @@ class _CalloutPlacement {
     required this.top,
     required this.width,
     required this.arrowDirection,
+    required this.estimatedHeight,
   });
 
   final double left;
   final double top;
   final double width;
   final _ArrowDirection arrowDirection;
+  final double estimatedHeight;
+
+  Offset? get arrowAnchor {
+    final centerX = left + width / 2;
+    switch (arrowDirection) {
+      case _ArrowDirection.up:
+        return Offset(centerX, top);
+      case _ArrowDirection.down:
+        return Offset(centerX, top + estimatedHeight);
+      case _ArrowDirection.left:
+        return Offset(left + width, top + estimatedHeight / 2);
+      case _ArrowDirection.right:
+        return Offset(left, top + estimatedHeight / 2);
+    }
+  }
 
   static _CalloutPlacement forTarget(Rect hole, Size layerSize) {
     const margin = 16.0;
@@ -477,6 +561,7 @@ class _CalloutPlacement {
           top: belowTop,
           width: calloutWidth,
           arrowDirection: _ArrowDirection.up,
+          estimatedHeight: estimatedHeight,
         ),
       );
     }
@@ -489,6 +574,7 @@ class _CalloutPlacement {
           top: aboveTop,
           width: calloutWidth,
           arrowDirection: _ArrowDirection.down,
+          estimatedHeight: estimatedHeight,
         ),
       );
     }
@@ -501,6 +587,7 @@ class _CalloutPlacement {
               .clamp(margin, layerSize.height - estimatedHeight - margin),
           width: calloutWidth,
           arrowDirection: _ArrowDirection.right,
+          estimatedHeight: estimatedHeight,
         ),
       );
     } else {
@@ -511,6 +598,7 @@ class _CalloutPlacement {
               .clamp(margin, layerSize.height - estimatedHeight - margin),
           width: calloutWidth,
           arrowDirection: _ArrowDirection.left,
+          estimatedHeight: estimatedHeight,
         ),
       );
     }
@@ -534,6 +622,7 @@ class _CalloutPlacement {
             top: margin,
             width: calloutWidth,
             arrowDirection: _ArrowDirection.down,
+            estimatedHeight: estimatedHeight,
           );
   }
 }
@@ -651,6 +740,8 @@ class _ArrowPointer extends StatelessWidget {
   final _ArrowDirection direction;
   final BackgroundTheme theme;
 
+  static const _arrowColor = Color(0xFFFFEB3B);
+
   @override
   Widget build(BuildContext context) {
     IconData icon;
@@ -667,8 +758,15 @@ class _ArrowPointer extends StatelessWidget {
 
     return Icon(
       icon,
-      size: 32,
-      color: theme.cardColor,
+      size: 40,
+      color: _arrowColor,
+      shadows: const [
+        Shadow(
+          color: Colors.black54,
+          blurRadius: 4,
+          offset: Offset(0, 1),
+        ),
+      ],
     );
   }
 }
