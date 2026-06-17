@@ -138,6 +138,9 @@ const Duration kMainThemedPreNavDuration = Duration(milliseconds: 620);
 const Duration kEditorThemedPreNavDuration = Duration(milliseconds: 580);
 const Duration kReturnToHatcheryPreNavDuration = Duration(milliseconds: 550);
 
+const String kHatcheryRouteName = '/';
+const String kShopRouteName = '/shop';
+const String kCollectionRouteName = '/collection';
 const String kQuestsRouteName = '/quests';
 const String kBattlesRouteName = '/battles';
 const String kCustomSpritesRouteName = '/custom-sprites';
@@ -149,9 +152,27 @@ class AppNavigationTracker extends NavigatorObserver {
   static final AppNavigationTracker instance = AppNavigationTracker._();
 
   String? topRouteName;
+  final List<VoidCallback> _routeListeners = [];
+
+  void addRouteListener(VoidCallback listener) {
+    if (!_routeListeners.contains(listener)) {
+      _routeListeners.add(listener);
+    }
+  }
+
+  void removeRouteListener(VoidCallback listener) {
+    _routeListeners.remove(listener);
+  }
+
+  void _notifyRouteListeners() {
+    for (final listener in List<VoidCallback>.from(_routeListeners)) {
+      listener();
+    }
+  }
 
   void _syncTop(Route<dynamic>? route) {
     topRouteName = route?.settings.name;
+    _notifyRouteListeners();
   }
 
   @override
@@ -232,7 +253,7 @@ Future<T?> openShopWithTransition<T>(
     label: 'Opening Shop',
     icon: '🛒',
     duration: kShopPreNavTransitionDuration,
-    settings: settings,
+    settings: settings ?? const RouteSettings(name: kShopRouteName),
   );
 }
 

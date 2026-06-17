@@ -20,6 +20,7 @@ class EggCard extends StatelessWidget {
     required this.lifetimeCoinsEarned,
     required this.onBuy,
     required this.theme,
+    this.buyButtonKey,
     this.isCustomEgg = false,
     this.customSprites,
     this.tripleHatchCost,
@@ -33,6 +34,7 @@ class EggCard extends StatelessWidget {
   final bool canAfford;
   final int lifetimeCoinsEarned;
   final VoidCallback onBuy;
+  final GlobalKey? buyButtonKey;
   final BackgroundTheme theme;
   final bool isCustomEgg;
   final CustomSpriteService? customSprites;
@@ -259,7 +261,9 @@ class EggCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            FilledButton(
+            KeyedSubtree(
+              key: buyButtonKey,
+              child: FilledButton(
               onPressed: onBuy,
               style: GameTheme.filledButton(
                 theme,
@@ -274,6 +278,7 @@ class EggCard extends StatelessWidget {
                         ? 'Buy & Hatch 🐣'
                         : _notEnoughMessage,
               ),
+            ),
             ),
             if (onTripleHatch != null && tripleHatchCost != null) ...[
               const SizedBox(height: 10),

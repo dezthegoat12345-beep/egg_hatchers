@@ -24,6 +24,7 @@ class AnimalCard extends StatelessWidget {
     this.showUpgradeButton = false,
     this.canAffordUpgrade = false,
     this.onUpgrade,
+    this.upgradeButtonKey,
     this.compact = false,
     this.customSprites,
     this.useBaseNameForTitle = false,
@@ -54,6 +55,7 @@ class AnimalCard extends StatelessWidget {
   final bool showUpgradeButton;
   final bool canAffordUpgrade;
   final VoidCallback? onUpgrade;
+  final GlobalKey? upgradeButtonKey;
   final bool compact;
   final bool useBaseNameForTitle;
   final bool showSellButtons;
@@ -259,7 +261,9 @@ class AnimalCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          SizedBox(
+                          KeyedSubtree(
+                            key: upgradeButtonKey,
+                            child: SizedBox(
                             width: double.infinity,
                             child: FilledButton(
                               onPressed: onUpgrade,
@@ -272,6 +276,7 @@ class AnimalCard extends StatelessWidget {
                               ),
                               child: const Text('Upgrade ⬆️'),
                             ),
+                          ),
                           ),
                         ],
                       );
@@ -290,7 +295,9 @@ class AnimalCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        FilledButton(
+                        KeyedSubtree(
+                          key: upgradeButtonKey,
+                          child: FilledButton(
                           onPressed: onUpgrade,
                           style: GameTheme.filledButton(
                             theme,
@@ -316,6 +323,7 @@ class AnimalCard extends StatelessWidget {
                             ),
                           ),
                           child: const Text('Upgrade ⬆️'),
+                        ),
                         ),
                       ],
                     );

@@ -15,6 +15,8 @@ import '../widgets/coin_header.dart';
 import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
+import '../services/tutorial_service.dart';
+import '../widgets/tutorial_targets.dart';
 import '../widgets/multi_hatch_dialog.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
@@ -154,9 +156,11 @@ class ShopScreen extends StatelessWidget {
         : null;
 
     game.buyEgg(egg);
+    TutorialService.instance.notifyEggPurchased();
     final result = game.hatchEgg(egg, customEgg: customDefinition);
 
     if (context.mounted) {
+      TutorialService.instance.notifyHatchDialogOpening();
       await HatchDialog.show(
         context,
         egg: egg,
@@ -164,6 +168,7 @@ class ShopScreen extends StatelessWidget {
         theme: bg,
         customSprites: customSprites,
       );
+      TutorialService.instance.notifyHatchDialogClosed();
       if (context.mounted) {
         showPendingQuestCompletionNotification(
           context,
@@ -235,6 +240,9 @@ class ShopScreen extends StatelessWidget {
                                     EggCard(
                                       egg: GameData.eggs[i],
                                       theme: bg,
+                                      buyButtonKey: i == 0
+                                          ? TutorialTargets.basicEggBuyButton
+                                          : null,
                                       isUnlocked:
                                           game.isEggUnlocked(GameData.eggs[i]),
                                       canAfford:

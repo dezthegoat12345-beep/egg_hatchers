@@ -10,6 +10,7 @@ import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
 import '../services/game_service.dart';
+import '../services/tutorial_service.dart';
 import '../utils/luck_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/rebirth_logic.dart';
@@ -597,6 +598,13 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 onPressed: () {
                   game.devUnlockNightmareModes();
                   _showMessage('Set all Hard Phase wins to 7 for Nightmare unlock.');
+                },
+              ),
+              _QuickButton(
+                label: 'Start Tutorial Now',
+                onPressed: () {
+                  TutorialService.instance.devStartTutorialNow();
+                  _showMessage('Tutorial welcome shown.');
                 },
               ),
               _QuickButton(

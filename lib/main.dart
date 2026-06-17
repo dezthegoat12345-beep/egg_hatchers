@@ -9,6 +9,7 @@ import 'services/preferences_service.dart';
 import 'services/sprite_rating_service.dart';
 import 'services/sprite_reference_overlay_service.dart';
 import 'widgets/app_theme_background.dart';
+import 'widgets/tutorial_host.dart';
 import 'navigation/app_page_route.dart';
 import 'widgets/game_background.dart';
 
@@ -114,9 +115,20 @@ class _EggHatchersAppState extends State<EggHatchersApp>
         fontFamily: 'Roboto',
       ),
       builder: (context, child) {
+        final content = child ?? const SizedBox.shrink();
+        if (!_isReady) {
+          return AppThemeBackground(
+            theme: theme,
+            child: content,
+          );
+        }
         return AppThemeBackground(
           theme: theme,
-          child: child ?? const SizedBox.shrink(),
+          child: TutorialHost(
+            game: _game,
+            theme: theme,
+            child: content,
+          ),
         );
       },
       home: _isReady

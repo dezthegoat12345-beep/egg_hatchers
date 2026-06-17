@@ -24,11 +24,13 @@ class OwnedAnimalList extends StatelessWidget {
     this.showSellButtons = false,
     this.onSellOne,
     this.onSellAll,
+    this.firstCardUpgradeKey,
   });
 
   final GameService game;
   final BackgroundTheme theme;
   final CustomSpriteService? customSprites;
+  final GlobalKey? firstCardUpgradeKey;
   final void Function(
     String animalId,
     String mutationId,
@@ -72,7 +74,7 @@ class OwnedAnimalList extends StatelessWidget {
           theme: theme,
         ),
         SizedBox(height: separatorHeight),
-        ..._buildCards(context, normal),
+        ..._buildCards(context, normal, firstCardIndexOffset: 0),
       ],
       if (mutated.isNotEmpty) ...[
         SizedBox(height: separatorHeight * 2),
@@ -82,7 +84,11 @@ class OwnedAnimalList extends StatelessWidget {
           theme: theme,
         ),
         SizedBox(height: separatorHeight),
-        ..._buildCards(context, mutated),
+        ..._buildCards(
+          context,
+          mutated,
+          firstCardIndexOffset: normal.length,
+        ),
       ],
     ];
 
@@ -107,16 +113,28 @@ class OwnedAnimalList extends StatelessWidget {
     return copy;
   }
 
-  List<Widget> _buildCards(BuildContext context, List<OwnedAnimal> entries) {
+  List<Widget> _buildCards(
+    BuildContext context,
+    List<OwnedAnimal> entries, {
+    required int firstCardIndexOffset,
+  }) {
     return [
       for (var i = 0; i < entries.length; i++) ...[
         if (i > 0) SizedBox(height: separatorHeight),
-        _buildCard(context, entries[i]),
+        _buildCard(
+          context,
+          entries[i],
+          isFirstCard: firstCardIndexOffset + i == 0,
+        ),
       ],
     ];
   }
 
-  Widget _buildCard(BuildContext context, OwnedAnimal owned) {
+  Widget _buildCard(
+    BuildContext context,
+    OwnedAnimal owned, {
+    bool isFirstCard = false,
+  }) {
     final animal = GameData.animalById(owned.animalId);
     if (animal == null) return const SizedBox.shrink();
 
@@ -133,6 +151,7 @@ class OwnedAnimalList extends StatelessWidget {
     return AnimalCard(
       animal: animal,
       theme: theme,
+      upgradeButtonKey: isFirstCard ? firstCardUpgradeKey : null,
       mutation: mutation,
       quantity: owned.quantity,
       level: owned.level,

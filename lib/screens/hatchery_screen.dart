@@ -18,7 +18,8 @@ import '../widgets/owned_animal_list.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
-import '../widgets/tutorial_overlay.dart';
+import '../services/tutorial_service.dart';
+import '../widgets/tutorial_targets.dart';
 import 'backgrounds_screen.dart';
 import 'battles_screen.dart';
 import 'collection_screen.dart';
@@ -69,11 +70,11 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     if (!mounted || _tutorialAutoStartChecked) return;
     _tutorialAutoStartChecked = true;
     if (!game.shouldAutoStartTutorial) return;
-    TutorialOverlay.show(
-      context,
+    TutorialService.instance.attach(
       game: game,
       theme: preferences.selectedTheme,
     );
+    TutorialService.instance.maybeAutoStartWelcome(game);
   }
 
   void _onCoinTap() {
@@ -106,6 +107,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
       isProtected: isProtected,
     );
     if (newLevel != null) {
+      TutorialService.instance.notifyAnimalUpgraded();
       showGameSnackBar(
         context,
         message: '$displayName upgraded to Level $newLevel!',
@@ -159,12 +161,17 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                     const SizedBox(height: 14),
                     LuckPanel(game: game, theme: bg),
                     const SizedBox(height: 14),
-                    RebirthPanel(game: game, theme: bg),
+                    RebirthPanel(
+                      key: TutorialTargets.rebirthPanel,
+                      game: game,
+                      theme: bg,
+                    ),
                     const SizedBox(height: 18),
                     _HatcheryNavGrid(
                       theme: bg,
                       items: [
                         _HatcheryNavItem(
+                          tutorialKey: TutorialTargets.battlesButton,
                           label: '⚔️ Battles',
                           color: bg.panelAccentColor.withValues(alpha: 0.9),
                           onTap: () => openBattlesWithTransition(
@@ -178,6 +185,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                           ),
                         ),
                         _HatcheryNavItem(
+                          tutorialKey: TutorialTargets.shopButton,
                           label: '🛒 Shop',
                           color: bg.secondaryColor,
                           onTap: () => openShopWithTransition(
@@ -192,6 +200,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                           ),
                         ),
                         _HatcheryNavItem(
+                          tutorialKey: TutorialTargets.questsButton,
                           label: '🎯 Quests',
                           color: bg.panelAccentColor,
                           onTap: () => openWithThemedTransition(
@@ -207,6 +216,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                           ),
                         ),
                         _HatcheryNavItem(
+                          tutorialKey: TutorialTargets.collectionButton,
                           label: '📚 Collection',
                           color: bg.primaryColor,
                           onTap: () => openWithThemedTransition(
@@ -214,6 +224,8 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                             theme: bg,
                             icon: '🐾',
                             label: 'Opening Collection',
+                            settings:
+                                const RouteSettings(name: kCollectionRouteName),
                             builder: (_) => CollectionScreen(
                               game: game,
                               preferences: preferences,
@@ -261,9 +273,12 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                       ],
                     ),
                     const SizedBox(height: 22),
-                    Text(
-                      'Your Animals',
-                      style: GameTheme.sectionTitle(bg),
+                    KeyedSubtree(
+                      key: TutorialTargets.animalsSection,
+                      child: Text(
+                        'Your Animals',
+                        style: GameTheme.sectionTitle(bg),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     if (game.ownedAnimals.isEmpty)
@@ -275,6 +290,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                         compact: true,
                         embedInParentScroll: true,
                         customSprites: customSprites,
+                        firstCardUpgradeKey: TutorialTargets.upgradeButton,
                         onUpgrade: (animalId, mutationId, name, isProtected) =>
                             _handleUpgrade(
                           context,
@@ -302,11 +318,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
 
 class _HatcheryNavItem {
   const _HatcheryNavItem({
+    this.tutorialKey,
     required this.label,
     required this.color,
     required this.onTap,
   });
 
+  final Key? tutorialKey;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -338,6 +356,7 @@ class _HatcheryNavGrid extends StatelessWidget {
             for (final item in items)
               SizedBox(
                 width: itemWidth,
+                key: item.tutorialKey,
                 child: _NavButton(
                   label: item.label,
                   theme: theme,
