@@ -18,6 +18,7 @@ import '../widgets/owned_animal_list.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
+import '../widgets/tutorial_overlay.dart';
 import 'backgrounds_screen.dart';
 import 'battles_screen.dart';
 import 'collection_screen.dart';
@@ -51,11 +52,29 @@ class HatcheryScreen extends StatefulWidget {
 
 class _HatcheryScreenState extends State<HatcheryScreen> {
   int _coinTapCount = 0;
+  var _tutorialAutoStartChecked = false;
 
   GameService get game => widget.game;
   PreferencesService get preferences => widget.preferences;
   CustomSpriteService get customSprites => widget.customSprites;
   CustomEggService get customEggs => widget.customEggs;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoStartTutorial());
+  }
+
+  void _maybeAutoStartTutorial() {
+    if (!mounted || _tutorialAutoStartChecked) return;
+    _tutorialAutoStartChecked = true;
+    if (!game.shouldAutoStartTutorial) return;
+    TutorialOverlay.show(
+      context,
+      game: game,
+      theme: preferences.selectedTheme,
+    );
+  }
 
   void _onCoinTap() {
     _coinTapCount++;

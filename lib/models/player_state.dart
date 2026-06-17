@@ -20,6 +20,9 @@ class PlayerState {
     this.nightmareWins = const {},
     this.bossMutationUnlocked = false,
     this.activeAutoBattle,
+    this.tutorialCompleted = false,
+    this.tutorialSkipped = false,
+    this.tutorialVersionCompleted = 0,
   });
 
   final int coins;
@@ -37,6 +40,9 @@ class PlayerState {
   final Map<String, int> nightmareWins;
   final bool bossMutationUnlocked;
   final ActiveAutoBattle? activeAutoBattle;
+  final bool tutorialCompleted;
+  final bool tutorialSkipped;
+  final int tutorialVersionCompleted;
 
   static PlayerState initial() {
     return PlayerState(
@@ -67,6 +73,9 @@ class PlayerState {
     bool? bossMutationUnlocked,
     ActiveAutoBattle? activeAutoBattle,
     bool clearActiveAutoBattle = false,
+    bool? tutorialCompleted,
+    bool? tutorialSkipped,
+    int? tutorialVersionCompleted,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -89,6 +98,10 @@ class PlayerState {
       activeAutoBattle: clearActiveAutoBattle
           ? null
           : activeAutoBattle ?? this.activeAutoBattle,
+      tutorialCompleted: tutorialCompleted ?? this.tutorialCompleted,
+      tutorialSkipped: tutorialSkipped ?? this.tutorialSkipped,
+      tutorialVersionCompleted:
+          tutorialVersionCompleted ?? this.tutorialVersionCompleted,
     );
   }
 
@@ -109,6 +122,9 @@ class PlayerState {
         'bossMutationUnlocked': bossMutationUnlocked,
         if (activeAutoBattle != null)
           'activeAutoBattle': activeAutoBattle!.toJson(),
+        'tutorialCompleted': tutorialCompleted,
+        'tutorialSkipped': tutorialSkipped,
+        'tutorialVersionCompleted': tutorialVersionCompleted,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -139,6 +155,10 @@ class PlayerState {
               json['activeAutoBattle'] as Map<String, dynamic>,
             )
           : null,
+      tutorialCompleted: json['tutorialCompleted'] as bool? ?? false,
+      tutorialSkipped: json['tutorialSkipped'] as bool? ?? false,
+      tutorialVersionCompleted:
+          json['tutorialVersionCompleted'] as int? ?? 0,
     );
   }
 

@@ -12,6 +12,7 @@ import '../utils/collection_quest_logic.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
+import '../widgets/tutorial_overlay.dart';
 import 'developer_screen.dart';
 
 /// Player-facing secret screen unlocked by tapping the Hatchery coin 3 times.
@@ -333,6 +334,52 @@ class SecretToolsScreen extends StatelessWidget {
                               ),
                             ),
                           ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: GameTheme.panelDecoration(theme),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Help',
+                            style: GameTheme.sectionTitle(theme, size: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Replay the basics anytime.',
+                            style: TextStyle(
+                              color: theme.cardTextSecondaryColor,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              TutorialOverlay.show(
+                                context,
+                                game: game,
+                                theme: theme,
+                                isReplay: true,
+                              );
+                            },
+                            icon: const Icon(Icons.school_outlined, size: 18),
+                            label: const Text('Replay Tutorial'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: theme.cardTextPrimaryColor,
+                              side: BorderSide(
+                                color: theme.panelAccentColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
                         ],
                       ),
                     ),

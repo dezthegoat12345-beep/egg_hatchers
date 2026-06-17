@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/boss_data.dart';
 import '../data/game_data.dart';
+import '../data/tutorial_data.dart';
 import '../data/quest_data.dart';
 import '../models/active_auto_battle.dart';
 import '../models/animal.dart';
@@ -206,6 +207,51 @@ class GameService extends ChangeNotifier {
 
   /// True when the one-time Secret Reward Badge has been applied or legacy void egg claimed.
   bool get secretRewardBadgeClaimed => _state.secretSpaceEggClaimed;
+
+  bool get tutorialCompleted => _state.tutorialCompleted;
+  bool get tutorialSkipped => _state.tutorialSkipped;
+  int get tutorialVersionCompleted => _state.tutorialVersionCompleted;
+
+  bool get shouldAutoStartTutorial =>
+      !_state.tutorialCompleted &&
+      !_state.tutorialSkipped &&
+      _state.tutorialVersionCompleted < TutorialData.currentVersion &&
+      _isNewPlayerForTutorial();
+
+  bool _isNewPlayerForTutorial() {
+    final starting = GameData.startingPlayerState();
+    return _state.lifetimeCoinsEarned == 0 &&
+        _state.ownedAnimals.isEmpty &&
+        _state.coins <= starting.coins;
+  }
+
+  void completeTutorial() {
+    _state = _state.copyWith(
+      tutorialCompleted: true,
+      tutorialSkipped: false,
+      tutorialVersionCompleted: TutorialData.currentVersion,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void skipTutorial() {
+    _state = _state.copyWith(tutorialSkipped: true);
+    notifyListeners();
+    save();
+  }
+
+  void devResetTutorial() {
+    _state = _state.copyWith(
+      tutorialCompleted: false,
+      tutorialSkipped: false,
+      tutorialVersionCompleted: 0,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devCompleteTutorial() => completeTutorial();
 
   bool get hasSecretRewardAnimal =>
       _state.ownedAnimals.any((owned) => owned.isSecretReward);
@@ -512,6 +558,9 @@ class GameService extends ChangeNotifier {
     final battleTokens = _state.battleTokens;
     final bossWins = _state.bossWins;
     final bossMutationUnlocked = _state.bossMutationUnlocked;
+    final tutorialCompleted = _state.tutorialCompleted;
+    final tutorialSkipped = _state.tutorialSkipped;
+    final tutorialVersionCompleted = _state.tutorialVersionCompleted;
     final protectedAnimals = _state.ownedAnimals
         .where((owned) => owned.isProtected)
         .toList();
@@ -528,6 +577,9 @@ class GameService extends ChangeNotifier {
       battleTokens: battleTokens,
       bossWins: bossWins,
       bossMutationUnlocked: bossMutationUnlocked,
+      tutorialCompleted: tutorialCompleted,
+      tutorialSkipped: tutorialSkipped,
+      tutorialVersionCompleted: tutorialVersionCompleted,
     );
     _pendingQuestNotification = null;
     _questNotificationDeferred = false;

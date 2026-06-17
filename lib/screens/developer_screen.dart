@@ -600,6 +600,20 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Reset Tutorial',
+                onPressed: () {
+                  game.devResetTutorial();
+                  _showMessage('Tutorial state reset.');
+                },
+              ),
+              _QuickButton(
+                label: 'Complete Tutorial',
+                onPressed: () {
+                  game.devCompleteTutorial();
+                  _showMessage('Tutorial marked complete.');
+                },
+              ),
+              _QuickButton(
                 label: 'Grant Secret Reward Badge',
                 onPressed: () {
                   game.devGrantSecretRewardBadge();
