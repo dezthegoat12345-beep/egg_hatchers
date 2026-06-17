@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
@@ -18,7 +19,9 @@ import '../widgets/owned_animal_list.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
+import '../data/tutorial_data.dart';
 import '../services/tutorial_service.dart';
+import '../services/tutorial_target_registry.dart';
 import '../widgets/tutorial_targets.dart';
 import 'backgrounds_screen.dart';
 import 'battles_screen.dart';
@@ -55,6 +58,14 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   int _coinTapCount = 0;
   var _tutorialAutoStartChecked = false;
 
+  static const _hatcheryTutorialTargets = [
+    TutorialTargetIds.shopButton,
+    TutorialTargetIds.collectionButton,
+    TutorialTargetIds.questsButton,
+    TutorialTargetIds.battlesButton,
+    TutorialTargetIds.upgradeButton,
+  ];
+
   GameService get game => widget.game;
   PreferencesService get preferences => widget.preferences;
   CustomSpriteService get customSprites => widget.customSprites;
@@ -63,7 +74,103 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoStartTutorial());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeAutoStartTutorial();
+      _registerTutorialTargets();
+    });
+  }
+
+  @override
+  void dispose() {
+    TutorialTargetRegistry.unregisterAll(_hatcheryTutorialTargets);
+    super.dispose();
+  }
+
+  void _registerTutorialTargets() {
+    if (!mounted) return;
+
+    TutorialTargetRegistry.register(TutorialTargetIds.shopButton, () {
+      if (!mounted) return;
+      final bg = preferences.selectedTheme;
+      openShopWithTransition(
+        context,
+        theme: bg,
+        builder: (_) => ShopScreen(
+          game: game,
+          preferences: preferences,
+          customSprites: customSprites,
+          customEggs: customEggs,
+        ),
+      );
+    });
+
+    TutorialTargetRegistry.register(TutorialTargetIds.collectionButton, () {
+      if (!mounted) return;
+      final bg = preferences.selectedTheme;
+      openWithThemedTransition(
+        context,
+        theme: bg,
+        icon: '🐾',
+        label: 'Opening Collection',
+        settings: const RouteSettings(name: kCollectionRouteName),
+        builder: (_) => CollectionScreen(
+          game: game,
+          preferences: preferences,
+          customSprites: customSprites,
+        ),
+      );
+    });
+
+    TutorialTargetRegistry.register(TutorialTargetIds.questsButton, () {
+      if (!mounted) return;
+      final bg = preferences.selectedTheme;
+      openWithThemedTransition(
+        context,
+        theme: bg,
+        icon: '⭐',
+        label: 'Opening Quests',
+        settings: const RouteSettings(name: kQuestsRouteName),
+        builder: (_) => QuestsScreen(
+          game: game,
+          preferences: preferences,
+        ),
+      );
+    });
+
+    TutorialTargetRegistry.register(TutorialTargetIds.battlesButton, () {
+      if (!mounted) return;
+      final bg = preferences.selectedTheme;
+      openBattlesWithTransition(
+        context,
+        theme: bg,
+        builder: (_) => BattlesScreen(
+          game: game,
+          preferences: preferences,
+          customSprites: customSprites,
+        ),
+      );
+    });
+
+    TutorialTargetRegistry.register(TutorialTargetIds.upgradeButton, () {
+      if (!mounted) return;
+      final owned = game.normalAnimals.isNotEmpty
+          ? game.normalAnimals.first
+          : game.mutatedAnimals.isEmpty
+              ? null
+              : game.mutatedAnimals.first;
+      if (owned == null) return;
+      final animal = GameData.animalById(owned.animalId);
+      if (animal == null) return;
+      final mutation = GameData.mutationById(owned.mutationId) ??
+          GameData.mutations.first;
+      _handleUpgrade(
+        context,
+        animal.id,
+        owned.mutationId,
+        mutation.fullName(animal),
+        owned.isProtected,
+      );
+    });
   }
 
   void _maybeAutoStartTutorial() {
@@ -356,8 +463,8 @@ class _HatcheryNavGrid extends StatelessWidget {
             for (final item in items)
               SizedBox(
                 width: itemWidth,
-                key: item.tutorialKey,
                 child: _NavButton(
+                  key: item.tutorialKey,
                   label: item.label,
                   theme: theme,
                   color: item.color,
@@ -374,6 +481,7 @@ class _HatcheryNavGrid extends StatelessWidget {
 
 class _NavButton extends StatelessWidget {
   const _NavButton({
+    super.key,
     required this.label,
     required this.theme,
     required this.color,

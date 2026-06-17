@@ -4,7 +4,7 @@ import '../data/game_data.dart';
 import '../data/tutorial_data.dart';
 import '../models/background_theme.dart';
 import '../navigation/app_page_route.dart';
-import '../widgets/tutorial_targets.dart';
+import '../services/tutorial_target_registry.dart';
 import 'game_service.dart';
 
 enum TutorialPhase { inactive, welcome, guided }
@@ -102,7 +102,7 @@ class TutorialService extends ChangeNotifier {
     final step = currentStep;
     if (step == null) return;
     if (!force && !step.allowsManualNext && step.targetId != null) {
-      if (!shouldUseFallback(step)) return;
+      if (!needsAffordabilityFallback(step)) return;
     }
     if (step.isFinish) {
       completeTutorial();
@@ -172,10 +172,14 @@ class TutorialService extends ChangeNotifier {
     }
   }
 
-  bool shouldUseFallback(GuidedTutorialStep step) {
-    if (step.targetId == null) return true;
-    if (TutorialTargets.measure(step.targetId) == null) return true;
+  void invokeTargetTap(String targetId) {
+    if (_phase != TutorialPhase.guided || _pausedForDialog) return;
+    final step = currentStep;
+    if (step?.targetId != targetId) return;
+    TutorialTargetRegistry.handlerFor(targetId)?.call();
+  }
 
+  bool needsAffordabilityFallback(GuidedTutorialStep step) {
     final game = _game;
     if (game == null) return false;
 
@@ -199,18 +203,35 @@ class TutorialService extends ChangeNotifier {
     return false;
   }
 
-  String displayText(GuidedTutorialStep step) {
-    if (shouldUseFallback(step) && step.fallbackText != null) {
+  bool isFallbackMode(GuidedTutorialStep step, {required bool targetFound}) {
+    if (!targetFound) return true;
+    return needsAffordabilityFallback(step);
+  }
+
+  bool shouldUseFallback(GuidedTutorialStep step) {
+    if (step.targetId == null) return true;
+    return needsAffordabilityFallback(step);
+  }
+
+  String displayText(GuidedTutorialStep step, {required bool targetFound}) {
+    if (isFallbackMode(step, targetFound: targetFound) &&
+        step.fallbackText != null) {
       return step.fallbackText!;
     }
     return step.text;
   }
 
-  bool showNextButton(GuidedTutorialStep step) {
+  bool showNextButton(GuidedTutorialStep step, {required bool targetFound}) {
     if (step.isFinish) return true;
     if (step.manualNext) return true;
-    if (shouldUseFallback(step)) return true;
+    if (isFallbackMode(step, targetFound: targetFound)) return true;
     return false;
+  }
+
+  bool allowsProxyTargetTap(GuidedTutorialStep step, {required bool targetFound}) {
+    if (!step.requiresTargetTap) return false;
+    if (isFallbackMode(step, targetFound: targetFound)) return false;
+    return TutorialTargetRegistry.handlerFor(step.targetId) != null;
   }
 
   bool isStepVisibleOnCurrentRoute(String? routeName) {

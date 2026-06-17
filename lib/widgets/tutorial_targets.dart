@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../data/tutorial_data.dart';
@@ -44,19 +45,61 @@ class TutorialTargets {
     }
   }
 
-  static Rect? measure(String? targetId, {double padding = 10}) {
+  static String? labelFor(String? targetId) => targetId;
+
+  static Rect? measure(
+    String? targetId, {
+    required BuildContext overlayContext,
+    double padding = 8,
+  }) {
     final key = keyFor(targetId);
     if (key == null) return null;
-    return measureKey(key, padding: padding);
+    return measureKey(key, overlayContext: overlayContext, padding: padding);
   }
 
-  static Rect? measureKey(GlobalKey key, {double padding = 10}) {
-    final context = key.currentContext;
-    if (context == null) return null;
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox || !renderObject.hasSize) return null;
-    final offset = renderObject.localToGlobal(Offset.zero);
-    final rect = offset & renderObject.size;
-    return rect.inflate(padding);
+  static Rect? measureKey(
+    GlobalKey key, {
+    required BuildContext overlayContext,
+    double padding = 8,
+  }) {
+    final targetContext = key.currentContext;
+    if (targetContext == null) return null;
+
+    final targetBox = targetContext.findRenderObject();
+    if (targetBox is! RenderBox || !targetBox.hasSize) return null;
+
+    final overlayBox = overlayContext.findRenderObject();
+    if (overlayBox is! RenderBox || !overlayBox.hasSize) return null;
+
+    final topLeft = targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final bottomRight = targetBox.localToGlobal(
+      targetBox.size.bottomRight(Offset.zero),
+      ancestor: overlayBox,
+    );
+
+    if (bottomRight.dx <= topLeft.dx || bottomRight.dy <= topLeft.dy) {
+      return null;
+    }
+
+    return Rect.fromPoints(topLeft, bottomRight).inflate(padding);
+  }
+
+  static void debugLogMeasure({
+    required String stepId,
+    required String? targetId,
+    required Rect? rect,
+  }) {
+    if (!kDebugMode) return;
+    final label = labelFor(targetId) ?? targetId ?? 'none';
+    if (rect == null) {
+      debugPrint('[Tutorial] step=$stepId target=$label rect=NOT_FOUND');
+    } else {
+      debugPrint(
+        '[Tutorial] step=$stepId target=$label '
+        'rect=${rect.left.toStringAsFixed(1)},'
+        '${rect.top.toStringAsFixed(1)} '
+        '${rect.width.toStringAsFixed(1)}x${rect.height.toStringAsFixed(1)}',
+      );
+    }
   }
 }

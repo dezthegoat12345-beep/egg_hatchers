@@ -15,7 +15,9 @@ import '../widgets/coin_header.dart';
 import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
+import '../data/tutorial_data.dart';
 import '../services/tutorial_service.dart';
+import '../services/tutorial_target_registry.dart';
 import '../widgets/tutorial_targets.dart';
 import '../widgets/multi_hatch_dialog.dart';
 import '../widgets/phone_width_layout.dart';
@@ -194,7 +196,9 @@ class ShopScreen extends StatelessWidget {
         final hasHiddenCustomEggs =
             hasSavedCustomEggs && customShopEggs.isEmpty;
 
-        return ReturnToHatcheryPopScope(
+        return _ShopTutorialRegistrar(
+          onBuyBasicEgg: () => _buyAndHatch(context, GameData.eggs.first),
+          child: ReturnToHatcheryPopScope(
           theme: bg,
           child: QuestNotificationListener(
           game: game,
@@ -398,10 +402,44 @@ class ShopScreen extends StatelessWidget {
           ),
         ),
         ),
+        ),
         );
       },
     );
   }
+}
+
+class _ShopTutorialRegistrar extends StatefulWidget {
+  const _ShopTutorialRegistrar({
+    required this.onBuyBasicEgg,
+    required this.child,
+  });
+
+  final VoidCallback onBuyBasicEgg;
+  final Widget child;
+
+  @override
+  State<_ShopTutorialRegistrar> createState() => _ShopTutorialRegistrarState();
+}
+
+class _ShopTutorialRegistrarState extends State<_ShopTutorialRegistrar> {
+  @override
+  void initState() {
+    super.initState();
+    TutorialTargetRegistry.register(
+      TutorialTargetIds.basicEggBuyButton,
+      widget.onBuyBasicEgg,
+    );
+  }
+
+  @override
+  void dispose() {
+    TutorialTargetRegistry.unregister(TutorialTargetIds.basicEggBuyButton);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _CustomEggsShopNotice extends StatelessWidget {

@@ -9,7 +9,7 @@ import 'phone_width_layout.dart';
 import 'tutorial_targets.dart';
 
 /// Dim overlay with circular spotlight, callout bubble, and tap blocking.
-class TutorialSpotlightOverlay extends StatelessWidget {
+class TutorialSpotlightOverlay extends StatefulWidget {
   const TutorialSpotlightOverlay({
     super.key,
     required this.service,
@@ -22,9 +22,103 @@ class TutorialSpotlightOverlay extends StatelessWidget {
   final String? topRouteName;
 
   @override
+  State<TutorialSpotlightOverlay> createState() =>
+      _TutorialSpotlightOverlayState();
+}
+
+class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
+  Rect? _targetRect;
+  String? _measuredStepId;
+  var _measureGeneration = 0;
+
+  TutorialService get service => widget.service;
+
+  @override
+  void initState() {
+    super.initState();
+    service.addListener(_scheduleMeasure);
+    _scheduleMeasure();
+  }
+
+  @override
+  void didUpdateWidget(covariant TutorialSpotlightOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.topRouteName != widget.topRouteName ||
+        oldWidget.service.stepIndex != widget.service.stepIndex) {
+      _scheduleMeasure();
+    }
+  }
+
+  @override
+  void dispose() {
+    service.removeListener(_scheduleMeasure);
+    super.dispose();
+  }
+
+  void _scheduleMeasure() {
+    final generation = ++_measureGeneration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != _measureGeneration) return;
+      _remeasureTarget();
+    });
+  }
+
+  void _remeasureTarget() {
+    final step = service.currentStep;
+    if (step == null || step.targetId == null) {
+      if (_targetRect != null || _measuredStepId != null) {
+        setState(() {
+          _targetRect = null;
+          _measuredStepId = null;
+        });
+      }
+      return;
+    }
+
+    final rect = TutorialTargets.measure(
+      step.targetId,
+      overlayContext: context,
+    );
+
+    TutorialTargets.debugLogMeasure(
+      stepId: step.id,
+      targetId: step.targetId,
+      rect: rect,
+    );
+
+    if (_measuredStepId != step.id || _targetRect != rect) {
+      setState(() {
+        _targetRect = rect;
+        _measuredStepId = step.id;
+      });
+    }
+
+    if (rect == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final retry = TutorialTargets.measure(
+          step.targetId,
+          overlayContext: context,
+        );
+        if (retry != null && retry != _targetRect) {
+          TutorialTargets.debugLogMeasure(
+            stepId: step.id,
+            targetId: step.targetId,
+            rect: retry,
+          );
+          setState(() {
+            _targetRect = retry;
+            _measuredStepId = step.id;
+          });
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (service.phase == TutorialPhase.welcome) {
-      return _WelcomeOverlay(service: service, theme: theme);
+      return _WelcomeOverlay(service: service, theme: widget.theme);
     }
     if (service.phase != TutorialPhase.guided || service.pausedForDialog) {
       return const SizedBox.shrink();
@@ -33,32 +127,45 @@ class TutorialSpotlightOverlay extends StatelessWidget {
     final step = service.currentStep;
     if (step == null) return const SizedBox.shrink();
 
-    if (!service.isStepVisibleOnCurrentRoute(topRouteName)) {
+    if (!service.isStepVisibleOnCurrentRoute(widget.topRouteName)) {
       return const SizedBox.shrink();
     }
 
-    final useFallback = service.shouldUseFallback(step);
-    final targetRect = useFallback ? null : TutorialTargets.measure(step.targetId);
-    final text = service.displayText(step);
-    final showNext = service.showNextButton(step);
+    final targetFound = _targetRect != null && _measuredStepId == step.id;
+    final useFallback = service.isFallbackMode(step, targetFound: targetFound);
+    final targetRect = useFallback ? null : _targetRect;
+    final text = service.displayText(step, targetFound: targetFound);
+    final showNext = service.showNextButton(step, targetFound: targetFound);
+    final proxyTap = service.allowsProxyTargetTap(
+      step,
+      targetFound: targetFound,
+    );
 
     if (targetRect == null) {
       return _FallbackCardOverlay(
         service: service,
-        theme: theme,
+        theme: widget.theme,
         text: text,
         showNext: showNext,
         isFinish: step.isFinish,
       );
     }
 
-    return _SpotlightLayer(
-      service: service,
-      theme: theme,
-      targetRect: targetRect,
-      text: text,
-      showNext: showNext,
-      isFinish: step.isFinish,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layerSize = constraints.biggest;
+        return _SpotlightLayer(
+          service: service,
+          theme: widget.theme,
+          targetRect: targetRect,
+          layerSize: layerSize,
+          text: text,
+          showNext: showNext,
+          isFinish: step.isFinish,
+          proxyTapEnabled: proxyTap,
+          targetId: step.targetId,
+        );
+      },
     );
   }
 }
@@ -185,38 +292,54 @@ class _SpotlightLayer extends StatelessWidget {
     required this.service,
     required this.theme,
     required this.targetRect,
+    required this.layerSize,
     required this.text,
     required this.showNext,
     required this.isFinish,
+    required this.proxyTapEnabled,
+    required this.targetId,
   });
 
   final TutorialService service;
   final BackgroundTheme theme;
   final Rect targetRect;
+  final Size layerSize;
   final String text;
   final bool showNext;
   final bool isFinish;
+  final bool proxyTapEnabled;
+  final String? targetId;
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
     final hole = _circleHole(targetRect);
     final calloutPlacement = _CalloutPlacement.forTarget(
       hole,
-      screenSize,
+      layerSize,
     );
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        CustomPaint(
-          size: screenSize,
-          painter: _DimSpotlightPainter(
-            hole: hole,
-            dimColor: Colors.black.withValues(alpha: 0.58),
+        IgnorePointer(
+          child: CustomPaint(
+            size: layerSize,
+            painter: _DimSpotlightPainter(
+              hole: hole,
+              dimColor: Colors.black.withValues(alpha: 0.58),
+            ),
           ),
         ),
-        ..._TapBlockers.build(hole: hole, screenSize: screenSize),
+        ..._TapBlockers.build(hole: hole, layerSize: layerSize),
+        if (proxyTapEnabled && targetId != null)
+          Positioned.fromRect(
+            rect: hole,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => service.invokeTargetTap(targetId!),
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
         Positioned(
           left: calloutPlacement.left,
           top: calloutPlacement.top,
@@ -242,7 +365,7 @@ class _SpotlightLayer extends StatelessWidget {
     final diameter = target.width > target.height
         ? target.width
         : target.height;
-    final radius = (diameter / 2).clamp(28.0, 72.0);
+    final radius = (diameter / 2).clamp(32.0, 80.0);
     return Rect.fromCircle(center: center, radius: radius);
   }
 }
@@ -250,19 +373,19 @@ class _SpotlightLayer extends StatelessWidget {
 class _TapBlockers {
   static List<Widget> build({
     required Rect hole,
-    required Size screenSize,
+    required Size layerSize,
   }) {
     return [
       Positioned(
         left: 0,
         top: 0,
         right: 0,
-        height: hole.top.clamp(0, screenSize.height),
+        height: hole.top.clamp(0, layerSize.height),
         child: const _TapBlocker(),
       ),
       Positioned(
         left: 0,
-        top: hole.bottom.clamp(0, screenSize.height),
+        top: hole.bottom.clamp(0, layerSize.height),
         right: 0,
         bottom: 0,
         child: const _TapBlocker(),
@@ -270,12 +393,12 @@ class _TapBlockers {
       Positioned(
         left: 0,
         top: hole.top,
-        width: hole.left.clamp(0, screenSize.width),
+        width: hole.left.clamp(0, layerSize.width),
         height: hole.height,
         child: const _TapBlocker(),
       ),
       Positioned(
-        left: hole.right.clamp(0, screenSize.width),
+        left: hole.right.clamp(0, layerSize.width),
         top: hole.top,
         right: 0,
         height: hole.height,
@@ -335,48 +458,83 @@ class _CalloutPlacement {
   final double width;
   final _ArrowDirection arrowDirection;
 
-  static _CalloutPlacement forTarget(Rect hole, Size screenSize) {
+  static _CalloutPlacement forTarget(Rect hole, Size layerSize) {
     const margin = 16.0;
     const calloutWidth = 280.0;
-    const estimatedHeight = 140.0;
+    const estimatedHeight = 150.0;
+
+    final candidates = <_CalloutPlacement>[];
 
     final centerX = hole.center.dx;
-    final left = (centerX - calloutWidth / 2)
-        .clamp(margin, screenSize.width - calloutWidth - margin);
+    final centeredLeft = (centerX - calloutWidth / 2)
+        .clamp(margin, layerSize.width - calloutWidth - margin);
 
-    final spaceBelow = screenSize.height - hole.bottom;
-    final spaceAbove = hole.top;
+    final belowTop = hole.bottom + margin;
+    if (belowTop + estimatedHeight <= layerSize.height - margin) {
+      candidates.add(
+        _CalloutPlacement(
+          left: centeredLeft,
+          top: belowTop,
+          width: calloutWidth,
+          arrowDirection: _ArrowDirection.up,
+        ),
+      );
+    }
 
-    if (spaceBelow >= estimatedHeight + margin) {
-      return _CalloutPlacement(
-        left: left,
-        top: hole.bottom + margin,
-        width: calloutWidth,
-        arrowDirection: _ArrowDirection.up,
+    final aboveTop = hole.top - estimatedHeight - margin;
+    if (aboveTop >= margin) {
+      candidates.add(
+        _CalloutPlacement(
+          left: centeredLeft,
+          top: aboveTop,
+          width: calloutWidth,
+          arrowDirection: _ArrowDirection.down,
+        ),
       );
     }
-    if (spaceAbove >= estimatedHeight + margin) {
-      return _CalloutPlacement(
-        left: left,
-        top: hole.top - estimatedHeight - margin,
-        width: calloutWidth,
-        arrowDirection: _ArrowDirection.down,
+
+    if (hole.center.dx > layerSize.width / 2) {
+      candidates.add(
+        _CalloutPlacement(
+          left: margin,
+          top: (hole.center.dy - estimatedHeight / 2)
+              .clamp(margin, layerSize.height - estimatedHeight - margin),
+          width: calloutWidth,
+          arrowDirection: _ArrowDirection.right,
+        ),
+      );
+    } else {
+      candidates.add(
+        _CalloutPlacement(
+          left: layerSize.width - calloutWidth - margin,
+          top: (hole.center.dy - estimatedHeight / 2)
+              .clamp(margin, layerSize.height - estimatedHeight - margin),
+          width: calloutWidth,
+          arrowDirection: _ArrowDirection.left,
+        ),
       );
     }
-    if (hole.center.dx > screenSize.width / 2) {
-      return _CalloutPlacement(
-        left: margin,
-        top: hole.center.dy - estimatedHeight / 2,
-        width: calloutWidth,
-        arrowDirection: _ArrowDirection.right,
+
+    for (final candidate in candidates) {
+      final calloutRect = Rect.fromLTWH(
+        candidate.left,
+        candidate.top,
+        candidate.width,
+        estimatedHeight,
       );
+      if (!calloutRect.overlaps(hole.inflate(8))) {
+        return candidate;
+      }
     }
-    return _CalloutPlacement(
-      left: screenSize.width - calloutWidth - margin,
-      top: hole.center.dy - estimatedHeight / 2,
-      width: calloutWidth,
-      arrowDirection: _ArrowDirection.left,
-    );
+
+    return candidates.isNotEmpty
+        ? candidates.first
+        : _CalloutPlacement(
+            left: centeredLeft,
+            top: margin,
+            width: calloutWidth,
+            arrowDirection: _ArrowDirection.down,
+          );
   }
 }
 

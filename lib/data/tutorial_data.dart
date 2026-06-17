@@ -18,6 +18,7 @@ class TutorialData {
       id: 'shop',
       text: 'Click the shop button!',
       targetId: TutorialTargetIds.shopButton,
+      requiresTargetTap: true,
       advanceOnRoute: kShopRouteName,
     ),
     GuidedTutorialStep(
@@ -25,6 +26,7 @@ class TutorialData {
       text: 'Buy your first egg!',
       targetId: TutorialTargetIds.basicEggBuyButton,
       fallbackText: 'This is where you buy eggs.',
+      requiresTargetTap: true,
       advanceOnAction: TutorialAction.eggPurchased,
       requiredRoute: kShopRouteName,
     ),
@@ -46,6 +48,7 @@ class TutorialData {
       text: 'Upgrade animals to make more coins!',
       targetId: TutorialTargetIds.upgradeButton,
       fallbackText: 'This button upgrades animals when you have enough coins.',
+      requiresTargetTap: true,
       advanceOnAction: TutorialAction.animalUpgraded,
       requiredRoute: kHatcheryRouteName,
     ),
@@ -53,6 +56,7 @@ class TutorialData {
       id: 'collection',
       text: "Open your Collection to see what you've found!",
       targetId: TutorialTargetIds.collectionButton,
+      requiresTargetTap: true,
       advanceOnRoute: kCollectionRouteName,
       requiredRoute: kHatcheryRouteName,
     ),
@@ -60,6 +64,7 @@ class TutorialData {
       id: 'quests',
       text: 'Quests give extra rewards!',
       targetId: TutorialTargetIds.questsButton,
+      requiresTargetTap: true,
       advanceOnRoute: kQuestsRouteName,
       requiredRoute: kHatcheryRouteName,
     ),
@@ -67,6 +72,7 @@ class TutorialData {
       id: 'battles',
       text: 'Battle bosses for special rewards!',
       targetId: TutorialTargetIds.battlesButton,
+      requiresTargetTap: true,
       advanceOnRoute: kBattlesRouteName,
       requiredRoute: kHatcheryRouteName,
     ),
@@ -110,6 +116,7 @@ class GuidedTutorialStep {
     this.targetId,
     this.fallbackText,
     this.manualNext = false,
+    this.requiresTargetTap = false,
     this.advanceOnRoute,
     this.advanceOnAction,
     this.requiredRoute,
@@ -121,6 +128,7 @@ class GuidedTutorialStep {
   final String? targetId;
   final String? fallbackText;
   final bool manualNext;
+  final bool requiresTargetTap;
   final String? advanceOnRoute;
   final TutorialAction? advanceOnAction;
   final String? requiredRoute;
