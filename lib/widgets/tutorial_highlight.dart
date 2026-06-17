@@ -24,13 +24,13 @@ class TutorialHighlightMetrics {
 
   static TutorialHighlightMetrics forTarget(
     Rect targetRect, {
-    double padding = 8,
+    double padding = 10,
   }) {
     final inflated = targetRect.inflate(padding);
     final aspect = inflated.width / math.max(inflated.height, 1);
 
     if (aspect > 1.35) {
-      final radius = (inflated.height * 0.22).clamp(10.0, 18.0);
+      final radius = (inflated.height * 0.24).clamp(12.0, 18.0);
       final rrect = RRect.fromRectAndRadius(
         inflated,
         Radius.circular(radius),
@@ -70,7 +70,88 @@ class TutorialHighlightMetrics {
   }
 }
 
+/// Four-panel dim mask leaving the target hole fully transparent.
+///
+/// More reliable than [Path.combine] cutouts on Flutter Web, where difference
+/// paths may still composite dim color over the target.
+class TutorialSpotlightDimMask extends StatelessWidget {
+  const TutorialSpotlightDimMask({
+    super.key,
+    required this.metrics,
+    required this.layerSize,
+    required this.dimColor,
+    this.blockOutsideTouches = true,
+  });
+
+  final TutorialHighlightMetrics metrics;
+  final Size layerSize;
+  final Color dimColor;
+  final bool blockOutsideTouches;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: _DimPanelRects.build(
+        hole: metrics.bounds,
+        layerSize: layerSize,
+        dimColor: dimColor,
+        blockTouches: blockOutsideTouches,
+      ),
+    );
+  }
+}
+
+class _DimPanelRects {
+  static List<Widget> build({
+    required Rect hole,
+    required Size layerSize,
+    required Color dimColor,
+    required bool blockTouches,
+  }) {
+    Widget panel() {
+      final child = ColoredBox(color: dimColor);
+      if (!blockTouches) {
+        return IgnorePointer(child: child);
+      }
+      return AbsorbPointer(child: child);
+    }
+
+    return [
+      Positioned(
+        left: 0,
+        top: 0,
+        right: 0,
+        height: hole.top.clamp(0, layerSize.height),
+        child: panel(),
+      ),
+      Positioned(
+        left: 0,
+        top: hole.bottom.clamp(0, layerSize.height),
+        right: 0,
+        bottom: 0,
+        child: panel(),
+      ),
+      Positioned(
+        left: 0,
+        top: hole.top,
+        width: hole.left.clamp(0, layerSize.width),
+        height: hole.height,
+        child: panel(),
+      ),
+      Positioned(
+        left: hole.right.clamp(0, layerSize.width),
+        top: hole.top,
+        right: 0,
+        height: hole.height,
+        child: panel(),
+      ),
+    ];
+  }
+}
+
 /// Dims the screen with a cutout over the active tutorial target.
+///
+/// Prefer [TutorialSpotlightDimMask] for runtime spotlight UI.
 class TutorialDimSpotlightPainter extends CustomPainter {
   TutorialDimSpotlightPainter({
     required this.metrics,
@@ -84,8 +165,15 @@ class TutorialDimSpotlightPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final overlay = Path()..addRect(Offset.zero & size);
     final cutout = metrics.cutoutPath();
-    final dimPath = Path.combine(PathOperation.difference, overlay, cutout);
-    canvas.drawPath(dimPath, Paint()..color = dimColor);
+    final dimPath = Path.combine(
+      PathOperation.difference,
+      overlay,
+      cutout,
+    );
+    canvas.drawPath(
+      dimPath,
+      Paint()..color = dimColor,
+    );
   }
 
   @override

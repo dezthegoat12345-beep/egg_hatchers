@@ -323,16 +323,12 @@ class _SpotlightLayer extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        IgnorePointer(
-          child: CustomPaint(
-            size: layerSize,
-            painter: TutorialDimSpotlightPainter(
-              metrics: metrics,
-              dimColor: Colors.black.withValues(alpha: 0.68),
-            ),
-          ),
+        TutorialSpotlightDimMask(
+          metrics: metrics,
+          layerSize: layerSize,
+          dimColor: Colors.black.withValues(alpha: 0.62),
+          blockOutsideTouches: true,
         ),
-        ..._TapBlockers.build(hole: highlightBounds, layerSize: layerSize),
         IgnorePointer(
           child: TutorialTargetHighlight(
             metrics: metrics,
@@ -374,57 +370,8 @@ class _SpotlightLayer extends StatelessWidget {
   }
 }
 
-class _TapBlockers {
-  static List<Widget> build({
-    required Rect hole,
-    required Size layerSize,
-  }) {
-    return [
-      Positioned(
-        left: 0,
-        top: 0,
-        right: 0,
-        height: hole.top.clamp(0, layerSize.height),
-        child: const _TapBlocker(),
-      ),
-      Positioned(
-        left: 0,
-        top: hole.bottom.clamp(0, layerSize.height),
-        right: 0,
-        bottom: 0,
-        child: const _TapBlocker(),
-      ),
-      Positioned(
-        left: 0,
-        top: hole.top,
-        width: hole.left.clamp(0, layerSize.width),
-        height: hole.height,
-        child: const _TapBlocker(),
-      ),
-      Positioned(
-        left: hole.right.clamp(0, layerSize.width),
-        top: hole.top,
-        right: 0,
-        height: hole.height,
-        child: const _TapBlocker(),
-      ),
-    ];
-  }
-}
-
-class _TapBlocker extends StatelessWidget {
-  const _TapBlocker();
-
-  @override
-  Widget build(BuildContext context) {
-    return AbsorbPointer(
-      absorbing: true,
-      child: Container(color: Colors.transparent),
-    );
-  }
-}
-
 enum _ArrowDirection { up, down, left, right }
+
 class _TargetDirectionArrow extends StatelessWidget {
   const _TargetDirectionArrow({
     required this.layerSize,
