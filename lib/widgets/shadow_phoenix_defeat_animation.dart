@@ -56,7 +56,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   @override
   void initState() {
     super.initState();
-    _feathers = _DarkFeather.generate(40);
+    _feathers = _DarkFeather.generate(44);
     _embers = _ShadowEmber.generate(18);
     _smokePuffs = _SmokePuff.generate(16);
     _controller = AnimationController(
@@ -96,6 +96,99 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
 
   double _timeMs() => _controller.value * _totalMs;
 
+  _WingFlapSnapshot _wingFlap(
+    double t,
+    double unevenFlap,
+    double topViewPhase,
+    double fallProgress,
+  ) {
+    if (t < _flapStartMs || t >= _impactMs) {
+      return const _WingFlapSnapshot();
+    }
+
+    const minRad = -18 * math.pi / 180;
+    const maxRad = 22 * math.pi / 180;
+    final flapSpeed = 130.0 + unevenFlap * 45 + topViewPhase * 28;
+    final cycle = t / flapSpeed * math.pi;
+    final sinVal = math.sin(cycle);
+    final normalized = (sinVal + 1) / 2;
+    final downstroke = sinVal < 0;
+
+    var amplitude =
+        (1.0 - unevenFlap * 0.28 - topViewPhase * 0.5 - fallProgress * 0.35)
+            .clamp(0.12, 1.0);
+    final irregular =
+        unevenFlap > 0 ? math.sin(t / 62 * math.pi) * unevenFlap * 0.14 : 0.0;
+
+    double leftAngle;
+    double rightAngle;
+
+    if (topViewPhase > 0.5) {
+      final falter = ((topViewPhase - 0.5) / 0.5).clamp(0.0, 1.0);
+      final spread = 0.42 + falter * 0.55;
+      leftAngle = spread + sinVal * 0.06 * amplitude;
+      rightAngle = -spread - sinVal * 0.06 * amplitude;
+      amplitude *= 1 - falter * 0.65;
+    } else {
+      final base = minRad + normalized * (maxRad - minRad);
+      leftAngle = (base + irregular) * amplitude;
+      rightAngle = (-base + irregular * 0.65) * amplitude;
+    }
+
+    final bodyBobY =
+        math.sin(cycle + math.pi / 2) * (5 + unevenFlap * 5) * amplitude *
+            (1 - topViewPhase * 0.55);
+    final bodyTilt =
+        math.sin(cycle) * (3 + unevenFlap * 2) * math.pi / 180 * amplitude;
+
+    const shoulderX = 30.0;
+    const shoulderY = 8.0;
+    const wingLen = 60.0;
+
+    final leftTip = _wingTip(
+      -shoulderX,
+      shoulderY,
+      leftAngle,
+      wingLen,
+      isLeft: true,
+    );
+    final rightTip = _wingTip(
+      shoulderX,
+      shoulderY,
+      rightAngle,
+      wingLen,
+      isLeft: false,
+    );
+
+    final featherIntensity =
+        (0.35 + unevenFlap * 0.45 + (downstroke ? 0.3 : 0.08)).clamp(0.0, 1.0);
+
+    return _WingFlapSnapshot(
+      leftAngle: leftAngle,
+      rightAngle: rightAngle,
+      bodyBobY: bodyBobY,
+      bodyTilt: bodyTilt,
+      leftTip: leftTip,
+      rightTip: rightTip,
+      featherIntensity: featherIntensity,
+      downstroke: downstroke,
+    );
+  }
+
+  Offset _wingTip(
+    double shoulderX,
+    double shoulderY,
+    double angle,
+    double length, {
+    required bool isLeft,
+  }) {
+    final dir = isLeft ? math.pi + angle * 0.85 : -angle * 0.85;
+    return Offset(
+      shoulderX + math.cos(dir) * length,
+      shoulderY + math.sin(dir) * length * 0.62,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -106,10 +199,11 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
         final zoomScale = 0.88 + zoomPhase * 0.48;
         final darken = (0.26 + zoomPhase * 0.28).clamp(0.0, 0.58);
 
-        final flapPhase = t >= _flapStartMs ? 1.0 : 0.0;
         final unevenFlap = _phase(_descentStartMs, _topViewStartMs);
-        final descentAmount = Curves.easeIn.transform(_phase(_descentStartMs, _topViewStartMs));
-        final topViewPhase = Curves.easeInOut.transform(_phase(_topViewStartMs, _fallStartMs));
+        final descentAmount =
+            Curves.easeIn.transform(_phase(_descentStartMs, _topViewStartMs));
+        final topViewPhase =
+            Curves.easeInOut.transform(_phase(_topViewStartMs, _fallStartMs));
         final fallProgress = Curves.easeIn.transform(_phase(_fallStartMs, _impactMs));
         final smokeExpand = t >= _impactMs
             ? Curves.easeOut.transform(_phase(_impactMs, _smokeEndMs))
@@ -118,18 +212,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
             ? Curves.easeOut.transform(_phase(_impactMs, _impactMs + 900))
             : 0.0;
 
-        final flapSpeed = 130 + unevenFlap * 40;
-        final flapTilt = t >= _flapStartMs && t < _impactMs
-            ? math.sin(t / flapSpeed * math.pi) *
-                (0.1 + unevenFlap * 0.08) *
-                (1 - topViewPhase * 0.7)
-            : 0.0;
-        final flapScaleY = t >= _flapStartMs && t < _impactMs
-            ? 1 + math.sin(t / (flapSpeed * 0.85) * math.pi) * 0.07 * (1 - topViewPhase)
-            : 1.0;
-        final flapScaleX = t >= _flapStartMs && t < _impactMs
-            ? 1 + math.sin(t / (flapSpeed * 0.85) * math.pi + math.pi / 2) * 0.04
-            : 1.0;
+        final flap = _wingFlap(t, unevenFlap, topViewPhase, fallProgress);
 
         final wobbleX = t >= _flapStartMs && t < _fallStartMs
             ? math.sin(t / 55 * math.pi) * (4 + unevenFlap * 8)
@@ -141,14 +224,13 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
             ? 1.0
             : (1 - _phase(_impactMs, _impactMs + 200)).clamp(0.0, 1.0);
 
-        // Flying position → top-view fall position
         final flyY = -descentAmount * 38 - topViewPhase * 20;
         final fallY = fallProgress * 120;
-        final bossOffsetY = flyY + fallY + topViewPhase * 30;
+        final bossOffsetY = flyY + fallY + topViewPhase * 30 + flap.bodyBobY;
         final bossOffsetX = wobbleX * (1 - topViewPhase * 0.5);
 
-        // Top-view perspective transforms
-        final perspectiveRotate = -topViewPhase * math.pi * 0.48 - fallProgress * 0.15;
+        final perspectiveRotate =
+            -topViewPhase * math.pi * 0.48 - fallProgress * 0.15;
         final flattenY = 1.0 - topViewPhase * 0.42;
         final flattenX = 1.0 + topViewPhase * 0.18;
         final fallShrink = 1 - fallProgress * 0.35;
@@ -190,55 +272,34 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                   Transform.translate(
                     offset: Offset(bossOffsetX, bossOffsetY),
                     child: Transform.rotate(
-                      angle: flapTilt + perspectiveRotate,
+                      angle: perspectiveRotate,
                       child: Transform.scale(
-                        scaleX: bossScale * flapScaleX * flattenX * fallShrink,
-                        scaleY: bossScale * flapScaleY * flattenY * fallShrink,
-                        child: Opacity(
-                        opacity: bossOpacity,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          clipBehavior: Clip.none,
-                          children: [
-                            if (flapPhase > 0 && t < _impactMs)
-                              Container(
-                                width: _baseSpriteSize * 1.15,
-                                height: _baseSpriteSize * 1.15,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF7E57C2)
-                                          .withValues(alpha: 0.35 * (1 - topViewPhase * 0.5)),
-                                      blurRadius: 32,
-                                      spreadRadius: 6,
-                                    ),
-                                    BoxShadow(
-                                      color: const Color(0xFF1565C0)
-                                          .withValues(alpha: 0.25 * (1 - topViewPhase * 0.5)),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            BossSprite(
-                              spritePath: widget.boss.spritePath,
-                              fallbackEmoji: widget.boss.emoji,
-                              size: _baseSpriteSize,
-                              semanticLabel: widget.boss.name,
+                        scaleX: bossScale * flattenX * fallShrink,
+                        scaleY: bossScale * flattenY * fallShrink,
+                        child: Transform.rotate(
+                          angle: flap.bodyTilt,
+                          child: Opacity(
+                            opacity: bossOpacity,
+                            child: _PhoenixFlappingBody(
+                              boss: widget.boss,
+                              spriteSize: _baseSpriteSize,
+                              flap: flap,
+                              topViewPhase: topViewPhase,
+                              showGlow: t >= _flapStartMs && t < _impactMs,
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
                 CustomPaint(
                   painter: _FallingFeathersPainter(
                     feathers: _feathers,
                     travel: featherTravel,
                     bossOffset: Offset(bossOffsetX, bossOffsetY),
+                    leftTip: flap.leftTip,
+                    rightTip: flap.rightTip,
+                    featherIntensity: flap.featherIntensity,
                     topView: topViewPhase,
                     fallProgress: fallProgress,
                     fade: effectFade,
@@ -276,11 +337,177 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   }
 }
 
+class _WingFlapSnapshot {
+  const _WingFlapSnapshot({
+    this.leftAngle = 0,
+    this.rightAngle = 0,
+    this.bodyBobY = 0,
+    this.bodyTilt = 0,
+    this.leftTip = Offset.zero,
+    this.rightTip = Offset.zero,
+    this.featherIntensity = 0,
+    this.downstroke = false,
+  });
+
+  final double leftAngle;
+  final double rightAngle;
+  final double bodyBobY;
+  final double bodyTilt;
+  final Offset leftTip;
+  final Offset rightTip;
+  final double featherIntensity;
+  final bool downstroke;
+}
+
+class _PhoenixFlappingBody extends StatelessWidget {
+  const _PhoenixFlappingBody({
+    required this.boss,
+    required this.spriteSize,
+    required this.flap,
+    required this.topViewPhase,
+    required this.showGlow,
+  });
+
+  final BossBattleDefinition boss;
+  final double spriteSize;
+  final _WingFlapSnapshot flap;
+  final double topViewPhase;
+  final bool showGlow;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = spriteSize * 1.45;
+    return SizedBox(
+      width: box,
+      height: box,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          if (showGlow)
+            Container(
+              width: spriteSize * 1.12,
+              height: spriteSize * 1.12,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7E57C2)
+                        .withValues(alpha: 0.32 * (1 - topViewPhase * 0.5)),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+            ),
+          Positioned(
+            left: box * 0.02,
+            top: box * 0.34,
+            child: Transform.rotate(
+              angle: flap.leftAngle,
+              alignment: Alignment.centerRight,
+              child: CustomPaint(
+                size: const Size(68, 84),
+                painter: _PhoenixWingShapePainter(
+                  isLeft: true,
+                  falter: topViewPhase > 0.5,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: box * 0.02,
+            top: box * 0.34,
+            child: Transform.rotate(
+              angle: flap.rightAngle,
+              alignment: Alignment.centerLeft,
+              child: CustomPaint(
+                size: const Size(68, 84),
+                painter: _PhoenixWingShapePainter(
+                  isLeft: false,
+                  falter: topViewPhase > 0.5,
+                ),
+              ),
+            ),
+          ),
+          BossSprite(
+            spritePath: boss.spritePath,
+            fallbackEmoji: boss.emoji,
+            size: spriteSize,
+            semanticLabel: boss.name,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoenixWingShapePainter extends CustomPainter {
+  _PhoenixWingShapePainter({required this.isLeft, required this.falter});
+
+  final bool isLeft;
+  final bool falter;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    if (isLeft) {
+      path.moveTo(size.width, size.height * 0.22);
+      path.quadraticBezierTo(size.width * 0.55, 0, size.width * 0.08, size.height * 0.18);
+      path.quadraticBezierTo(0, size.height * 0.45, size.width * 0.12, size.height * 0.82);
+      path.quadraticBezierTo(size.width * 0.45, size.height * 0.65, size.width, size.height * 0.48);
+      path.close();
+    } else {
+      path.moveTo(0, size.height * 0.22);
+      path.quadraticBezierTo(size.width * 0.45, 0, size.width * 0.92, size.height * 0.18);
+      path.quadraticBezierTo(size.width, size.height * 0.45, size.width * 0.88, size.height * 0.82);
+      path.quadraticBezierTo(size.width * 0.55, size.height * 0.65, 0, size.height * 0.48);
+      path.close();
+    }
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = LinearGradient(
+          begin: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+          end: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+          colors: falter
+              ? [const Color(0xFF311B92), const Color(0xFF1A237E)]
+              : [const Color(0xFF4527A0), const Color(0xFF1565C0), const Color(0xFF0D0D1A)],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFCE93D8).withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Feather edge arcs
+    final edge = Paint()
+      ..color = const Color(0xFF1A1A2E).withValues(alpha: 0.55)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+    for (var i = 0; i < 4; i++) {
+      final t = 0.2 + i * 0.18;
+      canvas.drawLine(
+        Offset(size.width * (isLeft ? 0.85 - t * 0.5 : 0.15 + t * 0.5), size.height * t),
+        Offset(size.width * (isLeft ? 0.2 : 0.8), size.height * (t + 0.12)),
+        edge,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PhoenixWingShapePainter oldDelegate) =>
+      oldDelegate.falter != falter;
+}
+
 class _DarkFeather {
   _DarkFeather({
     required this.wingSide,
-    required this.offsetX,
-    required this.offsetY,
+    required this.tipOffset,
     required this.drift,
     required this.size,
     required this.rotation,
@@ -288,8 +515,7 @@ class _DarkFeather {
   });
 
   final int wingSide;
-  final double offsetX;
-  final double offsetY;
+  final double tipOffset;
   final double drift;
   final double size;
   final double rotation;
@@ -300,12 +526,11 @@ class _DarkFeather {
     return List.generate(count, (i) {
       return _DarkFeather(
         wingSide: i.isEven ? -1 : 1,
-        offsetX: random.nextDouble() * 28,
-        offsetY: random.nextDouble() * 18,
+        tipOffset: random.nextDouble() * 14,
         drift: random.nextDouble() * math.pi * 2,
         size: 7 + random.nextDouble() * 12,
         rotation: random.nextDouble() * math.pi,
-        delay: random.nextDouble() * 0.35,
+        delay: random.nextDouble() * 0.38,
       );
     });
   }
@@ -368,6 +593,9 @@ class _FallingFeathersPainter extends CustomPainter {
     required this.feathers,
     required this.travel,
     required this.bossOffset,
+    required this.leftTip,
+    required this.rightTip,
+    required this.featherIntensity,
     required this.topView,
     required this.fallProgress,
     required this.fade,
@@ -376,6 +604,9 @@ class _FallingFeathersPainter extends CustomPainter {
   final List<_DarkFeather> feathers;
   final double travel;
   final Offset bossOffset;
+  final Offset leftTip;
+  final Offset rightTip;
+  final double featherIntensity;
   final double topView;
   final double fallProgress;
   final double fade;
@@ -383,47 +614,47 @@ class _FallingFeathersPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (travel <= 0) return;
-    final center = Offset(size.width / 2, size.height * 0.46) + bossOffset;
+    final bodyCenter = Offset(size.width / 2, size.height * 0.46) + bossOffset;
     final maxDim = math.max(size.width, size.height);
 
     for (final f in feathers) {
       final localT = ((travel - f.delay) / (1 - f.delay)).clamp(0.0, 1.0);
       if (localT <= 0) continue;
-      final eased = Curves.easeOut.transform(localT);
 
-      final spawn = center +
-          Offset(
-            f.wingSide * (48 + f.offsetX) * (1 - topView * 0.3),
-            f.offsetY - 10,
-          );
-      final driftX = math.sin(f.drift + eased * math.pi * 3) * 22;
-      final fallDist = eased * maxDim * (0.08 + fallProgress * 0.12);
+      final spawn = bodyCenter +
+          (f.wingSide < 0 ? leftTip : rightTip) +
+          Offset(f.wingSide * f.tipOffset * 0.3, f.tipOffset * 0.2);
+
+      final eased = Curves.easeOut.transform(localT);
+      final driftX = math.sin(f.drift + eased * math.pi * 3) * 24;
+      final fallDist = eased * maxDim * (0.07 + fallProgress * 0.14);
       final pos = spawn +
           Offset(
-            driftX + f.wingSide * eased * 30,
-            fallDist + eased * eased * maxDim * 0.18,
+            driftX + f.wingSide * eased * 34,
+            fallDist + eased * eased * maxDim * 0.2,
           );
 
-      final alpha = (fade * (1 - localT * 0.35)).clamp(0.0, 1.0);
-      if (alpha <= 0) continue;
+      final alpha =
+          (fade * featherIntensity * (1 - localT * 0.35)).clamp(0.0, 1.0);
+      if (alpha <= 0.05) continue;
 
       canvas.save();
       canvas.translate(pos.dx, pos.dy);
-      canvas.rotate(f.rotation + eased * math.pi * 2);
+      canvas.rotate(f.rotation + eased * math.pi * 2.2);
       final path = Path()
         ..moveTo(0, -f.size * 0.5)
-        ..quadraticBezierTo(f.size * 0.3, 0, 0, f.size * 0.5)
-        ..quadraticBezierTo(-f.size * 0.3, 0, 0, -f.size * 0.5);
+        ..quadraticBezierTo(f.size * 0.32, 0, 0, f.size * 0.5)
+        ..quadraticBezierTo(-f.size * 0.32, 0, 0, -f.size * 0.5);
       canvas.drawPath(
         path,
-        Paint()..color = const Color(0xFF311B92).withValues(alpha: alpha * 0.85),
+        Paint()..color = const Color(0xFF311B92).withValues(alpha: alpha * 0.92),
       );
       canvas.drawPath(
         path,
         Paint()
-          ..color = const Color(0xFF1565C0).withValues(alpha: alpha * 0.35)
+          ..color = const Color(0xFFCE93D8).withValues(alpha: alpha * 0.45)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
+          ..strokeWidth = 1.1,
       );
       canvas.restore();
     }
@@ -433,6 +664,9 @@ class _FallingFeathersPainter extends CustomPainter {
   bool shouldRepaint(covariant _FallingFeathersPainter oldDelegate) =>
       oldDelegate.travel != travel ||
       oldDelegate.bossOffset != bossOffset ||
+      oldDelegate.leftTip != leftTip ||
+      oldDelegate.rightTip != rightTip ||
+      oldDelegate.featherIntensity != featherIntensity ||
       oldDelegate.topView != topView ||
       oldDelegate.fallProgress != fallProgress ||
       oldDelegate.fade != fade;
@@ -508,6 +742,16 @@ class _ShadowSmokePainter extends CustomPainter {
     final impact = Offset(size.width * 0.5, size.height * 0.74);
     final maxDim = math.max(size.width, size.height);
 
+    // Dark impact shadow on sand
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: impact,
+        width: 36 + expand * 48,
+        height: 14 + expand * 16,
+      ),
+      Paint()..color = Colors.black.withValues(alpha: fade * expand * 0.35),
+    );
+
     if (shockwave > 0) {
       canvas.drawOval(
         Rect.fromCenter(
@@ -516,19 +760,42 @@ class _ShadowSmokePainter extends CustomPainter {
           height: 16 + shockwave * maxDim * 0.12,
         ),
         Paint()
-          ..color = const Color(0xFF4A148C).withValues(alpha: fade * shockwave * 0.35)
+          ..color = const Color(0xFF4A148C).withValues(alpha: fade * shockwave * 0.55)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3,
+          ..strokeWidth = 3.5,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: impact,
+          width: 34 + shockwave * maxDim * 0.38,
+          height: 12 + shockwave * maxDim * 0.1,
+        ),
+        Paint()
+          ..color = const Color(0xFF1A1A2E).withValues(alpha: fade * shockwave * 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5,
       );
     }
 
+    final core = Paint()..color = const Color(0xFF7E57C2).withValues(alpha: fade * expand * 0.55);
     canvas.drawOval(
       Rect.fromCenter(
-        center: impact - Offset(0, expand * 40),
-        width: 50 + expand * maxDim * 0.35,
-        height: 30 + expand * maxDim * 0.2,
+        center: impact - Offset(0, expand * 42),
+        width: 52 + expand * maxDim * 0.38,
+        height: 32 + expand * maxDim * 0.22,
       ),
-      Paint()..color = const Color(0xFF311B92).withValues(alpha: fade * expand * 0.45),
+      core,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: impact - Offset(0, expand * 42),
+        width: 52 + expand * maxDim * 0.38,
+        height: 32 + expand * maxDim * 0.22,
+      ),
+      Paint()
+        ..color = const Color(0xFF311B92).withValues(alpha: fade * expand * 0.65)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
     );
 
     for (final p in puffs) {
@@ -538,16 +805,27 @@ class _ShadowSmokePainter extends CustomPainter {
       final pos = impact +
           Offset(
             math.cos(p.angle) * dist * 0.6,
-            math.sin(p.angle) * dist - localT * 55,
+            math.sin(p.angle) * dist - localT * 58,
           );
-      final alpha = (fade * localT * (1 - localT * 0.5) * 0.55).clamp(0.0, 1.0);
+      final alpha = (fade * localT * (1 - localT * 0.45) * 0.65).clamp(0.0, 1.0);
       canvas.drawOval(
         Rect.fromCenter(
           center: pos,
-          width: p.size * (0.7 + localT),
-          height: p.size * (0.45 + localT * 0.6),
+          width: p.size * (0.75 + localT),
+          height: p.size * (0.5 + localT * 0.55),
         ),
-        Paint()..color = const Color(0xFF4A148C).withValues(alpha: alpha),
+        Paint()..color = const Color(0xFF6A1B9A).withValues(alpha: alpha),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: pos,
+          width: p.size * (0.75 + localT),
+          height: p.size * (0.5 + localT * 0.55),
+        ),
+        Paint()
+          ..color = const Color(0xFFCE93D8).withValues(alpha: alpha * 0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
       );
     }
   }

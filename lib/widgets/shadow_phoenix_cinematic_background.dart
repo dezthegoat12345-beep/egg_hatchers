@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Dark canyon backdrop for the Shadow Phoenix defeat cinematic.
+/// Desert canyon backdrop for the Shadow Phoenix defeat cinematic.
 class ShadowPhoenixCinematicBackground extends StatelessWidget {
   const ShadowPhoenixCinematicBackground({
     super.key,
@@ -15,13 +15,13 @@ class ShadowPhoenixCinematicBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _ShadowPhoenixCanyonPainter(topViewPhase: topViewPhase),
+      painter: _DesertCanyonPainter(topViewPhase: topViewPhase),
     );
   }
 }
 
-class _ShadowPhoenixCanyonPainter extends CustomPainter {
-  _ShadowPhoenixCanyonPainter({required this.topViewPhase});
+class _DesertCanyonPainter extends CustomPainter {
+  _DesertCanyonPainter({required this.topViewPhase});
 
   final double topViewPhase;
 
@@ -32,7 +32,7 @@ class _ShadowPhoenixCanyonPainter extends CustomPainter {
     final h = size.height;
     final tv = topViewPhase.clamp(0.0, 1.0);
 
-    // Twilight sky
+    // Purple dusk sky
     canvas.drawRect(
       rect,
       Paint()
@@ -40,136 +40,174 @@ class _ShadowPhoenixCanyonPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(const Color(0xFF0A0A18), const Color(0xFF1A1A2E), tv)!,
-            Color.lerp(const Color(0xFF1A237E), const Color(0xFF311B92), tv * 0.6)!,
-            Color.lerp(const Color(0xFF311B92), const Color(0xFF4A148C), tv * 0.4)!,
-            Color.lerp(const Color(0xFF1A1A2E), const Color(0xFF0D0D1A), tv)!,
+            Color.lerp(const Color(0xFF1A1033), const Color(0xFF2D1B4E), tv)!,
+            Color.lerp(const Color(0xFF4A2C6A), const Color(0xFF6D4C41), tv * 0.35)!,
+            Color.lerp(const Color(0xFF8D6E63), const Color(0xFFBF8A5A), tv * 0.5)!,
+            Color.lerp(const Color(0xFF5D4037), const Color(0xFF4E342E), tv)!,
           ],
         ).createShader(rect),
     );
 
-    // Storm/moon glow
-    canvas.drawCircle(
-      Offset(w * (0.78 - tv * 0.1), h * (0.1 + tv * 0.05)),
-      26 - tv * 6,
-      Paint()..color = const Color(0xFF7E57C2).withValues(alpha: 0.22),
-    );
-    canvas.drawCircle(
-      Offset(w * (0.78 - tv * 0.1), h * (0.1 + tv * 0.05)),
-      16 - tv * 4,
-      Paint()..color = const Color(0xFFB39DDB).withValues(alpha: 0.35),
+    // Distant mesas
+    final mesa = Paint()..color = const Color(0xFF6D4C41).withValues(alpha: 0.55);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, h * 0.42)
+        ..lineTo(w * 0.18, h * 0.34)
+        ..lineTo(w * 0.32, h * 0.38)
+        ..lineTo(w * 0.48, h * 0.3)
+        ..lineTo(w * 0.65, h * 0.36)
+        ..lineTo(w * 0.82, h * 0.32)
+        ..lineTo(w, h * 0.4)
+        ..lineTo(w, h * 0.48)
+        ..lineTo(0, h * 0.5)
+        ..close(),
+      mesa,
     );
 
-    // Left cliff
+    // Moon + stars
+    canvas.drawCircle(
+      Offset(w * 0.82, h * 0.1),
+      18,
+      Paint()..color = const Color(0xFFE1BEE7).withValues(alpha: 0.35),
+    );
+    final random = math.Random(88);
+    for (var i = 0; i < 14; i++) {
+      canvas.drawCircle(
+        Offset(random.nextDouble() * w, random.nextDouble() * h * 0.28),
+        0.7 + random.nextDouble(),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.15 + random.nextDouble() * 0.25),
+      );
+    }
+
+    // Left sandstone cliff
     final leftCliff = Path()
-      ..moveTo(0, h * 0.08)
-      ..lineTo(w * (0.22 - tv * 0.06), h * 0.32)
-      ..lineTo(w * (0.18 - tv * 0.04), h)
+      ..moveTo(0, h * 0.1)
+      ..lineTo(w * (0.24 - tv * 0.05), h * 0.34)
+      ..lineTo(w * (0.2 - tv * 0.03), h)
       ..lineTo(0, h)
       ..close();
     canvas.drawPath(
       leftCliff,
-      Paint()..color = const Color(0xFF0D0D1A).withValues(alpha: 0.88),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            const Color(0xFF5D4037),
+            const Color(0xFFBF360C).withValues(alpha: 0.85),
+            const Color(0xFF8D6E63),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, w * 0.3, h)),
     );
 
-    // Right cliff
+    // Right sandstone cliff
     final rightCliff = Path()
-      ..moveTo(w, h * 0.06)
-      ..lineTo(w * (0.78 + tv * 0.06), h * 0.3)
-      ..lineTo(w * (0.82 + tv * 0.04), h)
+      ..moveTo(w, h * 0.08)
+      ..lineTo(w * (0.76 + tv * 0.05), h * 0.32)
+      ..lineTo(w * (0.8 + tv * 0.03), h)
       ..lineTo(w, h)
       ..close();
     canvas.drawPath(
       rightCliff,
-      Paint()..color = const Color(0xFF0D0D1A).withValues(alpha: 0.88),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
+          colors: [
+            const Color(0xFF4E342E),
+            const Color(0xFFE65100).withValues(alpha: 0.75),
+            const Color(0xFF795548),
+          ],
+        ).createShader(Rect.fromLTWH(w * 0.7, 0, w * 0.3, h)),
     );
 
-    // Cliff edge highlights
-    final edge = Paint()
-      ..color = const Color(0xFF4527A0).withValues(alpha: 0.35)
+    // Rock strata on cliffs
+    final strata = Paint()
+      ..color = const Color(0xFF3E2723).withValues(alpha: 0.35)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(w * 0.2, h * 0.3), Offset(w * 0.18, h * 0.95), edge);
-    canvas.drawLine(Offset(w * 0.8, h * 0.28), Offset(w * 0.82, h * 0.95), edge);
+    for (var i = 0; i < 5; i++) {
+      final y = h * (0.38 + i * 0.1);
+      canvas.drawLine(Offset(0, y), Offset(w * 0.22, y + 4), strata);
+      canvas.drawLine(Offset(w * 0.78, y + 2), Offset(w, y - 2), strata);
+    }
 
-    // Canyon depth / fog below
+    // Canyon depth / shadow pit
     canvas.drawRect(
-      Rect.fromLTWH(w * 0.18, h * (0.38 + tv * 0.12), w * 0.64, h * (0.62 - tv * 0.1)),
+      Rect.fromLTWH(w * 0.2, h * (0.4 + tv * 0.1), w * 0.6, h * (0.6 - tv * 0.08)),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xFF311B92).withValues(alpha: 0.15),
-            const Color(0xFF1A1A2E).withValues(alpha: 0.55 + tv * 0.2),
-            const Color(0xFF0D0D1A).withValues(alpha: 0.75),
+            const Color(0xFF3E2723).withValues(alpha: 0.25),
+            const Color(0xFF2C1810).withValues(alpha: 0.55 + tv * 0.15),
+            const Color(0xFF1A120B).withValues(alpha: 0.8),
           ],
-        ).createShader(Rect.fromLTWH(w * 0.18, h * 0.38, w * 0.64, h * 0.62)),
+        ).createShader(Rect.fromLTWH(w * 0.2, h * 0.4, w * 0.6, h * 0.6)),
     );
 
-    // Canyon floor (more visible in top view)
-    if (tv > 0.2) {
-      final floorAlpha = (tv * 0.65).clamp(0.0, 0.65);
-      canvas.drawRect(
-        Rect.fromLTWH(w * 0.22, h * (0.62 + tv * 0.08), w * 0.56, h * 0.28),
-        Paint()..color = const Color(0xFF1A1A2E).withValues(alpha: floorAlpha),
-      );
-      final crack = Paint()
-        ..color = const Color(0xFF4527A0).withValues(alpha: floorAlpha * 0.5)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(
-        Offset(w * 0.35, h * 0.78),
-        Offset(w * 0.5, h * 0.82),
-        crack,
-      );
-      canvas.drawLine(
-        Offset(w * 0.55, h * 0.8),
-        Offset(w * 0.68, h * 0.84),
-        crack,
-      );
-    }
+    // Sandy canyon floor (stronger in top view)
+    final floorY = h * (0.62 + tv * 0.1);
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.22, floorY, w * 0.56, h * 0.28),
+      Paint()..color = const Color(0xFFD7CCC8).withValues(alpha: 0.35 + tv * 0.35),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.5, h * (0.74 + tv * 0.04)),
+        width: w * (0.38 + tv * 0.12),
+        height: h * (0.07 + tv * 0.025),
+      ),
+      Paint()..color = const Color(0xFFBCAAA4).withValues(alpha: 0.45 + tv * 0.25),
+    );
 
-    // Impact zone marker (subtle, visible in top view)
-    if (tv > 0.5) {
+    // Impact target on sand
+    if (tv > 0.35) {
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(w * 0.5, h * (0.72 + tv * 0.06)),
-          width: w * (0.12 + tv * 0.08),
-          height: h * (0.04 + tv * 0.02),
+          center: Offset(w * 0.5, h * (0.73 + tv * 0.05)),
+          width: w * (0.1 + tv * 0.06),
+          height: h * (0.035 + tv * 0.015),
         ),
-        Paint()..color = const Color(0xFF4A148C).withValues(alpha: tv * 0.25),
+        Paint()..color = const Color(0xFF5D4037).withValues(alpha: tv * 0.35),
       );
     }
 
-    // Distant stars
-    final random = math.Random(88);
-    for (var i = 0; i < 16; i++) {
-      canvas.drawCircle(
-        Offset(random.nextDouble() * w, random.nextDouble() * h * 0.35),
-        0.8 + random.nextDouble(),
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.12 + random.nextDouble() * 0.2),
-      );
-    }
+    // Dusty haze near floor
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.15, h * 0.68, w * 0.7, h * 0.22),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            const Color(0xFF8D6E63).withValues(alpha: 0.12 + tv * 0.08),
+            const Color(0xFF5D4037).withValues(alpha: 0.2),
+          ],
+        ).createShader(Rect.fromLTWH(w * 0.15, h * 0.68, w * 0.7, h * 0.22)),
+    );
 
-    // Edge vignette
+    // Vignette
     canvas.drawRect(
       rect,
       Paint()
         ..shader = RadialGradient(
-          center: Alignment(0, -0.1 + tv * 0.3),
-          radius: 0.95,
+          center: Alignment(0, -0.05 + tv * 0.25),
+          radius: 0.92,
           colors: [
             Colors.transparent,
-            Colors.black.withValues(alpha: 0.22),
+            Colors.black.withValues(alpha: 0.2),
           ],
-          stops: const [0.5, 1.0],
+          stops: const [0.52, 1.0],
         ).createShader(rect),
     );
   }
 
   @override
-  bool shouldRepaint(covariant _ShadowPhoenixCanyonPainter oldDelegate) =>
+  bool shouldRepaint(covariant _DesertCanyonPainter oldDelegate) =>
       oldDelegate.topViewPhase != topViewPhase;
 }
