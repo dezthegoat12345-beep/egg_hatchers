@@ -5,6 +5,7 @@ import '../models/background_theme.dart';
 import '../services/game_service.dart';
 import '../services/tutorial_service.dart';
 import '../theme/game_theme.dart';
+import '../utils/snackbar_utils.dart';
 import 'phone_width_layout.dart';
 import 'tutorial_highlight.dart';
 import 'tutorial_targets.dart';
@@ -60,6 +61,7 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
     final generation = ++_measureGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || generation != _measureGeneration) return;
+      clearGameSnackBars(context);
       _remeasureTarget();
     });
   }

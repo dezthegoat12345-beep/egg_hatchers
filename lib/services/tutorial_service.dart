@@ -23,6 +23,10 @@ class TutorialService extends ChangeNotifier {
 
   TutorialPhase get phase => _phase;
   bool get isActive => _phase != TutorialPhase.inactive;
+  bool get isGuided => _phase == TutorialPhase.guided;
+
+  /// While welcome or guided tutorial is active, transient snackbars are suppressed.
+  bool get shouldSuppressSnackBars => isActive;
   bool get isReplay => _isReplay;
   bool get pausedForDialog => _pausedForDialog;
   int get stepIndex => _stepIndex;

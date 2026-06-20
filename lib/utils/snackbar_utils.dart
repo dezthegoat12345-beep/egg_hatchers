@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/tutorial_service.dart';
+
 /// Quick/common transient notifications.
 const Duration kGameSnackBarDurationShort = Duration(milliseconds: 1500);
 
@@ -25,6 +27,11 @@ Duration _resolveSnackBarDuration({
   return resolved;
 }
 
+/// Removes any visible game snackbars from the nearest [ScaffoldMessenger].
+void clearGameSnackBars(BuildContext context) {
+  ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
+}
+
 /// Shows a compact floating SnackBar sized to fit the message.
 void showGameSnackBar(
   BuildContext context, {
@@ -35,6 +42,8 @@ void showGameSnackBar(
   VoidCallback? onAction,
   double? minWidth,
 }) {
+  if (TutorialService.instance.shouldSuppressSnackBars) return;
+
   final messenger = ScaffoldMessenger.of(context);
   messenger.clearSnackBars();
 

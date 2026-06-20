@@ -4,6 +4,7 @@ import '../models/background_theme.dart';
 import '../navigation/app_page_route.dart';
 import '../services/game_service.dart';
 import '../services/tutorial_service.dart';
+import '../utils/snackbar_utils.dart';
 import 'tutorial_overlay.dart';
 
 /// Wraps the app and renders the tutorial spotlight above the navigator.
@@ -47,7 +48,11 @@ class _TutorialHostState extends State<TutorialHost> {
   }
 
   void _onTutorialChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_tutorial.isActive) {
+      clearGameSnackBars(context);
+    }
+    setState(() {});
   }
 
   @override
