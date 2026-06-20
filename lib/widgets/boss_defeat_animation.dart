@@ -6,6 +6,8 @@ import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../utils/boss_defeat_animation_config.dart';
 import '../utils/format_utils.dart';
+import 'boss_battle_background.dart';
+import 'boss_sprite.dart';
 
 /// Boss-specific defeat celebration overlay for manual battle victories.
 class BossDefeatAnimation extends StatefulWidget {
@@ -171,6 +173,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
         fit: StackFit.expand,
         alignment: Alignment.center,
         children: [
+          BossBattleBackground(bossId: widget.boss.id),
           CustomPaint(
             painter: _AnimParticlePainter(
               particles: _particles,
@@ -201,7 +204,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
               transform: Matrix4.diagonal3Values(scaleX, scaleY, 1),
               child: _BossDefeatBody(
                 type: _animationType,
-                bossEmoji: widget.boss.emoji,
+                boss: widget.boss,
                 crackOpacity: crackOpacity,
                 phase: _controller.value,
               ),
@@ -288,426 +291,156 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
 class _BossDefeatBody extends StatelessWidget {
   const _BossDefeatBody({
     required this.type,
-    required this.bossEmoji,
+    required this.boss,
     required this.crackOpacity,
     required this.phase,
   });
 
   final BossDefeatAnimationType type;
-  final String bossEmoji;
+  final BossBattleDefinition boss;
   final double crackOpacity;
   final double phase;
 
-  @override
-  Widget build(BuildContext context) {
-    return switch (type) {
-      BossDefeatAnimationType.slimeBurst => _SlimeBody(
-          bossEmoji: bossEmoji,
-          crackOpacity: crackOpacity,
-          royal: false,
-        ),
-      BossDefeatAnimationType.royalSlimeBurst => Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            _SlimeBody(
-              bossEmoji: bossEmoji,
-              crackOpacity: crackOpacity,
-              royal: true,
-            ),
-            Transform.translate(
-              offset: Offset(0, -60 - math.sin(phase * math.pi * 4) * 8),
-              child: Transform.rotate(
-                angle: phase * math.pi * 2,
-                child: const Text('👑', style: TextStyle(fontSize: 36)),
-              ),
-            ),
-          ],
-        ),
-      BossDefeatAnimationType.golemCollapse => _GolemBody(
-          bossEmoji: bossEmoji,
-          crackOpacity: crackOpacity,
-        ),
-      BossDefeatAnimationType.shadowFeathers => _ShadowBirdBody(
-          bossEmoji: bossEmoji,
-          crackOpacity: crackOpacity,
-          eyeOpacity: (1 - phase * 2.5).clamp(0.0, 1.0),
-        ),
-      BossDefeatAnimationType.guardianShatter => _GuardianBody(
-          bossEmoji: bossEmoji,
-          crackOpacity: crackOpacity,
-          glowOpacity: crackOpacity * 0.9,
-        ),
-      BossDefeatAnimationType.shadowPhoenixFlame => _PhoenixBody(
-          bossEmoji: bossEmoji,
-          pulse: 0.85 + math.sin(phase * math.pi * 6) * 0.15,
-          crackOpacity: crackOpacity,
-        ),
-      BossDefeatAnimationType.generic => _GenericBody(
-          bossEmoji: bossEmoji,
-          crackOpacity: crackOpacity,
-        ),
-    };
-  }
-}
-
-class _SlimeBody extends StatelessWidget {
-  const _SlimeBody({
-    required this.bossEmoji,
-    required this.crackOpacity,
-    required this.royal,
-  });
-
-  final String bossEmoji;
-  final double crackOpacity;
-  final bool royal;
+  double get _spriteSize => switch (type) {
+        BossDefeatAnimationType.royalSlimeBurst => 120,
+        BossDefeatAnimationType.shadowPhoenixFlame => 118,
+        BossDefeatAnimationType.guardianShatter => 116,
+        _ => 110,
+      };
 
   @override
   Widget build(BuildContext context) {
-    final green = royal ? const Color(0xFF2E7D32) : const Color(0xFF43A047);
+    final eyeOpacity = (1 - phase * 2.5).clamp(0.0, 1.0);
+    final glowOpacity = crackOpacity * 0.9;
+    final pulse = 0.85 + math.sin(phase * math.pi * 6) * 0.15;
+    final size = _spriteSize;
+
+    Widget sprite = BossSprite(
+      spritePath: boss.spritePath,
+      fallbackEmoji: boss.emoji,
+      size: size,
+      semanticLabel: boss.name,
+    );
+
+    if (type == BossDefeatAnimationType.shadowPhoenixFlame) {
+      sprite = Transform.scale(scale: pulse, child: sprite);
+    }
+
     return SizedBox(
-      width: royal ? 130 : 118,
-      height: royal ? 118 : 108,
+      width: size + 24,
+      height: size + 24,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            width: royal ? 118 : 104,
-            height: royal ? 96 : 88,
-            decoration: BoxDecoration(
-              color: green.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(40),
-              boxShadow: [
-                BoxShadow(
-                  color: green.withValues(alpha: 0.55),
-                  blurRadius: royal ? 28 : 18,
-                  spreadRadius: royal ? 6 : 2,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                bossEmoji,
-                style: TextStyle(
-                  fontSize: royal ? 40 : 36,
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
-              ),
-            ),
-          ),
-          if (royal && crackOpacity > 0)
-            ...List.generate(4, (i) {
-              return Positioned(
-                top: 20 + i * 8.0,
-                left: 24 + (i % 2) * 40.0,
-                child: Icon(
-                  Icons.star,
-                  size: 12,
-                  color: Colors.amber.withValues(alpha: crackOpacity),
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-}
-
-class _GolemBody extends StatelessWidget {
-  const _GolemBody({
-    required this.bossEmoji,
-    required this.crackOpacity,
-  });
-
-  final String bossEmoji;
-  final double crackOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 120,
-      height: 130,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 96,
-            height: 112,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8D6E63).withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFFBCAAA4), width: 3),
-            ),
-            child: Center(
-              child: Text(
-                bossEmoji,
-                style: TextStyle(
-                  fontSize: 38,
-                  color: Colors.white.withValues(alpha: 0.18),
-                ),
-              ),
-            ),
-          ),
-          Opacity(
-            opacity: crackOpacity,
-            child: CustomPaint(
-              size: const Size(96, 112),
-              painter: _GolemCrackPainter(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShadowBirdBody extends StatelessWidget {
-  const _ShadowBirdBody({
-    required this.bossEmoji,
-    required this.crackOpacity,
-    required this.eyeOpacity,
-  });
-
-  final String bossEmoji;
-  final double crackOpacity;
-  final double eyeOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 120,
-      height: 120,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 108,
-            height: 108,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF1A1A2E).withValues(alpha: 0.94),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.purple.shade900.withValues(alpha: 0.5),
-                  blurRadius: 22,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                bossEmoji,
-                style: TextStyle(
-                  fontSize: 42,
-                  color: Colors.white.withValues(alpha: 0.12),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 38,
-            child: Opacity(
-              opacity: eyeOpacity,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFE040FB),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFFE040FB),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Opacity(
-            opacity: crackOpacity * 0.6,
-            child: CustomPaint(
-              size: const Size(108, 108),
-              painter: _SmokeWispPainter(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GuardianBody extends StatelessWidget {
-  const _GuardianBody({
-    required this.bossEmoji,
-    required this.crackOpacity,
-    required this.glowOpacity,
-  });
-
-  final String bossEmoji;
-  final double crackOpacity;
-  final double glowOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 124,
-      height: 124,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 112,
-            height: 112,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF37474F).withValues(alpha: 0.9),
-              border: Border.all(
-                color: const Color(0xFFFFD54F).withValues(alpha: 0.85),
-                width: 4,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF42A5F5).withValues(alpha: glowOpacity),
-                  blurRadius: 24,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                bossEmoji,
-                style: TextStyle(
-                  fontSize: 40,
-                  color: Colors.white.withValues(alpha: 0.15),
-                ),
-              ),
-            ),
-          ),
-          Opacity(
-            opacity: crackOpacity,
-            child: CustomPaint(
-              size: const Size(112, 112),
-              painter: _GuardianCrackPainter(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PhoenixBody extends StatelessWidget {
-  const _PhoenixBody({
-    required this.bossEmoji,
-    required this.pulse,
-    required this.crackOpacity,
-  });
-
-  final String bossEmoji;
-  final double pulse;
-  final double crackOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: pulse,
-      child: SizedBox(
-        width: 130,
-        height: 130,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
+          if (type == BossDefeatAnimationType.guardianShatter)
             Container(
-              width: 118,
-              height: 118,
+              width: size + 8,
+              height: size + 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF0D47A1).withValues(alpha: 0.95),
-                    const Color(0xFF1A237E).withValues(alpha: 0.98),
-                  ],
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.65),
-                    blurRadius: 30,
-                    spreadRadius: 6,
+                    color: const Color(0xFF42A5F5).withValues(alpha: glowOpacity),
+                    blurRadius: 24,
+                    spreadRadius: 2,
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  bossEmoji,
-                  style: TextStyle(
-                    fontSize: 44,
-                    color: Colors.white.withValues(alpha: 0.15),
+            ),
+          if (type == BossDefeatAnimationType.shadowPhoenixFlame)
+            Container(
+              width: size + 12,
+              height: size + 12,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1565C0).withValues(alpha: 0.55),
+                    blurRadius: 28,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          sprite,
+          if (type == BossDefeatAnimationType.golemCollapse ||
+              type == BossDefeatAnimationType.generic)
+            Opacity(
+              opacity: crackOpacity,
+              child: CustomPaint(
+                size: Size(size, size),
+                painter: type == BossDefeatAnimationType.golemCollapse
+                    ? _GolemCrackPainter()
+                    : _SimpleCrackPainter(),
+              ),
+            ),
+          if (type == BossDefeatAnimationType.guardianShatter)
+            Opacity(
+              opacity: crackOpacity,
+              child: CustomPaint(
+                size: Size(size, size),
+                painter: _GuardianCrackPainter(),
+              ),
+            ),
+          if (type == BossDefeatAnimationType.shadowFeathers) ...[
+            Positioned(
+              top: size * 0.22,
+              child: Opacity(
+                opacity: eyeOpacity,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFE040FB),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFE040FB),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
             Opacity(
-              opacity: crackOpacity * 0.75,
+              opacity: crackOpacity * 0.6,
               child: CustomPaint(
-                size: const Size(118, 118),
-                painter: _FlameArcPainter(),
+                size: Size(size, size),
+                painter: _SmokeWispPainter(),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GenericBody extends StatelessWidget {
-  const _GenericBody({
-    required this.bossEmoji,
-    required this.crackOpacity,
-  });
-
-  final String bossEmoji;
-  final double crackOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 120,
-      height: 120,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 108,
-            height: 108,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black.withValues(alpha: 0.88),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.shade900.withValues(alpha: 0.45),
-                  blurRadius: 24,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                bossEmoji,
-                style: TextStyle(
-                  fontSize: 44,
-                  color: Colors.white.withValues(alpha: 0.15),
-                ),
+          if (type == BossDefeatAnimationType.shadowPhoenixFlame)
+            Opacity(
+              opacity: crackOpacity * 0.75,
+              child: CustomPaint(
+                size: Size(size, size),
+                painter: _FlameArcPainter(),
               ),
             ),
-          ),
-          Opacity(
-            opacity: crackOpacity,
-            child: CustomPaint(
-              size: const Size(108, 108),
-              painter: _SimpleCrackPainter(),
+          if (type == BossDefeatAnimationType.royalSlimeBurst) ...[
+            Transform.translate(
+              offset: Offset(0, -size * 0.52 - math.sin(phase * math.pi * 4) * 8),
+              child: Transform.rotate(
+                angle: phase * math.pi * 2,
+                child: const Text('👑', style: TextStyle(fontSize: 36)),
+              ),
             ),
-          ),
+            if (crackOpacity > 0)
+              ...List.generate(4, (i) {
+                return Positioned(
+                  top: size * 0.15 + i * 8.0,
+                  left: size * 0.2 + (i % 2) * size * 0.35,
+                  child: Icon(
+                    Icons.star,
+                    size: 12,
+                    color: Colors.amber.withValues(alpha: crackOpacity),
+                  ),
+                );
+              }),
+          ],
         ],
       ),
     );

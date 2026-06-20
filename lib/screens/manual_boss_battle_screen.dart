@@ -19,12 +19,13 @@ import '../utils/battle_power_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
+import '../widgets/boss_battle_background.dart';
 import '../widgets/boss_defeat_animation.dart';
+import '../widgets/boss_projectile_widget.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
-import '../widgets/rotten_egg_projectile.dart';
 
 /// Top-view dodge boss fight: move side-to-side, break shield, shoot eggs.
 class ManualBossBattleScreen extends StatefulWidget {
@@ -746,6 +747,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                                 return _Arena(
                                   theme: currentTheme,
                                   boss: boss,
+                                  showBattleBackgrounds:
+                                      widget.preferences.showBattleBackgrounds,
                                   arenaWidth: _arenaWidth,
                                   arenaHeight: _arenaHeight,
                                   playerX: _playerX,
@@ -815,6 +818,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             theme: currentTheme,
                             onResume: _resumeBattle,
                             onQuit: _confirmQuitBattle,
+                            showBattleBackgrounds:
+                                widget.preferences.showBattleBackgrounds,
+                            onToggleBattleBackgrounds:
+                                widget.preferences.setShowBattleBackgrounds,
                           ),
                         ),
                       ),
@@ -1063,11 +1070,15 @@ class _PauseOverlay extends StatelessWidget {
     required this.theme,
     required this.onResume,
     required this.onQuit,
+    required this.showBattleBackgrounds,
+    required this.onToggleBattleBackgrounds,
   });
 
   final BackgroundTheme theme;
   final VoidCallback onResume;
   final VoidCallback onQuit;
+  final bool showBattleBackgrounds;
+  final ValueChanged<bool> onToggleBattleBackgrounds;
 
   @override
   Widget build(BuildContext context) {
@@ -1089,6 +1100,26 @@ class _PauseOverlay extends StatelessWidget {
                 style: GameTheme.sectionTitle(theme, size: 22),
               ),
               const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Battle Backgrounds',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: theme.cardTextPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: showBattleBackgrounds,
+                    activeTrackColor: theme.primaryColor.withValues(alpha: 0.45),
+                    activeThumbColor: theme.primaryColor,
+                    onChanged: onToggleBattleBackgrounds,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
               FilledButton(
                 onPressed: onResume,
                 style: GameTheme.filledButton(theme),
@@ -1119,6 +1150,7 @@ class _Arena extends StatelessWidget {
   const _Arena({
     required this.theme,
     required this.boss,
+    required this.showBattleBackgrounds,
     required this.arenaWidth,
     required this.arenaHeight,
     required this.playerX,
@@ -1144,6 +1176,7 @@ class _Arena extends StatelessWidget {
 
   final BackgroundTheme theme;
   final BossBattleDefinition boss;
+  final bool showBattleBackgrounds;
   final double arenaWidth;
   final double arenaHeight;
   final double playerX;
@@ -1179,13 +1212,25 @@ class _Arena extends StatelessWidget {
       onPanCancel: () => onPointerRelease(),
       child: Container(
       decoration: BoxDecoration(
-        color: theme.panelColor.withValues(alpha: 0.55),
+        color: showBattleBackgrounds
+            ? Colors.transparent
+            : theme.panelColor.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.cardBorderColor),
       ),
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
+          if (showBattleBackgrounds)
+            Positioned.fill(
+              child: BossBattleBackground(bossId: boss.id),
+            ),
+          if (showBattleBackgrounds)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.08),
+              ),
+            ),
           if (shieldActive && shieldFlash <= 0)
             Positioned.fill(
               child: IgnorePointer(
@@ -1258,7 +1303,7 @@ class _Arena extends StatelessWidget {
             Positioned(
               left: p.x - 11,
               top: p.y - 12,
-              child: const RottenEggProjectile(size: 22),
+              child: BossProjectileWidget(bossId: boss.id, size: 22),
             ),
           if (activeEgg != null)
             Positioned(
