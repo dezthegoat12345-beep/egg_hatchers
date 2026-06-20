@@ -834,6 +834,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                           coinReward: _victoryCoinReward,
                           tokenReward: _victoryTokenReward,
                           animalRewardName: _earnedRewardAnimalName,
+                          showBattleBackgrounds:
+                              widget.preferences.showBattleBackgrounds,
                           onComplete: _onVictoryAnimationComplete,
                         ),
                       ),

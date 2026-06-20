@@ -8,6 +8,7 @@ import '../utils/boss_defeat_animation_config.dart';
 import '../utils/format_utils.dart';
 import 'boss_battle_background.dart';
 import 'boss_sprite.dart';
+import 'slime_boss_defeat_animation.dart';
 
 /// Boss-specific defeat celebration overlay for manual battle victories.
 class BossDefeatAnimation extends StatefulWidget {
@@ -19,6 +20,7 @@ class BossDefeatAnimation extends StatefulWidget {
     required this.coinReward,
     required this.tokenReward,
     this.animalRewardName,
+    this.showBattleBackgrounds = true,
     required this.onComplete,
   });
 
@@ -28,6 +30,7 @@ class BossDefeatAnimation extends StatefulWidget {
   final int coinReward;
   final int tokenReward;
   final String? animalRewardName;
+  final bool showBattleBackgrounds;
   final VoidCallback onComplete;
 
   static String victoryTitle({
@@ -115,6 +118,22 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.boss.id == 'slime_boss') {
+      return SlimeBossDefeatAnimation(
+        theme: widget.theme,
+        boss: widget.boss,
+        coinReward: widget.coinReward,
+        tokenReward: widget.tokenReward,
+        animalRewardName: widget.animalRewardName,
+        showBattleBackgrounds: widget.showBattleBackgrounds,
+        onComplete: widget.onComplete,
+      );
+    }
+
+    return _buildStandardAnimation();
+  }
+
+  Widget _buildStandardAnimation() {
     final t = _controller.value;
     final flash = (1 - (_phase(0, 250) * 2).clamp(0.0, 1.0)).abs();
     final shakeAmount = (1 - _phase(0, 350)) * 6;
