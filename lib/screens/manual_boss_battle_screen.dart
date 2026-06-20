@@ -66,7 +66,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   late CustomSpriteData? _fighterCustomSprite;
   late Mutation _fighterMutation;
 
-  var _lives = BossBattleLogic.manualBattleLives;
+  var _lives = BattleUpgradeLogic.baseManualBattleLives;
   var _bossLives = 0;
   var _bossMaxLives = 0;
   var _playerX = 0.0;
@@ -117,6 +117,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   double get _eggMaxHomingSpeed => BattleUpgradeLogic.manualEggMaxHomingSpeed(
         widget.game.battleHomingLevel,
+      );
+
+  int get _maxPlayerLives => BattleUpgradeLogic.manualBattleStartingLives(
+        widget.game.battleExtraLifeLevel,
       );
 
   int get _requiredMisses => BossBattleLogic.manualRequiredMisses(
@@ -173,7 +177,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _resetBattleState() {
-    _lives = BossBattleLogic.manualBattleLives;
+    _lives = _maxPlayerLives;
     _bossMaxLives = BossBattleLogic.manualBossLives(boss);
     _bossLives = _bossMaxLives;
     _shieldActive = true;
@@ -482,7 +486,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     final result = BossBattleResult(
       won: _won,
       rounds: 0,
-      initialPlayerHp: BossBattleLogic.manualBattleLives,
+      initialPlayerHp: _maxPlayerLives,
       initialBossHp: _bossMaxLives,
       finalPlayerHp: _won ? _lives : 0,
       finalBossHp: _bossLives,
@@ -631,6 +635,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                         bossLives: _bossLives,
                         bossMaxLives: _bossMaxLives,
                         lives: _lives,
+                        maxPlayerLives: _maxPlayerLives,
                         shieldActive: _shieldActive,
                         shieldFlash: _shieldFlash,
                         missCount: _missCount,
@@ -792,6 +797,7 @@ class _BattleHeader extends StatelessWidget {
     required this.bossLives,
     required this.bossMaxLives,
     required this.lives,
+    required this.maxPlayerLives,
     required this.shieldActive,
     required this.shieldFlash,
     required this.missCount,
@@ -803,6 +809,7 @@ class _BattleHeader extends StatelessWidget {
   final int bossLives;
   final int bossMaxLives;
   final int lives;
+  final int maxPlayerLives;
   final bool shieldActive;
   final double shieldFlash;
   final int missCount;
@@ -815,12 +822,18 @@ class _BattleHeader extends StatelessWidget {
     return 'Boss Lives: $eggs';
   }
 
+  String _playerLivesDisplay(int remaining, int maxLives) {
+    if (maxLives <= 4) {
+      final hearts = List.generate(maxLives, (index) {
+        return index < remaining ? '❤️' : '🖤';
+      }).join();
+      return 'Your Lives: $hearts';
+    }
+    return 'Your Lives: ❤️ ×$remaining';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final maxLives = BossBattleLogic.manualBattleLives;
-    final hearts = List.generate(maxLives, (index) {
-      return index < lives ? '❤️' : '🖤';
-    }).join();
     final shieldLabel = shieldActive ? 'Shielded' : 'Shield down!';
     final shieldColor = shieldActive
         ? theme.secondaryColor
@@ -851,7 +864,7 @@ class _BattleHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your Lives: $hearts',
+            _playerLivesDisplay(lives, maxPlayerLives),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,

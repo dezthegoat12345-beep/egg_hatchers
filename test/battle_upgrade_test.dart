@@ -52,6 +52,20 @@ void main() {
         closeTo(BattleUpgradeLogic.baseEggSpeed * 1.6, 0.0001),
       );
     });
+
+    test('extra life upgrade costs scale with level squared from 100', () {
+      expect(BattleUpgradeLogic.extraLifeUpgradeCost(0), 100);
+      expect(BattleUpgradeLogic.extraLifeUpgradeCost(1), 400);
+      expect(BattleUpgradeLogic.extraLifeUpgradeCost(2), 900);
+      expect(BattleUpgradeLogic.extraLifeUpgradeCost(3), 0);
+    });
+
+    test('extra life increases manual battle starting lives', () {
+      expect(BattleUpgradeLogic.manualBattleStartingLives(0), 3);
+      expect(BattleUpgradeLogic.manualBattleStartingLives(1), 4);
+      expect(BattleUpgradeLogic.manualBattleStartingLives(2), 5);
+      expect(BattleUpgradeLogic.manualBattleStartingLives(3), 6);
+    });
   });
 
   group('PlayerState battle upgrade persistence', () {
@@ -65,17 +79,20 @@ void main() {
 
       expect(restored.battleHomingLevel, 0);
       expect(restored.battleShotSpeedLevel, 0);
+      expect(restored.battleExtraLifeLevel, 0);
     });
 
     test('battle upgrade levels round-trip and clamp', () {
       final state = PlayerState.initial().copyWith(
         battleHomingLevel: 12,
         battleShotSpeedLevel: -3,
+        battleExtraLifeLevel: 9,
       );
       final restored = PlayerState.fromJson(state.toJson());
 
       expect(restored.battleHomingLevel, 10);
       expect(restored.battleShotSpeedLevel, 0);
+      expect(restored.battleExtraLifeLevel, 3);
     });
   });
 
@@ -109,6 +126,20 @@ void main() {
 
       expect(game.upgradeBattleHoming(), isFalse);
       expect(game.battleHomingLevel, BattleUpgradeLogic.maxLevel);
+      expect(game.battleExtraLifeLevel, BattleUpgradeLogic.extraLifeMaxLevel);
+    });
+
+    test('upgradeBattleExtraLife spends tokens and increments level', () {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService();
+      game.devAddBattleTokens(500);
+
+      expect(game.battleExtraLifeLevel, 0);
+      expect(game.battleExtraLifeUpgradeCost(), 100);
+
+      expect(game.upgradeBattleExtraLife(), isTrue);
+      expect(game.battleExtraLifeLevel, 1);
+      expect(game.battleTokens, 400);
     });
   });
 }

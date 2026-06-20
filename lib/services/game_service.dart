@@ -429,6 +429,7 @@ class GameService extends ChangeNotifier {
   bool get bossMutationUnlocked => _state.bossMutationUnlocked;
   int get battleHomingLevel => _state.battleHomingLevel;
   int get battleShotSpeedLevel => _state.battleShotSpeedLevel;
+  int get battleExtraLifeLevel => _state.battleExtraLifeLevel;
 
   bool canAfford(Egg egg) {
     if (egg.usesBattleTokens) {
@@ -563,6 +564,7 @@ class GameService extends ChangeNotifier {
     final bossMutationUnlocked = _state.bossMutationUnlocked;
     final battleHomingLevel = _state.battleHomingLevel;
     final battleShotSpeedLevel = _state.battleShotSpeedLevel;
+    final battleExtraLifeLevel = _state.battleExtraLifeLevel;
     final tutorialCompleted = _state.tutorialCompleted;
     final tutorialSkipped = _state.tutorialSkipped;
     final tutorialVersionCompleted = _state.tutorialVersionCompleted;
@@ -584,6 +586,7 @@ class GameService extends ChangeNotifier {
       bossMutationUnlocked: bossMutationUnlocked,
       battleHomingLevel: battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel,
+      battleExtraLifeLevel: battleExtraLifeLevel,
       tutorialCompleted: tutorialCompleted,
       tutorialSkipped: tutorialSkipped,
       tutorialVersionCompleted: tutorialVersionCompleted,
@@ -1211,6 +1214,7 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       battleHomingLevel: BattleUpgradeLogic.maxLevel,
       battleShotSpeedLevel: BattleUpgradeLogic.maxLevel,
+      battleExtraLifeLevel: BattleUpgradeLogic.extraLifeMaxLevel,
     );
     notifyListeners();
     save();
@@ -1220,6 +1224,7 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       battleHomingLevel: BattleUpgradeLogic.minLevel,
       battleShotSpeedLevel: BattleUpgradeLogic.minLevel,
+      battleExtraLifeLevel: BattleUpgradeLogic.minLevel,
     );
     notifyListeners();
     save();
@@ -1363,6 +1368,24 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(
       battleTokens: _state.battleTokens - cost,
       battleShotSpeedLevel: _state.battleShotSpeedLevel + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  int battleExtraLifeUpgradeCost() =>
+      BattleUpgradeLogic.extraLifeUpgradeCost(_state.battleExtraLifeLevel);
+
+  bool upgradeBattleExtraLife() {
+    if (_state.battleExtraLifeLevel >= BattleUpgradeLogic.extraLifeMaxLevel) {
+      return false;
+    }
+    final cost = battleExtraLifeUpgradeCost();
+    if (_state.battleTokens < cost) return false;
+    _state = _state.copyWith(
+      battleTokens: _state.battleTokens - cost,
+      battleExtraLifeLevel: _state.battleExtraLifeLevel + 1,
     );
     notifyListeners();
     save();

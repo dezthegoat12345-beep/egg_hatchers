@@ -26,6 +26,7 @@ class PlayerState {
     this.tutorialVersionCompleted = 0,
     this.battleHomingLevel = 0,
     this.battleShotSpeedLevel = 0,
+    this.battleExtraLifeLevel = 0,
   });
 
   final int coins;
@@ -48,6 +49,7 @@ class PlayerState {
   final int tutorialVersionCompleted;
   final int battleHomingLevel;
   final int battleShotSpeedLevel;
+  final int battleExtraLifeLevel;
 
   static PlayerState initial() {
     return PlayerState(
@@ -83,6 +85,7 @@ class PlayerState {
     int? tutorialVersionCompleted,
     int? battleHomingLevel,
     int? battleShotSpeedLevel,
+    int? battleExtraLifeLevel,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -111,6 +114,7 @@ class PlayerState {
           tutorialVersionCompleted ?? this.tutorialVersionCompleted,
       battleHomingLevel: battleHomingLevel ?? this.battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel ?? this.battleShotSpeedLevel,
+      battleExtraLifeLevel: battleExtraLifeLevel ?? this.battleExtraLifeLevel,
     );
   }
 
@@ -136,6 +140,7 @@ class PlayerState {
         'tutorialVersionCompleted': tutorialVersionCompleted,
         'battleHomingLevel': battleHomingLevel,
         'battleShotSpeedLevel': battleShotSpeedLevel,
+        'battleExtraLifeLevel': battleExtraLifeLevel,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -175,6 +180,9 @@ class PlayerState {
       ),
       battleShotSpeedLevel: BattleUpgradeLogic.clampLevel(
         json['battleShotSpeedLevel'] as int? ?? 0,
+      ),
+      battleExtraLifeLevel: BattleUpgradeLogic.clampExtraLifeLevel(
+        json['battleExtraLifeLevel'] as int? ?? 0,
       ),
     );
   }

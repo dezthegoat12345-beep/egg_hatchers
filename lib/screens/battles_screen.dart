@@ -140,6 +140,29 @@ class BattlesScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _upgradeBattleExtraLife(BuildContext context) async {
+    if (game.battleExtraLifeLevel >= BattleUpgradeLogic.extraLifeMaxLevel) {
+      return;
+    }
+
+    if (game.battleTokens < game.battleExtraLifeUpgradeCost()) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough Battle Tokens.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    if (game.upgradeBattleExtraLife() && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Extra Life upgraded!',
+        backgroundColor: Colors.green.shade700,
+      );
+    }
+  }
+
   Future<OwnedAnimal?> _pickBossMutationTarget(
     BuildContext context,
     BackgroundTheme theme,
@@ -542,57 +565,63 @@ class BattlesScreen extends StatelessWidget {
                       theme: theme,
                     ),
                     const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: GameTheme.cardDecoration(theme),
-                      child: Row(
-                        children: [
-                          Text(
-                            '⚔️',
-                            style: TextStyle(fontSize: 28, color: theme.primaryColor),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Battle Tokens: ${game.battleTokens}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: theme.cardTextPrimaryColor,
-                              ),
-                            ),
-                          ),
-                          if (game.totalBossWins > 0)
-                            Text(
-                              '${game.totalBossWins} wins',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: theme.cardTextSecondaryColor,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _BattleUpgradesCard(
-                      theme: theme,
-                      game: game,
-                      onUpgradeBattleHoming: () =>
-                          _upgradeBattleHoming(context),
-                      onUpgradeBattleShotSpeed: () =>
-                          _upgradeBattleShotSpeed(context),
-                      onUnlockBossMutation: () => _unlockBossMutation(context),
-                      onApplyBossMutation: () =>
-                          _applyBossMutation(context, theme),
-                    ),
-                    const SizedBox(height: 18),
                     Expanded(
                       child: ListView(
                         children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: GameTheme.cardDecoration(theme),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '⚔️',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    color: theme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Battle Tokens: ${game.battleTokens}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.cardTextPrimaryColor,
+                                    ),
+                                  ),
+                                ),
+                                if (game.totalBossWins > 0)
+                                  Text(
+                                    '${game.totalBossWins} wins',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.cardTextSecondaryColor,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _BattleUpgradesCard(
+                            theme: theme,
+                            game: game,
+                            onUpgradeBattleHoming: () =>
+                                _upgradeBattleHoming(context),
+                            onUpgradeBattleShotSpeed: () =>
+                                _upgradeBattleShotSpeed(context),
+                            onUpgradeBattleExtraLife: () =>
+                                _upgradeBattleExtraLife(context),
+                            onUnlockBossMutation: () =>
+                                _unlockBossMutation(context),
+                            onApplyBossMutation: () =>
+                                _applyBossMutation(context, theme),
+                          ),
+                          const SizedBox(height: 18),
                           for (var i = 0; i < BossData.bosses.length; i++) ...[
                             if (i > 0) const SizedBox(height: 14),
                             KeyedSubtree(
@@ -600,50 +629,53 @@ class BattlesScreen extends StatelessWidget {
                                   ? TutorialTargets.battlesExplainSection
                                   : null,
                               child: _BossCard(
-                              boss: BossData.bosses[i],
-                              theme: theme,
-                              game: game,
-                              isUnlocked: BossBattleLogic.isBossUnlocked(
-                                BossData.bosses[i],
-                                game.state,
+                                boss: BossData.bosses[i],
+                                theme: theme,
+                                game: game,
+                                isUnlocked: BossBattleLogic.isBossUnlocked(
+                                  BossData.bosses[i],
+                                  game.state,
+                                ),
+                                winCount:
+                                    game.bossWinCount(BossData.bosses[i].id),
+                                hardPhaseWinCount: game.hardPhaseWinCount(
+                                  BossData.bosses[i].id,
+                                ),
+                                eliteUnlockProgress: game.eliteBossUnlockProgress(
+                                  BossData.bosses[i].id,
+                                ),
+                                hardPhaseUnlocked: game.isHardPhaseUnlocked(
+                                  BossData.bosses[i].id,
+                                ),
+                                nightmareUnlocked: game.isNightmareUnlocked(
+                                  BossData.bosses[i].id,
+                                ),
+                                onAutoBattle: () => _startAutoBattle(
+                                  context,
+                                  BossData.bosses[i],
+                                  theme,
+                                ),
+                                onManualBattle: () => _startManualBattle(
+                                  context,
+                                  BossData.bosses[i],
+                                  theme,
+                                ),
+                                onHardPhaseBattle: () => _startManualBattle(
+                                  context,
+                                  BossData.bosses[i],
+                                  theme,
+                                  mode: ManualBattleMode.hard,
+                                ),
+                                onNightmareBattle: () => _startManualBattle(
+                                  context,
+                                  BossData.bosses[i],
+                                  theme,
+                                  mode: ManualBattleMode.nightmare,
+                                ),
                               ),
-                              winCount: game.bossWinCount(BossData.bosses[i].id),
-                              hardPhaseWinCount:
-                                  game.hardPhaseWinCount(BossData.bosses[i].id),
-                              eliteUnlockProgress: game.eliteBossUnlockProgress(
-                                BossData.bosses[i].id,
-                              ),
-                              hardPhaseUnlocked: game.isHardPhaseUnlocked(
-                                BossData.bosses[i].id,
-                              ),
-                              nightmareUnlocked: game.isNightmareUnlocked(
-                                BossData.bosses[i].id,
-                              ),
-                              onAutoBattle: () => _startAutoBattle(
-                                context,
-                                BossData.bosses[i],
-                                theme,
-                              ),
-                              onManualBattle: () => _startManualBattle(
-                                context,
-                                BossData.bosses[i],
-                                theme,
-                              ),
-                              onHardPhaseBattle: () => _startManualBattle(
-                                context,
-                                BossData.bosses[i],
-                                theme,
-                                mode: ManualBattleMode.hard,
-                              ),
-                              onNightmareBattle: () => _startManualBattle(
-                                context,
-                                BossData.bosses[i],
-                                theme,
-                                mode: ManualBattleMode.nightmare,
-                              ),
-                            ),
                             ),
                           ],
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),
@@ -665,6 +697,7 @@ class _BattleUpgradesCard extends StatelessWidget {
     required this.game,
     required this.onUpgradeBattleHoming,
     required this.onUpgradeBattleShotSpeed,
+    required this.onUpgradeBattleExtraLife,
     required this.onUnlockBossMutation,
     required this.onApplyBossMutation,
   });
@@ -673,12 +706,16 @@ class _BattleUpgradesCard extends StatelessWidget {
   final GameService game;
   final VoidCallback onUpgradeBattleHoming;
   final VoidCallback onUpgradeBattleShotSpeed;
+  final VoidCallback onUpgradeBattleExtraLife;
   final VoidCallback onUnlockBossMutation;
   final VoidCallback onApplyBossMutation;
 
   @override
   Widget build(BuildContext context) {
     final unlocked = game.bossMutationUnlocked;
+    final startingLives = BattleUpgradeLogic.manualBattleStartingLives(
+      game.battleExtraLifeLevel,
+    );
 
     return Container(
       decoration: GameTheme.cardDecoration(theme),
@@ -712,6 +749,19 @@ class _BattleUpgradesCard extends StatelessWidget {
             nextCost: game.battleShotSpeedUpgradeCost(),
             canAfford: game.battleTokens >= game.battleShotSpeedUpgradeCost(),
             onUpgrade: onUpgradeBattleShotSpeed,
+          ),
+          const SizedBox(height: 14),
+          _BattleTokenUpgradeTile(
+            theme: theme,
+            title: 'Extra Life',
+            description:
+                'Start Manual Battles with one more life per level.',
+            level: game.battleExtraLifeLevel,
+            maxLevel: BattleUpgradeLogic.extraLifeMaxLevel,
+            nextCost: game.battleExtraLifeUpgradeCost(),
+            canAfford: game.battleTokens >= game.battleExtraLifeUpgradeCost(),
+            onUpgrade: onUpgradeBattleExtraLife,
+            statusLine: 'Starting lives: $startingLives',
           ),
           const SizedBox(height: 16),
           Divider(color: theme.cardTextSecondaryColor.withValues(alpha: 0.35)),
@@ -792,6 +842,7 @@ class _BattleTokenUpgradeTile extends StatelessWidget {
     required this.nextCost,
     required this.canAfford,
     required this.onUpgrade,
+    this.statusLine,
   });
 
   final BackgroundTheme theme;
@@ -802,6 +853,7 @@ class _BattleTokenUpgradeTile extends StatelessWidget {
   final int nextCost;
   final bool canAfford;
   final VoidCallback onUpgrade;
+  final String? statusLine;
 
   @override
   Widget build(BuildContext context) {
@@ -836,6 +888,16 @@ class _BattleTokenUpgradeTile extends StatelessWidget {
             color: theme.cardTextPrimaryColor,
           ),
         ),
+        if (statusLine != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            statusLine!,
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.cardTextSecondaryColor,
+            ),
+          ),
+        ],
         if (!atMax) ...[
           const SizedBox(height: 4),
           Text(

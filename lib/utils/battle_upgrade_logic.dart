@@ -1,9 +1,11 @@
-/// Battle Token upgrades for Manual Battle egg homing and shot speed.
+/// Battle Token upgrades for Manual Battle egg homing, shot speed, and lives.
 class BattleUpgradeLogic {
   BattleUpgradeLogic._();
 
   static const int minLevel = 0;
   static const int maxLevel = 10;
+  static const int extraLifeMaxLevel = 3;
+  static const int baseManualBattleLives = 3;
 
   static const double baseEggSpeed = 550.0;
   static const double baseEggHomingLerp = 0.04;
@@ -16,6 +18,9 @@ class BattleUpgradeLogic {
 
   static int clampLevel(int level) =>
       level.clamp(minLevel, maxLevel).toInt();
+
+  static int clampExtraLifeLevel(int level) =>
+      level.clamp(minLevel, extraLifeMaxLevel).toInt();
 
   /// Cost to upgrade homing from [currentLevel] to the next level.
   static int homingUpgradeCost(int currentLevel) {
@@ -56,4 +61,16 @@ class BattleUpgradeLogic {
   /// Max horizontal homing step per tick for player egg shots in Manual Battle.
   static double manualEggMaxHomingSpeed(int homingLevel) =>
       baseEggMaxHomingSpeed * _homingMultiplier(homingLevel);
+
+  /// Cost to upgrade extra lives from [currentLevel] to the next level.
+  static int extraLifeUpgradeCost(int currentLevel) {
+    final level = clampExtraLifeLevel(currentLevel);
+    if (level >= extraLifeMaxLevel) return 0;
+    final next = level + 1;
+    return 100 * next * next;
+  }
+
+  /// Starting player lives in Manual Battle (base 3 + upgrade level).
+  static int manualBattleStartingLives(int extraLifeLevel) =>
+      baseManualBattleLives + clampExtraLifeLevel(extraLifeLevel);
 }
