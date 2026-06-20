@@ -11,13 +11,13 @@ void main() {
     expect(BossCinematicConfig.isCinematicBoss('night_crow'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('slime_king'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('egg_guardian'), isTrue);
-    expect(BossCinematicConfig.isCinematicBoss('shadow_phoenix'), isFalse);
+    expect(BossCinematicConfig.isCinematicBoss('shadow_phoenix'), isTrue);
   });
 
-  test('elite cinematic boss ids exclude shadow phoenix', () {
+  test('elite cinematic boss ids include all elites', () {
     expect(BossCinematicConfig.isEliteCinematicBoss('slime_king'), isTrue);
     expect(BossCinematicConfig.isEliteCinematicBoss('egg_guardian'), isTrue);
-    expect(BossCinematicConfig.isEliteCinematicBoss('shadow_phoenix'), isFalse);
+    expect(BossCinematicConfig.isEliteCinematicBoss('shadow_phoenix'), isTrue);
     expect(BossCinematicConfig.isEliteCinematicBoss('slime_boss'), isFalse);
   });
 

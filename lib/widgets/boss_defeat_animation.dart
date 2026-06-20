@@ -13,6 +13,7 @@ import 'boss_sprite.dart';
 import 'egg_golem_defeat_animation.dart';
 import 'egg_guardian_defeat_animation.dart';
 import 'slime_boss_defeat_animation.dart';
+import 'shadow_phoenix_defeat_animation.dart';
 import 'slime_king_defeat_animation.dart';
 
 /// Boss-specific defeat celebration overlay for manual battle victories.
@@ -196,6 +197,17 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
 
     if (widget.boss.id == 'egg_guardian') {
       return EggGuardianDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (widget.boss.id == 'shadow_phoenix') {
+      return ShadowPhoenixDefeatAnimation(
         theme: common.theme,
         boss: common.boss,
         coinReward: common.coinReward,

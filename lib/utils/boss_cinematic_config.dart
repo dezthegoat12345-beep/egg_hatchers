@@ -10,7 +10,8 @@ class BossCinematicConfig {
       'night_rooster' ||
       'night_crow' ||
       'slime_king' ||
-      'egg_guardian' =>
+      'egg_guardian' ||
+      'shadow_phoenix' =>
         true,
       _ => false,
     };
@@ -18,7 +19,7 @@ class BossCinematicConfig {
 
   static bool isEliteCinematicBoss(String bossId) {
     return switch (bossId) {
-      'slime_king' || 'egg_guardian' => true,
+      'slime_king' || 'egg_guardian' || 'shadow_phoenix' => true,
       _ => false,
     };
   }
