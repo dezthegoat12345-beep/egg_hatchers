@@ -144,7 +144,7 @@ class DailyQuestsSummaryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Resets each day · Tap to view',
+                  'Random quests refresh daily · Tap to view',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.cardTextSecondaryColor,

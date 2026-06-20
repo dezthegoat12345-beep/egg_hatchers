@@ -116,7 +116,7 @@ class DailyQuestsSection extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Resets each day at midnight',
+          'New random quests every day',
           style: TextStyle(
             fontSize: 13,
             color: theme.cardTextSecondaryColor,

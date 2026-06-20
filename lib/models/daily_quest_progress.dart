@@ -5,6 +5,7 @@ class DailyQuestProgress {
     required this.type,
     required this.title,
     required this.target,
+    this.group,
     this.progress = 0,
     this.rewardCoins = 0,
     this.rewardBattleTokens = 0,
@@ -15,6 +16,7 @@ class DailyQuestProgress {
   final String type;
   final String title;
   final int target;
+  final String? group;
   final int progress;
   final int rewardCoins;
   final int rewardBattleTokens;
@@ -27,6 +29,7 @@ class DailyQuestProgress {
     String? type,
     String? title,
     int? target,
+    String? group,
     int? progress,
     int? rewardCoins,
     int? rewardBattleTokens,
@@ -37,6 +40,7 @@ class DailyQuestProgress {
       type: type ?? this.type,
       title: title ?? this.title,
       target: target ?? this.target,
+      group: group ?? this.group,
       progress: progress ?? this.progress,
       rewardCoins: rewardCoins ?? this.rewardCoins,
       rewardBattleTokens: rewardBattleTokens ?? this.rewardBattleTokens,
@@ -49,6 +53,7 @@ class DailyQuestProgress {
         'type': type,
         'title': title,
         'target': target,
+        if (group != null) 'group': group,
         'progress': progress,
         'rewardCoins': rewardCoins,
         'rewardBattleTokens': rewardBattleTokens,
@@ -61,6 +66,7 @@ class DailyQuestProgress {
       type: json['type'] as String,
       title: json['title'] as String? ?? '',
       target: (json['target'] as num).toInt(),
+      group: json['group'] as String?,
       progress: (json['progress'] as num?)?.toInt() ?? 0,
       rewardCoins: (json['rewardCoins'] as num?)?.toInt() ?? 0,
       rewardBattleTokens: (json['rewardBattleTokens'] as num?)?.toInt() ?? 0,

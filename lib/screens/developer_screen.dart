@@ -576,7 +576,14 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 label: 'Reset Daily Quests',
                 onPressed: () {
                   game.devResetDailyQuests();
-                  _showMessage('Daily quests reset.');
+                  _showMessage('Daily quests rerolled.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reroll Daily Quests',
+                onPressed: () {
+                  game.devRerollDailyQuests();
+                  _showMessage('Daily quests rerolled.');
                 },
               ),
               _QuickButton(

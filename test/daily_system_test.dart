@@ -17,14 +17,45 @@ void main() {
       expect(DailySystemLogic.rewardForStreak(8).coins, 500);
     });
 
-    test('generates three fixed daily quests', () {
-      final quests = DailySystemLogic.generateDailyQuests();
-      expect(quests.length, 3);
-      expect(quests.map((q) => q.type).toSet(), {
-        DailySystemLogic.hatchEggsType,
-        DailySystemLogic.upgradeAnimalsType,
-        DailySystemLogic.defeatBossType,
-      });
+    test('generates three random daily quests with unique groups', () {
+      final quests = DailySystemLogic.generateDailyQuests('2026-06-05');
+      expect(quests.length, DailySystemLogic.dailyQuestCount);
+
+      final groups = quests.map((q) => q.group).whereType<String>().toSet();
+      expect(groups.length, DailySystemLogic.dailyQuestCount);
+
+      final ids = quests.map((q) => q.id).toSet();
+      expect(ids.length, DailySystemLogic.dailyQuestCount);
+    });
+
+    test('same date generates the same daily quests', () {
+      final first = DailySystemLogic.generateDailyQuests('2026-06-05');
+      final second = DailySystemLogic.generateDailyQuests('2026-06-05');
+
+      expect(first.map((q) => q.id).toList(), second.map((q) => q.id).toList());
+    });
+
+    test('different dates can generate different daily quests', () {
+      final june5 = DailySystemLogic.generateDailyQuests('2026-06-05');
+      final june6 = DailySystemLogic.generateDailyQuests('2026-06-06');
+
+      expect(
+        june5.map((q) => q.id).toList(),
+        isNot(equals(june6.map((q) => q.id).toList())),
+      );
+    });
+
+    test('reroll salt changes same-day quest selection', () {
+      final stable = DailySystemLogic.generateDailyQuests('2026-06-05');
+      final rerolled = DailySystemLogic.generateDailyQuests(
+        '2026-06-05',
+        rerollSalt: 12345,
+      );
+
+      expect(
+        stable.map((q) => q.id).toList(),
+        isNot(equals(rerolled.map((q) => q.id).toList())),
+      );
     });
   });
 
@@ -45,7 +76,7 @@ void main() {
     });
 
     test('daily fields round-trip', () {
-      final quests = DailySystemLogic.generateDailyQuests();
+      final quests = DailySystemLogic.generateDailyQuests('2026-06-05');
       final state = PlayerState.initial().copyWith(
         lastDailyRewardClaimDate: '2026-06-05',
         dailyRewardStreak: 4,
@@ -60,6 +91,31 @@ void main() {
       expect(restored.bestDailyRewardStreak, 6);
       expect(restored.dailyQuestDate, '2026-06-05');
       expect(restored.dailyQuests.length, 3);
+      expect(restored.dailyQuests.first.group, isNotNull);
+    });
+
+    test('legacy daily quests without group still load', () {
+      final restored = PlayerState.fromJson({
+        'coins': 100,
+        'ownedAnimals': [],
+        'lastSavedTime': DateTime.now().toIso8601String(),
+        'lifetimeCoinsEarned': 100,
+        'dailyQuestDate': DailySystemLogic.todayKey(),
+        'dailyQuests': [
+          {
+            'id': 'daily_hatch_3',
+            'type': DailySystemLogic.hatchEggsType,
+            'title': 'Hatch 3 eggs',
+            'target': 3,
+            'progress': 1,
+            'rewardCoins': 1000,
+          },
+        ],
+      });
+
+      expect(restored.dailyQuests.length, 1);
+      expect(restored.dailyQuests.first.group, isNull);
+      expect(restored.dailyQuests.first.progress, 1);
     });
   });
 
@@ -107,14 +163,28 @@ void main() {
 
       final hatchQuest = game.dailyQuests.firstWhere(
         (q) => q.type == DailySystemLogic.hatchEggsType,
+        orElse: () => throw StateError('No hatch quest today'),
       );
       expect(hatchQuest.progress, 0);
 
       game.hatchEgg(GameData.eggs.first);
       final updated = game.dailyQuests.firstWhere(
-        (q) => q.type == DailySystemLogic.hatchEggsType,
+        (q) => q.id == hatchQuest.id,
       );
       expect(updated.progress, 1);
+    });
+
+    test('dev reroll changes active daily quests for today', () async {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService();
+      await game.initialize();
+
+      final before = game.dailyQuests.map((q) => q.id).toList();
+      game.devRerollDailyQuests();
+      final after = game.dailyQuests.map((q) => q.id).toList();
+
+      expect(after.length, DailySystemLogic.dailyQuestCount);
+      expect(after, isNot(equals(before)));
     });
   });
 }

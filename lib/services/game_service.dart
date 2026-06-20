@@ -519,6 +519,7 @@ class GameService extends ChangeNotifier {
     } else {
       _state = _state.copyWith(coins: _state.coins - egg.cost);
     }
+    _incrementDailyQuest(DailySystemLogic.buyEggsType);
     notifyListeners();
     save();
     return true;
@@ -535,6 +536,7 @@ class GameService extends ChangeNotifier {
       if (_state.coins < cost) return false;
       _state = _state.copyWith(coins: _state.coins - cost);
     }
+    _incrementDailyQuest(DailySystemLogic.buyEggsType);
     notifyListeners();
     save();
     return true;
@@ -703,6 +705,7 @@ class GameService extends ChangeNotifier {
           ],
         ),
       );
+      _incrementDailyQuest(DailySystemLogic.claimQuestRewardType);
       notifyListeners();
       save();
       return const QuestClaimResult();
@@ -718,6 +721,7 @@ class GameService extends ChangeNotifier {
         ],
       ),
     );
+    _incrementDailyQuest(DailySystemLogic.claimQuestRewardType);
     notifyListeners();
     save();
     return QuestClaimResult(
@@ -733,7 +737,18 @@ class GameService extends ChangeNotifier {
     }
     _state = _state.copyWith(
       dailyQuestDate: today,
-      dailyQuests: DailySystemLogic.generateDailyQuests(),
+      dailyQuests: DailySystemLogic.generateDailyQuests(today),
+    );
+  }
+
+  void _rerollDailyQuestsForToday({int? rerollSalt}) {
+    final today = DailySystemLogic.todayKey();
+    _state = _state.copyWith(
+      dailyQuestDate: today,
+      dailyQuests: DailySystemLogic.generateDailyQuests(
+        today,
+        rerollSalt: rerollSalt ?? DateTime.now().millisecondsSinceEpoch,
+      ),
     );
   }
 
@@ -959,6 +974,7 @@ class GameService extends ChangeNotifier {
         battlePower: battlePower,
       ),
     );
+    _incrementDailyQuest(DailySystemLogic.startAutoBattleType);
     notifyListeners();
     save();
     return true;
@@ -1224,6 +1240,7 @@ class GameService extends ChangeNotifier {
             _state.questProgress.totalBossBattlesStarted + 1,
       ),
     );
+    _incrementDailyQuest(DailySystemLogic.startManualBattleType);
     _refreshQuestNotifications();
     notifyListeners();
     save();
@@ -1291,6 +1308,7 @@ class GameService extends ChangeNotifier {
     BossBattleResult result, {
     ManualBattleMode mode = ManualBattleMode.normal,
     String? rewardAnimalId,
+    bool isManualBattle = true,
   }) {
     var progress = _state.questProgress;
     if (result.won) {
@@ -1336,6 +1354,9 @@ class GameService extends ChangeNotifier {
       nightmareWins: nightmareWins,
     );
     _incrementDailyQuest(DailySystemLogic.defeatBossType);
+    if (isManualBattle) {
+      _incrementDailyQuest(DailySystemLogic.winManualBattleType);
+    }
     _refreshQuestNotifications();
     notifyListeners();
     save();
@@ -1384,7 +1405,7 @@ class GameService extends ChangeNotifier {
     );
     if (result == null) return null;
     recordBossBattleStarted();
-    applyBossBattleRewards(bossId, result);
+    applyBossBattleRewards(bossId, result, isManualBattle: false);
     return result;
   }
 
@@ -1433,11 +1454,13 @@ class GameService extends ChangeNotifier {
   }
 
   void devResetDailyQuests() {
-    _state = _state.copyWith(
-      clearDailyQuestDate: true,
-      dailyQuests: const [],
-    );
-    _refreshDailyQuestsIfNeeded();
+    _rerollDailyQuestsForToday();
+    notifyListeners();
+    save();
+  }
+
+  void devRerollDailyQuests() {
+    _rerollDailyQuestsForToday();
     notifyListeners();
     save();
   }
@@ -1581,6 +1604,7 @@ class GameService extends ChangeNotifier {
       battleTokens: _state.battleTokens - cost,
       battleHomingLevel: _state.battleHomingLevel + 1,
     );
+    _incrementDailyQuest(DailySystemLogic.buyBattleUpgradeType);
     notifyListeners();
     save();
     return true;
@@ -1594,6 +1618,7 @@ class GameService extends ChangeNotifier {
       battleTokens: _state.battleTokens - cost,
       battleShotSpeedLevel: _state.battleShotSpeedLevel + 1,
     );
+    _incrementDailyQuest(DailySystemLogic.buyBattleUpgradeType);
     notifyListeners();
     save();
     return true;
@@ -1612,6 +1637,7 @@ class GameService extends ChangeNotifier {
       battleTokens: _state.battleTokens - cost,
       battleExtraLifeLevel: _state.battleExtraLifeLevel + 1,
     );
+    _incrementDailyQuest(DailySystemLogic.buyBattleUpgradeType);
     notifyListeners();
     save();
     return true;
