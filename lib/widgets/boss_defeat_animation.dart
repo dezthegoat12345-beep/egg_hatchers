@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
+import '../utils/boss_cinematic_config.dart';
 import '../utils/boss_defeat_animation_config.dart';
 import '../utils/format_utils.dart';
+import 'bird_boss_defeat_animation.dart';
 import 'boss_battle_background.dart';
 import 'boss_sprite.dart';
+import 'egg_golem_defeat_animation.dart';
 import 'slime_boss_defeat_animation.dart';
 
 /// Boss-specific defeat celebration overlay for manual battle victories.
@@ -58,13 +61,14 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
   List<_AnimParticle>? _particles;
   var _completed = false;
 
-  bool get _isSlimeCinematic => widget.boss.id == 'slime_boss';
+  bool get _isCinematicBoss =>
+      BossCinematicConfig.isCinematicBoss(widget.boss.id);
 
   @override
   void initState() {
     super.initState();
     _animationType = BossDefeatAnimationConfig.typeForBossId(widget.boss.id);
-    if (_isSlimeCinematic) return;
+    if (_isCinematicBoss) return;
 
     _duration = BossDefeatAnimationConfig.durationFor(_animationType);
     _totalMs = _duration!.inMilliseconds.toDouble();
@@ -126,15 +130,54 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
 
   @override
   Widget build(BuildContext context) {
+    if (_isCinematicBoss) {
+      return _buildCinematicAnimation();
+    }
+
+    return _buildStandardAnimation();
+  }
+
+  Widget _buildCinematicAnimation() {
+    final common = (
+      theme: widget.theme,
+      boss: widget.boss,
+      coinReward: widget.coinReward,
+      tokenReward: widget.tokenReward,
+      animalRewardName: widget.animalRewardName,
+      onComplete: widget.onComplete,
+    );
+
     if (widget.boss.id == 'slime_boss') {
       return SlimeBossDefeatAnimation(
-        theme: widget.theme,
-        boss: widget.boss,
-        coinReward: widget.coinReward,
-        tokenReward: widget.tokenReward,
-        animalRewardName: widget.animalRewardName,
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
         showBattleBackgrounds: widget.showBattleBackgrounds,
-        onComplete: widget.onComplete,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (widget.boss.id == 'egg_golem') {
+      return EggGolemDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (BossCinematicConfig.isBirdBoss(widget.boss.id)) {
+      return BirdBossDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
       );
     }
 

@@ -1,7 +1,26 @@
+import 'package:egg_hatchers/utils/boss_cinematic_config.dart';
 import 'package:egg_hatchers/utils/boss_defeat_animation_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('cinematic boss ids include base bosses only', () {
+    expect(BossCinematicConfig.isCinematicBoss('slime_boss'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('egg_golem'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('shadow_rooster'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('night_rooster'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('night_crow'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('slime_king'), isFalse);
+    expect(BossCinematicConfig.isCinematicBoss('egg_guardian'), isFalse);
+    expect(BossCinematicConfig.isCinematicBoss('shadow_phoenix'), isFalse);
+  });
+
+  test('bird boss ids are detected', () {
+    expect(BossCinematicConfig.isBirdBoss('shadow_rooster'), isTrue);
+    expect(BossCinematicConfig.isBirdBoss('night_rooster'), isTrue);
+    expect(BossCinematicConfig.isBirdBoss('night_crow'), isTrue);
+    expect(BossCinematicConfig.isBirdBoss('egg_golem'), isFalse);
+  });
+
   test('boss ids map to expected defeat animation types', () {
     expect(
       BossDefeatAnimationConfig.typeForBossId('slime_boss'),
