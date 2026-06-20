@@ -39,8 +39,9 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   static const _totalMs = 12000.0;
   static const _skipAfterMs = 1000.0;
   static const _flapStartMs = 1000.0;
-  static const _descentStartMs = 3500.0;
-  static const _topViewStartMs = 6000.0;
+  static const _descentStartMs = 4500.0;
+  static const _falterStartMs = 6500.0;
+  static const _topViewStartMs = 6500.0;
   static const _fallStartMs = 7500.0;
   static const _impactMs = 8800.0;
   static const _smokeEndMs = 10200.0;
@@ -99,36 +100,69 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   _WingFlapSnapshot _wingFlap(
     double t,
     double unevenFlap,
+    double falterPhase,
     double topViewPhase,
     double fallProgress,
   ) {
-    if (t < _flapStartMs || t >= _impactMs) {
+    if (t >= _impactMs) {
       return const _WingFlapSnapshot();
     }
 
     const minRad = -18 * math.pi / 180;
     const maxRad = 22 * math.pi / 180;
-    final flapSpeed = 130.0 + unevenFlap * 45 + topViewPhase * 28;
+    final shoulderX = _baseSpriteSize * 0.30;
+    const shoulderY = -_baseSpriteSize * 0.06;
+    const wingLen = _baseSpriteSize * 0.38;
+
+    // Establish shot: wings spread, no flapping yet.
+    if (t < _flapStartMs) {
+      const spread = 0.22;
+      return _WingFlapSnapshot(
+        leftAngle: spread,
+        rightAngle: -spread,
+        leftTip: _wingTip(-shoulderX, shoulderY, spread, wingLen, isLeft: true),
+        rightTip: _wingTip(shoulderX, shoulderY, -spread, wingLen, isLeft: false),
+        isFlapping: false,
+      );
+    }
+
+    // Fall phase: wings trail/fold — no strong flapping.
+    if (t >= _fallStartMs) {
+      final trail = _phase(_fallStartMs, _impactMs);
+      const spread = 0.62;
+      final leftAngle = spread + trail * 0.15;
+      final rightAngle = -spread - trail * 0.15;
+      return _WingFlapSnapshot(
+        leftAngle: leftAngle,
+        rightAngle: rightAngle,
+        leftTip: _wingTip(-shoulderX, shoulderY, leftAngle, wingLen, isLeft: true),
+        rightTip: _wingTip(shoulderX, shoulderY, rightAngle, wingLen, isLeft: false),
+        featherIntensity: (0.15 * (1 - trail)).clamp(0.0, 0.2),
+        isFlapping: false,
+      );
+    }
+
+    final flapSpeed = 130.0 + unevenFlap * 40;
     final cycle = t / flapSpeed * math.pi;
     final sinVal = math.sin(cycle);
     final normalized = (sinVal + 1) / 2;
     final downstroke = sinVal < 0;
 
     var amplitude =
-        (1.0 - unevenFlap * 0.28 - topViewPhase * 0.5 - fallProgress * 0.35)
-            .clamp(0.12, 1.0);
+        (1.0 - unevenFlap * 0.22 - falterPhase * 0.55).clamp(0.15, 1.0);
     final irregular =
-        unevenFlap > 0 ? math.sin(t / 62 * math.pi) * unevenFlap * 0.14 : 0.0;
+        unevenFlap > 0 ? math.sin(t / 62 * math.pi) * unevenFlap * 0.12 : 0.0;
 
     double leftAngle;
     double rightAngle;
 
-    if (topViewPhase > 0.5) {
-      final falter = ((topViewPhase - 0.5) / 0.5).clamp(0.0, 1.0);
-      final spread = 0.42 + falter * 0.55;
-      leftAngle = spread + sinVal * 0.06 * amplitude;
-      rightAngle = -spread - sinVal * 0.06 * amplitude;
-      amplitude *= 1 - falter * 0.65;
+    if (falterPhase > 0.15) {
+      final falter = falterPhase.clamp(0.0, 1.0);
+      final spread = 0.28 + falter * 0.48;
+      final twitch = sinVal * 0.05 * (1 - falter);
+      leftAngle = spread + twitch;
+      rightAngle = -spread - twitch;
+      amplitude *= 1 - falter * 0.75;
     } else {
       final base = minRad + normalized * (maxRad - minRad);
       leftAngle = (base + irregular) * amplitude;
@@ -136,32 +170,15 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
     }
 
     final bodyBobY =
-        math.sin(cycle + math.pi / 2) * (5 + unevenFlap * 5) * amplitude *
-            (1 - topViewPhase * 0.55);
+        math.sin(cycle + math.pi / 2) * (5 + unevenFlap * 5) * amplitude;
     final bodyTilt =
         math.sin(cycle) * (3 + unevenFlap * 2) * math.pi / 180 * amplitude;
 
-    const shoulderX = 30.0;
-    const shoulderY = 8.0;
-    const wingLen = 60.0;
-
-    final leftTip = _wingTip(
-      -shoulderX,
-      shoulderY,
-      leftAngle,
-      wingLen,
-      isLeft: true,
-    );
-    final rightTip = _wingTip(
-      shoulderX,
-      shoulderY,
-      rightAngle,
-      wingLen,
-      isLeft: false,
-    );
+    final leftTip = _wingTip(-shoulderX, shoulderY, leftAngle, wingLen, isLeft: true);
+    final rightTip = _wingTip(shoulderX, shoulderY, rightAngle, wingLen, isLeft: false);
 
     final featherIntensity =
-        (0.35 + unevenFlap * 0.45 + (downstroke ? 0.3 : 0.08)).clamp(0.0, 1.0);
+        (0.4 + unevenFlap * 0.45 + (downstroke ? 0.28 : 0.06)).clamp(0.0, 1.0);
 
     return _WingFlapSnapshot(
       leftAngle: leftAngle,
@@ -172,6 +189,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
       rightTip: rightTip,
       featherIntensity: featherIntensity,
       downstroke: downstroke,
+      isFlapping: true,
     );
   }
 
@@ -199,9 +217,10 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
         final zoomScale = 0.88 + zoomPhase * 0.48;
         final darken = (0.26 + zoomPhase * 0.28).clamp(0.0, 0.58);
 
-        final unevenFlap = _phase(_descentStartMs, _topViewStartMs);
+        final unevenFlap = _phase(_descentStartMs, _falterStartMs);
+        final falterPhase = _phase(_falterStartMs, _fallStartMs);
         final descentAmount =
-            Curves.easeIn.transform(_phase(_descentStartMs, _topViewStartMs));
+            Curves.easeIn.transform(_phase(_descentStartMs, _fallStartMs));
         final topViewPhase =
             Curves.easeInOut.transform(_phase(_topViewStartMs, _fallStartMs));
         final fallProgress = Curves.easeIn.transform(_phase(_fallStartMs, _impactMs));
@@ -212,30 +231,32 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
             ? Curves.easeOut.transform(_phase(_impactMs, _impactMs + 900))
             : 0.0;
 
-        final flap = _wingFlap(t, unevenFlap, topViewPhase, fallProgress);
+        final flap = _wingFlap(t, unevenFlap, falterPhase, topViewPhase, fallProgress);
 
         final wobbleX = t >= _flapStartMs && t < _fallStartMs
             ? math.sin(t / 55 * math.pi) * (4 + unevenFlap * 8)
             : 0.0;
 
         final bossScale = zoomScale * _sizeBoost;
-        final showBoss = t < _impactMs + 80;
-        final bossOpacity = t < _impactMs
-            ? 1.0
-            : (1 - _phase(_impactMs, _impactMs + 200)).clamp(0.0, 1.0);
-
-        final flyY = -descentAmount * 38 - topViewPhase * 20;
-        final fallY = fallProgress * 120;
-        final bossOffsetY = flyY + fallY + topViewPhase * 30 + flap.bodyBobY;
-        final bossOffsetX = wobbleX * (1 - topViewPhase * 0.5);
-
         final perspectiveRotate =
             -topViewPhase * math.pi * 0.48 - fallProgress * 0.15;
         final flattenY = 1.0 - topViewPhase * 0.42;
         final flattenX = 1.0 + topViewPhase * 0.18;
         final fallShrink = 1 - fallProgress * 0.35;
+        final bodyScaleX = bossScale * flattenX * fallShrink;
+        final bodyScaleY = bossScale * flattenY * fallShrink;
+        final showBoss = t < _impactMs + 80;
+        final bossOpacity = t < _impactMs
+            ? 1.0
+            : (1 - _phase(_impactMs, _impactMs + 200)).clamp(0.0, 1.0);
 
-        final featherTravel = t >= _flapStartMs
+        final flyY = -descentAmount * 28 - topViewPhase * 18;
+        final fallY = fallProgress * 120;
+        final bossOffsetY = flyY + fallY + topViewPhase * 30 +
+            (t < _fallStartMs ? flap.bodyBobY : 0);
+        final bossOffsetX = wobbleX * (1 - topViewPhase * 0.5);
+
+        final featherTravel = t >= _flapStartMs && t < _impactMs
             ? Curves.easeOut.transform(_phase(_flapStartMs, _smokeEndMs))
             : 0.0;
         final emberTrail = t >= _descentStartMs && t < _impactMs
@@ -268,14 +289,30 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                       fade: effectFade,
                     ),
                   ),
+                if (featherTravel > 0)
+                  CustomPaint(
+                    painter: _FallingFeathersPainter(
+                      feathers: _feathers,
+                      travel: featherTravel,
+                      bossOffset: Offset(bossOffsetX, bossOffsetY),
+                      leftTip: flap.leftTip,
+                      rightTip: flap.rightTip,
+                      tipScaleX: bodyScaleX,
+                      tipScaleY: bodyScaleY,
+                      featherIntensity: flap.featherIntensity,
+                      isFlapping: flap.isFlapping,
+                      fallProgress: fallProgress,
+                      fade: effectFade,
+                    ),
+                  ),
                 if (showBoss && bossOpacity > 0)
                   Transform.translate(
                     offset: Offset(bossOffsetX, bossOffsetY),
                     child: Transform.rotate(
                       angle: perspectiveRotate,
                       child: Transform.scale(
-                        scaleX: bossScale * flattenX * fallShrink,
-                        scaleY: bossScale * flattenY * fallShrink,
+                        scaleX: bodyScaleX,
+                        scaleY: bodyScaleY,
                         child: Transform.rotate(
                           angle: flap.bodyTilt,
                           child: Opacity(
@@ -284,7 +321,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                               boss: widget.boss,
                               spriteSize: _baseSpriteSize,
                               flap: flap,
-                              topViewPhase: topViewPhase,
+                              falterPhase: falterPhase,
                               showGlow: t >= _flapStartMs && t < _impactMs,
                             ),
                           ),
@@ -292,19 +329,6 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                       ),
                     ),
                   ),
-                CustomPaint(
-                  painter: _FallingFeathersPainter(
-                    feathers: _feathers,
-                    travel: featherTravel,
-                    bossOffset: Offset(bossOffsetX, bossOffsetY),
-                    leftTip: flap.leftTip,
-                    rightTip: flap.rightTip,
-                    featherIntensity: flap.featherIntensity,
-                    topView: topViewPhase,
-                    fallProgress: fallProgress,
-                    fade: effectFade,
-                  ),
-                ),
                 if (smokeExpand > 0)
                   CustomPaint(
                     painter: _ShadowSmokePainter(
@@ -347,6 +371,7 @@ class _WingFlapSnapshot {
     this.rightTip = Offset.zero,
     this.featherIntensity = 0,
     this.downstroke = false,
+    this.isFlapping = false,
   });
 
   final double leftAngle;
@@ -357,6 +382,7 @@ class _WingFlapSnapshot {
   final Offset rightTip;
   final double featherIntensity;
   final bool downstroke;
+  final bool isFlapping;
 }
 
 class _PhoenixFlappingBody extends StatelessWidget {
@@ -364,79 +390,127 @@ class _PhoenixFlappingBody extends StatelessWidget {
     required this.boss,
     required this.spriteSize,
     required this.flap,
-    required this.topViewPhase,
+    required this.falterPhase,
     required this.showGlow,
   });
 
   final BossBattleDefinition boss;
   final double spriteSize;
   final _WingFlapSnapshot flap;
-  final double topViewPhase;
+  final double falterPhase;
   final bool showGlow;
 
   @override
   Widget build(BuildContext context) {
-    final box = spriteSize * 1.45;
+    final wingW = spriteSize * 0.44;
+    final wingH = spriteSize * 0.52;
+    final shoulderX = spriteSize * 0.30;
+    final shoulderY = -spriteSize * 0.06;
+
     return SizedBox(
-      width: box,
-      height: box,
+      width: spriteSize,
+      height: spriteSize * 1.08,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
           if (showGlow)
             Container(
-              width: spriteSize * 1.12,
-              height: spriteSize * 1.12,
+              width: spriteSize * 0.72,
+              height: spriteSize * 0.72,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF7E57C2)
-                        .withValues(alpha: 0.32 * (1 - topViewPhase * 0.5)),
-                    blurRadius: 30,
-                    spreadRadius: 5,
+                    color: const Color(0xFF7E57C2).withValues(alpha: 0.32),
+                    blurRadius: 28,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
             ),
-          Positioned(
-            left: box * 0.02,
-            top: box * 0.34,
+          // Left wing — pivot at shoulder, attached to body side.
+          Transform.translate(
+            offset: Offset(-shoulderX, shoulderY),
             child: Transform.rotate(
               angle: flap.leftAngle,
-              alignment: Alignment.centerRight,
+              alignment: Alignment.topRight,
               child: CustomPaint(
-                size: const Size(68, 84),
+                size: Size(wingW, wingH),
                 painter: _PhoenixWingShapePainter(
                   isLeft: true,
-                  falter: topViewPhase > 0.5,
+                  falter: falterPhase > 0.2,
                 ),
               ),
             ),
           ),
-          Positioned(
-            right: box * 0.02,
-            top: box * 0.34,
+          // Right wing — mirrored shoulder pivot.
+          Transform.translate(
+            offset: Offset(shoulderX, shoulderY),
             child: Transform.rotate(
               angle: flap.rightAngle,
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.topLeft,
               child: CustomPaint(
-                size: const Size(68, 84),
+                size: Size(wingW, wingH),
                 painter: _PhoenixWingShapePainter(
                   isLeft: false,
-                  falter: topViewPhase > 0.5,
+                  falter: falterPhase > 0.2,
                 ),
               ),
             ),
           ),
-          BossSprite(
-            spritePath: boss.spritePath,
-            fallbackEmoji: boss.emoji,
-            size: spriteSize,
-            semanticLabel: boss.name,
+          // Body sprite with static wing regions masked.
+          Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              BossSprite(
+                spritePath: boss.spritePath,
+                fallbackEmoji: boss.emoji,
+                size: spriteSize,
+                semanticLabel: boss.name,
+              ),
+              Positioned(
+                left: 0,
+                top: spriteSize * 0.26,
+                child: _StaticWingMask(width: spriteSize * 0.38, height: spriteSize * 0.48),
+              ),
+              Positioned(
+                right: 0,
+                top: spriteSize * 0.26,
+                child: _StaticWingMask(width: spriteSize * 0.38, height: spriteSize * 0.48),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Covers the PNG sprite's baked-in wing pixels during the cinematic only.
+class _StaticWingMask extends StatelessWidget {
+  const _StaticWingMask({required this.width, required this.height});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: RadialGradient(
+          center: Alignment.center,
+          radius: 0.85,
+          colors: [
+            const Color(0xFF141428).withValues(alpha: 0.97),
+            const Color(0xFF0D1B3E).withValues(alpha: 0.92),
+            const Color(0xFF141428).withValues(alpha: 0.88),
+          ],
+        ),
       ),
     );
   }
@@ -595,8 +669,10 @@ class _FallingFeathersPainter extends CustomPainter {
     required this.bossOffset,
     required this.leftTip,
     required this.rightTip,
+    required this.tipScaleX,
+    required this.tipScaleY,
     required this.featherIntensity,
-    required this.topView,
+    required this.isFlapping,
     required this.fallProgress,
     required this.fade,
   });
@@ -606,36 +682,40 @@ class _FallingFeathersPainter extends CustomPainter {
   final Offset bossOffset;
   final Offset leftTip;
   final Offset rightTip;
+  final double tipScaleX;
+  final double tipScaleY;
   final double featherIntensity;
-  final double topView;
+  final bool isFlapping;
   final double fallProgress;
   final double fade;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (travel <= 0) return;
+    if (travel <= 0 || featherIntensity <= 0.02) return;
     final bodyCenter = Offset(size.width / 2, size.height * 0.46) + bossOffset;
     final maxDim = math.max(size.width, size.height);
+    final intensity = isFlapping ? featherIntensity : featherIntensity * 0.5;
 
     for (final f in feathers) {
       final localT = ((travel - f.delay) / (1 - f.delay)).clamp(0.0, 1.0);
       if (localT <= 0) continue;
+      if (!isFlapping && f.delay < 0.15) continue;
 
+      final tip = f.wingSide < 0 ? leftTip : rightTip;
       final spawn = bodyCenter +
-          (f.wingSide < 0 ? leftTip : rightTip) +
-          Offset(f.wingSide * f.tipOffset * 0.3, f.tipOffset * 0.2);
+          Offset(tip.dx * tipScaleX, tip.dy * tipScaleY) +
+          Offset(f.wingSide * f.tipOffset * 0.25, f.tipOffset * 0.15);
 
       final eased = Curves.easeOut.transform(localT);
-      final driftX = math.sin(f.drift + eased * math.pi * 3) * 24;
-      final fallDist = eased * maxDim * (0.07 + fallProgress * 0.14);
+      final driftX = math.sin(f.drift + eased * math.pi * 3) * 22;
+      final fallDist = eased * maxDim * (0.06 + fallProgress * 0.12);
       final pos = spawn +
           Offset(
-            driftX + f.wingSide * eased * 34,
-            fallDist + eased * eased * maxDim * 0.2,
+            driftX + f.wingSide * eased * 28,
+            fallDist + eased * eased * maxDim * 0.18,
           );
 
-      final alpha =
-          (fade * featherIntensity * (1 - localT * 0.35)).clamp(0.0, 1.0);
+      final alpha = (fade * intensity * (1 - localT * 0.35)).clamp(0.0, 1.0);
       if (alpha <= 0.05) continue;
 
       canvas.save();
@@ -666,8 +746,10 @@ class _FallingFeathersPainter extends CustomPainter {
       oldDelegate.bossOffset != bossOffset ||
       oldDelegate.leftTip != leftTip ||
       oldDelegate.rightTip != rightTip ||
+      oldDelegate.tipScaleX != tipScaleX ||
+      oldDelegate.tipScaleY != tipScaleY ||
       oldDelegate.featherIntensity != featherIntensity ||
-      oldDelegate.topView != topView ||
+      oldDelegate.isFlapping != isFlapping ||
       oldDelegate.fallProgress != fallProgress ||
       oldDelegate.fade != fade;
 }
