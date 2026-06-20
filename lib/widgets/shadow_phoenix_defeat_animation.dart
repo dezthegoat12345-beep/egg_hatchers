@@ -112,7 +112,8 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
     const maxRad = 22 * math.pi / 180;
     final shoulderX = _baseSpriteSize * 0.30;
     const shoulderY = -_baseSpriteSize * 0.06;
-    const wingLen = _baseSpriteSize * 0.38;
+    final wingW = _baseSpriteSize * 0.44;
+    final wingH = _baseSpriteSize * 0.52;
 
     // Establish shot: wings spread, no flapping yet.
     if (t < _flapStartMs) {
@@ -120,8 +121,8 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
       return _WingFlapSnapshot(
         leftAngle: spread,
         rightAngle: -spread,
-        leftTip: _wingTip(-shoulderX, shoulderY, spread, wingLen, isLeft: true),
-        rightTip: _wingTip(shoulderX, shoulderY, -spread, wingLen, isLeft: false),
+        leftTip: _wingTip(-shoulderX, shoulderY, spread, wingW, wingH, isLeft: true),
+        rightTip: _wingTip(shoulderX, shoulderY, -spread, wingW, wingH, isLeft: false),
         isFlapping: false,
       );
     }
@@ -135,8 +136,8 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
       return _WingFlapSnapshot(
         leftAngle: leftAngle,
         rightAngle: rightAngle,
-        leftTip: _wingTip(-shoulderX, shoulderY, leftAngle, wingLen, isLeft: true),
-        rightTip: _wingTip(shoulderX, shoulderY, rightAngle, wingLen, isLeft: false),
+        leftTip: _wingTip(-shoulderX, shoulderY, leftAngle, wingW, wingH, isLeft: true),
+        rightTip: _wingTip(shoulderX, shoulderY, rightAngle, wingW, wingH, isLeft: false),
         featherIntensity: (0.15 * (1 - trail)).clamp(0.0, 0.2),
         isFlapping: false,
       );
@@ -174,8 +175,8 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
     final bodyTilt =
         math.sin(cycle) * (3 + unevenFlap * 2) * math.pi / 180 * amplitude;
 
-    final leftTip = _wingTip(-shoulderX, shoulderY, leftAngle, wingLen, isLeft: true);
-    final rightTip = _wingTip(shoulderX, shoulderY, rightAngle, wingLen, isLeft: false);
+    final leftTip = _wingTip(-shoulderX, shoulderY, leftAngle, wingW, wingH, isLeft: true);
+    final rightTip = _wingTip(shoulderX, shoulderY, rightAngle, wingW, wingH, isLeft: false);
 
     final featherIntensity =
         (0.4 + unevenFlap * 0.45 + (downstroke ? 0.28 : 0.06)).clamp(0.0, 1.0);
@@ -197,13 +198,17 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
     double shoulderX,
     double shoulderY,
     double angle,
-    double length, {
+    double wingW,
+    double wingH, {
     required bool isLeft,
   }) {
-    final dir = isLeft ? math.pi + angle * 0.85 : -angle * 0.85;
+    final frac = _PhoenixWingShapePainter.tipFraction(isLeft: isLeft);
+    final tipLocal = Offset(frac.dx * wingW, frac.dy * wingH);
+    final cos = math.cos(angle);
+    final sin = math.sin(angle);
     return Offset(
-      shoulderX + math.cos(dir) * length,
-      shoulderY + math.sin(dir) * length * 0.62,
+      shoulderX + tipLocal.dx * cos - tipLocal.dy * sin,
+      shoulderY + tipLocal.dx * sin + tipLocal.dy * cos,
     );
   }
 
@@ -459,7 +464,7 @@ class _PhoenixFlappingBody extends StatelessWidget {
               ),
             ),
           ),
-          // Body sprite with static wing regions masked.
+          // Body sprite with static wing regions covered by organic body-toned paths.
           Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
@@ -470,15 +475,9 @@ class _PhoenixFlappingBody extends StatelessWidget {
                 size: spriteSize,
                 semanticLabel: boss.name,
               ),
-              Positioned(
-                left: 0,
-                top: spriteSize * 0.26,
-                child: _StaticWingMask(width: spriteSize * 0.38, height: spriteSize * 0.48),
-              ),
-              Positioned(
-                right: 0,
-                top: spriteSize * 0.26,
-                child: _StaticWingMask(width: spriteSize * 0.38, height: spriteSize * 0.48),
+              CustomPaint(
+                size: Size(spriteSize, spriteSize),
+                painter: _StaticWingOccluderPainter(),
               ),
             ],
           ),
@@ -488,32 +487,68 @@ class _PhoenixFlappingBody extends StatelessWidget {
   }
 }
 
-/// Covers the PNG sprite's baked-in wing pixels during the cinematic only.
-class _StaticWingMask extends StatelessWidget {
-  const _StaticWingMask({required this.width, required this.height});
-
-  final double width;
-  final double height;
-
+/// Hides baked-in PNG wing pixels using body-toned organic paths (not rectangles).
+class _StaticWingOccluderPainter extends CustomPainter {
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: RadialGradient(
-          center: Alignment.center,
-          radius: 0.85,
-          colors: [
-            const Color(0xFF141428).withValues(alpha: 0.97),
-            const Color(0xFF0D1B3E).withValues(alpha: 0.92),
-            const Color(0xFF141428).withValues(alpha: 0.88),
+  void paint(Canvas canvas, Size size) {
+    _drawSide(canvas, size, isLeft: true);
+    _drawSide(canvas, size, isLeft: false);
+  }
+
+  void _drawSide(Canvas canvas, Size size, {required bool isLeft}) {
+    final path = _occluderPath(size, isLeft: isLeft);
+    final bounds = path.getBounds();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = RadialGradient(
+          center: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+          radius: 0.95,
+          colors: const [
+            Color(0xFF2E2E42),
+            Color(0xFF1E1E30),
+            Color(0xFF12121E),
           ],
-        ),
-      ),
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(bounds.inflate(4)),
+    );
+    // Soft blend into torso — no hard rectangular edge.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF141420).withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
   }
+
+  Path _occluderPath(Size size, {required bool isLeft}) {
+    final w = size.width;
+    final h = size.height;
+    final path = Path();
+    if (isLeft) {
+      path.moveTo(w * 0.54, h * 0.30);
+      path.quadraticBezierTo(w * 0.38, h * 0.28, w * 0.22, h * 0.34);
+      path.quadraticBezierTo(w * 0.08, h * 0.42, w * 0.04, h * 0.52);
+      path.quadraticBezierTo(w * 0.02, h * 0.62, w * 0.10, h * 0.70);
+      path.quadraticBezierTo(w * 0.22, h * 0.76, w * 0.38, h * 0.72);
+      path.quadraticBezierTo(w * 0.48, h * 0.58, w * 0.52, h * 0.44);
+      path.close();
+    } else {
+      path.moveTo(w * 0.46, h * 0.30);
+      path.quadraticBezierTo(w * 0.62, h * 0.28, w * 0.78, h * 0.34);
+      path.quadraticBezierTo(w * 0.92, h * 0.42, w * 0.96, h * 0.52);
+      path.quadraticBezierTo(w * 0.98, h * 0.62, w * 0.90, h * 0.70);
+      path.quadraticBezierTo(w * 0.78, h * 0.76, w * 0.62, h * 0.72);
+      path.quadraticBezierTo(w * 0.52, h * 0.58, w * 0.48, h * 0.44);
+      path.close();
+    }
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _StaticWingOccluderPainter oldDelegate) => false;
 }
 
 class _PhoenixWingShapePainter extends CustomPainter {
@@ -522,22 +557,67 @@ class _PhoenixWingShapePainter extends CustomPainter {
   final bool isLeft;
   final bool falter;
 
-  @override
-  void paint(Canvas canvas, Size size) {
+  /// Primary wing-tip fraction from shoulder pivot (wing-local space).
+  static Offset tipFraction({required bool isLeft}) =>
+      Offset(isLeft ? -0.93 : 0.93, 0.30);
+
+  Path _wingPath(Size size) {
+    final w = size.width;
+    final h = size.height;
     final path = Path();
+
     if (isLeft) {
-      path.moveTo(size.width, size.height * 0.22);
-      path.quadraticBezierTo(size.width * 0.55, 0, size.width * 0.08, size.height * 0.18);
-      path.quadraticBezierTo(0, size.height * 0.45, size.width * 0.12, size.height * 0.82);
-      path.quadraticBezierTo(size.width * 0.45, size.height * 0.65, size.width, size.height * 0.48);
+      // Shoulder pivot at top-right.
+      final sx = w;
+      final sy = h * 0.10;
+      path.moveTo(sx, sy);
+      // Leading edge — curves up and outward to primary tip.
+      path.quadraticBezierTo(w * 0.70, h * 0.01, w * 0.34, h * 0.05);
+      path.quadraticBezierTo(w * 0.06, h * 0.14, w * 0.01, h * 0.30);
+      path.quadraticBezierTo(w * 0.02, h * 0.44, w * 0.04, h * 0.56);
+      // Trailing feather notches back toward shoulder.
+      path.lineTo(w * 0.14, h * 0.68);
+      path.lineTo(w * 0.28, h * 0.80);
+      path.lineTo(w * 0.46, h * 0.90);
+      path.lineTo(w * 0.64, h * 0.84);
+      path.lineTo(w * 0.80, h * 0.68);
+      path.lineTo(w * 0.92, h * 0.48);
+      path.quadraticBezierTo(w * 0.98, h * 0.28, sx, sy);
       path.close();
     } else {
-      path.moveTo(0, size.height * 0.22);
-      path.quadraticBezierTo(size.width * 0.45, 0, size.width * 0.92, size.height * 0.18);
-      path.quadraticBezierTo(size.width, size.height * 0.45, size.width * 0.88, size.height * 0.82);
-      path.quadraticBezierTo(size.width * 0.55, size.height * 0.65, 0, size.height * 0.48);
+      // Shoulder pivot at top-left — mirrored.
+      final sx = 0.0;
+      final sy = h * 0.10;
+      path.moveTo(sx, sy);
+      path.quadraticBezierTo(w * 0.30, h * 0.01, w * 0.66, h * 0.05);
+      path.quadraticBezierTo(w * 0.94, h * 0.14, w * 0.99, h * 0.30);
+      path.quadraticBezierTo(w * 0.98, h * 0.44, w * 0.96, h * 0.56);
+      path.lineTo(w * 0.86, h * 0.68);
+      path.lineTo(w * 0.72, h * 0.80);
+      path.lineTo(w * 0.54, h * 0.90);
+      path.lineTo(w * 0.36, h * 0.84);
+      path.lineTo(w * 0.20, h * 0.68);
+      path.lineTo(w * 0.08, h * 0.48);
+      path.quadraticBezierTo(w * 0.02, h * 0.28, sx, sy);
       path.close();
     }
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _wingPath(size);
+    final bounds = path.getBounds().inflate(6);
+    final w = size.width;
+    final h = size.height;
+
+    // Soft blue glow behind wing silhouette.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF1565C0).withValues(alpha: falter ? 0.08 : 0.18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
 
     canvas.drawPath(
       path,
@@ -546,29 +626,57 @@ class _PhoenixWingShapePainter extends CustomPainter {
           begin: isLeft ? Alignment.centerRight : Alignment.centerLeft,
           end: isLeft ? Alignment.centerLeft : Alignment.centerRight,
           colors: falter
-              ? [const Color(0xFF311B92), const Color(0xFF1A237E)]
-              : [const Color(0xFF4527A0), const Color(0xFF1565C0), const Color(0xFF0D0D1A)],
-        ).createShader(Offset.zero & size),
+              ? [
+                  const Color(0xFF1A237E),
+                  const Color(0xFF311B92),
+                  const Color(0xFF0D0D1A),
+                ]
+              : [
+                  const Color(0xFF0D0D1A),
+                  const Color(0xFF311B92),
+                  const Color(0xFF1565C0),
+                  const Color(0xFF4527A0),
+                ],
+          stops: falter ? const [0.0, 0.5, 1.0] : const [0.0, 0.25, 0.65, 1.0],
+        ).createShader(bounds),
     );
+
+    // Blue edge highlight along leading edge.
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFFCE93D8).withValues(alpha: 0.35)
+        ..color = const Color(0xFF64B5F6).withValues(alpha: falter ? 0.22 : 0.42)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..strokeWidth = 1.4,
     );
 
-    // Feather edge arcs
-    final edge = Paint()
-      ..color = const Color(0xFF1A1A2E).withValues(alpha: 0.55)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-    for (var i = 0; i < 4; i++) {
-      final t = 0.2 + i * 0.18;
-      canvas.drawLine(
-        Offset(size.width * (isLeft ? 0.85 - t * 0.5 : 0.15 + t * 0.5), size.height * t),
-        Offset(size.width * (isLeft ? 0.2 : 0.8), size.height * (t + 0.12)),
-        edge,
+    // Individual feather filaments on trailing edge.
+    final feather = Paint()
+      ..color = const Color(0xFF1A1A2E).withValues(alpha: 0.5)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final primaries = isLeft
+        ? [
+            (Offset(w * 0.04, h * 0.56), Offset(w * 0.28, h * 0.80)),
+            (Offset(w * 0.14, h * 0.68), Offset(w * 0.46, h * 0.90)),
+            (Offset(w * 0.28, h * 0.80), Offset(w * 0.64, h * 0.84)),
+            (Offset(w * 0.46, h * 0.90), Offset(w * 0.80, h * 0.68)),
+            (Offset(w * 0.64, h * 0.84), Offset(w * 0.92, h * 0.48)),
+          ]
+        : [
+            (Offset(w * 0.96, h * 0.56), Offset(w * 0.72, h * 0.80)),
+            (Offset(w * 0.86, h * 0.68), Offset(w * 0.54, h * 0.90)),
+            (Offset(w * 0.72, h * 0.80), Offset(w * 0.36, h * 0.84)),
+            (Offset(w * 0.54, h * 0.90), Offset(w * 0.20, h * 0.68)),
+            (Offset(w * 0.36, h * 0.84), Offset(w * 0.08, h * 0.48)),
+          ];
+    for (final (from, to) in primaries) {
+      canvas.drawLine(from, to, feather);
+      canvas.drawCircle(
+        to,
+        1.2,
+        Paint()..color = const Color(0xFF90CAF9).withValues(alpha: 0.35),
       );
     }
   }
