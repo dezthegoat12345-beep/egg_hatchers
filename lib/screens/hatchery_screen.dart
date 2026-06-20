@@ -12,6 +12,7 @@ import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/auto_battle_notification_listener.dart';
+import '../widgets/daily_system_cards.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/luck_panel.dart';
@@ -264,6 +265,24 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                       lifetimeCoinsEarned: game.lifetimeCoinsEarned,
                       onCoinTap: _onCoinTap,
                       theme: bg,
+                    ),
+                    const SizedBox(height: 14),
+                    DailyRewardCard(game: game, theme: bg),
+                    const SizedBox(height: 14),
+                    DailyQuestsSummaryCard(
+                      game: game,
+                      theme: bg,
+                      onOpenQuests: () => openWithThemedTransition(
+                        context,
+                        theme: bg,
+                        icon: '⭐',
+                        label: 'Opening Quests',
+                        settings: const RouteSettings(name: kQuestsRouteName),
+                        builder: (_) => QuestsScreen(
+                          game: game,
+                          preferences: preferences,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 14),
                     LuckPanel(game: game, theme: bg),

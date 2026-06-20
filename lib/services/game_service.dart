@@ -14,6 +14,8 @@ import '../models/custom_egg.dart';
 import '../models/egg.dart';
 import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
+import '../models/daily_quest_progress.dart';
+import '../utils/daily_system_logic.dart';
 import '../utils/custom_egg_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/luck_logic.dart';
@@ -293,10 +295,12 @@ class GameService extends ChangeNotifier {
     final saved = await _saveService.load();
     if (saved != null) {
       _state = _migrateEliteRewardAnimals(saved);
+      _refreshDailyQuestsIfNeeded();
       _resolveActiveAutoBattle();
       _applyOfflineEarnings();
     } else {
       _state = GameData.startingPlayerState();
+      _refreshDailyQuestsIfNeeded();
     }
 
     _silenceExistingQuestNotifications();
@@ -430,6 +434,27 @@ class GameService extends ChangeNotifier {
   int get battleHomingLevel => _state.battleHomingLevel;
   int get battleShotSpeedLevel => _state.battleShotSpeedLevel;
   int get battleExtraLifeLevel => _state.battleExtraLifeLevel;
+  String? get lastDailyRewardClaimDate => _state.lastDailyRewardClaimDate;
+  int get dailyRewardStreak => _state.dailyRewardStreak;
+  int get bestDailyRewardStreak => _state.bestDailyRewardStreak;
+  List<DailyQuestProgress> get dailyQuests {
+    _refreshDailyQuestsIfNeeded();
+    return List.unmodifiable(_state.dailyQuests);
+  }
+
+  bool get hasClaimedDailyRewardToday =>
+      _state.lastDailyRewardClaimDate == DailySystemLogic.todayKey();
+
+  bool get canClaimDailyReward => !hasClaimedDailyRewardToday;
+
+  DailyRewardOffer get upcomingDailyReward =>
+      DailySystemLogic.rewardForStreak(_dailyRewardStreakAfterClaim());
+
+  int get dailyQuestsCompleteCount =>
+      dailyQuests.where((quest) => quest.isComplete).length;
+
+  int get dailyQuestsClaimedCount =>
+      dailyQuests.where((quest) => quest.claimed).length;
 
   bool canAfford(Egg egg) {
     if (egg.usesBattleTokens) {
@@ -565,6 +590,11 @@ class GameService extends ChangeNotifier {
     final battleHomingLevel = _state.battleHomingLevel;
     final battleShotSpeedLevel = _state.battleShotSpeedLevel;
     final battleExtraLifeLevel = _state.battleExtraLifeLevel;
+    final lastDailyRewardClaimDate = _state.lastDailyRewardClaimDate;
+    final dailyRewardStreak = _state.dailyRewardStreak;
+    final bestDailyRewardStreak = _state.bestDailyRewardStreak;
+    final dailyQuestDate = _state.dailyQuestDate;
+    final dailyQuests = _state.dailyQuests;
     final tutorialCompleted = _state.tutorialCompleted;
     final tutorialSkipped = _state.tutorialSkipped;
     final tutorialVersionCompleted = _state.tutorialVersionCompleted;
@@ -587,6 +617,11 @@ class GameService extends ChangeNotifier {
       battleHomingLevel: battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel,
       battleExtraLifeLevel: battleExtraLifeLevel,
+      lastDailyRewardClaimDate: lastDailyRewardClaimDate,
+      dailyRewardStreak: dailyRewardStreak,
+      bestDailyRewardStreak: bestDailyRewardStreak,
+      dailyQuestDate: dailyQuestDate,
+      dailyQuests: dailyQuests,
       tutorialCompleted: tutorialCompleted,
       tutorialSkipped: tutorialSkipped,
       tutorialVersionCompleted: tutorialVersionCompleted,
@@ -653,6 +688,116 @@ class GameService extends ChangeNotifier {
       coins: quest.rewardCoins,
       battleTokens: quest.rewardBattleTokens,
     );
+  }
+
+  void _refreshDailyQuestsIfNeeded() {
+    final today = DailySystemLogic.todayKey();
+    if (_state.dailyQuestDate == today && _state.dailyQuests.isNotEmpty) {
+      return;
+    }
+    _state = _state.copyWith(
+      dailyQuestDate: today,
+      dailyQuests: DailySystemLogic.generateDailyQuests(),
+    );
+  }
+
+  int _dailyRewardStreakAfterClaim() {
+    if (hasClaimedDailyRewardToday) return _state.dailyRewardStreak;
+    if (DailySystemLogic.isYesterday(_state.lastDailyRewardClaimDate)) {
+      return _state.dailyRewardStreak + 1;
+    }
+    return 1;
+  }
+
+  bool claimDailyReward() {
+    final today = DailySystemLogic.todayKey();
+    if (_state.lastDailyRewardClaimDate == today) return false;
+
+    final streak = _dailyRewardStreakAfterClaim();
+    final best = max(_state.bestDailyRewardStreak, streak);
+    final reward = DailySystemLogic.rewardForStreak(streak);
+
+    var progress = _state.questProgress;
+    var coins = _state.coins;
+    var tokens = _state.battleTokens;
+
+    coins += reward.coins;
+    if (reward.battleTokens > 0) {
+      tokens += reward.battleTokens;
+      progress = progress.copyWith(
+        totalBattleTokensEarned:
+            progress.totalBattleTokensEarned + reward.battleTokens,
+      );
+    }
+
+    _state = _state.copyWith(
+      lastDailyRewardClaimDate: today,
+      dailyRewardStreak: streak,
+      bestDailyRewardStreak: best,
+      coins: coins,
+      battleTokens: tokens,
+      questProgress: progress,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool claimDailyQuest(String questId) {
+    _refreshDailyQuestsIfNeeded();
+    final index = _state.dailyQuests.indexWhere((quest) => quest.id == questId);
+    if (index < 0) return false;
+
+    final quest = _state.dailyQuests[index];
+    if (quest.claimed || !quest.isComplete) return false;
+
+    var progress = _state.questProgress;
+    var coins = _state.coins;
+    var tokens = _state.battleTokens;
+
+    if (quest.rewardCoins > 0) {
+      coins += quest.rewardCoins;
+    }
+    if (quest.rewardBattleTokens > 0) {
+      tokens += quest.rewardBattleTokens;
+      progress = progress.copyWith(
+        totalBattleTokensEarned: progress.totalBattleTokensEarned +
+            quest.rewardBattleTokens,
+      );
+    }
+
+    final updatedQuests = List<DailyQuestProgress>.from(_state.dailyQuests);
+    updatedQuests[index] = quest.copyWith(claimed: true);
+
+    _state = _state.copyWith(
+      dailyQuests: updatedQuests,
+      coins: coins,
+      battleTokens: tokens,
+      questProgress: progress,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  void _incrementDailyQuest(String type, {int amount = 1}) {
+    if (amount <= 0) return;
+    _refreshDailyQuestsIfNeeded();
+
+    var changed = false;
+    final updated = _state.dailyQuests.map((quest) {
+      if (quest.type != type || quest.claimed || quest.isComplete) {
+        return quest;
+      }
+      changed = true;
+      final nextProgress = quest.progress + amount;
+      return quest.copyWith(
+        progress: nextProgress > quest.target ? quest.target : nextProgress,
+      );
+    }).toList();
+
+    if (!changed) return;
+    _state = _state.copyWith(dailyQuests: updated);
   }
 
   /// Grants sprite rating bonus coins without affecting lifetime earnings.
@@ -820,6 +965,7 @@ class GameService extends ChangeNotifier {
     final wins = Map<String, int>.from(_state.bossWins);
     var changed = false;
     AutoBattleCompletionSummary? completion;
+    var bossDefeatsForDailyQuest = 0;
 
     while (battle != null) {
       if (battle.battlesWon >= BossBattleLogic.maxAutoBattleDefeats) {
@@ -858,6 +1004,7 @@ class GameService extends ChangeNotifier {
         coins += boss.coinReward;
         tokens += boss.battleTokenReward;
         wins[boss.id] = (wins[boss.id] ?? 0) + 1;
+        bossDefeatsForDailyQuest++;
 
         battle = battle.copyWith(
           currentHp: result.finalPlayerHp,
@@ -913,6 +1060,13 @@ class GameService extends ChangeNotifier {
       activeAutoBattle: battle,
       clearActiveAutoBattle: battle == null,
     );
+
+    if (bossDefeatsForDailyQuest > 0) {
+      _incrementDailyQuest(
+        DailySystemLogic.defeatBossType,
+        amount: bossDefeatsForDailyQuest,
+      );
+    }
 
     if (completion != null) {
       _pendingAutoBattleCompletion = completion;
@@ -1145,6 +1299,7 @@ class GameService extends ChangeNotifier {
       hardPhaseWins: hardPhaseWins,
       nightmareWins: nightmareWins,
     );
+    _incrementDailyQuest(DailySystemLogic.defeatBossType);
     _refreshQuestNotifications();
     notifyListeners();
     save();
@@ -1225,6 +1380,38 @@ class GameService extends ChangeNotifier {
       battleHomingLevel: BattleUpgradeLogic.minLevel,
       battleShotSpeedLevel: BattleUpgradeLogic.minLevel,
       battleExtraLifeLevel: BattleUpgradeLogic.minLevel,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devResetDailyRewardClaim() {
+    _state = _state.copyWith(
+      clearLastDailyRewardClaimDate: true,
+      dailyRewardStreak: 0,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devResetDailyQuests() {
+    _state = _state.copyWith(
+      clearDailyQuestDate: true,
+      dailyQuests: const [],
+    );
+    _refreshDailyQuestsIfNeeded();
+    notifyListeners();
+    save();
+  }
+
+  void devCompleteDailyQuests() {
+    _refreshDailyQuestsIfNeeded();
+    _state = _state.copyWith(
+      dailyQuests: _state.dailyQuests
+          .map(
+            (quest) => quest.copyWith(progress: quest.target),
+          )
+          .toList(),
     );
     notifyListeners();
     save();
@@ -2123,6 +2310,10 @@ class GameService extends ChangeNotifier {
     }
 
     _state = _state.copyWith(questProgress: progress);
+    _incrementDailyQuest(
+      DailySystemLogic.hatchEggsType,
+      amount: results.length,
+    );
   }
 
   OwnedAnimal? ownedAnimal(
@@ -2201,6 +2392,7 @@ class GameService extends ChangeNotifier {
         totalAnimalUpgrades: _state.questProgress.totalAnimalUpgrades + 1,
       ),
     );
+    _incrementDailyQuest(DailySystemLogic.upgradeAnimalsType);
     _refreshQuestNotifications();
     notifyListeners();
     save();

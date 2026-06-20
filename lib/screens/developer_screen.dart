@@ -566,6 +566,27 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Reset Daily Reward',
+                onPressed: () {
+                  game.devResetDailyRewardClaim();
+                  _showMessage('Daily reward claim reset.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Daily Quests',
+                onPressed: () {
+                  game.devResetDailyQuests();
+                  _showMessage('Daily quests reset.');
+                },
+              ),
+              _QuickButton(
+                label: 'Complete Daily Quests',
+                onPressed: () {
+                  game.devCompleteDailyQuests();
+                  _showMessage('Daily quests completed.');
+                },
+              ),
+              _QuickButton(
                 label: 'Reset boss wins',
                 onPressed: () {
                   game.devResetBossWins();

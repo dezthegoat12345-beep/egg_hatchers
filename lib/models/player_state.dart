@@ -1,5 +1,6 @@
 import '../utils/battle_upgrade_logic.dart';
 import 'active_auto_battle.dart';
+import 'daily_quest_progress.dart';
 import 'owned_animal.dart';
 import 'quest_progress.dart';
 
@@ -27,6 +28,11 @@ class PlayerState {
     this.battleHomingLevel = 0,
     this.battleShotSpeedLevel = 0,
     this.battleExtraLifeLevel = 0,
+    this.lastDailyRewardClaimDate,
+    this.dailyRewardStreak = 0,
+    this.bestDailyRewardStreak = 0,
+    this.dailyQuestDate,
+    this.dailyQuests = const [],
   });
 
   final int coins;
@@ -50,6 +56,11 @@ class PlayerState {
   final int battleHomingLevel;
   final int battleShotSpeedLevel;
   final int battleExtraLifeLevel;
+  final String? lastDailyRewardClaimDate;
+  final int dailyRewardStreak;
+  final int bestDailyRewardStreak;
+  final String? dailyQuestDate;
+  final List<DailyQuestProgress> dailyQuests;
 
   static PlayerState initial() {
     return PlayerState(
@@ -86,6 +97,13 @@ class PlayerState {
     int? battleHomingLevel,
     int? battleShotSpeedLevel,
     int? battleExtraLifeLevel,
+    String? lastDailyRewardClaimDate,
+    bool clearLastDailyRewardClaimDate = false,
+    int? dailyRewardStreak,
+    int? bestDailyRewardStreak,
+    String? dailyQuestDate,
+    bool clearDailyQuestDate = false,
+    List<DailyQuestProgress>? dailyQuests,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -115,6 +133,16 @@ class PlayerState {
       battleHomingLevel: battleHomingLevel ?? this.battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel ?? this.battleShotSpeedLevel,
       battleExtraLifeLevel: battleExtraLifeLevel ?? this.battleExtraLifeLevel,
+      lastDailyRewardClaimDate: clearLastDailyRewardClaimDate
+          ? null
+          : lastDailyRewardClaimDate ?? this.lastDailyRewardClaimDate,
+      dailyRewardStreak: dailyRewardStreak ?? this.dailyRewardStreak,
+      bestDailyRewardStreak:
+          bestDailyRewardStreak ?? this.bestDailyRewardStreak,
+      dailyQuestDate: clearDailyQuestDate
+          ? null
+          : dailyQuestDate ?? this.dailyQuestDate,
+      dailyQuests: dailyQuests ?? this.dailyQuests,
     );
   }
 
@@ -141,6 +169,12 @@ class PlayerState {
         'battleHomingLevel': battleHomingLevel,
         'battleShotSpeedLevel': battleShotSpeedLevel,
         'battleExtraLifeLevel': battleExtraLifeLevel,
+        if (lastDailyRewardClaimDate != null)
+          'lastDailyRewardClaimDate': lastDailyRewardClaimDate,
+        'dailyRewardStreak': dailyRewardStreak,
+        'bestDailyRewardStreak': bestDailyRewardStreak,
+        if (dailyQuestDate != null) 'dailyQuestDate': dailyQuestDate,
+        'dailyQuests': dailyQuests.map((quest) => quest.toJson()).toList(),
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -184,7 +218,24 @@ class PlayerState {
       battleExtraLifeLevel: BattleUpgradeLogic.clampExtraLifeLevel(
         json['battleExtraLifeLevel'] as int? ?? 0,
       ),
+      lastDailyRewardClaimDate: json['lastDailyRewardClaimDate'] as String?,
+      dailyRewardStreak: (json['dailyRewardStreak'] as num?)?.toInt() ?? 0,
+      bestDailyRewardStreak:
+          (json['bestDailyRewardStreak'] as num?)?.toInt() ?? 0,
+      dailyQuestDate: json['dailyQuestDate'] as String?,
+      dailyQuests: _dailyQuestsFromJson(json['dailyQuests']),
     );
+  }
+
+  static List<DailyQuestProgress> _dailyQuestsFromJson(Object? raw) {
+    if (raw is! List || raw.isEmpty) return const [];
+    return raw
+        .map(
+          (item) => DailyQuestProgress.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
   }
 
   static Map<String, int> _bossWinsFromJson(Object? raw) {

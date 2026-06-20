@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/quest_data.dart';
+import '../models/daily_quest_progress.dart';
 import '../models/background_theme.dart';
 import '../models/quest.dart';
 import '../services/game_service.dart';
@@ -11,6 +12,7 @@ import '../utils/quest_logic.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
+import '../widgets/daily_quest_card.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
@@ -89,6 +91,26 @@ class QuestsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _claimDailyQuest(BuildContext context, DailyQuestProgress quest) {
+    if (!game.claimDailyQuest(quest.id) || !context.mounted) return;
+
+    if (quest.rewardCoins > 0) {
+      showGameSnackBar(
+        context,
+        message:
+            'Daily quest complete! +${formatCoins(quest.rewardCoins)} coins',
+        backgroundColor: preferences.selectedTheme.secondaryColor,
+      );
+    } else if (quest.rewardBattleTokens > 0) {
+      showGameSnackBar(
+        context,
+        message:
+            'Daily quest complete! +${quest.rewardBattleTokens} Battle Tokens',
+        backgroundColor: preferences.selectedTheme.secondaryColor,
+      );
+    }
   }
 
   @override
@@ -171,7 +193,13 @@ class QuestsScreen extends StatelessWidget {
                   Expanded(
                     child: ListView(
                       children: [
-                                  if (readyToClaim.isNotEmpty) ...[
+                        DailyQuestsSection(
+                          game: game,
+                          theme: bg,
+                          onClaim: (quest) => _claimDailyQuest(context, quest),
+                        ),
+                        const SizedBox(height: 20),
+                        if (readyToClaim.isNotEmpty) ...[
                                     _CompletedQuestsHeader(theme: bg),
                                     const SizedBox(height: 10),
                                     Container(
