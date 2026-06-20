@@ -715,6 +715,35 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
             ],
           ),
           const SizedBox(height: 32),
+          _SectionTitle('Egg Mastery Testing'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _QuickButton(
+                label: '+10 hatches each egg',
+                onPressed: () {
+                  game.devAddEggMasteryHatches();
+                  _showMessage('Added 10 mastery hatches to each egg.');
+                },
+              ),
+              _QuickButton(
+                label: 'Max all Egg Mastery',
+                onPressed: () {
+                  game.devMaxAllEggMastery();
+                  _showMessage('Maxed Egg Mastery for all eggs.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Egg Mastery',
+                onPressed: () {
+                  game.devResetEggMastery();
+                  _showMessage('Reset Egg Mastery progress.');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
           _SectionTitle('Quest Testing'),
           Wrap(
             spacing: 8,

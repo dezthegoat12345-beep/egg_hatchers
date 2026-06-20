@@ -156,7 +156,7 @@ class OwnedAnimalList extends StatelessWidget {
       quantity: owned.quantity,
       level: owned.level,
       typeIncome:
-          isBattling ? 0 : GameService.incomeFor(animal, owned),
+          isBattling ? 0 : game.incomeForOwned(animal, owned),
       upgradeCost: GameService.upgradeCostFor(animal, owned),
       showUpgradeButton: true,
       canAffordUpgrade: !isBattling &&

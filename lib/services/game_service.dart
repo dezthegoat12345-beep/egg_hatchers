@@ -12,6 +12,7 @@ import '../models/animal.dart';
 import '../models/boss_battle.dart';
 import '../models/custom_egg.dart';
 import '../models/egg.dart';
+import '../models/egg_mastery_progress.dart';
 import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
 import '../models/daily_quest_progress.dart';
@@ -29,6 +30,7 @@ import '../utils/quest_logic.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/animal_sell_logic.dart';
 import '../utils/built_in_egg_logic.dart';
+import '../utils/egg_mastery_logic.dart';
 import '../utils/battle_power_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/sprite_rating_logic.dart';
@@ -49,6 +51,7 @@ class GameService extends ChangeNotifier {
   bool _isInitialized = false;
   String? _pendingQuestNotification;
   bool _questNotificationDeferred = false;
+  final List<String> _pendingMasteryNotifications = [];
   AutoBattleCompletionSummary? _pendingAutoBattleCompletion;
   var _dailyRewardPopupShownThisSession = false;
 
@@ -63,13 +66,38 @@ class GameService extends ChangeNotifier {
     return GameData.mutationById(owned.mutationId) ?? GameData.mutations.first;
   }
 
-  /// Income: base × mutationMultiplier × quantity × level.
-  static int incomeFor(Animal animal, OwnedAnimal owned) {
+  /// Income: base × mutationMultiplier × quantity × level × egg mastery bonus.
+  static int incomeFor(
+    Animal animal,
+    OwnedAnimal owned, {
+    int masteryLevel = 0,
+  }) {
     final mutation = _mutationFor(owned);
-    return animal.coinsPerSecond *
+    final base = animal.coinsPerSecond *
         mutation.incomeMultiplier *
         owned.quantity *
         owned.level;
+    if (owned.sourceEggId == null || masteryLevel <= 0) {
+      return base;
+    }
+    return EggMasteryLogic.applyIncomeBonus(base, masteryLevel);
+  }
+
+  int masteryLevelForEgg(String? eggId) {
+    if (eggId == null) return 0;
+    return _state.eggMastery[eggId]?.masteryLevel ?? 0;
+  }
+
+  EggMasteryProgress? eggMasteryProgress(String eggId) {
+    return _state.eggMastery[eggId];
+  }
+
+  int incomeForOwned(Animal animal, OwnedAnimal owned) {
+    return incomeFor(
+      animal,
+      owned,
+      masteryLevel: masteryLevelForEgg(owned.sourceEggId),
+    );
   }
 
   /// Upgrade cost: base × level × 30 (mutation does not affect cost).
@@ -171,7 +199,7 @@ class GameService extends ChangeNotifier {
       }
       final animal = GameData.animalById(owned.animalId);
       if (animal != null) {
-        total += incomeFor(animal, owned);
+        total += incomeForOwned(animal, owned);
       }
     }
     return RebirthLogic.applyMultiplier(total, _state.rebirthLevel);
@@ -189,7 +217,7 @@ class GameService extends ChangeNotifier {
       }
       final animal = GameData.animalById(owned.animalId);
       if (animal != null) {
-        total += incomeFor(animal, owned);
+        total += incomeForOwned(animal, owned);
       }
     }
     return total;
@@ -368,6 +396,14 @@ class GameService extends ChangeNotifier {
   }
 
   bool get isQuestNotificationDeferred => _questNotificationDeferred;
+
+  String? consumePendingMasteryNotification() {
+    if (_pendingMasteryNotifications.isEmpty) return null;
+    return _pendingMasteryNotifications.removeAt(0);
+  }
+
+  bool get hasPendingMasteryNotifications =>
+      _pendingMasteryNotifications.isNotEmpty;
 
   void _silenceExistingQuestNotifications() {
     final progress = _state.questProgress;
@@ -635,6 +671,7 @@ class GameService extends ChangeNotifier {
     final tutorialCompleted = _state.tutorialCompleted;
     final tutorialSkipped = _state.tutorialSkipped;
     final tutorialVersionCompleted = _state.tutorialVersionCompleted;
+    final eggMastery = _state.eggMastery;
     final protectedAnimals = _state.ownedAnimals
         .where((owned) => owned.isProtected)
         .toList();
@@ -663,8 +700,10 @@ class GameService extends ChangeNotifier {
       tutorialCompleted: tutorialCompleted,
       tutorialSkipped: tutorialSkipped,
       tutorialVersionCompleted: tutorialVersionCompleted,
+      eggMastery: eggMastery,
     );
     _pendingQuestNotification = null;
+    _pendingMasteryNotifications.clear();
     _questNotificationDeferred = false;
     _refreshQuestNotifications();
     notifyListeners();
@@ -1844,6 +1883,42 @@ class GameService extends ChangeNotifier {
     save();
   }
 
+  void devAddEggMasteryHatches({int count = 10}) {
+    if (count <= 0) return;
+    final updated = Map<String, EggMasteryProgress>.from(_state.eggMastery);
+    for (final egg in [...GameData.eggs, ...GameData.battleEggs]) {
+      final current =
+          updated[egg.id] ?? EggMasteryProgress(eggId: egg.id);
+      updated[egg.id] = current
+          .copyWith(hatchCount: current.hatchCount + count)
+          .normalized();
+    }
+    _state = _state.copyWith(eggMastery: updated);
+    notifyListeners();
+    save();
+  }
+
+  void devMaxAllEggMastery() {
+    final updated = <String, EggMasteryProgress>{};
+    for (final egg in [...GameData.eggs, ...GameData.battleEggs]) {
+      updated[egg.id] = EggMasteryProgress(
+        eggId: egg.id,
+        hatchCount: EggMasteryLogic.thresholds.last,
+        masteryLevel: EggMasteryLogic.maxLevel,
+      );
+    }
+    _state = _state.copyWith(eggMastery: updated);
+    notifyListeners();
+    save();
+  }
+
+  void devResetEggMastery() {
+    _state = _state.copyWith(eggMastery: const {});
+    _pendingMasteryNotifications.clear();
+    notifyListeners();
+    save();
+  }
+
   void devAddMutationHatched({String mutationId = 'golden'}) {
     var progress = _state.questProgress.copyWith(
       totalMutationsHatched: _state.questProgress.totalMutationsHatched + 1,
@@ -2277,11 +2352,22 @@ class GameService extends ChangeNotifier {
       mutation.id,
       isProtected: false,
     );
+    final hatchSourceEggId = EggMasteryLogic.isMasteryEligibleEgg(egg.id)
+        ? egg.id
+        : null;
 
     if (existingIndex >= 0) {
       final existing = updatedAnimals[existingIndex];
-      updatedAnimals[existingIndex] =
-          existing.copyWith(quantity: existing.quantity + 1);
+      updatedAnimals[existingIndex] = existing.copyWith(
+        quantity: existing.quantity + 1,
+        sourceEggId: _mergeSourceEggId(
+          existing.sourceEggId,
+          hatchSourceEggId,
+        ),
+        clearSourceEggId: existing.sourceEggId != null &&
+            hatchSourceEggId != null &&
+            existing.sourceEggId != hatchSourceEggId,
+      );
     } else {
       updatedAnimals.add(
         OwnedAnimal(
@@ -2289,6 +2375,7 @@ class GameService extends ChangeNotifier {
           quantity: 1,
           level: 1,
           mutationId: mutation.id,
+          sourceEggId: hatchSourceEggId,
         ),
       );
     }
@@ -2378,6 +2465,44 @@ class GameService extends ChangeNotifier {
       DailySystemLogic.hatchEggsType,
       amount: results.length,
     );
+    if (eggId != null && EggMasteryLogic.isMasteryEligibleEgg(eggId)) {
+      _applyEggMasteryHatches(eggId, results.length);
+    }
+  }
+
+  String? _mergeSourceEggId(String? existing, String? hatchEggId) {
+    if (hatchEggId == null) return existing;
+    if (existing == null) return hatchEggId;
+    if (existing == hatchEggId) return existing;
+    return null;
+  }
+
+  void _applyEggMasteryHatches(String eggId, int hatchCount) {
+    if (hatchCount <= 0) return;
+
+    final egg = GameData.eggById(eggId);
+    if (egg == null) return;
+
+    final current = _state.eggMastery[eggId] ??
+        EggMasteryProgress(eggId: eggId);
+    final previousLevel = current.masteryLevel;
+    final updated = current
+        .copyWith(hatchCount: current.hatchCount + hatchCount)
+        .normalized();
+
+    final updatedMap = Map<String, EggMasteryProgress>.from(_state.eggMastery)
+      ..[eggId] = updated;
+    _state = _state.copyWith(eggMastery: updatedMap);
+
+    if (updated.masteryLevel > previousLevel) {
+      for (var level = previousLevel + 1;
+          level <= updated.masteryLevel;
+          level++) {
+        _pendingMasteryNotifications.add(
+          EggMasteryLogic.levelUpMessage(egg.name, level),
+        );
+      }
+    }
   }
 
   OwnedAnimal? ownedAnimal(

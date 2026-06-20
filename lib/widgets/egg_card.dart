@@ -4,8 +4,10 @@ import '../data/game_data.dart';
 import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
+import '../models/egg_mastery_progress.dart';
 import '../services/custom_sprite_service.dart';
 import '../utils/built_in_egg_logic.dart';
+import '../utils/egg_mastery_logic.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import 'game_sprite.dart';
@@ -27,6 +29,7 @@ class EggCard extends StatelessWidget {
     this.canAffordTripleHatch = false,
     this.onTripleHatch,
     this.battleTokens,
+    this.masteryProgress,
   });
 
   final Egg egg;
@@ -42,6 +45,9 @@ class EggCard extends StatelessWidget {
   final bool canAffordTripleHatch;
   final VoidCallback? onTripleHatch;
   final int? battleTokens;
+  final EggMasteryProgress? masteryProgress;
+
+  bool get _showEggMastery => EggMasteryLogic.isMasteryEligibleEgg(egg.id);
 
   bool get _usesBattleTokens => egg.usesBattleTokens;
 
@@ -212,6 +218,14 @@ class EggCard extends StatelessWidget {
                 ),
               ],
             ],
+            if (_showEggMastery) ...[
+              const SizedBox(height: 14),
+              _EggMasterySection(
+                theme: theme,
+                progress: masteryProgress ??
+                    EggMasteryProgress(eggId: egg.id),
+              ),
+            ],
             const SizedBox(height: 14),
             Text(
               'Possible animals:',
@@ -328,6 +342,76 @@ class EggCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EggMasterySection extends StatelessWidget {
+  const _EggMasterySection({
+    required this.theme,
+    required this.progress,
+  });
+
+  final BackgroundTheme theme;
+  final EggMasteryProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = progress.masteryLevel;
+    final maxLevel = EggMasteryLogic.maxLevel;
+    final bonusPercent = EggMasteryLogic.incomeBonusPercent(level);
+    final atMax = level >= maxLevel;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.secondaryColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.secondaryColor.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Egg Mastery',
+            style: GameTheme.sectionTitle(theme, size: 14).copyWith(
+              color: theme.cardTextPrimaryColor,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Mastery Lv. $level / $maxLevel',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: theme.cardTextPrimaryColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            atMax
+                ? 'Max Mastery'
+                : EggMasteryLogic.progressLabel(progress),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: theme.cardTextSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Income bonus: +$bonusPercent%',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.secondaryColor,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_data.dart';
 import '../models/egg.dart';
 import '../utils/custom_egg_logic.dart';
+import '../utils/egg_mastery_logic.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
@@ -115,9 +116,13 @@ class ShopScreen extends StatelessWidget {
         results: results,
         theme: bg,
         customSprites: customSprites,
+        sourceEggId: EggMasteryLogic.isMasteryEligibleEgg(egg.id)
+            ? egg.id
+            : null,
+        masteryLevel: game.masteryLevelForEgg(egg.id),
       );
       if (context.mounted) {
-        showPendingQuestCompletionNotification(
+        showPendingHatchNotifications(
           context,
           game: game,
           preferences: preferences,
@@ -172,7 +177,7 @@ class ShopScreen extends StatelessWidget {
       );
       TutorialService.instance.notifyHatchDialogClosed();
       if (context.mounted) {
-        showPendingQuestCompletionNotification(
+        showPendingHatchNotifications(
           context,
           game: game,
           preferences: preferences,
@@ -274,6 +279,10 @@ class ShopScreen extends StatelessWidget {
                                         context,
                                         GameData.eggs[i],
                                       ),
+                                      masteryProgress:
+                                          game.eggMasteryProgress(
+                                        GameData.eggs[i].id,
+                                      ),
                                     ),
                                   ],
                                   if (GameData.battleEggs.isNotEmpty) ...[
@@ -314,6 +323,10 @@ class ShopScreen extends StatelessWidget {
                                         onTripleHatch: () => _tripleHatch(
                                           context,
                                           GameData.battleEggs[i],
+                                        ),
+                                        masteryProgress:
+                                            game.eggMasteryProgress(
+                                          GameData.battleEggs[i].id,
                                         ),
                                       ),
                                     ],

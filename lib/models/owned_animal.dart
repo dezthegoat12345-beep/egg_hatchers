@@ -10,6 +10,7 @@ class OwnedAnimal {
     this.isProtected = false,
     this.isSecretReward = false,
     this.isEliteReward = false,
+    this.sourceEggId,
   });
 
   final String animalId;
@@ -19,6 +20,7 @@ class OwnedAnimal {
   final bool isProtected;
   final bool isSecretReward;
   final bool isEliteReward;
+  final String? sourceEggId;
 
   OwnedAnimal copyWith({
     int? quantity,
@@ -27,6 +29,8 @@ class OwnedAnimal {
     bool? isProtected,
     bool? isSecretReward,
     bool? isEliteReward,
+    String? sourceEggId,
+    bool clearSourceEggId = false,
   }) {
     return OwnedAnimal(
       animalId: animalId,
@@ -36,6 +40,7 @@ class OwnedAnimal {
       isProtected: isProtected ?? this.isProtected,
       isSecretReward: isSecretReward ?? this.isSecretReward,
       isEliteReward: isEliteReward ?? this.isEliteReward,
+      sourceEggId: clearSourceEggId ? null : sourceEggId ?? this.sourceEggId,
     );
   }
 
@@ -59,6 +64,7 @@ class OwnedAnimal {
         'isProtected': isProtected,
         'isSecretReward': isSecretReward,
         'isEliteReward': isEliteReward,
+        if (sourceEggId != null) 'sourceEggId': sourceEggId,
       };
 
   factory OwnedAnimal.fromJson(Map<String, dynamic> json) {
@@ -86,6 +92,7 @@ class OwnedAnimal {
       isProtected: isProtected || isEliteReward,
       isSecretReward: isSecretReward,
       isEliteReward: isEliteReward,
+      sourceEggId: json['sourceEggId'] as String?,
     );
   }
 }

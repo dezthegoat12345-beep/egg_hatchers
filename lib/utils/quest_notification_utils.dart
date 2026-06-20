@@ -29,6 +29,41 @@ void showPendingQuestCompletionNotification(
   );
 }
 
+/// Shows pending Egg Mastery level-up notifications after hatching.
+void showPendingEggMasteryNotifications(
+  BuildContext context, {
+  required GameService game,
+  required PreferencesService preferences,
+}) {
+  while (game.hasPendingMasteryNotifications) {
+    final message = game.consumePendingMasteryNotification();
+    if (message == null) break;
+    showGameSnackBar(
+      context,
+      message: message,
+      backgroundColor: preferences.selectedTheme.secondaryColor,
+      duration: kGameSnackBarDurationImportant,
+    );
+  }
+}
+
+void showPendingHatchNotifications(
+  BuildContext context, {
+  required GameService game,
+  required PreferencesService preferences,
+}) {
+  showPendingQuestCompletionNotification(
+    context,
+    game: game,
+    preferences: preferences,
+  );
+  showPendingEggMasteryNotifications(
+    context,
+    game: game,
+    preferences: preferences,
+  );
+}
+
 void openQuestsScreen(
   BuildContext context, {
   required GameService game,

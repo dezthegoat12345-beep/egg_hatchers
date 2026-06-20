@@ -1,6 +1,8 @@
 import '../utils/battle_upgrade_logic.dart';
+import '../utils/egg_mastery_logic.dart';
 import 'active_auto_battle.dart';
 import 'daily_quest_progress.dart';
+import 'egg_mastery_progress.dart';
 import 'owned_animal.dart';
 import 'quest_progress.dart';
 
@@ -34,6 +36,7 @@ class PlayerState {
     this.dailyQuestDate,
     this.dailyQuests = const [],
     this.lastDailyRewardPopupDismissDate,
+    this.eggMastery = const {},
   });
 
   final int coins;
@@ -63,6 +66,7 @@ class PlayerState {
   final String? dailyQuestDate;
   final List<DailyQuestProgress> dailyQuests;
   final String? lastDailyRewardPopupDismissDate;
+  final Map<String, EggMasteryProgress> eggMastery;
 
   static PlayerState initial() {
     return PlayerState(
@@ -108,6 +112,7 @@ class PlayerState {
     List<DailyQuestProgress>? dailyQuests,
     String? lastDailyRewardPopupDismissDate,
     bool clearLastDailyRewardPopupDismissDate = false,
+    Map<String, EggMasteryProgress>? eggMastery,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -151,6 +156,7 @@ class PlayerState {
           ? null
           : lastDailyRewardPopupDismissDate ??
               this.lastDailyRewardPopupDismissDate,
+      eggMastery: eggMastery ?? this.eggMastery,
     );
   }
 
@@ -185,6 +191,10 @@ class PlayerState {
         'dailyQuests': dailyQuests.map((quest) => quest.toJson()).toList(),
         if (lastDailyRewardPopupDismissDate != null)
           'lastDailyRewardPopupDismissDate': lastDailyRewardPopupDismissDate,
+        'eggMastery': {
+          for (final entry in eggMastery.entries)
+            entry.key: entry.value.toJson(),
+        },
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -236,7 +246,20 @@ class PlayerState {
       dailyQuests: _dailyQuestsFromJson(json['dailyQuests']),
       lastDailyRewardPopupDismissDate:
           json['lastDailyRewardPopupDismissDate'] as String?,
+      eggMastery: _eggMasteryFromJson(json['eggMastery']),
     );
+  }
+
+  static Map<String, EggMasteryProgress> _eggMasteryFromJson(Object? raw) {
+    if (raw is! Map) return const {};
+    final parsed = <String, EggMasteryProgress>{};
+    for (final entry in raw.entries) {
+      final value = entry.value;
+      if (value is! Map<String, dynamic>) continue;
+      final progress = EggMasteryProgress.fromJson(value);
+      parsed[progress.eggId] = progress;
+    }
+    return EggMasteryLogic.normalizeMap(parsed);
   }
 
   static List<DailyQuestProgress> _dailyQuestsFromJson(Object? raw) {

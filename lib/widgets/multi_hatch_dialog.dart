@@ -26,12 +26,16 @@ class MultiHatchDialog extends StatefulWidget {
     required this.results,
     required this.theme,
     this.customSprites,
+    this.sourceEggId,
+    this.masteryLevel = 0,
   });
 
   final Egg egg;
   final List<HatchResult> results;
   final BackgroundTheme theme;
   final CustomSpriteService? customSprites;
+  final String? sourceEggId;
+  final int masteryLevel;
 
   static Future<void> show(
     BuildContext context, {
@@ -39,6 +43,8 @@ class MultiHatchDialog extends StatefulWidget {
     required List<HatchResult> results,
     required BackgroundTheme theme,
     CustomSpriteService? customSprites,
+    String? sourceEggId,
+    int masteryLevel = 0,
   }) {
     return showDialog<void>(
       context: context,
@@ -48,6 +54,8 @@ class MultiHatchDialog extends StatefulWidget {
         results: results,
         theme: theme,
         customSprites: customSprites,
+        sourceEggId: sourceEggId,
+        masteryLevel: masteryLevel,
       ),
     );
   }
@@ -321,6 +329,8 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
                   customSprites: widget.customSprites,
                   index: i + 1,
                   compact: true,
+                  sourceEggId: widget.sourceEggId,
+                  masteryLevel: widget.masteryLevel,
                 ),
               ),
             ),
@@ -337,6 +347,8 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
             theme: widget.theme,
             customSprites: widget.customSprites,
             index: i + 1,
+            sourceEggId: widget.sourceEggId,
+            masteryLevel: widget.masteryLevel,
           ),
         ],
       ],
@@ -351,6 +363,8 @@ class _TripleResultTile extends StatelessWidget {
     required this.index,
     this.customSprites,
     this.compact = false,
+    this.sourceEggId,
+    this.masteryLevel = 0,
   });
 
   final HatchResult result;
@@ -358,6 +372,8 @@ class _TripleResultTile extends StatelessWidget {
   final CustomSpriteService? customSprites;
   final int index;
   final bool compact;
+  final String? sourceEggId;
+  final int masteryLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +388,9 @@ class _TripleResultTile extends StatelessWidget {
         quantity: 1,
         level: 1,
         mutationId: result.mutation.id,
+        sourceEggId: sourceEggId,
       ),
+      masteryLevel: masteryLevel,
     );
 
     return Container(
