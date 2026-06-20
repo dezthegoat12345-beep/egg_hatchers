@@ -1,23 +1,48 @@
 import 'package:flutter/material.dart';
 
-/// Default duration for normal compact game notifications.
-const Duration kGameSnackBarDuration = Duration(seconds: 3);
+/// Quick/common transient notifications.
+const Duration kGameSnackBarDurationShort = Duration(milliseconds: 1500);
 
-/// Longer duration for quest completion notifications.
-const Duration kQuestCompletionSnackBarDuration = Duration(seconds: 7);
+/// Default duration for normal compact game notifications.
+const Duration kGameSnackBarDuration = Duration(seconds: 2);
+
+/// Important notifications, including those with action buttons.
+const Duration kGameSnackBarDurationImportant = Duration(seconds: 3);
+
+/// Quest completion notifications with a View Quests action.
+const Duration kQuestCompletionSnackBarDuration =
+    kGameSnackBarDurationImportant;
+
+Duration _resolveSnackBarDuration({
+  required Duration? duration,
+  required bool hasAction,
+}) {
+  final resolved = duration ??
+      (hasAction ? kGameSnackBarDurationImportant : kGameSnackBarDuration);
+  if (resolved > kGameSnackBarDurationImportant) {
+    return kGameSnackBarDurationImportant;
+  }
+  return resolved;
+}
 
 /// Shows a compact floating SnackBar sized to fit the message.
 void showGameSnackBar(
   BuildContext context, {
   required String message,
   Color? backgroundColor,
-  Duration duration = kGameSnackBarDuration,
+  Duration? duration,
   String? actionLabel,
   VoidCallback? onAction,
   double? minWidth,
 }) {
   final messenger = ScaffoldMessenger.of(context);
   messenger.clearSnackBars();
+
+  final hasAction = actionLabel != null && onAction != null;
+  final effectiveDuration = _resolveSnackBarDuration(
+    duration: duration,
+    hasAction: hasAction,
+  );
 
   final screenWidth = MediaQuery.sizeOf(context).width;
   const horizontalMargin = 24.0;
@@ -37,7 +62,7 @@ void showGameSnackBar(
     maxLines: 4,
   )..layout(maxWidth: maxWidth - 32);
 
-  final snackWidth = actionLabel != null
+  final snackWidth = hasAction
       ? maxWidth
       : (textPainter.size.width + 32).clamp(resolvedMinWidth, maxWidth);
 
@@ -45,11 +70,11 @@ void showGameSnackBar(
     SnackBar(
       content: Text(message, style: textStyle),
       behavior: SnackBarBehavior.floating,
-      duration: duration,
+      duration: effectiveDuration,
       backgroundColor: backgroundColor ?? Colors.grey.shade800,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       width: snackWidth,
-      action: actionLabel != null && onAction != null
+      action: hasAction
           ? SnackBarAction(
               label: actionLabel,
               textColor: Colors.white,
@@ -60,7 +85,7 @@ void showGameSnackBar(
   );
 }
 
-/// Quest completion SnackBar with longer duration and optional View Quests action.
+/// Quest completion SnackBar with optional View Quests action.
 void showQuestCompletionSnackBar(
   BuildContext context, {
   required String message,
@@ -71,7 +96,9 @@ void showQuestCompletionSnackBar(
     context,
     message: message,
     backgroundColor: backgroundColor,
-    duration: kQuestCompletionSnackBarDuration,
+    duration: onViewQuests != null
+        ? kGameSnackBarDurationImportant
+        : kGameSnackBarDuration,
     minWidth: 280,
     actionLabel: onViewQuests != null ? 'View Quests' : null,
     onAction: onViewQuests,

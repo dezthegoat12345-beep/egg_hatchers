@@ -9,6 +9,7 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/collection_quest_logic.dart';
+import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
@@ -31,8 +32,10 @@ class SecretToolsScreen extends StatelessWidget {
   Future<void> _useSecretRewardBadge(BuildContext context) async {
     if (!game.canUseSecretRewardBadge) {
       if (game.ownedAnimals.isEmpty && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Hatch an animal first.')),
+        showGameSnackBar(
+          context,
+          message: 'Hatch an animal first.',
+          duration: kGameSnackBarDurationShort,
         );
       }
       return;
@@ -49,14 +52,17 @@ class SecretToolsScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     if (name == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not apply Secret Reward Badge.')),
+      showGameSnackBar(
+        context,
+        message: 'Could not apply Secret Reward Badge.',
+        duration: kGameSnackBarDurationShort,
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Secret Reward Badge applied to $name!')),
+    showGameSnackBar(
+      context,
+      message: 'Secret Reward Badge applied to $name!',
     );
   }
 
