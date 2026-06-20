@@ -19,6 +19,7 @@ import '../utils/battle_power_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
+import '../widgets/boss_defeat_animation.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
@@ -97,6 +98,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _isPaused = false;
   var _rewardsApplied = false;
   var _resultDialogShown = false;
+  var _showVictoryAnimation = false;
+  var _victoryCoinReward = 0;
+  var _victoryTokenReward = 0;
   String? _earnedRewardAnimalName;
   BossRewardGrant? _earnedRewardGrant;
 
@@ -202,6 +206,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _isPaused = false;
     _rewardsApplied = false;
     _resultDialogShown = false;
+    _showVictoryAnimation = false;
+    _victoryCoinReward = 0;
+    _victoryTokenReward = 0;
     _earnedRewardAnimalName = null;
     _earnedRewardGrant = null;
     _lastTickElapsed = null;
@@ -518,10 +525,25 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _gameOver = true;
     _won = won;
     _ticker.stop();
+    _bossProjectiles.clear();
+    _activeEgg = null;
+    _floatingDamages.clear();
     _applyRewardsOnce();
+
+    if (won) {
+      setState(() => _showVictoryAnimation = true);
+      return;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _showResultDialog();
     });
+  }
+
+  void _onVictoryAnimationComplete() {
+    if (!mounted || !_showVictoryAnimation) return;
+    setState(() => _showVictoryAnimation = false);
+    _showResultDialog();
   }
 
   void _applyRewardsOnce() {
@@ -532,6 +554,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
     final coinReward = _won ? boss.coinReward * rewardMultiplier : 0;
     final tokenReward = _won ? boss.battleTokenReward * rewardMultiplier : 0;
+
+    _victoryCoinReward = coinReward;
+    _victoryTokenReward = tokenReward;
 
     final result = BossBattleResult(
       won: _won,
@@ -601,7 +626,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (_gameOver || _isPaused) return KeyEventResult.ignored;
+    if (_gameOver || _isPaused || _showVictoryAnimation) {
+      return KeyEventResult.ignored;
+    }
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       if (event is KeyUpEvent) {
         if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
@@ -698,7 +725,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             shieldFlash: _shieldFlash,
                             missCount: _missCount,
                             requiredMisses: _requiredMisses,
-                            showPauseButton: !_gameOver && !_isPaused,
+                            showPauseButton: !_gameOver &&
+                                !_isPaused &&
+                                !_showVictoryAnimation,
                             onPause: _pauseBattle,
                           ),
                           const SizedBox(height: 12),
@@ -768,6 +797,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             shieldActive: _shieldActive,
                             canShoot: !_gameOver &&
                                 !_isPaused &&
+                                !_showVictoryAnimation &&
                                 !_shieldActive &&
                                 _activeEgg == null &&
                                 _eggCooldownRemaining <= 0,
@@ -786,6 +816,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             onResume: _resumeBattle,
                             onQuit: _confirmQuitBattle,
                           ),
+                        ),
+                      ),
+                    if (_showVictoryAnimation)
+                      Positioned.fill(
+                        child: BossDefeatAnimation(
+                          theme: currentTheme,
+                          boss: boss,
+                          mode: _mode,
+                          coinReward: _victoryCoinReward,
+                          tokenReward: _victoryTokenReward,
+                          animalRewardName: _earnedRewardAnimalName,
+                          onComplete: _onVictoryAnimationComplete,
                         ),
                       ),
                   ],
