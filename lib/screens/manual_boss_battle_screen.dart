@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../data/game_data.dart';
+import '../models/boss_reward_grant.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/custom_sprite_data.dart';
@@ -97,6 +98,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _rewardsApplied = false;
   var _resultDialogShown = false;
   String? _earnedRewardAnimalName;
+  BossRewardGrant? _earnedRewardGrant;
 
   Duration? _lastTickElapsed;
 
@@ -201,6 +203,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _rewardsApplied = false;
     _resultDialogShown = false;
     _earnedRewardAnimalName = null;
+    _earnedRewardGrant = null;
     _lastTickElapsed = null;
     _bossProjectiles.clear();
     _activeEgg = null;
@@ -530,10 +533,6 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     final coinReward = _won ? boss.coinReward * rewardMultiplier : 0;
     final tokenReward = _won ? boss.battleTokenReward * rewardMultiplier : 0;
 
-    final rewardAnimal = _won && boss.rewardAnimalId != null
-        ? GameData.animalById(boss.rewardAnimalId!)
-        : null;
-
     final result = BossBattleResult(
       won: _won,
       rounds: 0,
@@ -547,13 +546,14 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       coinReward: coinReward,
       battleTokenReward: tokenReward,
     );
-    widget.game.applyBossBattleRewards(
+    final grant = widget.game.applyBossBattleRewards(
       boss.id,
       result,
       mode: _won ? _mode : ManualBattleMode.normal,
       rewardAnimalId: _won ? boss.rewardAnimalId : null,
     );
-    _earnedRewardAnimalName = rewardAnimal?.name;
+    _earnedRewardAnimalName = grant?.displayName;
+    _earnedRewardGrant = grant;
   }
 
   Future<void> _showResultDialog() async {
@@ -580,6 +580,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         coinReward: _won ? boss.coinReward * rewardMultiplier : 0,
         tokenReward: _won ? boss.battleTokenReward * rewardMultiplier : 0,
         rewardAnimalName: _earnedRewardAnimalName,
+        rewardGrant: _earnedRewardGrant,
+        customSprites: widget.customSprites,
         onBackToBattles: () {
           Navigator.pop(dialogContext);
           if (mounted) Navigator.pop(context);
@@ -1322,6 +1324,8 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.coinReward,
     required this.tokenReward,
     this.rewardAnimalName,
+    this.rewardGrant,
+    this.customSprites,
     required this.onBackToBattles,
     required this.onBattleAgain,
   });
@@ -1338,6 +1342,8 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final int coinReward;
   final int tokenReward;
   final String? rewardAnimalName;
+  final BossRewardGrant? rewardGrant;
+  final CustomSpriteService? customSprites;
   final VoidCallback onBackToBattles;
   final VoidCallback onBattleAgain;
 
@@ -1463,6 +1469,42 @@ class _ManualBattleResultDialog extends StatelessWidget {
               ),
               if (rewardAnimalName != null) ...[
                 const SizedBox(height: 8),
+                if (rewardGrant != null) ...[
+                  Center(
+                    child: GameAnimalPortrait(
+                      customSprite: customSprites?.getDisplaySprite(
+                        rewardGrant!.animal.id,
+                      ),
+                      spritePath: rewardGrant!.animal.spritePath,
+                      fallbackEmoji: rewardGrant!.animal.emoji,
+                      size: 72,
+                      mutation: rewardGrant!.mutation,
+                      semanticLabel: rewardGrant!.displayName,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade700.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.amber.shade700),
+                      ),
+                      child: const Text(
+                        'Elite',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 Text(
                   'You earned $rewardAnimalName!',
                   style: TextStyle(

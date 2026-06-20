@@ -107,14 +107,48 @@ void main() {
     final game = GameService();
     await game.initialize();
 
-    game.grantBossRewardAnimal('slime_king');
+    game.grantBossRewardAnimal('slime_king', mutationId: 'none');
     expect(game.ownedAnimals.single.isEliteReward, isTrue);
     expect(game.ownedAnimals.single.isProtected, isTrue);
     expect(game.ownedAnimals.single.isSecretReward, isFalse);
+    expect(game.ownedAnimals.single.mutationId, 'none');
 
-    game.grantBossRewardAnimal('slime_king');
+    game.grantBossRewardAnimal('slime_king', mutationId: 'none');
     expect(game.ownedAnimals.single.quantity, 2);
     expect(game.ownedAnimals.single.isEliteReward, isTrue);
+
+    game.dispose();
+  });
+
+  test('elite boss reward rolls normal mutations and keeps elite flags', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    final grant = game.grantBossRewardAnimal(
+      'slime_king',
+      mutationId: 'golden',
+    );
+    expect(grant?.displayName, 'Golden Slime King');
+    expect(game.ownedAnimals.single.mutationId, 'golden');
+    expect(game.ownedAnimals.single.isEliteReward, isTrue);
+    expect(game.ownedAnimals.single.isProtected, isTrue);
+
+    game.dispose();
+  });
+
+  test('mutated elite rewards stack by mutation', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.grantBossRewardAnimal('egg_guardian', mutationId: 'rainbow');
+    game.grantBossRewardAnimal('egg_guardian', mutationId: 'none');
+    expect(game.ownedAnimals.length, 2);
+    expect(
+      game.ownedAnimals.every((owned) => owned.isEliteReward && owned.isProtected),
+      isTrue,
+    );
 
     game.dispose();
   });

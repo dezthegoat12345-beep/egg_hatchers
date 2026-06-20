@@ -15,6 +15,7 @@ import '../models/egg.dart';
 import '../models/egg_mastery_progress.dart';
 import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
+import '../models/boss_reward_grant.dart';
 import '../models/daily_quest_progress.dart';
 import '../utils/daily_system_logic.dart';
 import '../utils/custom_egg_logic.dart';
@@ -1299,13 +1300,39 @@ class GameService extends ChangeNotifier {
     return state.copyWith(ownedAnimals: animals);
   }
 
-  void grantBossRewardAnimal(String animalId) {
+  BossRewardGrant? grantBossRewardAnimal(
+    String animalId, {
+    String? mutationId,
+  }) {
     final animal = GameData.animalById(animalId);
-    if (animal == null) return;
+    if (animal == null) return null;
 
     final isElite = GameData.bossVictoryRewardAnimalIds.contains(animalId);
+    final Mutation mutation;
+    if (isElite) {
+      if (mutationId != null) {
+        mutation =
+            GameData.mutationById(mutationId) ?? GameData.mutations.first;
+      } else {
+        mutation = LuckLogic.rollNormalMutation(_random, _state.luckLevel);
+      }
+    } else {
+      mutation = GameData.mutations.first;
+    }
+
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
-    final existingIndex = _indexOfBossRewardStack(updatedAnimals, animalId);
+    final existingIndex = isElite
+        ? _indexOfEliteRewardStack(
+            updatedAnimals,
+            animalId,
+            mutation.id,
+          )
+        : _indexOfOwnedStack(
+            updatedAnimals,
+            animalId,
+            mutation.id,
+            isProtected: false,
+          );
 
     if (existingIndex >= 0) {
       final existing = updatedAnimals[existingIndex];
@@ -1321,7 +1348,7 @@ class GameService extends ChangeNotifier {
           animalId: animalId,
           quantity: 1,
           level: 1,
-          mutationId: 'none',
+          mutationId: mutation.id,
           isProtected: isElite,
           isEliteReward: isElite,
         ),
@@ -1329,20 +1356,34 @@ class GameService extends ChangeNotifier {
     }
 
     _state = _state.copyWith(ownedAnimals: updatedAnimals);
+    return BossRewardGrant(animal: animal, mutation: mutation);
   }
 
-  int _indexOfBossRewardStack(List<OwnedAnimal> animals, String animalId) {
-    var fallback = -1;
+  int _indexOfEliteRewardStack(
+    List<OwnedAnimal> animals,
+    String animalId,
+    String mutationId,
+  ) {
+    final eliteIndex = _indexOfOwnedStack(
+      animals,
+      animalId,
+      mutationId,
+      isProtected: true,
+    );
+    if (eliteIndex >= 0) return eliteIndex;
+
     for (var i = 0; i < animals.length; i++) {
       final owned = animals[i];
-      if (owned.animalId != animalId || owned.mutationId != 'none') continue;
-      if (owned.isEliteReward) return i;
-      fallback = i;
+      if (owned.animalId == animalId &&
+          owned.mutationId == mutationId &&
+          !owned.isProtected) {
+        return i;
+      }
     }
-    return fallback;
+    return -1;
   }
   /// Applies win rewards and records battle quest progress after animation.
-  bool applyBossBattleRewards(
+  BossRewardGrant? applyBossBattleRewards(
     String bossId,
     BossBattleResult result, {
     ManualBattleMode mode = ManualBattleMode.normal,
@@ -1368,7 +1409,7 @@ class GameService extends ChangeNotifier {
       _refreshQuestNotifications();
       notifyListeners();
       save();
-      return false;
+      return null;
     }
 
     final wins = Map<String, int>.from(_state.bossWins);
@@ -1382,8 +1423,9 @@ class GameService extends ChangeNotifier {
       nightmareWins = Map<String, int>.from(nightmareWins);
       nightmareWins[bossId] = (nightmareWins[bossId] ?? 0) + 1;
     }
+    BossRewardGrant? grant;
     if (rewardAnimalId != null) {
-      grantBossRewardAnimal(rewardAnimalId);
+      grant = grantBossRewardAnimal(rewardAnimalId);
     }
     _state = _state.copyWith(
       coins: _state.coins + result.coinReward,
@@ -1399,7 +1441,7 @@ class GameService extends ChangeNotifier {
     _refreshQuestNotifications();
     notifyListeners();
     save();
-    return true;
+    return grant;
   }
 
   QuestProgress _questProgressAfterBossWin(
@@ -2110,6 +2152,15 @@ class GameService extends ChangeNotifier {
         grantBossRewardAnimal(animalId);
       }
     }
+    notifyListeners();
+    save();
+  }
+
+  void devGrantEliteBossAnimal(
+    String animalId, {
+    String? mutationId,
+  }) {
+    grantBossRewardAnimal(animalId, mutationId: mutationId);
     notifyListeners();
     save();
   }

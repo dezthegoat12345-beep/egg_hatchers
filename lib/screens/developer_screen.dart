@@ -688,7 +688,39 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 label: 'Grant Elite Boss Animals',
                 onPressed: () {
                   game.devGrantEliteBossAnimals();
-                  _showMessage('Granted Slime King, Egg Guardian, Shadow Phoenix.');
+                  _showMessage(
+                    'Granted elite boss animals with mutation rolls.',
+                  );
+                },
+              ),
+              _QuickButton(
+                label: 'Grant Golden Slime King',
+                onPressed: () {
+                  game.devGrantEliteBossAnimal(
+                    'slime_king',
+                    mutationId: 'golden',
+                  );
+                  _showMessage('Granted Golden Slime King.');
+                },
+              ),
+              _QuickButton(
+                label: 'Grant Rainbow Egg Guardian',
+                onPressed: () {
+                  game.devGrantEliteBossAnimal(
+                    'egg_guardian',
+                    mutationId: 'rainbow',
+                  );
+                  _showMessage('Granted Rainbow Egg Guardian.');
+                },
+              ),
+              _QuickButton(
+                label: 'Grant Shadow Shadow Phoenix',
+                onPressed: () {
+                  game.devGrantEliteBossAnimal(
+                    'shadow_phoenix',
+                    mutationId: 'shadow',
+                  );
+                  _showMessage('Granted Shadow Shadow Phoenix.');
                 },
               ),
               _QuickButton(

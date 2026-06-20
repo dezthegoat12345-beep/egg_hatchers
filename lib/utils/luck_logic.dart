@@ -117,4 +117,13 @@ class LuckLogic {
 
     return GameData.mutations.first;
   }
+
+  /// Rolls Golden/Rainbow/Shadow/none using luck, never Boss Mutation.
+  static Mutation rollNormalMutation(Random random, int luckLevel) {
+    return rollMutation(
+      random,
+      luckLevel,
+      bossMutationUnlocked: false,
+    );
+  }
 }
