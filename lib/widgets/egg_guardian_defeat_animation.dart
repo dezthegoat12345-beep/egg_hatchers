@@ -6,7 +6,7 @@ import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import 'boss_cinematic_ui.dart';
 import 'boss_sprite.dart';
-import 'egg_guardian_nest_background.dart';
+import 'egg_guardian_cinematic_background.dart';
 
 /// Cinematic Egg Guardian defeat celebration for manual battle victories.
 class EggGuardianDefeatAnimation extends StatefulWidget {
@@ -191,7 +191,7 @@ class _EggGuardianDefeatAnimationState extends State<EggGuardianDefeatAnimation>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const EggGuardianNestBackground(),
+                const EggGuardianCinematicBackground(),
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
                 if (runeRing > 0)
                   CustomPaint(

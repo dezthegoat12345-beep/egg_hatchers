@@ -6,7 +6,7 @@ import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import 'boss_cinematic_ui.dart';
 import 'boss_sprite.dart';
-import 'slime_king_palace_background.dart';
+import 'slime_king_cinematic_background.dart';
 
 /// Cinematic Slime King defeat celebration for manual battle victories.
 class SlimeKingDefeatAnimation extends StatefulWidget {
@@ -155,7 +155,7 @@ class _SlimeKingDefeatAnimationState extends State<SlimeKingDefeatAnimation>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const SlimeKingPalaceBackground(),
+                const SlimeKingCinematicBackground(),
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
                 if (showBoss)
                   Transform.translate(
