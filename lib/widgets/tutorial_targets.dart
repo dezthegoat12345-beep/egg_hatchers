@@ -92,6 +92,27 @@ class TutorialTargets {
     return Rect.fromPoints(topLeft, bottomRight).inflate(padding);
   }
 
+  static Future<void> scrollTargetIntoView(
+    String? targetId, {
+    Duration duration = const Duration(milliseconds: 320),
+    double alignment = 0.32,
+  }) async {
+    final targetContext = keyFor(targetId)?.currentContext;
+    if (targetContext == null) return;
+
+    try {
+      await Scrollable.ensureVisible(
+        targetContext,
+        duration: duration,
+        curve: Curves.easeInOut,
+        alignment: alignment,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+      );
+    } catch (_) {
+      // Target may not live inside a scrollable ancestor.
+    }
+  }
+
   static void debugLogMeasure({
     required String stepId,
     required String? targetId,

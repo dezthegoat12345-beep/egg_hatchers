@@ -17,11 +17,13 @@ class TutorialSpotlightOverlay extends StatefulWidget {
     required this.service,
     required this.theme,
     required this.topRouteName,
+    required this.contentKey,
   });
 
   final TutorialService service;
   final BackgroundTheme theme;
   final String? topRouteName;
+  final GlobalKey contentKey;
 
   @override
   State<TutorialSpotlightOverlay> createState() =>
@@ -32,6 +34,7 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
   Rect? _targetRect;
   String? _measuredStepId;
   var _measureGeneration = 0;
+  int? _lastAutoScrolledStepIndex;
 
   TutorialService get service => widget.service;
 
@@ -59,10 +62,26 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
 
   void _scheduleMeasure() {
     final generation = ++_measureGeneration;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final stepIndex = service.stepIndex;
+    final shouldAutoScroll = _lastAutoScrolledStepIndex != stepIndex;
+    if (shouldAutoScroll) {
+      _lastAutoScrolledStepIndex = stepIndex;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || generation != _measureGeneration) return;
       clearGameSnackBars(context);
-      _remeasureTarget();
+
+      final step = service.currentStep;
+      if (shouldAutoScroll && step?.targetId != null) {
+        await TutorialTargets.scrollTargetIntoView(step!.targetId);
+      }
+      if (!mounted || generation != _measureGeneration) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || generation != _measureGeneration) return;
+        _remeasureTarget();
+      });
     });
   }
 
@@ -83,34 +102,39 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
       overlayContext: context,
     );
 
+    final viewport = Offset.zero & MediaQuery.sizeOf(context);
+    final visibleRect = rect != null && viewport.overlaps(rect) ? rect : null;
+
     TutorialTargets.debugLogMeasure(
       stepId: step.id,
       targetId: step.targetId,
-      rect: rect,
+      rect: visibleRect,
     );
 
-    if (_measuredStepId != step.id || _targetRect != rect) {
+    if (_measuredStepId != step.id || _targetRect != visibleRect) {
       setState(() {
-        _targetRect = rect;
+        _targetRect = visibleRect;
         _measuredStepId = step.id;
       });
     }
 
-    if (rect == null) {
+    if (visibleRect == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final retry = TutorialTargets.measure(
           step.targetId,
           overlayContext: context,
         );
-        if (retry != null && retry != _targetRect) {
+        final retryVisible =
+            retry != null && viewport.overlaps(retry) ? retry : null;
+        if (retryVisible != null && retryVisible != _targetRect) {
           TutorialTargets.debugLogMeasure(
             stepId: step.id,
             targetId: step.targetId,
-            rect: retry,
+            rect: retryVisible,
           );
           setState(() {
-            _targetRect = retry;
+            _targetRect = retryVisible;
             _measuredStepId = step.id;
           });
         }
@@ -175,6 +199,7 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
           isFinish: step.isFinish,
           proxyTapEnabled: proxyTap,
           targetId: step.targetId,
+          contentKey: widget.contentKey,
         );
       },
     );
@@ -315,6 +340,7 @@ class _SpotlightLayer extends StatelessWidget {
     required this.isFinish,
     required this.proxyTapEnabled,
     required this.targetId,
+    required this.contentKey,
   });
 
   final TutorialService service;
@@ -326,6 +352,7 @@ class _SpotlightLayer extends StatelessWidget {
   final bool isFinish;
   final bool proxyTapEnabled;
   final String? targetId;
+  final GlobalKey contentKey;
 
   @override
   Widget build(BuildContext context) {
@@ -344,6 +371,7 @@ class _SpotlightLayer extends StatelessWidget {
           layerSize: layerSize,
           dimColor: Colors.black.withValues(alpha: 0.62),
           blockOutsideTouches: true,
+          contentKey: contentKey,
         ),
         IgnorePointer(
           child: TutorialTargetHighlight(

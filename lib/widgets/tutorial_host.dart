@@ -26,6 +26,7 @@ class TutorialHost extends StatefulWidget {
 
 class _TutorialHostState extends State<TutorialHost> {
   final TutorialService _tutorial = TutorialService.instance;
+  final GlobalKey _contentKey = GlobalKey(debugLabel: 'tutorialContent');
   late final VoidCallback _routeListener;
 
   @override
@@ -64,17 +65,29 @@ class _TutorialHostState extends State<TutorialHost> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        if (_tutorial.isActive && !_tutorial.pausedForDialog)
-          TutorialSpotlightOverlay(
-            service: _tutorial,
-            theme: widget.theme,
-            topRouteName: AppNavigationTracker.instance.topRouteName,
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (_tutorial.isGuided && !_tutorial.pausedForDialog) {
+          _tutorial.requestScrollRemeasure();
+        }
+        return false;
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          KeyedSubtree(
+            key: _contentKey,
+            child: widget.child,
           ),
-      ],
+          if (_tutorial.isActive && !_tutorial.pausedForDialog)
+            TutorialSpotlightOverlay(
+              service: _tutorial,
+              theme: widget.theme,
+              topRouteName: AppNavigationTracker.instance.topRouteName,
+              contentKey: _contentKey,
+            ),
+        ],
+      ),
     );
   }
 }

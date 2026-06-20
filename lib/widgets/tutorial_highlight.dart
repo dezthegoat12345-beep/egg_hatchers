@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import '../utils/tutorial_scroll_bridge.dart';
 
 /// Shape used to outline a tutorial spotlight target.
 enum TutorialHighlightShape {
@@ -81,12 +84,14 @@ class TutorialSpotlightDimMask extends StatelessWidget {
     required this.layerSize,
     required this.dimColor,
     this.blockOutsideTouches = true,
+    this.contentKey,
   });
 
   final TutorialHighlightMetrics metrics;
   final Size layerSize;
   final Color dimColor;
   final bool blockOutsideTouches;
+  final GlobalKey? contentKey;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +101,7 @@ class TutorialSpotlightDimMask extends StatelessWidget {
         layerSize: layerSize,
         dimColor: dimColor,
         blockTouches: blockOutsideTouches,
+        contentKey: contentKey,
       ),
     );
   }
@@ -107,13 +113,20 @@ class _DimPanelRects {
     required Size layerSize,
     required Color dimColor,
     required bool blockTouches,
+    GlobalKey? contentKey,
   }) {
     Widget panel() {
       final child = ColoredBox(color: dimColor);
       if (!blockTouches) {
         return IgnorePointer(child: child);
       }
-      return AbsorbPointer(child: child);
+      if (contentKey == null) {
+        return AbsorbPointer(child: child);
+      }
+      return _TutorialDimScrollPanel(
+        contentKey: contentKey,
+        child: child,
+      );
     }
 
     return [
@@ -146,6 +159,94 @@ class _DimPanelRects {
         child: panel(),
       ),
     ];
+  }
+}
+
+/// Blocks errant taps on dimmed tutorial regions while forwarding vertical
+/// scroll gestures to the underlying scrollable content layer.
+class _TutorialDimScrollPanel extends StatefulWidget {
+  const _TutorialDimScrollPanel({
+    required this.contentKey,
+    required this.child,
+  });
+
+  final GlobalKey contentKey;
+  final Widget child;
+
+  @override
+  State<_TutorialDimScrollPanel> createState() =>
+      _TutorialDimScrollPanelState();
+}
+
+class _TutorialDimScrollPanelState extends State<_TutorialDimScrollPanel> {
+  static const _scrollSlop = 8.0;
+
+  int? _activePointer;
+  Offset? _downPosition;
+  var _isScrolling = false;
+
+  void _resetPointer() {
+    _activePointer = null;
+    _downPosition = null;
+    _isScrolling = false;
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    _activePointer = event.pointer;
+    _downPosition = event.position;
+    _isScrolling = false;
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (_activePointer != event.pointer || _downPosition == null) return;
+
+    final totalDelta = event.position - _downPosition!;
+    if (!_isScrolling) {
+      if (totalDelta.dy.abs() > _scrollSlop &&
+          totalDelta.dy.abs() > totalDelta.dx.abs()) {
+        _isScrolling = true;
+      }
+    }
+
+    if (_isScrolling) {
+      TutorialScrollBridge.applyDrag(
+        contentKey: widget.contentKey,
+        globalPosition: event.position,
+        delta: event.delta.dy,
+      );
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (_activePointer != event.pointer) return;
+    _resetPointer();
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (_activePointer != event.pointer) return;
+    _resetPointer();
+  }
+
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+    TutorialScrollBridge.applyScrollSignal(
+      contentKey: widget.contentKey,
+      globalPosition: event.position,
+      delta: event.scrollDelta.dy,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      onPointerSignal: _onPointerSignal,
+      child: widget.child,
+    );
   }
 }
 

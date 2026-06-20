@@ -269,6 +269,11 @@ class TutorialService extends ChangeNotifier {
     });
   }
 
+  void requestScrollRemeasure() {
+    if (_phase != TutorialPhase.guided || _pausedForDialog) return;
+    _scheduleRemeasure();
+  }
+
   void devStartTutorialNow() {
     _beginWelcome(isReplay: true);
   }
