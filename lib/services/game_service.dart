@@ -50,6 +50,7 @@ class GameService extends ChangeNotifier {
   String? _pendingQuestNotification;
   bool _questNotificationDeferred = false;
   AutoBattleCompletionSummary? _pendingAutoBattleCompletion;
+  var _dailyRewardPopupShownThisSession = false;
 
   // In-memory only — for developer testing, not saved.
   ForcedHatchMode _forcedHatchMode = ForcedHatchMode.none;
@@ -450,6 +451,38 @@ class GameService extends ChangeNotifier {
   DailyRewardOffer get upcomingDailyReward =>
       DailySystemLogic.rewardForStreak(_dailyRewardStreakAfterClaim());
 
+  /// Streak shown before claiming (includes consecutive-day bonus).
+  int get displayDailyRewardStreak => hasClaimedDailyRewardToday
+      ? _state.dailyRewardStreak
+      : _dailyRewardStreakAfterClaim();
+
+  bool get shouldAutoShowDailyRewardPopup {
+    if (_dailyRewardPopupShownThisSession) return false;
+    if (!_state.tutorialCompleted && !_state.tutorialSkipped) return false;
+    if (!canClaimDailyReward) return false;
+    if (_state.lastDailyRewardPopupDismissDate == DailySystemLogic.todayKey()) {
+      return false;
+    }
+    return true;
+  }
+
+  void markDailyRewardPopupShown() {
+    _dailyRewardPopupShownThisSession = true;
+  }
+
+  void dismissDailyRewardPopup() {
+    _dailyRewardPopupShownThisSession = true;
+    _state = _state.copyWith(
+      lastDailyRewardPopupDismissDate: DailySystemLogic.todayKey(),
+    );
+    notifyListeners();
+    save();
+  }
+
+  void resetDailyRewardPopupSessionGuard() {
+    _dailyRewardPopupShownThisSession = false;
+  }
+
   int get dailyQuestsCompleteCount =>
       dailyQuests.where((quest) => quest.isComplete).length;
 
@@ -595,6 +628,8 @@ class GameService extends ChangeNotifier {
     final bestDailyRewardStreak = _state.bestDailyRewardStreak;
     final dailyQuestDate = _state.dailyQuestDate;
     final dailyQuests = _state.dailyQuests;
+    final lastDailyRewardPopupDismissDate =
+        _state.lastDailyRewardPopupDismissDate;
     final tutorialCompleted = _state.tutorialCompleted;
     final tutorialSkipped = _state.tutorialSkipped;
     final tutorialVersionCompleted = _state.tutorialVersionCompleted;
@@ -622,6 +657,7 @@ class GameService extends ChangeNotifier {
       bestDailyRewardStreak: bestDailyRewardStreak,
       dailyQuestDate: dailyQuestDate,
       dailyQuests: dailyQuests,
+      lastDailyRewardPopupDismissDate: lastDailyRewardPopupDismissDate,
       tutorialCompleted: tutorialCompleted,
       tutorialSkipped: tutorialSkipped,
       tutorialVersionCompleted: tutorialVersionCompleted,
@@ -1386,8 +1422,10 @@ class GameService extends ChangeNotifier {
   }
 
   void devResetDailyRewardClaim() {
+    _dailyRewardPopupShownThisSession = false;
     _state = _state.copyWith(
       clearLastDailyRewardClaimDate: true,
+      clearLastDailyRewardPopupDismissDate: true,
       dailyRewardStreak: 0,
     );
     notifyListeners();

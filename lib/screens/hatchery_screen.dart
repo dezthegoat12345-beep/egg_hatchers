@@ -12,6 +12,8 @@ import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/auto_battle_notification_listener.dart';
+import '../services/tutorial_service.dart';
+import '../widgets/daily_reward_popup.dart';
 import '../widgets/daily_system_cards.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
@@ -21,7 +23,6 @@ import '../widgets/phone_width_layout.dart';
 import '../widgets/quest_notification_listener.dart';
 import '../widgets/rebirth_panel.dart';
 import '../data/tutorial_data.dart';
-import '../services/tutorial_service.dart';
 import '../services/tutorial_target_registry.dart';
 import '../widgets/tutorial_targets.dart';
 import 'backgrounds_screen.dart';
@@ -58,6 +59,8 @@ class HatcheryScreen extends StatefulWidget {
 class _HatcheryScreenState extends State<HatcheryScreen> {
   int _coinTapCount = 0;
   var _tutorialAutoStartChecked = false;
+  var _wasTutorialActive = false;
+  late final TutorialService _tutorialService;
 
   static const _hatcheryTutorialTargets = [
     TutorialTargetIds.shopButton,
@@ -75,16 +78,39 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   @override
   void initState() {
     super.initState();
+    _tutorialService = TutorialService.instance;
+    _wasTutorialActive = _tutorialService.isActive;
+    _tutorialService.addListener(_onTutorialServiceChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeAutoStartTutorial();
-      _registerTutorialTargets();
+      _scheduleDailyRewardPopup();
     });
   }
 
   @override
   void dispose() {
+    _tutorialService.removeListener(_onTutorialServiceChanged);
     TutorialTargetRegistry.unregisterAll(_hatcheryTutorialTargets);
     super.dispose();
+  }
+
+  void _onTutorialServiceChanged() {
+    final active = _tutorialService.isActive;
+    if (_wasTutorialActive && !active) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scheduleDailyRewardPopup();
+      });
+    }
+    _wasTutorialActive = active;
+  }
+
+  void _scheduleDailyRewardPopup() {
+    if (!mounted) return;
+    DailyRewardPopup.showIfEligible(
+      context,
+      game: game,
+      theme: preferences.selectedTheme,
+    );
   }
 
   void _registerTutorialTargets() {
@@ -177,12 +203,14 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
   void _maybeAutoStartTutorial() {
     if (!mounted || _tutorialAutoStartChecked) return;
     _tutorialAutoStartChecked = true;
+    _registerTutorialTargets();
     if (!game.shouldAutoStartTutorial) return;
     TutorialService.instance.attach(
       game: game,
       theme: preferences.selectedTheme,
     );
     TutorialService.instance.maybeAutoStartWelcome(game);
+    _wasTutorialActive = TutorialService.instance.isActive;
   }
 
   void _onCoinTap() {

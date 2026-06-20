@@ -33,6 +33,7 @@ class PlayerState {
     this.bestDailyRewardStreak = 0,
     this.dailyQuestDate,
     this.dailyQuests = const [],
+    this.lastDailyRewardPopupDismissDate,
   });
 
   final int coins;
@@ -61,6 +62,7 @@ class PlayerState {
   final int bestDailyRewardStreak;
   final String? dailyQuestDate;
   final List<DailyQuestProgress> dailyQuests;
+  final String? lastDailyRewardPopupDismissDate;
 
   static PlayerState initial() {
     return PlayerState(
@@ -104,6 +106,8 @@ class PlayerState {
     String? dailyQuestDate,
     bool clearDailyQuestDate = false,
     List<DailyQuestProgress>? dailyQuests,
+    String? lastDailyRewardPopupDismissDate,
+    bool clearLastDailyRewardPopupDismissDate = false,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -143,6 +147,10 @@ class PlayerState {
           ? null
           : dailyQuestDate ?? this.dailyQuestDate,
       dailyQuests: dailyQuests ?? this.dailyQuests,
+      lastDailyRewardPopupDismissDate: clearLastDailyRewardPopupDismissDate
+          ? null
+          : lastDailyRewardPopupDismissDate ??
+              this.lastDailyRewardPopupDismissDate,
     );
   }
 
@@ -175,6 +183,8 @@ class PlayerState {
         'bestDailyRewardStreak': bestDailyRewardStreak,
         if (dailyQuestDate != null) 'dailyQuestDate': dailyQuestDate,
         'dailyQuests': dailyQuests.map((quest) => quest.toJson()).toList(),
+        if (lastDailyRewardPopupDismissDate != null)
+          'lastDailyRewardPopupDismissDate': lastDailyRewardPopupDismissDate,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -224,6 +234,8 @@ class PlayerState {
           (json['bestDailyRewardStreak'] as num?)?.toInt() ?? 0,
       dailyQuestDate: json['dailyQuestDate'] as String?,
       dailyQuests: _dailyQuestsFromJson(json['dailyQuests']),
+      lastDailyRewardPopupDismissDate:
+          json['lastDailyRewardPopupDismissDate'] as String?,
     );
   }
 

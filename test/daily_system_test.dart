@@ -79,6 +79,27 @@ void main() {
       expect(game.claimDailyReward(), isFalse);
     });
 
+    test('shouldAutoShowDailyRewardPopup respects tutorial and dismiss', () async {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService();
+      await game.initialize();
+
+      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+
+      game.completeTutorial();
+      expect(game.shouldAutoShowDailyRewardPopup, isTrue);
+
+      game.dismissDailyRewardPopup();
+      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+
+      game.resetDailyRewardPopupSessionGuard();
+      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+
+      game.devResetDailyRewardClaim();
+      game.completeTutorial();
+      expect(game.shouldAutoShowDailyRewardPopup, isTrue);
+    });
+
     test('daily quest progress increments on hatch count', () async {
       SharedPreferences.setMockInitialValues({});
       final game = GameService();
