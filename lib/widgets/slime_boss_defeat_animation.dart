@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../utils/format_utils.dart';
-import 'boss_battle_background.dart';
 import 'boss_sprite.dart';
+import 'slime_boss_forest_background.dart';
 
 enum _SlimeExpression { none, dizzy, surprised }
 
@@ -192,12 +192,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (widget.showBattleBackgrounds)
-                  BossBattleBackground(bossId: widget.boss.id)
-                else
-                  ColoredBox(
-                    color: widget.theme.panelColor.withValues(alpha: 0.65),
-                  ),
+                const SlimeBossForestBackground(),
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
                 if (showBoss)
                   Transform.translate(
