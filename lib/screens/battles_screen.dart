@@ -11,6 +11,7 @@ import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/battle_power_logic.dart';
+import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
@@ -92,6 +93,48 @@ class BattlesScreen extends StatelessWidget {
       showGameSnackBar(
         context,
         message: 'Boss Mutation applied!',
+        backgroundColor: Colors.green.shade700,
+      );
+    }
+  }
+
+  Future<void> _upgradeBattleHoming(BuildContext context) async {
+    if (game.battleHomingLevel >= BattleUpgradeLogic.maxLevel) return;
+
+    if (game.battleTokens < game.battleHomingUpgradeCost()) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough Battle Tokens.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    if (game.upgradeBattleHoming() && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Egg Homing upgraded!',
+        backgroundColor: Colors.green.shade700,
+      );
+    }
+  }
+
+  Future<void> _upgradeBattleShotSpeed(BuildContext context) async {
+    if (game.battleShotSpeedLevel >= BattleUpgradeLogic.maxLevel) return;
+
+    if (game.battleTokens < game.battleShotSpeedUpgradeCost()) {
+      showGameSnackBar(
+        context,
+        message: 'Not enough Battle Tokens.',
+        backgroundColor: Colors.red.shade400,
+      );
+      return;
+    }
+
+    if (game.upgradeBattleShotSpeed() && context.mounted) {
+      showGameSnackBar(
+        context,
+        message: 'Egg Speed upgraded!',
         backgroundColor: Colors.green.shade700,
       );
     }
@@ -538,6 +581,10 @@ class BattlesScreen extends StatelessWidget {
                     _BattleUpgradesCard(
                       theme: theme,
                       game: game,
+                      onUpgradeBattleHoming: () =>
+                          _upgradeBattleHoming(context),
+                      onUpgradeBattleShotSpeed: () =>
+                          _upgradeBattleShotSpeed(context),
                       onUnlockBossMutation: () => _unlockBossMutation(context),
                       onApplyBossMutation: () =>
                           _applyBossMutation(context, theme),
@@ -616,12 +663,16 @@ class _BattleUpgradesCard extends StatelessWidget {
   const _BattleUpgradesCard({
     required this.theme,
     required this.game,
+    required this.onUpgradeBattleHoming,
+    required this.onUpgradeBattleShotSpeed,
     required this.onUnlockBossMutation,
     required this.onApplyBossMutation,
   });
 
   final BackgroundTheme theme;
   final GameService game;
+  final VoidCallback onUpgradeBattleHoming;
+  final VoidCallback onUpgradeBattleShotSpeed;
   final VoidCallback onUnlockBossMutation;
   final VoidCallback onApplyBossMutation;
 
@@ -639,6 +690,31 @@ class _BattleUpgradesCard extends StatelessWidget {
             'Battle Upgrades',
             style: GameTheme.sectionTitle(theme, size: 18),
           ),
+          const SizedBox(height: 12),
+          _BattleTokenUpgradeTile(
+            theme: theme,
+            title: 'Egg Homing',
+            description:
+                'Your egg shots curve toward bosses a little better.',
+            level: game.battleHomingLevel,
+            maxLevel: BattleUpgradeLogic.maxLevel,
+            nextCost: game.battleHomingUpgradeCost(),
+            canAfford: game.battleTokens >= game.battleHomingUpgradeCost(),
+            onUpgrade: onUpgradeBattleHoming,
+          ),
+          const SizedBox(height: 14),
+          _BattleTokenUpgradeTile(
+            theme: theme,
+            title: 'Egg Speed',
+            description: 'Your egg shots fly faster in Manual Battle.',
+            level: game.battleShotSpeedLevel,
+            maxLevel: BattleUpgradeLogic.maxLevel,
+            nextCost: game.battleShotSpeedUpgradeCost(),
+            canAfford: game.battleTokens >= game.battleShotSpeedUpgradeCost(),
+            onUpgrade: onUpgradeBattleShotSpeed,
+          ),
+          const SizedBox(height: 16),
+          Divider(color: theme.cardTextSecondaryColor.withValues(alpha: 0.35)),
           const SizedBox(height: 12),
           if (unlocked)
             Text(
@@ -702,6 +778,86 @@ class _BattleUpgradesCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BattleTokenUpgradeTile extends StatelessWidget {
+  const _BattleTokenUpgradeTile({
+    required this.theme,
+    required this.title,
+    required this.description,
+    required this.level,
+    required this.maxLevel,
+    required this.nextCost,
+    required this.canAfford,
+    required this.onUpgrade,
+  });
+
+  final BackgroundTheme theme;
+  final String title;
+  final String description;
+  final int level;
+  final int maxLevel;
+  final int nextCost;
+  final bool canAfford;
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    final atMax = level >= maxLevel;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: theme.cardTextPrimaryColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: TextStyle(
+            fontSize: 13,
+            color: theme.cardTextSecondaryColor,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Level $level / $maxLevel',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: theme.cardTextPrimaryColor,
+          ),
+        ),
+        if (!atMax) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Next cost: $nextCost Battle Tokens',
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.cardTextSecondaryColor,
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: atMax ? null : (canAfford ? onUpgrade : onUpgrade),
+          style: GameTheme.filledButton(
+            theme,
+            color: atMax
+                ? theme.disabledColor
+                : (canAfford ? theme.primaryColor : theme.disabledColor),
+          ),
+          child: Text(atMax ? 'Max Level' : 'Upgrade'),
+        ),
+      ],
     );
   }
 }

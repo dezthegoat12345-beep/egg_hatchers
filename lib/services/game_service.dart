@@ -15,6 +15,7 @@ import '../models/egg.dart';
 import '../models/forced_hatch_result.dart';
 import '../models/hatch_result.dart';
 import '../utils/custom_egg_logic.dart';
+import '../utils/battle_upgrade_logic.dart';
 import '../utils/luck_logic.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
@@ -426,6 +427,8 @@ class GameService extends ChangeNotifier {
   }
 
   bool get bossMutationUnlocked => _state.bossMutationUnlocked;
+  int get battleHomingLevel => _state.battleHomingLevel;
+  int get battleShotSpeedLevel => _state.battleShotSpeedLevel;
 
   bool canAfford(Egg egg) {
     if (egg.usesBattleTokens) {
@@ -558,6 +561,8 @@ class GameService extends ChangeNotifier {
     final battleTokens = _state.battleTokens;
     final bossWins = _state.bossWins;
     final bossMutationUnlocked = _state.bossMutationUnlocked;
+    final battleHomingLevel = _state.battleHomingLevel;
+    final battleShotSpeedLevel = _state.battleShotSpeedLevel;
     final tutorialCompleted = _state.tutorialCompleted;
     final tutorialSkipped = _state.tutorialSkipped;
     final tutorialVersionCompleted = _state.tutorialVersionCompleted;
@@ -577,6 +582,8 @@ class GameService extends ChangeNotifier {
       battleTokens: battleTokens,
       bossWins: bossWins,
       bossMutationUnlocked: bossMutationUnlocked,
+      battleHomingLevel: battleHomingLevel,
+      battleShotSpeedLevel: battleShotSpeedLevel,
       tutorialCompleted: tutorialCompleted,
       tutorialSkipped: tutorialSkipped,
       tutorialVersionCompleted: tutorialVersionCompleted,
@@ -1200,6 +1207,24 @@ class GameService extends ChangeNotifier {
     save();
   }
 
+  void devMaxBattleUpgrades() {
+    _state = _state.copyWith(
+      battleHomingLevel: BattleUpgradeLogic.maxLevel,
+      battleShotSpeedLevel: BattleUpgradeLogic.maxLevel,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devResetBattleUpgrades() {
+    _state = _state.copyWith(
+      battleHomingLevel: BattleUpgradeLogic.minLevel,
+      battleShotSpeedLevel: BattleUpgradeLogic.minLevel,
+    );
+    notifyListeners();
+    save();
+  }
+
   void devUnlockBossMutation() {
     _state = _state.copyWith(bossMutationUnlocked: true);
     _refreshQuestNotifications();
@@ -1307,6 +1332,38 @@ class GameService extends ChangeNotifier {
       ),
     );
     _refreshQuestNotifications();
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  int battleHomingUpgradeCost() =>
+      BattleUpgradeLogic.homingUpgradeCost(_state.battleHomingLevel);
+
+  int battleShotSpeedUpgradeCost() =>
+      BattleUpgradeLogic.shotSpeedUpgradeCost(_state.battleShotSpeedLevel);
+
+  bool upgradeBattleHoming() {
+    if (_state.battleHomingLevel >= BattleUpgradeLogic.maxLevel) return false;
+    final cost = battleHomingUpgradeCost();
+    if (_state.battleTokens < cost) return false;
+    _state = _state.copyWith(
+      battleTokens: _state.battleTokens - cost,
+      battleHomingLevel: _state.battleHomingLevel + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool upgradeBattleShotSpeed() {
+    if (_state.battleShotSpeedLevel >= BattleUpgradeLogic.maxLevel) return false;
+    final cost = battleShotSpeedUpgradeCost();
+    if (_state.battleTokens < cost) return false;
+    _state = _state.copyWith(
+      battleTokens: _state.battleTokens - cost,
+      battleShotSpeedLevel: _state.battleShotSpeedLevel + 1,
+    );
     notifyListeners();
     save();
     return true;

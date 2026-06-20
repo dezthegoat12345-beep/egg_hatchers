@@ -1,3 +1,4 @@
+import '../utils/battle_upgrade_logic.dart';
 import 'active_auto_battle.dart';
 import 'owned_animal.dart';
 import 'quest_progress.dart';
@@ -23,6 +24,8 @@ class PlayerState {
     this.tutorialCompleted = false,
     this.tutorialSkipped = false,
     this.tutorialVersionCompleted = 0,
+    this.battleHomingLevel = 0,
+    this.battleShotSpeedLevel = 0,
   });
 
   final int coins;
@@ -43,6 +46,8 @@ class PlayerState {
   final bool tutorialCompleted;
   final bool tutorialSkipped;
   final int tutorialVersionCompleted;
+  final int battleHomingLevel;
+  final int battleShotSpeedLevel;
 
   static PlayerState initial() {
     return PlayerState(
@@ -76,6 +81,8 @@ class PlayerState {
     bool? tutorialCompleted,
     bool? tutorialSkipped,
     int? tutorialVersionCompleted,
+    int? battleHomingLevel,
+    int? battleShotSpeedLevel,
   }) {
     return PlayerState(
       coins: coins ?? this.coins,
@@ -102,6 +109,8 @@ class PlayerState {
       tutorialSkipped: tutorialSkipped ?? this.tutorialSkipped,
       tutorialVersionCompleted:
           tutorialVersionCompleted ?? this.tutorialVersionCompleted,
+      battleHomingLevel: battleHomingLevel ?? this.battleHomingLevel,
+      battleShotSpeedLevel: battleShotSpeedLevel ?? this.battleShotSpeedLevel,
     );
   }
 
@@ -125,6 +134,8 @@ class PlayerState {
         'tutorialCompleted': tutorialCompleted,
         'tutorialSkipped': tutorialSkipped,
         'tutorialVersionCompleted': tutorialVersionCompleted,
+        'battleHomingLevel': battleHomingLevel,
+        'battleShotSpeedLevel': battleShotSpeedLevel,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -159,6 +170,12 @@ class PlayerState {
       tutorialSkipped: json['tutorialSkipped'] as bool? ?? false,
       tutorialVersionCompleted:
           json['tutorialVersionCompleted'] as int? ?? 0,
+      battleHomingLevel: BattleUpgradeLogic.clampLevel(
+        json['battleHomingLevel'] as int? ?? 0,
+      ),
+      battleShotSpeedLevel: BattleUpgradeLogic.clampLevel(
+        json['battleShotSpeedLevel'] as int? ?? 0,
+      ),
     );
   }
 

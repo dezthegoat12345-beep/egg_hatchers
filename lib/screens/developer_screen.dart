@@ -552,6 +552,20 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Max Battle Upgrades',
+                onPressed: () {
+                  game.devMaxBattleUpgrades();
+                  _showMessage('Battle upgrades maxed.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Battle Upgrades',
+                onPressed: () {
+                  game.devResetBattleUpgrades();
+                  _showMessage('Battle upgrades reset.');
+                },
+              ),
+              _QuickButton(
                 label: 'Reset boss wins',
                 onPressed: () {
                   game.devResetBossWins();

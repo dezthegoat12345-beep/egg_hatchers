@@ -15,6 +15,7 @@ import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/battle_power_logic.dart';
+import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
 import '../widgets/boss_sprite.dart';
@@ -49,9 +50,6 @@ class ManualBossBattleScreen extends StatefulWidget {
 class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     with SingleTickerProviderStateMixin {
   static const _playerSpeed = 280.0;
-  static const _eggSpeed = 550.0;
-  static const _eggHomingLerp = 0.04;
-  static const _eggMaxHomingSpeed = 110.0;
   static const _playerSize = 48.0;
   static const _bossSize = 80.0;
   static const _bossTop = 8.0;
@@ -108,6 +106,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   BackgroundTheme get theme => widget.preferences.selectedTheme;
   BossBattleDefinition get boss => widget.boss;
   ManualBattleMode get _mode => widget.mode;
+
+  double get _eggSpeed => BattleUpgradeLogic.manualEggSpeed(
+        widget.game.battleShotSpeedLevel,
+      );
+
+  double get _eggHomingLerp => BattleUpgradeLogic.manualEggHomingLerp(
+        widget.game.battleHomingLevel,
+      );
+
+  double get _eggMaxHomingSpeed => BattleUpgradeLogic.manualEggMaxHomingSpeed(
+        widget.game.battleHomingLevel,
+      );
 
   int get _requiredMisses => BossBattleLogic.manualRequiredMisses(
         _successfulEggHits,
