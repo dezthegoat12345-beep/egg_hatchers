@@ -93,6 +93,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _bossSpeedBannerRemaining = 0.0;
   var _gameOver = false;
   var _won = false;
+  var _isPaused = false;
   var _rewardsApplied = false;
   var _resultDialogShown = false;
   String? _earnedRewardAnimalName;
@@ -196,6 +197,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _bossSpeedBannerRemaining = 0;
     _gameOver = false;
     _won = false;
+    _isPaused = false;
     _rewardsApplied = false;
     _resultDialogShown = false;
     _earnedRewardAnimalName = null;
@@ -242,7 +244,12 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   void _onTick(Duration elapsed) {
     if (!mounted || _gameOver) return;
 
-    final last = _lastTickElapsed ?? Duration.zero;
+    if (_isPaused) {
+      _lastTickElapsed = elapsed;
+      return;
+    }
+
+    final last = _lastTickElapsed ?? elapsed;
     var dt = (elapsed - last).inMicroseconds / 1000000.0;
     _lastTickElapsed = elapsed;
     if (dt <= 0) return;
@@ -250,6 +257,50 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     _updateGame(dt);
     setState(() {});
+  }
+
+  void _pauseBattle() {
+    if (_gameOver || _isPaused) return;
+    setState(() {
+      _isPaused = true;
+      _moveLeft = false;
+      _moveRight = false;
+      _pointerActive = false;
+      _targetX = null;
+    });
+  }
+
+  void _resumeBattle() {
+    if (_gameOver || !_isPaused) return;
+    setState(() => _isPaused = false);
+  }
+
+  Future<void> _confirmQuitBattle() async {
+    if (_gameOver) return;
+
+    final quit = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Quit this battle?'),
+        content: const Text('You will not receive rewards.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep Fighting'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Quit'),
+          ),
+        ],
+      ),
+    );
+
+    if (quit == true && mounted) {
+      setState(() => _isPaused = false);
+      _endBattle(won: false);
+    }
   }
 
   void _updateGame(double dt) {
@@ -448,7 +499,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _shootEgg() {
-    if (_gameOver || _shieldActive || _activeEgg != null) return;
+    if (_gameOver || _isPaused || _shieldActive || _activeEgg != null) return;
     if (_eggCooldownRemaining > 0) return;
 
     _activeEgg = _EggProjectile(
@@ -548,7 +599,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (_gameOver) return KeyEventResult.ignored;
+    if (_gameOver || _isPaused) return KeyEventResult.ignored;
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       if (event is KeyUpEvent) {
         if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
@@ -576,13 +627,13 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _onArenaPointerDown(double localX) {
-    if (_gameOver) return;
+    if (_gameOver || _isPaused) return;
     _pointerActive = true;
     _updateTargetX(localX);
   }
 
   void _onArenaPointerMove(double localX) {
-    if (_gameOver || !_pointerActive) return;
+    if (_gameOver || _isPaused || !_pointerActive) return;
     _updateTargetX(localX);
   }
 
@@ -619,102 +670,123 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
             body: GameBackground(
               theme: currentTheme,
               child: PhoneWidthLayout(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_mode != ManualBattleMode.normal)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _ModeBadge(theme: currentTheme, mode: _mode),
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_mode != ManualBattleMode.normal)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _ModeBadge(
+                                theme: currentTheme,
+                                mode: _mode,
+                              ),
+                            ),
+                          _BattleHeader(
+                            theme: currentTheme,
+                            boss: boss,
+                            bossLives: _bossLives,
+                            bossMaxLives: _bossMaxLives,
+                            lives: _lives,
+                            maxPlayerLives: _maxPlayerLives,
+                            shieldActive: _shieldActive,
+                            shieldFlash: _shieldFlash,
+                            missCount: _missCount,
+                            requiredMisses: _requiredMisses,
+                            showPauseButton: !_gameOver && !_isPaused,
+                            onPause: _pauseBattle,
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                _arenaWidth = constraints.maxWidth;
+                                _arenaHeight = constraints.maxHeight;
+                                if (_playerX == 0 ||
+                                    _playerX > _arenaWidth) {
+                                  _playerX = _arenaWidth / 2;
+                                }
+                                if (_bossX == 0 || _bossX > _arenaWidth) {
+                                  _bossX = _arenaWidth / 2;
+                                }
+                                return _Arena(
+                                  theme: currentTheme,
+                                  boss: boss,
+                                  arenaWidth: _arenaWidth,
+                                  arenaHeight: _arenaHeight,
+                                  playerX: _playerX,
+                                  bossX: _bossX,
+                                  bossTop: _bossTop,
+                                  bossSpeedBannerRemaining:
+                                      _bossSpeedBannerRemaining,
+                                  playerSize: _playerSize,
+                                  bossSize: _bossSize,
+                                  fighterCustomSprite: _fighterCustomSprite,
+                                  fighterSpritePath: _fighterSpritePath,
+                                  fighterEmoji: _fighterEmoji,
+                                  fighterMutation: _fighterMutation,
+                                  fighterName: _fighterName,
+                                  bossProjectiles: _bossProjectiles,
+                                  activeEgg: _activeEgg,
+                                  floatingDamages: _floatingDamages,
+                                  shieldActive: _shieldActive,
+                                  shieldFlash: _shieldFlash,
+                                  onPointerDown: _onArenaPointerDown,
+                                  onPointerMove: _onArenaPointerMove,
+                                  onPointerRelease: _onArenaPointerRelease,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Hold and drag to dodge.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: currentTheme.cardTextSecondaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Harder bosses aim better.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: currentTheme.cardTextSecondaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _ShootRow(
+                            theme: currentTheme,
+                            shieldActive: _shieldActive,
+                            canShoot: !_gameOver &&
+                                !_isPaused &&
+                                !_shieldActive &&
+                                _activeEgg == null &&
+                                _eggCooldownRemaining <= 0,
+                            eggOnCooldown: _eggCooldownRemaining > 0,
+                            onShootEgg: _shootEgg,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_isPaused)
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                          child: _PauseOverlay(
+                            theme: currentTheme,
+                            onResume: _resumeBattle,
+                            onQuit: _confirmQuitBattle,
+                          ),
                         ),
-                      _BattleHeader(
-                        theme: currentTheme,
-                        boss: boss,
-                        bossLives: _bossLives,
-                        bossMaxLives: _bossMaxLives,
-                        lives: _lives,
-                        maxPlayerLives: _maxPlayerLives,
-                        shieldActive: _shieldActive,
-                        shieldFlash: _shieldFlash,
-                        missCount: _missCount,
-                        requiredMisses: _requiredMisses,
                       ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            _arenaWidth = constraints.maxWidth;
-                            _arenaHeight = constraints.maxHeight;
-                            if (_playerX == 0 ||
-                                _playerX > _arenaWidth) {
-                              _playerX = _arenaWidth / 2;
-                            }
-                            if (_bossX == 0 || _bossX > _arenaWidth) {
-                              _bossX = _arenaWidth / 2;
-                            }
-                            return _Arena(
-                              theme: currentTheme,
-                              boss: boss,
-                              arenaWidth: _arenaWidth,
-                              arenaHeight: _arenaHeight,
-                              playerX: _playerX,
-                              bossX: _bossX,
-                              bossTop: _bossTop,
-                              bossSpeedBannerRemaining:
-                                  _bossSpeedBannerRemaining,
-                              playerSize: _playerSize,
-                              bossSize: _bossSize,
-                              fighterCustomSprite: _fighterCustomSprite,
-                              fighterSpritePath: _fighterSpritePath,
-                              fighterEmoji: _fighterEmoji,
-                              fighterMutation: _fighterMutation,
-                              fighterName: _fighterName,
-                              bossProjectiles: _bossProjectiles,
-                              activeEgg: _activeEgg,
-                              floatingDamages: _floatingDamages,
-                              shieldActive: _shieldActive,
-                              shieldFlash: _shieldFlash,
-                              onPointerDown: _onArenaPointerDown,
-                              onPointerMove: _onArenaPointerMove,
-                              onPointerRelease: _onArenaPointerRelease,
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Hold and drag to dodge.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: currentTheme.cardTextSecondaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Harder bosses aim better.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: currentTheme.cardTextSecondaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _ShootRow(
-                        theme: currentTheme,
-                        shieldActive: _shieldActive,
-                        canShoot: !_gameOver &&
-                            !_shieldActive &&
-                            _activeEgg == null &&
-                            _eggCooldownRemaining <= 0,
-                        eggOnCooldown: _eggCooldownRemaining > 0,
-                        onShootEgg: _shootEgg,
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -802,6 +874,8 @@ class _BattleHeader extends StatelessWidget {
     required this.shieldFlash,
     required this.missCount,
     required this.requiredMisses,
+    required this.showPauseButton,
+    required this.onPause,
   });
 
   final BackgroundTheme theme;
@@ -814,6 +888,8 @@ class _BattleHeader extends StatelessWidget {
   final double shieldFlash;
   final int missCount;
   final int requiredMisses;
+  final bool showPauseButton;
+  final VoidCallback onPause;
 
   String _bossLivesDisplay(int remaining, int maxLives) {
     final eggs = List.generate(maxLives, (index) {
@@ -845,13 +921,41 @@ class _BattleHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            boss.name,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.cardTextPrimaryColor,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  boss.name,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.cardTextPrimaryColor,
+                  ),
+                ),
+              ),
+              if (showPauseButton) ...[
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: onPause,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.primaryColor,
+                    side: BorderSide(color: theme.primaryColor),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: const Icon(Icons.pause, size: 18),
+                  label: const Text(
+                    'Pause',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 8),
           Text(
@@ -905,6 +1009,63 @@ class _BattleHeader extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _PauseOverlay extends StatelessWidget {
+  const _PauseOverlay({
+    required this.theme,
+    required this.onResume,
+    required this.onQuit,
+  });
+
+  final BackgroundTheme theme;
+  final VoidCallback onResume;
+  final VoidCallback onQuit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: theme.scaffoldColor.withValues(alpha: 0.82),
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 320),
+          padding: const EdgeInsets.all(20),
+          decoration: GameTheme.cardDecoration(theme),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Paused',
+                textAlign: TextAlign.center,
+                style: GameTheme.sectionTitle(theme, size: 22),
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: onResume,
+                style: GameTheme.filledButton(theme),
+                child: const Text('Resume'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: onQuit,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                  foregroundColor: theme.cardTextSecondaryColor,
+                  side: BorderSide(color: theme.cardTextSecondaryColor),
+                ),
+                child: const Text(
+                  'Quit Battle',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
