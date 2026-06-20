@@ -25,7 +25,7 @@ class SlimeBossDefeatAnimation extends StatefulWidget {
     required this.onComplete,
   });
 
-  static const duration = Duration(milliseconds: 11000);
+  static const duration = Duration(milliseconds: 10500);
 
   final BackgroundTheme theme;
   final BossBattleDefinition boss;
@@ -42,8 +42,11 @@ class SlimeBossDefeatAnimation extends StatefulWidget {
 
 class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
     with SingleTickerProviderStateMixin {
-  static const _totalMs = 11000.0;
+  static const _totalMs = 10500.0;
   static const _skipAfterMs = 1000.0;
+  static const _explosionStartMs = 7500.0;
+  static const _bossVanishMs = 7520.0;
+  static const _burstTravelEndMs = 8300.0;
   static const _baseSpriteSize = 158.0;
   static const _sizeBoost = 1.38;
 
@@ -95,7 +98,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
   _SlimeExpression _expression(double t) {
     if (t < 1000) return _SlimeExpression.none;
     if (t < 6800) return _SlimeExpression.dizzy;
-    if (t < 7200) return _SlimeExpression.surprised;
+    if (t < _bossVanishMs) return _SlimeExpression.surprised;
     return _SlimeExpression.none;
   }
 
@@ -112,48 +115,71 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
         final darken = (0.32 + zoomPhase * 0.38).clamp(0.0, 0.72);
 
         final wobblePhase = _phase(1000, 5500);
-        final pressurePhase = _phase(5500, 7200);
-        final wobbleAmp =
-            6 + wobblePhase * 14 + pressurePhase * 28;
-        final wobbleSpeed = 190 - pressurePhase * 110;
-        final wobbleX = t >= 1000 && t < 7200
+        final pressurePhase = _phase(5500, _bossVanishMs);
+        final panicPhase = _phase(6800, _bossVanishMs);
+        final wobbleAmp = 6 + wobblePhase * 14 + pressurePhase * 34 + panicPhase * 12;
+        final wobbleSpeed = 190 - pressurePhase * 130;
+        final wobbleX = t >= 1000 && t < _bossVanishMs
             ? math.sin(t / wobbleSpeed * math.pi) * wobbleAmp
             : 0.0;
-        final squashStrength = 0.05 + wobblePhase * 0.07 + pressurePhase * 0.14;
-        final squash = 1 + math.sin(t / (220 - pressurePhase * 80) * math.pi) * squashStrength;
+        final squashStrength =
+            0.05 + wobblePhase * 0.07 + pressurePhase * 0.16 + panicPhase * 0.1;
+        final squash =
+            1 + math.sin(t / (220 - pressurePhase * 90) * math.pi) * squashStrength;
 
         final earlyInflate = Curves.easeInOut.transform(_phase(3000, 5500));
-        final finalInflate = Curves.easeIn.transform(_phase(5500, 7200));
-        final inflateScale = 1.0 + earlyInflate * 0.42 + finalInflate * 1.0;
+        final finalInflate = Curves.easeIn.transform(_phase(5500, 6800));
+        final panicInflate = Curves.easeIn.transform(_phase(6800, _explosionStartMs));
+        final inflateScale =
+            1.0 + earlyInflate * 0.4 + finalInflate * 0.85 + panicInflate * 0.55;
 
-        final bossScale = zoomScale * inflateScale * _sizeBoost;
-        final scaleX = bossScale * (1 + (1 - squash) * (0.14 + pressurePhase * 0.12));
+        final prePopSnap = Curves.easeIn.transform(_phase(7400, _bossVanishMs));
+        final snapScale = 1.0 + prePopSnap * 0.28;
+
+        final bossScale = zoomScale * inflateScale * _sizeBoost * snapScale;
+        final scaleX = bossScale * (1 + (1 - squash) * (0.14 + pressurePhase * 0.14));
         final scaleY = bossScale * squash;
 
-        final surpriseShake = t >= 6800 && t < 7200
-            ? math.sin(t / 28 * math.pi) * 6 * (1 - _phase(6800, 7100))
+        final surpriseShake = t >= 6800 && t < _bossVanishMs
+            ? math.sin(t / 22 * math.pi) * (8 + panicPhase * 10)
             : 0.0;
 
-        final popPhase = Curves.easeIn.transform(_phase(7200, 7600));
-        final bossOpacity = t < 7200 ? 1.0 : (1 - popPhase).clamp(0.0, 1.0);
+        final showBoss = t < _bossVanishMs;
 
-        final flash = t >= 7200 && t < 7800
-            ? (1 - _phase(7200, 7800)).clamp(0.0, 1.0)
+        final burstTravel = t >= _explosionStartMs
+            ? Curves.easeOutCubic.transform(
+                _phase(_explosionStartMs, _burstTravelEndMs),
+              )
             : 0.0;
 
-        final explodeOut = Curves.easeOutCubic.transform(_phase(7200, 7600));
-        final shakeAmp = explodeOut * 16 * (1 - _phase(7200, 7900));
-        final shakeX = math.sin(t / 28 * math.pi) * shakeAmp;
-        final shakeY = math.cos(t / 34 * math.pi) * shakeAmp * 0.65;
+        final flashWhite = t >= _explosionStartMs
+            ? (1 - _phase(_explosionStartMs, _explosionStartMs + 180)).clamp(0.0, 1.0)
+            : 0.0;
+        final flashGreen = t >= _explosionStartMs
+            ? (1 - _phase(_explosionStartMs + 40, _explosionStartMs + 520))
+                .clamp(0.0, 1.0)
+            : 0.0;
 
-        final splatStick = Curves.easeOut.transform(_phase(7200, 7800));
-        final particleFade = (1 - _phase(9200, 10600)).clamp(0.0, 1.0);
+        final shockwaveProgress = t >= _explosionStartMs
+            ? Curves.easeOut.transform(_phase(_explosionStartMs, _explosionStartMs + 680))
+            : 0.0;
 
-        final pressureGlow = pressurePhase * (1 - popPhase);
+        final shakeAmp = t >= _explosionStartMs && t < 8000
+            ? 24 * (1 - _phase(_explosionStartMs, 8000))
+            : 0.0;
+        final shakeX = math.sin(t / 24 * math.pi) * shakeAmp;
+        final shakeY = math.cos(t / 30 * math.pi) * shakeAmp * 0.7;
 
-        final titleProgress = Curves.elasticOut.transform(_phase(9200, 9800));
-        final titleOpacity = Curves.easeOut.transform(_phase(9200, 9600));
-        final rewardsOpacity = Curves.easeOut.transform(_phase(9800, 10600));
+        final splatReveal = t >= _burstTravelEndMs - 150
+            ? Curves.easeOut.transform(_phase(_burstTravelEndMs - 150, 9100))
+            : 0.0;
+        final particleFade = (1 - _phase(9100, 10200)).clamp(0.0, 1.0);
+
+        final pressureGlow = pressurePhase * (showBoss ? 1.0 : 0.0);
+
+        final titleProgress = Curves.elasticOut.transform(_phase(9100, 9700));
+        final titleOpacity = Curves.easeOut.transform(_phase(9100, 9500));
+        final rewardsOpacity = Curves.easeOut.transform(_phase(9400, 10200));
         final rewardsSlide = (1 - rewardsOpacity) * 28;
 
         final canSkip = t >= _skipAfterMs && !_completed;
@@ -173,38 +199,50 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                     color: widget.theme.panelColor.withValues(alpha: 0.65),
                   ),
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
-                if (flash > 0)
+                if (flashWhite > 0)
                   ColoredBox(
-                    color: const Color(0xFF66BB6A).withValues(alpha: flash * 0.72),
+                    color: Colors.white.withValues(alpha: flashWhite * 0.92),
                   ),
+                if (flashGreen > 0)
+                  ColoredBox(
+                    color: const Color(0xFF76FF03).withValues(alpha: flashGreen * 0.55),
+                  ),
+                Transform.translate(
+                  offset: Offset(shakeX, shakeY),
+                  child: CustomPaint(
+                    painter: _ExplosionEffectsPainter(
+                      shockwaveProgress: shockwaveProgress,
+                      burstCore: burstTravel.clamp(0.0, 0.35) / 0.35,
+                      fade: particleFade,
+                    ),
+                  ),
+                ),
                 Transform.translate(
                   offset: Offset(shakeX, shakeY),
                   child: CustomPaint(
                     painter: _GooParticlePainter(
                       particles: _particles,
-                      explodeProgress: explodeOut,
+                      burstTravel: burstTravel,
+                      splatReveal: splatReveal,
                       fade: particleFade,
-                      splatStick: splatStick,
                     ),
                   ),
                 ),
-                if (bossOpacity > 0)
+                if (showBoss)
                   Transform.translate(
                     offset: Offset(wobbleX + surpriseShake, 0),
-                    child: Opacity(
-                      opacity: bossOpacity,
-                      child: Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.diagonal3Values(scaleX, scaleY, 1),
-                        child: _SlimeBossStage(
-                          boss: widget.boss,
-                          spriteSize: _baseSpriteSize,
-                          expression: expression,
-                          timeMs: t,
-                          wobblePhase: wobblePhase,
-                          pressurePhase: pressurePhase,
-                          pressureGlow: pressureGlow,
-                        ),
+                    child: Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.diagonal3Values(scaleX, scaleY, 1),
+                      child: _SlimeBossStage(
+                        boss: widget.boss,
+                        spriteSize: _baseSpriteSize,
+                        expression: expression,
+                        timeMs: t,
+                        wobblePhase: wobblePhase,
+                        pressurePhase: pressurePhase,
+                        pressureGlow: pressureGlow,
+                        panicPhase: panicPhase,
                       ),
                     ),
                   ),
@@ -341,6 +379,7 @@ class _SlimeBossStage extends StatelessWidget {
     required this.wobblePhase,
     required this.pressurePhase,
     required this.pressureGlow,
+    required this.panicPhase,
   });
 
   final BossBattleDefinition boss;
@@ -350,6 +389,7 @@ class _SlimeBossStage extends StatelessWidget {
   final double wobblePhase;
   final double pressurePhase;
   final double pressureGlow;
+  final double panicPhase;
 
   @override
   Widget build(BuildContext context) {
@@ -364,17 +404,21 @@ class _SlimeBossStage extends StatelessWidget {
         children: [
           if (pressureGlow > 0)
             Container(
-              width: spriteSize * (1.1 + pressurePhase * 0.5),
-              height: spriteSize * (1.1 + pressurePhase * 0.5),
+              width: spriteSize * (1.15 + pressurePhase * 0.55 + panicPhase * 0.25),
+              height: spriteSize * (1.15 + pressurePhase * 0.55 + panicPhase * 0.25),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF66BB6A).withValues(
-                      alpha: 0.25 + pressureGlow * 0.45,
+                    color: Color.lerp(
+                      const Color(0xFF66BB6A),
+                      const Color(0xFF76FF03),
+                      panicPhase,
+                    )!.withValues(
+                      alpha: 0.28 + pressureGlow * 0.55,
                     ),
-                    blurRadius: 28 + pressurePhase * 24,
-                    spreadRadius: 6 + pressurePhase * 10,
+                    blurRadius: 32 + pressurePhase * 28 + panicPhase * 20,
+                    spreadRadius: 8 + pressurePhase * 12 + panicPhase * 8,
                   ),
                 ],
               ),
@@ -432,8 +476,9 @@ class _SlimeBossStage extends StatelessWidget {
                 painter: _SlimeFacePainter(
                   expression: expression,
                   spin: timeMs / 400 * math.pi * 2,
-                  surprisedScale:
-                      expression == _SlimeExpression.surprised ? 1.25 : 1.0,
+                  surprisedScale: expression == _SlimeExpression.surprised
+                      ? 1.25 + panicPhase * 0.35
+                      : 1.0,
                 ),
               ),
             ),
@@ -592,6 +637,25 @@ class _GooParticle {
   final double rotation;
   final double lumpiness;
 
+  Offset landingOffset(Offset center, Size size, double maxDim) {
+    final isAnchored = kind == _GooKind.splat ||
+        kind == _GooKind.smear ||
+        kind == _GooKind.screenSplat;
+    if (isAnchored) {
+      return center +
+          Offset(
+            stickNx * size.width * 0.48,
+            stickNy * size.height * 0.46,
+          );
+    }
+    final gravity = verticalBias * maxDim * 0.12;
+    return center +
+        Offset(
+          math.cos(angle) * distance * maxDim,
+          math.sin(angle) * distance * maxDim * 0.72 + gravity,
+        );
+  }
+
   static List<_GooParticle> generate() {
     final random = math.Random(42);
     const palette = [
@@ -706,105 +770,172 @@ class _GooParticle {
   }
 }
 
-class _GooParticlePainter extends CustomPainter {
-  _GooParticlePainter({
-    required this.particles,
-    required this.explodeProgress,
+class _ExplosionEffectsPainter extends CustomPainter {
+  _ExplosionEffectsPainter({
+    required this.shockwaveProgress,
+    required this.burstCore,
     required this.fade,
-    required this.splatStick,
   });
 
-  final List<_GooParticle> particles;
-  final double explodeProgress;
+  final double shockwaveProgress;
+  final double burstCore;
   final double fade;
-  final double splatStick;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (explodeProgress <= 0 && fade >= 1) return;
-
     final center = Offset(size.width / 2, size.height / 2);
     final maxDim = math.max(size.width, size.height);
 
-    if (explodeProgress > 0.02) {
-      final centralAlpha = (explodeProgress * fade * 0.85).clamp(0.0, 1.0);
+    if (burstCore > 0) {
+      final coreAlpha = (burstCore * (1 - burstCore * 0.4)).clamp(0.0, 1.0);
+      canvas.drawCircle(
+        center,
+        24 + burstCore * 48,
+        Paint()..color = Colors.white.withValues(alpha: coreAlpha * 0.85),
+      );
+      canvas.drawCircle(
+        center,
+        40 + burstCore * 70,
+        Paint()..color = const Color(0xFF76FF03).withValues(alpha: coreAlpha * 0.55),
+      );
+    }
+
+    if (shockwaveProgress > 0) {
+      final radius = 20 + shockwaveProgress * maxDim * 0.62;
+      final ringAlpha = ((1 - shockwaveProgress) * fade).clamp(0.0, 1.0);
+      final ringPaint = Paint()
+        ..color = Colors.white.withValues(alpha: ringAlpha * 0.75)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6 + (1 - shockwaveProgress) * 10;
+      canvas.drawCircle(center, radius, ringPaint);
+
+      final innerRing = Paint()
+        ..color = const Color(0xFFA5D6A7).withValues(alpha: ringAlpha * 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3 + (1 - shockwaveProgress) * 6;
+      canvas.drawCircle(center, radius * 0.82, innerRing);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ExplosionEffectsPainter oldDelegate) =>
+      oldDelegate.shockwaveProgress != shockwaveProgress ||
+      oldDelegate.burstCore != burstCore ||
+      oldDelegate.fade != fade;
+}
+
+class _GooParticlePainter extends CustomPainter {
+  _GooParticlePainter({
+    required this.particles,
+    required this.burstTravel,
+    required this.splatReveal,
+    required this.fade,
+  });
+
+  final List<_GooParticle> particles;
+  final double burstTravel;
+  final double splatReveal;
+  final double fade;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (burstTravel <= 0 && splatReveal <= 0 && fade >= 1) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxDim = math.max(size.width, size.height);
+    final travel = burstTravel.clamp(0.0, 1.0);
+
+    if (travel > 0.02) {
+      final popAlpha = (travel * fade * 0.9).clamp(0.0, 1.0);
       _drawIrregularSplat(
         canvas,
         center,
-        60 + explodeProgress * maxDim * 0.38,
-        44 + explodeProgress * maxDim * 0.28,
+        50 + travel * maxDim * 0.22,
+        38 + travel * maxDim * 0.16,
         0,
         const Color(0xFF43A047),
         const Color(0xFF1B5E20),
-        centralAlpha,
+        popAlpha,
         0.35,
       );
     }
 
     for (final p in particles) {
-      final travel = Curves.easeOutCubic.transform(explodeProgress);
-      final dist = p.distance * maxDim * travel;
-      final gravity = travel * travel * p.verticalBias * maxDim * 0.12;
-      final flying = center +
-          Offset(
-            math.cos(p.angle) * dist,
-            math.sin(p.angle) * dist * 0.72 + gravity,
-          );
+      final landing = p.landingOffset(center, size, maxDim);
+      final flyT = Curves.easeOutCubic.transform(travel);
+      final pos = Offset.lerp(center, landing, flyT)!;
 
       final isSticky = p.kind == _GooKind.splat ||
           p.kind == _GooKind.smear ||
           p.kind == _GooKind.screenSplat;
 
-      if (isSticky && travel > 0.2) {
-        final stickCenter = center +
-            Offset(
-              p.stickNx * size.width * 0.48,
-              p.stickNy * size.height * 0.46,
-            );
-        final alpha = (splatStick * fade).clamp(0.0, 1.0);
-        if (alpha <= 0) continue;
+      if (travel > 0 && travel < 0.98) {
+        final flyAlpha = (fade * (1 - travel * 0.05)).clamp(0.0, 1.0);
+        if (flyAlpha <= 0) continue;
+
+        final blobSize = p.size * (0.85 + flyT * 0.35);
+        final blobPaint = Paint()..color = p.color.withValues(alpha: flyAlpha * 0.92);
+        canvas.drawCircle(pos, blobSize, blobPaint);
+        canvas.drawCircle(
+          pos + Offset(-blobSize * 0.25, -blobSize * 0.25),
+          blobSize * 0.3,
+          Paint()..color = Colors.white.withValues(alpha: flyAlpha * 0.4),
+        );
+        canvas.drawCircle(
+          pos,
+          blobSize + 1.5,
+          Paint()
+            ..color = p.outlineColor.withValues(alpha: flyAlpha * 0.4)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4,
+        );
+
+        if (flyT > 0.15) {
+          final trail = Offset.lerp(center, pos, flyT * 0.55)!;
+          canvas.drawCircle(
+            trail,
+            blobSize * 0.55,
+            Paint()..color = p.color.withValues(alpha: flyAlpha * 0.35),
+          );
+        }
+      }
+
+      if (isSticky && splatReveal > 0 && travel >= 0.55) {
+        final stickAlpha =
+            (splatReveal * fade * Curves.easeOut.transform((travel - 0.55) / 0.45))
+                .clamp(0.0, 1.0);
+        if (stickAlpha <= 0) continue;
 
         if (p.kind == _GooKind.smear) {
           _drawSmear(
             canvas,
-            stickCenter,
-            p.size * (0.8 + splatStick * 0.4),
+            landing,
+            p.size * (0.85 + splatReveal * 0.45),
             p.rotation,
             p.color,
             p.outlineColor,
-            alpha * 0.88,
+            stickAlpha * 0.9,
           );
         } else {
           _drawIrregularSplat(
             canvas,
-            stickCenter,
-            p.size * (1.6 + splatStick * 0.5),
-            p.size * p.aspectRatio * (1.4 + splatStick * 0.4),
+            landing,
+            p.size * (1.5 + splatReveal * 0.55),
+            p.size * p.aspectRatio * (1.35 + splatReveal * 0.45),
             p.rotation,
             p.color,
             p.outlineColor,
-            alpha * 0.92,
+            stickAlpha * 0.94,
             p.lumpiness,
           );
         }
-      } else if (travel > 0 && p.kind == _GooKind.blob) {
-        final alpha = (fade * (1 - travel * 0.08)).clamp(0.0, 1.0);
-        if (alpha <= 0) continue;
-
-        final blobPaint = Paint()..color = p.color.withValues(alpha: alpha * 0.9);
-        canvas.drawCircle(flying, p.size, blobPaint);
+      } else if (!isSticky && travel >= 0.95 && p.kind == _GooKind.blob) {
+        final blobAlpha = (fade * splatReveal * 0.7).clamp(0.0, 1.0);
+        if (blobAlpha <= 0) continue;
         canvas.drawCircle(
-          flying + Offset(-p.size * 0.28, -p.size * 0.28),
-          p.size * 0.32,
-          Paint()..color = Colors.white.withValues(alpha: alpha * 0.38),
-        );
-        canvas.drawCircle(
-          flying,
-          p.size + 1.2,
-          Paint()
-            ..color = p.outlineColor.withValues(alpha: alpha * 0.35)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.2,
+          landing,
+          p.size * 0.85,
+          Paint()..color = p.color.withValues(alpha: blobAlpha),
         );
       }
     }
@@ -896,9 +1027,9 @@ class _GooParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GooParticlePainter oldDelegate) =>
-      oldDelegate.explodeProgress != explodeProgress ||
-      oldDelegate.fade != fade ||
-      oldDelegate.splatStick != splatStick;
+      oldDelegate.burstTravel != burstTravel ||
+      oldDelegate.splatReveal != splatReveal ||
+      oldDelegate.fade != fade;
 }
 
 class _RewardChip extends StatelessWidget {
