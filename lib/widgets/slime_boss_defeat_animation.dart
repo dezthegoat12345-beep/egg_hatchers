@@ -10,7 +10,9 @@ import 'boss_sprite.dart';
 
 enum _SlimeExpression { none, dizzy, surprised }
 
-/// Cinematic ~10s Slime Boss defeat celebration for manual battle victories.
+enum _GooKind { blob, splat, smear, screenSplat }
+
+/// Cinematic Slime Boss defeat celebration for manual battle victories.
 class SlimeBossDefeatAnimation extends StatefulWidget {
   const SlimeBossDefeatAnimation({
     super.key,
@@ -23,7 +25,7 @@ class SlimeBossDefeatAnimation extends StatefulWidget {
     required this.onComplete,
   });
 
-  static const duration = Duration(seconds: 10);
+  static const duration = Duration(milliseconds: 11000);
 
   final BackgroundTheme theme;
   final BossBattleDefinition boss;
@@ -40,8 +42,10 @@ class SlimeBossDefeatAnimation extends StatefulWidget {
 
 class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
     with SingleTickerProviderStateMixin {
-  static const _totalMs = 10000.0;
+  static const _totalMs = 11000.0;
   static const _skipAfterMs = 1000.0;
+  static const _baseSpriteSize = 158.0;
+  static const _sizeBoost = 1.38;
 
   late final AnimationController _controller;
   late final List<_GooParticle> _particles;
@@ -50,7 +54,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
   @override
   void initState() {
     super.initState();
-    _particles = _GooParticle.generate(34);
+    _particles = _GooParticle.generate();
     _controller = AnimationController(
       vsync: this,
       duration: SlimeBossDefeatAnimation.duration,
@@ -90,8 +94,8 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
 
   _SlimeExpression _expression(double t) {
     if (t < 1000) return _SlimeExpression.none;
-    if (t < 6500) return _SlimeExpression.dizzy;
-    if (t < 7500) return _SlimeExpression.surprised;
+    if (t < 6800) return _SlimeExpression.dizzy;
+    if (t < 7200) return _SlimeExpression.surprised;
     return _SlimeExpression.none;
   }
 
@@ -104,48 +108,55 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
         final expression = _expression(t);
 
         final zoomPhase = Curves.easeOutCubic.transform(_phase(0, 1000));
-        final sceneZoom = 0.62 + zoomPhase * 0.38;
-        final darken = (0.35 + zoomPhase * 0.35).clamp(0.0, 0.72);
+        final zoomScale = 0.88 + zoomPhase * 0.58;
+        final darken = (0.32 + zoomPhase * 0.38).clamp(0.0, 0.72);
 
-        final wobblePhase = _phase(1000, 6500);
-        final wobbleAmp = 5 + wobblePhase * 16;
-        final wobbleX = t >= 1000 && t < 7500
-            ? math.sin(t / 180 * math.pi) * wobbleAmp
+        final wobblePhase = _phase(1000, 5500);
+        final pressurePhase = _phase(5500, 7200);
+        final wobbleAmp =
+            6 + wobblePhase * 14 + pressurePhase * 28;
+        final wobbleSpeed = 190 - pressurePhase * 110;
+        final wobbleX = t >= 1000 && t < 7200
+            ? math.sin(t / wobbleSpeed * math.pi) * wobbleAmp
             : 0.0;
-        final squash = 1 + math.sin(t / 220 * math.pi) * (0.04 + wobblePhase * 0.06);
+        final squashStrength = 0.05 + wobblePhase * 0.07 + pressurePhase * 0.14;
+        final squash = 1 + math.sin(t / (220 - pressurePhase * 80) * math.pi) * squashStrength;
 
-        final inflate = Curves.easeInOut.transform(_phase(3000, 6500));
-        final bossScale = sceneZoom * (1 + inflate * 0.45);
-        final scaleX = bossScale * (1 + (1 - squash) * 0.12);
+        final earlyInflate = Curves.easeInOut.transform(_phase(3000, 5500));
+        final finalInflate = Curves.easeIn.transform(_phase(5500, 7200));
+        final inflateScale = 1.0 + earlyInflate * 0.42 + finalInflate * 1.0;
+
+        final bossScale = zoomScale * inflateScale * _sizeBoost;
+        final scaleX = bossScale * (1 + (1 - squash) * (0.14 + pressurePhase * 0.12));
         final scaleY = bossScale * squash;
 
-        final surpriseShake = t >= 6500 && t < 7500
-            ? math.sin(t / 40 * math.pi) * 3 * (1 - _phase(6500, 7200))
+        final surpriseShake = t >= 6800 && t < 7200
+            ? math.sin(t / 28 * math.pi) * 6 * (1 - _phase(6800, 7100))
             : 0.0;
 
-        final explodePhase = Curves.easeOut.transform(_phase(7500, 8500));
-        final bossOpacity =
-            t < 7500 ? 1.0 : (1 - explodePhase).clamp(0.0, 1.0);
+        final popPhase = Curves.easeIn.transform(_phase(7200, 7600));
+        final bossOpacity = t < 7200 ? 1.0 : (1 - popPhase).clamp(0.0, 1.0);
 
-        final flash = t >= 7500 && t < 8200
-            ? (1 - _phase(7500, 8200)).clamp(0.0, 1.0)
+        final flash = t >= 7200 && t < 7800
+            ? (1 - _phase(7200, 7800)).clamp(0.0, 1.0)
             : 0.0;
 
-        final shakeAmp = explodePhase * 10 * (1 - _phase(7500, 8500));
-        final shakeX = math.sin(t / 35 * math.pi) * shakeAmp;
-        final shakeY = math.cos(t / 42 * math.pi) * shakeAmp * 0.6;
+        final explodeOut = Curves.easeOutCubic.transform(_phase(7200, 7600));
+        final shakeAmp = explodeOut * 16 * (1 - _phase(7200, 7900));
+        final shakeX = math.sin(t / 28 * math.pi) * shakeAmp;
+        final shakeY = math.cos(t / 34 * math.pi) * shakeAmp * 0.65;
 
-        final particleFade = (1 - _phase(8500, 9800)).clamp(0.0, 1.0);
-        final splatStick = Curves.easeOut.transform(_phase(7800, 8600));
+        final splatStick = Curves.easeOut.transform(_phase(7200, 7800));
+        final particleFade = (1 - _phase(9200, 10600)).clamp(0.0, 1.0);
 
-        final titleProgress =
-            Curves.elasticOut.transform(_phase(8500, 9200));
-        final titleOpacity = Curves.easeOut.transform(_phase(8500, 9000));
-        final rewardsOpacity = Curves.easeOut.transform(_phase(9000, 9800));
+        final pressureGlow = pressurePhase * (1 - popPhase);
+
+        final titleProgress = Curves.elasticOut.transform(_phase(9200, 9800));
+        final titleOpacity = Curves.easeOut.transform(_phase(9200, 9600));
+        final rewardsOpacity = Curves.easeOut.transform(_phase(9800, 10600));
         final rewardsSlide = (1 - rewardsOpacity) * 28;
 
         final canSkip = t >= _skipAfterMs && !_completed;
-        const spriteSize = 120.0;
 
         return Material(
           color: Colors.black.withValues(alpha: 0.82),
@@ -164,14 +175,14 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
                 if (flash > 0)
                   ColoredBox(
-                    color: const Color(0xFF66BB6A).withValues(alpha: flash * 0.65),
+                    color: const Color(0xFF66BB6A).withValues(alpha: flash * 0.72),
                   ),
                 Transform.translate(
                   offset: Offset(shakeX, shakeY),
                   child: CustomPaint(
                     painter: _GooParticlePainter(
                       particles: _particles,
-                      explodeProgress: explodePhase,
+                      explodeProgress: explodeOut,
                       fade: particleFade,
                       splatStick: splatStick,
                     ),
@@ -187,10 +198,12 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                         transform: Matrix4.diagonal3Values(scaleX, scaleY, 1),
                         child: _SlimeBossStage(
                           boss: widget.boss,
-                          spriteSize: spriteSize,
+                          spriteSize: _baseSpriteSize,
                           expression: expression,
                           timeMs: t,
                           wobblePhase: wobblePhase,
+                          pressurePhase: pressurePhase,
+                          pressureGlow: pressureGlow,
                         ),
                       ),
                     ),
@@ -198,26 +211,36 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 88),
                     Opacity(
                       opacity: titleOpacity,
                       child: Transform.scale(
                         scale: 0.75 + titleProgress * 0.25,
-                        child: const Text(
-                          'SLIME SPLAT!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Color(0xFFFFEB3B),
-                            shadows: [
-                              Shadow(
-                                color: Colors.black87,
-                                blurRadius: 12,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'SLIME SPLAT!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                              color: Color(0xFFFFEB3B),
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black87,
+                                  blurRadius: 12,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -225,13 +248,23 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                     const SizedBox(height: 8),
                     Opacity(
                       opacity: titleOpacity * 0.9,
-                      child: Text(
-                        widget.boss.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: widget.theme.cardTextPrimaryColor.withValues(
-                            alpha: 0.95,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          widget.boss.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: widget.theme.cardTextPrimaryColor.withValues(
+                              alpha: 0.95,
+                            ),
                           ),
                         ),
                       ),
@@ -241,27 +274,37 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                       opacity: rewardsOpacity,
                       child: Transform.translate(
                         offset: Offset(0, rewardsSlide),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            if (widget.coinReward > 0)
-                              _RewardChip(
-                                label: '🪙 +${formatCoins(widget.coinReward)}',
-                                color: Colors.amber.shade700,
-                              ),
-                            if (widget.tokenReward > 0)
-                              _RewardChip(
-                                label: '⚔️ +${widget.tokenReward}',
-                                color: const Color(0xFF1565C0),
-                              ),
-                            if (widget.animalRewardName != null)
-                              _RewardChip(
-                                label: 'Elite: ${widget.animalRewardName!}',
-                                color: Colors.deepPurple.shade400,
-                              ),
-                          ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              if (widget.coinReward > 0)
+                                _RewardChip(
+                                  label: '🪙 +${formatCoins(widget.coinReward)}',
+                                  color: Colors.amber.shade700,
+                                ),
+                              if (widget.tokenReward > 0)
+                                _RewardChip(
+                                  label: '⚔️ +${widget.tokenReward}',
+                                  color: const Color(0xFF1565C0),
+                                ),
+                              if (widget.animalRewardName != null)
+                                _RewardChip(
+                                  label: 'Elite: ${widget.animalRewardName!}',
+                                  color: Colors.deepPurple.shade400,
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -296,6 +339,8 @@ class _SlimeBossStage extends StatelessWidget {
     required this.expression,
     required this.timeMs,
     required this.wobblePhase,
+    required this.pressurePhase,
+    required this.pressureGlow,
   });
 
   final BossBattleDefinition boss;
@@ -303,31 +348,71 @@ class _SlimeBossStage extends StatelessWidget {
   final _SlimeExpression expression;
   final double timeMs;
   final double wobblePhase;
+  final double pressurePhase;
+  final double pressureGlow;
 
   @override
   Widget build(BuildContext context) {
     final starAngle = timeMs / 600 * math.pi * 2;
 
     return SizedBox(
-      width: spriteSize + 80,
-      height: spriteSize + 80,
+      width: spriteSize + 100,
+      height: spriteSize + 100,
       child: Stack(
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
+          if (pressureGlow > 0)
+            Container(
+              width: spriteSize * (1.1 + pressurePhase * 0.5),
+              height: spriteSize * (1.1 + pressurePhase * 0.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF66BB6A).withValues(
+                      alpha: 0.25 + pressureGlow * 0.45,
+                    ),
+                    blurRadius: 28 + pressurePhase * 24,
+                    spreadRadius: 6 + pressurePhase * 10,
+                  ),
+                ],
+              ),
+            ),
+          if (pressurePhase > 0.15)
+            ...List.generate(3, (i) {
+              final pulse = (pressurePhase - i * 0.12).clamp(0.0, 1.0);
+              if (pulse <= 0) return const SizedBox.shrink();
+              return Opacity(
+                opacity: pulse * 0.35,
+                child: Container(
+                  width: spriteSize * (0.9 + i * 0.18 + pressurePhase * 0.35),
+                  height: spriteSize * (0.9 + i * 0.18 + pressurePhase * 0.35),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFA5D6A7).withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              );
+            }),
           if (expression == _SlimeExpression.dizzy)
             ...List.generate(3, (i) {
               final a = starAngle + i * math.pi * 2 / 3;
               return Transform.translate(
                 offset: Offset(
-                  math.cos(a) * (spriteSize * 0.42),
-                  math.sin(a) * (spriteSize * 0.28) - spriteSize * 0.12,
+                  math.cos(a) * (spriteSize * 0.44),
+                  math.sin(a) * (spriteSize * 0.3) - spriteSize * 0.12,
                 ),
                 child: Text(
                   '⭐',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.yellow.withValues(alpha: 0.55 + wobblePhase * 0.35),
+                    fontSize: 16,
+                    color: Colors.yellow.withValues(
+                      alpha: 0.55 + wobblePhase * 0.35,
+                    ),
                   ),
                 ),
               );
@@ -341,23 +426,29 @@ class _SlimeBossStage extends StatelessWidget {
           if (expression == _SlimeExpression.dizzy ||
               expression == _SlimeExpression.surprised)
             Positioned(
-              top: spriteSize * 0.22,
+              top: spriteSize * 0.2,
               child: CustomPaint(
-                size: Size(spriteSize * 0.55, spriteSize * 0.28),
+                size: Size(spriteSize * 0.58, spriteSize * 0.3),
                 painter: _SlimeFacePainter(
                   expression: expression,
                   spin: timeMs / 400 * math.pi * 2,
+                  surprisedScale:
+                      expression == _SlimeExpression.surprised ? 1.25 : 1.0,
                 ),
               ),
             ),
-          if (expression == _SlimeExpression.dizzy && wobblePhase > 0.2)
+          if ((expression == _SlimeExpression.dizzy && wobblePhase > 0.2) ||
+              pressurePhase > 0.2)
             Positioned(
-              top: spriteSize * 0.58,
+              top: spriteSize * 0.55,
               child: Opacity(
-                opacity: wobblePhase * 0.5,
+                opacity: (wobblePhase * 0.45 + pressurePhase * 0.55).clamp(0.0, 1.0),
                 child: CustomPaint(
-                  size: Size(spriteSize * 0.7, spriteSize * 0.35),
-                  painter: _SlimeBubblePainter(seed: 3),
+                  size: Size(spriteSize * 0.75, spriteSize * 0.38),
+                  painter: _SlimeBubblePainter(
+                    seed: 3,
+                    count: 6 + (pressurePhase * 8).round(),
+                  ),
                 ),
               ),
             ),
@@ -368,16 +459,21 @@ class _SlimeBossStage extends StatelessWidget {
 }
 
 class _SlimeFacePainter extends CustomPainter {
-  _SlimeFacePainter({required this.expression, required this.spin});
+  _SlimeFacePainter({
+    required this.expression,
+    required this.spin,
+    required this.surprisedScale,
+  });
 
   final _SlimeExpression expression;
   final double spin;
+  final double surprisedScale;
 
   @override
   void paint(Canvas canvas, Size size) {
     final leftEye = Offset(size.width * 0.28, size.height * 0.42);
     final rightEye = Offset(size.width * 0.72, size.height * 0.42);
-    const eyeR = 11.0;
+    final eyeR = 11.0 * surprisedScale;
 
     if (expression == _SlimeExpression.dizzy) {
       _drawSpiralEye(canvas, leftEye, eyeR, spin);
@@ -388,20 +484,20 @@ class _SlimeFacePainter extends CustomPainter {
     if (expression == _SlimeExpression.surprised) {
       final white = Paint()..color = Colors.white;
       final pupil = Paint()..color = const Color(0xFF1B5E20);
-      canvas.drawCircle(leftEye, eyeR + 3, white);
-      canvas.drawCircle(rightEye, eyeR + 3, white);
-      canvas.drawCircle(leftEye, 4.5, pupil);
-      canvas.drawCircle(rightEye, 4.5, pupil);
+      canvas.drawCircle(leftEye, eyeR + 4, white);
+      canvas.drawCircle(rightEye, eyeR + 4, white);
+      canvas.drawCircle(leftEye, 5.5, pupil);
+      canvas.drawCircle(rightEye, 5.5, pupil);
 
       final mouth = Paint()
         ..color = const Color(0xFF1B5E20)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
+        ..strokeWidth = 3;
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(size.width * 0.5, size.height * 0.88),
-          width: 18,
-          height: 14,
+          center: Offset(size.width * 0.5, size.height * 0.9),
+          width: 22 * surprisedScale,
+          height: 18 * surprisedScale,
         ),
         mouth,
       );
@@ -435,56 +531,68 @@ class _SlimeFacePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SlimeFacePainter oldDelegate) =>
-      oldDelegate.expression != expression || oldDelegate.spin != spin;
+      oldDelegate.expression != expression ||
+      oldDelegate.spin != spin ||
+      oldDelegate.surprisedScale != surprisedScale;
 }
 
 class _SlimeBubblePainter extends CustomPainter {
-  _SlimeBubblePainter({required this.seed});
+  _SlimeBubblePainter({required this.seed, this.count = 6});
 
   final int seed;
+  final int count;
 
   @override
   void paint(Canvas canvas, Size size) {
     final random = math.Random(seed);
-    final bubble = Paint()..color = const Color(0xFFA5D6A7).withValues(alpha: 0.45);
-    for (var i = 0; i < 6; i++) {
+    final bubble = Paint()..color = const Color(0xFFA5D6A7).withValues(alpha: 0.5);
+    for (var i = 0; i < count; i++) {
       canvas.drawCircle(
         Offset(
-          size.width * (0.15 + random.nextDouble() * 0.7),
-          size.height * (0.2 + random.nextDouble() * 0.65),
+          size.width * (0.12 + random.nextDouble() * 0.76),
+          size.height * (0.15 + random.nextDouble() * 0.7),
         ),
-        3 + random.nextDouble() * 4,
+        3 + random.nextDouble() * 5,
         bubble,
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SlimeBubblePainter oldDelegate) =>
+      oldDelegate.count != count;
 }
 
 class _GooParticle {
   _GooParticle({
+    required this.kind,
     required this.angle,
     required this.distance,
     required this.size,
     required this.color,
-    required this.isSplat,
+    required this.outlineColor,
     required this.verticalBias,
-    required this.stickX,
-    required this.stickY,
+    required this.stickNx,
+    required this.stickNy,
+    required this.aspectRatio,
+    required this.rotation,
+    required this.lumpiness,
   });
 
+  final _GooKind kind;
   final double angle;
   final double distance;
   final double size;
   final Color color;
-  final bool isSplat;
+  final Color outlineColor;
   final double verticalBias;
-  final double stickX;
-  final double stickY;
+  final double stickNx;
+  final double stickNy;
+  final double aspectRatio;
+  final double rotation;
+  final double lumpiness;
 
-  static List<_GooParticle> generate(int count) {
+  static List<_GooParticle> generate() {
     final random = math.Random(42);
     const palette = [
       Color(0xFF66BB6A),
@@ -492,21 +600,109 @@ class _GooParticle {
       Color(0xFF2E7D32),
       Color(0xFFA5D6A7),
       Color(0xFF1B5E20),
+      Color(0xFF81C784),
+    ];
+    const outlines = [
+      Color(0xFF1B5E20),
+      Color(0xFF33691E),
+      Color(0xFF2E7D32),
     ];
 
-    return List.generate(count, (index) {
-      final isSplat = index % 4 == 0;
-      return _GooParticle(
-        angle: random.nextDouble() * math.pi * 2,
-        distance: 60 + random.nextDouble() * 140,
-        size: 5 + random.nextDouble() * (isSplat ? 14 : 9),
-        color: palette[index % palette.length],
-        isSplat: isSplat,
-        verticalBias: 0.25 + random.nextDouble() * 0.55,
-        stickX: -0.75 + random.nextDouble() * 1.5,
-        stickY: -0.55 + random.nextDouble() * 1.1,
+    final particles = <_GooParticle>[];
+
+    for (var i = 0; i < 38; i++) {
+      particles.add(
+        _GooParticle(
+          kind: _GooKind.blob,
+          angle: random.nextDouble() * math.pi * 2,
+          distance: 0.22 + random.nextDouble() * 0.48,
+          size: 5 + random.nextDouble() * 10,
+          color: palette[i % palette.length],
+          outlineColor: outlines[i % outlines.length],
+          verticalBias: 0.2 + random.nextDouble() * 0.6,
+          stickNx: 0,
+          stickNy: 0,
+          aspectRatio: 1,
+          rotation: 0,
+          lumpiness: 0,
+        ),
       );
-    });
+    }
+
+    for (var i = 0; i < 14; i++) {
+      particles.add(
+        _GooParticle(
+          kind: _GooKind.splat,
+          angle: random.nextDouble() * math.pi * 2,
+          distance: 0.35 + random.nextDouble() * 0.55,
+          size: 14 + random.nextDouble() * 22,
+          color: palette[(i + 2) % palette.length],
+          outlineColor: outlines[i % outlines.length],
+          verticalBias: 0.15 + random.nextDouble() * 0.5,
+          stickNx: -0.92 + random.nextDouble() * 1.84,
+          stickNy: -0.88 + random.nextDouble() * 1.76,
+          aspectRatio: 0.65 + random.nextDouble() * 0.7,
+          rotation: random.nextDouble() * math.pi,
+          lumpiness: 0.3 + random.nextDouble() * 0.5,
+        ),
+      );
+    }
+
+    for (var i = 0; i < 8; i++) {
+      particles.add(
+        _GooParticle(
+          kind: _GooKind.smear,
+          angle: random.nextDouble() * math.pi * 2,
+          distance: 0.4 + random.nextDouble() * 0.45,
+          size: 18 + random.nextDouble() * 28,
+          color: palette[(i + 4) % palette.length],
+          outlineColor: outlines[i % outlines.length],
+          verticalBias: 0.5 + random.nextDouble() * 0.4,
+          stickNx: -0.85 + random.nextDouble() * 1.7,
+          stickNy: -0.75 + random.nextDouble() * 1.5,
+          aspectRatio: 1.6 + random.nextDouble() * 1.2,
+          rotation: random.nextDouble() * math.pi,
+          lumpiness: 0.4,
+        ),
+      );
+    }
+
+    const screenAnchors = [
+      (-0.85, -0.82),
+      (0.0, -0.88),
+      (0.85, -0.82),
+      (-0.92, -0.2),
+      (0.92, -0.15),
+      (-0.88, 0.55),
+      (0.88, 0.58),
+      (0.0, 0.72),
+      (-0.55, 0.35),
+      (0.55, 0.38),
+      (-0.35, -0.45),
+      (0.4, -0.42),
+    ];
+
+    for (var i = 0; i < screenAnchors.length; i++) {
+      final (nx, ny) = screenAnchors[i];
+      particles.add(
+        _GooParticle(
+          kind: _GooKind.screenSplat,
+          angle: random.nextDouble() * math.pi * 2,
+          distance: 0.5 + random.nextDouble() * 0.35,
+          size: 28 + random.nextDouble() * 38,
+          color: palette[i % palette.length],
+          outlineColor: outlines[i % outlines.length],
+          verticalBias: 0,
+          stickNx: nx + (random.nextDouble() - 0.5) * 0.08,
+          stickNy: ny + (random.nextDouble() - 0.5) * 0.08,
+          aspectRatio: 0.7 + random.nextDouble() * 0.55,
+          rotation: random.nextDouble() * math.pi,
+          lumpiness: 0.45 + random.nextDouble() * 0.35,
+        ),
+      );
+    }
+
+    return particles;
   }
 }
 
@@ -528,61 +724,174 @@ class _GooParticlePainter extends CustomPainter {
     if (explodeProgress <= 0 && fade >= 1) return;
 
     final center = Offset(size.width / 2, size.height / 2);
+    final maxDim = math.max(size.width, size.height);
+
+    if (explodeProgress > 0.02) {
+      final centralAlpha = (explodeProgress * fade * 0.85).clamp(0.0, 1.0);
+      _drawIrregularSplat(
+        canvas,
+        center,
+        60 + explodeProgress * maxDim * 0.38,
+        44 + explodeProgress * maxDim * 0.28,
+        0,
+        const Color(0xFF43A047),
+        const Color(0xFF1B5E20),
+        centralAlpha,
+        0.35,
+      );
+    }
 
     for (final p in particles) {
-      final travel = explodeProgress;
-      final dist = p.distance * Curves.easeOut.transform(travel);
-      final gravity = travel * travel * p.verticalBias * 40;
-      final offset = Offset(
-        math.cos(p.angle) * dist,
-        math.sin(p.angle) * dist * 0.65 + gravity,
-      );
+      final travel = Curves.easeOutCubic.transform(explodeProgress);
+      final dist = p.distance * maxDim * travel;
+      final gravity = travel * travel * p.verticalBias * maxDim * 0.12;
+      final flying = center +
+          Offset(
+            math.cos(p.angle) * dist,
+            math.sin(p.angle) * dist * 0.72 + gravity,
+          );
 
-      final alpha = p.isSplat
-          ? (splatStick * fade).clamp(0.0, 1.0)
-          : (fade * (1 - travel * 0.15)).clamp(0.0, 1.0);
+      final isSticky = p.kind == _GooKind.splat ||
+          p.kind == _GooKind.smear ||
+          p.kind == _GooKind.screenSplat;
 
-      if (alpha <= 0) continue;
-
-      final paint = Paint()..color = p.color.withValues(alpha: alpha * 0.9);
-
-      if (p.isSplat && travel > 0.35) {
+      if (isSticky && travel > 0.2) {
         final stickCenter = center +
             Offset(
-              p.stickX * size.width * 0.42,
-              p.stickY * size.height * 0.38,
+              p.stickNx * size.width * 0.48,
+              p.stickNy * size.height * 0.46,
             );
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: stickCenter,
-            width: p.size * 2.2,
-            height: p.size * 1.4,
-          ),
-          paint,
-        );
-      } else if (travel > 0) {
-        canvas.drawCircle(center + offset, p.size, paint);
-        if (!p.isSplat) {
-          canvas.drawCircle(
-            center + offset + Offset(-p.size * 0.25, -p.size * 0.25),
-            p.size * 0.35,
-            Paint()..color = Colors.white.withValues(alpha: alpha * 0.35),
+        final alpha = (splatStick * fade).clamp(0.0, 1.0);
+        if (alpha <= 0) continue;
+
+        if (p.kind == _GooKind.smear) {
+          _drawSmear(
+            canvas,
+            stickCenter,
+            p.size * (0.8 + splatStick * 0.4),
+            p.rotation,
+            p.color,
+            p.outlineColor,
+            alpha * 0.88,
+          );
+        } else {
+          _drawIrregularSplat(
+            canvas,
+            stickCenter,
+            p.size * (1.6 + splatStick * 0.5),
+            p.size * p.aspectRatio * (1.4 + splatStick * 0.4),
+            p.rotation,
+            p.color,
+            p.outlineColor,
+            alpha * 0.92,
+            p.lumpiness,
           );
         }
+      } else if (travel > 0 && p.kind == _GooKind.blob) {
+        final alpha = (fade * (1 - travel * 0.08)).clamp(0.0, 1.0);
+        if (alpha <= 0) continue;
+
+        final blobPaint = Paint()..color = p.color.withValues(alpha: alpha * 0.9);
+        canvas.drawCircle(flying, p.size, blobPaint);
+        canvas.drawCircle(
+          flying + Offset(-p.size * 0.28, -p.size * 0.28),
+          p.size * 0.32,
+          Paint()..color = Colors.white.withValues(alpha: alpha * 0.38),
+        );
+        canvas.drawCircle(
+          flying,
+          p.size + 1.2,
+          Paint()
+            ..color = p.outlineColor.withValues(alpha: alpha * 0.35)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
+        );
       }
     }
+  }
 
-    if (explodeProgress > 0.05) {
-      final splatAlpha = (explodeProgress * fade * 0.75).clamp(0.0, 1.0);
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: center,
-          width: 40 + explodeProgress * 120,
-          height: 28 + explodeProgress * 80,
-        ),
-        Paint()..color = const Color(0xFF43A047).withValues(alpha: splatAlpha),
-      );
+  void _drawIrregularSplat(
+    Canvas canvas,
+    Offset center,
+    double width,
+    double height,
+    double rotation,
+    Color fill,
+    Color outline,
+    double alpha,
+    double lumpiness,
+  ) {
+    if (alpha <= 0) return;
+
+    final path = Path();
+    const points = 10;
+    for (var i = 0; i <= points; i++) {
+      final t = i / points;
+      final angle = rotation + t * math.pi * 2;
+      final wobble = 1 + math.sin(t * math.pi * 5) * lumpiness * 0.22;
+      final rX = width * 0.5 * wobble;
+      final rY = height * 0.5 * (1 + math.cos(t * math.pi * 4) * lumpiness * 0.15);
+      final p = center + Offset(math.cos(angle) * rX, math.sin(angle) * rY);
+      if (i == 0) {
+        path.moveTo(p.dx, p.dy);
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
     }
+    path.close();
+
+    canvas.drawPath(
+      path,
+      Paint()..color = fill.withValues(alpha: alpha * 0.88),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = outline.withValues(alpha: alpha * 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+
+    canvas.drawCircle(
+      center + Offset(-width * 0.12, -height * 0.1),
+      width * 0.08,
+      Paint()..color = Colors.white.withValues(alpha: alpha * 0.25),
+    );
+  }
+
+  void _drawSmear(
+    Canvas canvas,
+    Offset center,
+    double length,
+    double rotation,
+    Color fill,
+    Color outline,
+    double alpha,
+  ) {
+    if (alpha <= 0) return;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final smear = Path()
+      ..moveTo(-length * 0.15, -length * 0.08)
+      ..quadraticBezierTo(length * 0.35, 0, length * 0.55, length * 0.12)
+      ..quadraticBezierTo(length * 0.2, length * 0.18, -length * 0.1, length * 0.06)
+      ..close();
+
+    canvas.drawPath(
+      smear,
+      Paint()..color = fill.withValues(alpha: alpha * 0.82),
+    );
+    canvas.drawPath(
+      smear,
+      Paint()
+        ..color = outline.withValues(alpha: alpha * 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+    canvas.restore();
   }
 
   @override
