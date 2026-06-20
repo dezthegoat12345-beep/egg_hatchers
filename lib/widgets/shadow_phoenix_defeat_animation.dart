@@ -464,20 +464,23 @@ class _PhoenixFlappingBody extends StatelessWidget {
               ),
             ),
           ),
-          // Body sprite with static wing regions covered by organic body-toned paths.
+          // Body sprite clipped to head/torso/tail — static wing pixels excluded.
           Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              BossSprite(
-                spritePath: boss.spritePath,
-                fallbackEmoji: boss.emoji,
-                size: spriteSize,
-                semanticLabel: boss.name,
+              ClipPath(
+                clipper: _PhoenixCinematicBodyClipper(),
+                child: BossSprite(
+                  spritePath: boss.spritePath,
+                  fallbackEmoji: boss.emoji,
+                  size: spriteSize,
+                  semanticLabel: boss.name,
+                ),
               ),
               CustomPaint(
                 size: Size(spriteSize, spriteSize),
-                painter: _StaticWingOccluderPainter(),
+                painter: _ShoulderSeamCoverPainter(),
               ),
             ],
           ),
@@ -487,68 +490,59 @@ class _PhoenixFlappingBody extends StatelessWidget {
   }
 }
 
-/// Hides baked-in PNG wing pixels using body-toned organic paths (not rectangles).
-class _StaticWingOccluderPainter extends CustomPainter {
+/// Clips the boss PNG to head, torso, and tail — excludes baked-in side wings.
+class _PhoenixCinematicBodyClipper extends CustomClipper<Path> {
   @override
-  void paint(Canvas canvas, Size size) {
-    _drawSide(canvas, size, isLeft: true);
-    _drawSide(canvas, size, isLeft: false);
-  }
-
-  void _drawSide(Canvas canvas, Size size, {required bool isLeft}) {
-    final path = _occluderPath(size, isLeft: isLeft);
-    final bounds = path.getBounds();
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = RadialGradient(
-          center: isLeft ? Alignment.centerRight : Alignment.centerLeft,
-          radius: 0.95,
-          colors: const [
-            Color(0xFF2E2E42),
-            Color(0xFF1E1E30),
-            Color(0xFF12121E),
-          ],
-          stops: const [0.0, 0.55, 1.0],
-        ).createShader(bounds.inflate(4)),
-    );
-    // Soft blend into torso — no hard rectangular edge.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF141420).withValues(alpha: 0.35)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
-  }
-
-  Path _occluderPath(Size size, {required bool isLeft}) {
+  Path getClip(Size size) {
     final w = size.width;
     final h = size.height;
-    final path = Path();
-    if (isLeft) {
-      path.moveTo(w * 0.54, h * 0.30);
-      path.quadraticBezierTo(w * 0.38, h * 0.28, w * 0.22, h * 0.34);
-      path.quadraticBezierTo(w * 0.08, h * 0.42, w * 0.04, h * 0.52);
-      path.quadraticBezierTo(w * 0.02, h * 0.62, w * 0.10, h * 0.70);
-      path.quadraticBezierTo(w * 0.22, h * 0.76, w * 0.38, h * 0.72);
-      path.quadraticBezierTo(w * 0.48, h * 0.58, w * 0.52, h * 0.44);
-      path.close();
-    } else {
-      path.moveTo(w * 0.46, h * 0.30);
-      path.quadraticBezierTo(w * 0.62, h * 0.28, w * 0.78, h * 0.34);
-      path.quadraticBezierTo(w * 0.92, h * 0.42, w * 0.96, h * 0.52);
-      path.quadraticBezierTo(w * 0.98, h * 0.62, w * 0.90, h * 0.70);
-      path.quadraticBezierTo(w * 0.78, h * 0.76, w * 0.62, h * 0.72);
-      path.quadraticBezierTo(w * 0.52, h * 0.58, w * 0.48, h * 0.44);
-      path.close();
-    }
-    return path;
+    return Path()
+      ..addOval(Rect.fromCenter(
+        center: Offset(w * 0.5, h * 0.365),
+        width: w * 0.40,
+        height: h * 0.28,
+      ))
+      ..addOval(Rect.fromCenter(
+        center: Offset(w * 0.5, h * 0.60),
+        width: w * 0.46,
+        height: h * 0.52,
+      ))
+      ..addOval(Rect.fromCenter(
+        center: Offset(w * 0.5, h * 0.805),
+        width: w * 0.36,
+        height: h * 0.30,
+      ))
+      ..addRect(Rect.fromLTWH(w * 0.40, h * 0.40, w * 0.20, h * 0.14));
   }
 
   @override
-  bool shouldRepaint(covariant _StaticWingOccluderPainter oldDelegate) => false;
+  bool shouldReclip(covariant _PhoenixCinematicBodyClipper oldClipper) => false;
+}
+
+/// Tiny shoulder patches — covers wing-root seams only, not the body center.
+class _ShoulderSeamCoverPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    for (final cx in [w * 0.36, w * 0.64]) {
+      final rect = Rect.fromCenter(
+        center: Offset(cx, h * 0.38),
+        width: w * 0.14,
+        height: h * 0.10,
+      );
+      canvas.drawOval(
+        rect,
+        Paint()
+          ..shader = const RadialGradient(
+            colors: [Color(0xFF2A2A3C), Color(0xFF1E1E30)],
+          ).createShader(rect),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ShoulderSeamCoverPainter oldDelegate) => false;
 }
 
 class _PhoenixWingShapePainter extends CustomPainter {
