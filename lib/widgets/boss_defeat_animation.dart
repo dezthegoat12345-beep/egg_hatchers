@@ -52,55 +52,63 @@ class BossDefeatAnimation extends StatefulWidget {
 class _BossDefeatAnimationState extends State<BossDefeatAnimation>
     with SingleTickerProviderStateMixin {
   late final BossDefeatAnimationType _animationType;
-  late final Duration _duration;
-  late final double _totalMs;
-  late final AnimationController _controller;
-  late final List<_AnimParticle> _particles;
+  Duration? _duration;
+  double? _totalMs;
+  AnimationController? _controller;
+  List<_AnimParticle>? _particles;
   var _completed = false;
+
+  bool get _isSlimeCinematic => widget.boss.id == 'slime_boss';
 
   @override
   void initState() {
     super.initState();
     _animationType = BossDefeatAnimationConfig.typeForBossId(widget.boss.id);
+    if (_isSlimeCinematic) return;
+
     _duration = BossDefeatAnimationConfig.durationFor(_animationType);
-    _totalMs = _duration.inMilliseconds.toDouble();
+    _totalMs = _duration!.inMilliseconds.toDouble();
     _particles = _AnimParticle.generate(_animationType);
-    _controller = AnimationController(vsync: this, duration: _duration)
+    _controller = AnimationController(vsync: this, duration: _duration!)
       ..addStatusListener(_onStatusChanged)
       ..forward();
   }
 
   void _onStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed) _finish();
+    if (status == AnimationStatus.completed) _finishOnce();
   }
 
-  void _finish() {
+  void _finishOnce() {
     if (_completed || !mounted) return;
     _completed = true;
+    _controller?.stop();
     widget.onComplete();
   }
 
   void _trySkip() {
-    if (_controller.value < 500 / _totalMs) return;
-    _finish();
+    final totalMs = _totalMs;
+    final controller = _controller;
+    if (totalMs == null || controller == null) return;
+    if (controller.value < 500 / totalMs) return;
+    _finishOnce();
   }
 
   @override
   void dispose() {
-    _controller.removeStatusListener(_onStatusChanged);
-    _controller.dispose();
+    _controller?.removeStatusListener(_onStatusChanged);
+    _controller?.dispose();
     super.dispose();
   }
 
   double _interval(double start, double end) {
-    final t = _controller.value;
+    final t = _controller!.value;
     if (t <= start) return 0;
     if (t >= end) return 1;
     return (t - start) / (end - start);
   }
 
   double _phase(int startMs, int endMs) =>
-      _interval(startMs / _totalMs, endMs / _totalMs);
+      _interval(startMs / _totalMs!, endMs / _totalMs!);
 
   Color _flashColor(double flash) {
     final base = switch (_animationType) {
@@ -134,7 +142,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
   }
 
   Widget _buildStandardAnimation() {
-    final t = _controller.value;
+    final t = _controller!.value;
     final flash = (1 - (_phase(0, 250) * 2).clamp(0.0, 1.0)).abs();
     final shakeAmount = (1 - _phase(0, 350)) * 6;
     final shakeX = math.sin(t * math.pi * 14) * shakeAmount;
@@ -168,7 +176,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
         : 1 + _phase(250, 500) * 0.06;
 
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _controller!,
       builder: (context, child) {
         return Material(
           color: Colors.black.withValues(alpha: 0.72),
@@ -195,7 +203,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
           BossBattleBackground(bossId: widget.boss.id),
           CustomPaint(
             painter: _AnimParticlePainter(
-              particles: _particles,
+              particles: _particles!,
               type: _animationType,
               progress: burstProgress,
               fade: particleFade,
@@ -225,7 +233,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
                 type: _animationType,
                 boss: widget.boss,
                 crackOpacity: crackOpacity,
-                phase: _controller.value,
+                phase: _controller!.value,
               ),
             ),
           ),

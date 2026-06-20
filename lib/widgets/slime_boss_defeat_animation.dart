@@ -45,8 +45,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
   static const _totalMs = 10500.0;
   static const _skipAfterMs = 1000.0;
   static const _explosionStartMs = 7500.0;
-  static const _bossVanishMs = 7520.0;
-  static const _burstTravelEndMs = 8300.0;
+  static const _burstTravelEndMs = 8600.0;
   static const _baseSpriteSize = 158.0;
   static const _sizeBoost = 1.38;
 
@@ -63,12 +62,12 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
       duration: SlimeBossDefeatAnimation.duration,
     )
       ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) _finish();
+        if (status == AnimationStatus.completed) _finishOnce();
       })
       ..forward();
   }
 
-  void _finish() {
+  void _finishOnce() {
     if (_completed || !mounted) return;
     _completed = true;
     _controller.stop();
@@ -76,8 +75,8 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
   }
 
   void _trySkip() {
-    if (_controller.value * _totalMs < _skipAfterMs) return;
-    _finish();
+    if (_controller.value * _totalMs < _skipAfterMs || _completed) return;
+    _finishOnce();
   }
 
   @override
@@ -98,7 +97,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
   _SlimeExpression _expression(double t) {
     if (t < 1000) return _SlimeExpression.none;
     if (t < 6800) return _SlimeExpression.dizzy;
-    if (t < _bossVanishMs) return _SlimeExpression.surprised;
+    if (t < _explosionStartMs) return _SlimeExpression.surprised;
     return _SlimeExpression.none;
   }
 
@@ -115,11 +114,11 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
         final darken = (0.32 + zoomPhase * 0.38).clamp(0.0, 0.72);
 
         final wobblePhase = _phase(1000, 5500);
-        final pressurePhase = _phase(5500, _bossVanishMs);
-        final panicPhase = _phase(6800, _bossVanishMs);
+        final pressurePhase = _phase(5500, _explosionStartMs);
+        final panicPhase = _phase(6800, _explosionStartMs);
         final wobbleAmp = 6 + wobblePhase * 14 + pressurePhase * 34 + panicPhase * 12;
         final wobbleSpeed = 190 - pressurePhase * 130;
-        final wobbleX = t >= 1000 && t < _bossVanishMs
+        final wobbleX = t >= 1000 && t < _explosionStartMs
             ? math.sin(t / wobbleSpeed * math.pi) * wobbleAmp
             : 0.0;
         final squashStrength =
@@ -133,18 +132,18 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
         final inflateScale =
             1.0 + earlyInflate * 0.4 + finalInflate * 0.85 + panicInflate * 0.55;
 
-        final prePopSnap = Curves.easeIn.transform(_phase(7400, _bossVanishMs));
-        final snapScale = 1.0 + prePopSnap * 0.28;
+        final prePopSnap = Curves.easeIn.transform(_phase(7350, _explosionStartMs));
+        final snapScale = 1.0 + prePopSnap * 0.32;
 
         final bossScale = zoomScale * inflateScale * _sizeBoost * snapScale;
         final scaleX = bossScale * (1 + (1 - squash) * (0.14 + pressurePhase * 0.14));
         final scaleY = bossScale * squash;
 
-        final surpriseShake = t >= 6800 && t < _bossVanishMs
+        final surpriseShake = t >= 6800 && t < _explosionStartMs
             ? math.sin(t / 22 * math.pi) * (8 + panicPhase * 10)
             : 0.0;
 
-        final showBoss = t < _bossVanishMs;
+        final showBoss = t < _explosionStartMs;
 
         final burstTravel = t >= _explosionStartMs
             ? Curves.easeOutCubic.transform(
@@ -153,33 +152,34 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
             : 0.0;
 
         final flashWhite = t >= _explosionStartMs
-            ? (1 - _phase(_explosionStartMs, _explosionStartMs + 180)).clamp(0.0, 1.0)
+            ? (1 - _phase(_explosionStartMs, _explosionStartMs + 280)).clamp(0.0, 1.0)
             : 0.0;
         final flashGreen = t >= _explosionStartMs
-            ? (1 - _phase(_explosionStartMs + 40, _explosionStartMs + 520))
+            ? (1 - _phase(_explosionStartMs + 30, _explosionStartMs + 650))
                 .clamp(0.0, 1.0)
             : 0.0;
 
         final shockwaveProgress = t >= _explosionStartMs
-            ? Curves.easeOut.transform(_phase(_explosionStartMs, _explosionStartMs + 680))
+            ? Curves.easeOut.transform(_phase(_explosionStartMs, _explosionStartMs + 900))
             : 0.0;
 
-        final shakeAmp = t >= _explosionStartMs && t < 8000
-            ? 24 * (1 - _phase(_explosionStartMs, 8000))
+        final splatReveal = t >= _burstTravelEndMs - 100
+            ? Curves.easeOut.transform(_phase(_burstTravelEndMs - 100, 9200))
+            : 0.0;
+        final particleFade = (1 - _phase(9200, 10300)).clamp(0.0, 1.0);
+        final shockwaveFade = t >= _explosionStartMs && t < 9200 ? 1.0 : particleFade;
+
+        final shakeAmp = t >= _explosionStartMs && t < 8100
+            ? 32 * (1 - _phase(_explosionStartMs, 8100))
             : 0.0;
         final shakeX = math.sin(t / 24 * math.pi) * shakeAmp;
         final shakeY = math.cos(t / 30 * math.pi) * shakeAmp * 0.7;
 
-        final splatReveal = t >= _burstTravelEndMs - 150
-            ? Curves.easeOut.transform(_phase(_burstTravelEndMs - 150, 9100))
-            : 0.0;
-        final particleFade = (1 - _phase(9100, 10200)).clamp(0.0, 1.0);
-
         final pressureGlow = pressurePhase * (showBoss ? 1.0 : 0.0);
 
-        final titleProgress = Curves.elasticOut.transform(_phase(9100, 9700));
-        final titleOpacity = Curves.easeOut.transform(_phase(9100, 9500));
-        final rewardsOpacity = Curves.easeOut.transform(_phase(9400, 10200));
+        final titleProgress = Curves.elasticOut.transform(_phase(9300, 9900));
+        final titleOpacity = Curves.easeOut.transform(_phase(9300, 9700));
+        final rewardsOpacity = Curves.easeOut.transform(_phase(9600, 10300));
         final rewardsSlide = (1 - rewardsOpacity) * 28;
 
         final canSkip = t >= _skipAfterMs && !_completed;
@@ -199,35 +199,6 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                     color: widget.theme.panelColor.withValues(alpha: 0.65),
                   ),
                 ColoredBox(color: Colors.black.withValues(alpha: darken)),
-                if (flashWhite > 0)
-                  ColoredBox(
-                    color: Colors.white.withValues(alpha: flashWhite * 0.92),
-                  ),
-                if (flashGreen > 0)
-                  ColoredBox(
-                    color: const Color(0xFF76FF03).withValues(alpha: flashGreen * 0.55),
-                  ),
-                Transform.translate(
-                  offset: Offset(shakeX, shakeY),
-                  child: CustomPaint(
-                    painter: _ExplosionEffectsPainter(
-                      shockwaveProgress: shockwaveProgress,
-                      burstCore: burstTravel.clamp(0.0, 0.35) / 0.35,
-                      fade: particleFade,
-                    ),
-                  ),
-                ),
-                Transform.translate(
-                  offset: Offset(shakeX, shakeY),
-                  child: CustomPaint(
-                    painter: _GooParticlePainter(
-                      particles: _particles,
-                      burstTravel: burstTravel,
-                      splatReveal: splatReveal,
-                      fade: particleFade,
-                    ),
-                  ),
-                ),
                 if (showBoss)
                   Transform.translate(
                     offset: Offset(wobbleX + surpriseShake, 0),
@@ -246,6 +217,35 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
                       ),
                     ),
                   ),
+                if (flashWhite > 0)
+                  ColoredBox(
+                    color: Colors.white.withValues(alpha: flashWhite * 0.96),
+                  ),
+                if (flashGreen > 0)
+                  ColoredBox(
+                    color: const Color(0xFF76FF03).withValues(alpha: flashGreen * 0.62),
+                  ),
+                Transform.translate(
+                  offset: Offset(shakeX, shakeY),
+                  child: CustomPaint(
+                    painter: _ExplosionEffectsPainter(
+                      shockwaveProgress: shockwaveProgress,
+                      burstCore: burstTravel.clamp(0.0, 0.55) / 0.55,
+                      fade: shockwaveFade,
+                    ),
+                  ),
+                ),
+                Transform.translate(
+                  offset: Offset(shakeX, shakeY),
+                  child: CustomPaint(
+                    painter: _GooParticlePainter(
+                      particles: _particles,
+                      burstTravel: burstTravel,
+                      splatReveal: splatReveal,
+                      fade: particleFade,
+                    ),
+                  ),
+                ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -787,32 +787,32 @@ class _ExplosionEffectsPainter extends CustomPainter {
     final maxDim = math.max(size.width, size.height);
 
     if (burstCore > 0) {
-      final coreAlpha = (burstCore * (1 - burstCore * 0.4)).clamp(0.0, 1.0);
+      final coreAlpha = (burstCore * (1 - burstCore * 0.25)).clamp(0.0, 1.0);
       canvas.drawCircle(
         center,
-        24 + burstCore * 48,
-        Paint()..color = Colors.white.withValues(alpha: coreAlpha * 0.85),
+        36 + burstCore * 90,
+        Paint()..color = Colors.white.withValues(alpha: coreAlpha * 0.95),
       );
       canvas.drawCircle(
         center,
-        40 + burstCore * 70,
-        Paint()..color = const Color(0xFF76FF03).withValues(alpha: coreAlpha * 0.55),
+        56 + burstCore * 120,
+        Paint()..color = const Color(0xFF76FF03).withValues(alpha: coreAlpha * 0.7),
       );
     }
 
     if (shockwaveProgress > 0) {
-      final radius = 20 + shockwaveProgress * maxDim * 0.62;
+      final radius = 28 + shockwaveProgress * maxDim * 0.68;
       final ringAlpha = ((1 - shockwaveProgress) * fade).clamp(0.0, 1.0);
       final ringPaint = Paint()
-        ..color = Colors.white.withValues(alpha: ringAlpha * 0.75)
+        ..color = Colors.white.withValues(alpha: ringAlpha * 0.9)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 6 + (1 - shockwaveProgress) * 10;
+        ..strokeWidth = 8 + (1 - shockwaveProgress) * 14;
       canvas.drawCircle(center, radius, ringPaint);
 
       final innerRing = Paint()
-        ..color = const Color(0xFFA5D6A7).withValues(alpha: ringAlpha * 0.55)
+        ..color = const Color(0xFFC5E1A5).withValues(alpha: ringAlpha * 0.75)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3 + (1 - shockwaveProgress) * 6;
+        ..strokeWidth = 4 + (1 - shockwaveProgress) * 8;
       canvas.drawCircle(center, radius * 0.82, innerRing);
     }
   }
@@ -869,11 +869,11 @@ class _GooParticlePainter extends CustomPainter {
           p.kind == _GooKind.smear ||
           p.kind == _GooKind.screenSplat;
 
-      if (travel > 0 && travel < 0.98) {
-        final flyAlpha = (fade * (1 - travel * 0.05)).clamp(0.0, 1.0);
+      if (travel > 0 && travel < 1.0) {
+        final flyAlpha = (fade * (1 - travel * 0.03)).clamp(0.0, 1.0);
         if (flyAlpha <= 0) continue;
 
-        final blobSize = p.size * (0.85 + flyT * 0.35);
+        final blobSize = p.size * (0.9 + flyT * 0.45);
         final blobPaint = Paint()..color = p.color.withValues(alpha: flyAlpha * 0.92);
         canvas.drawCircle(pos, blobSize, blobPaint);
         canvas.drawCircle(
@@ -900,9 +900,9 @@ class _GooParticlePainter extends CustomPainter {
         }
       }
 
-      if (isSticky && splatReveal > 0 && travel >= 0.55) {
+      if (isSticky && splatReveal > 0 && travel >= 0.65) {
         final stickAlpha =
-            (splatReveal * fade * Curves.easeOut.transform((travel - 0.55) / 0.45))
+            (splatReveal * fade * Curves.easeOut.transform((travel - 0.65) / 0.35))
                 .clamp(0.0, 1.0);
         if (stickAlpha <= 0) continue;
 
