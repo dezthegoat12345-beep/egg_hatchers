@@ -11,7 +11,9 @@ import 'bird_boss_defeat_animation.dart';
 import 'boss_battle_background.dart';
 import 'boss_sprite.dart';
 import 'egg_golem_defeat_animation.dart';
+import 'egg_guardian_defeat_animation.dart';
 import 'slime_boss_defeat_animation.dart';
+import 'slime_king_defeat_animation.dart';
 
 /// Boss-specific defeat celebration overlay for manual battle victories.
 class BossDefeatAnimation extends StatefulWidget {
@@ -172,6 +174,28 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
 
     if (BossCinematicConfig.isBirdBoss(widget.boss.id)) {
       return BirdBossDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (widget.boss.id == 'slime_king') {
+      return SlimeKingDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (widget.boss.id == 'egg_guardian') {
+      return EggGuardianDefeatAnimation(
         theme: common.theme,
         boss: common.boss,
         coinReward: common.coinReward,

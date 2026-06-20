@@ -3,15 +3,22 @@ import 'package:egg_hatchers/utils/boss_defeat_animation_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('cinematic boss ids include base bosses only', () {
+  test('cinematic boss ids include base and elite cinematics', () {
     expect(BossCinematicConfig.isCinematicBoss('slime_boss'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('egg_golem'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('shadow_rooster'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('night_rooster'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('night_crow'), isTrue);
-    expect(BossCinematicConfig.isCinematicBoss('slime_king'), isFalse);
-    expect(BossCinematicConfig.isCinematicBoss('egg_guardian'), isFalse);
+    expect(BossCinematicConfig.isCinematicBoss('slime_king'), isTrue);
+    expect(BossCinematicConfig.isCinematicBoss('egg_guardian'), isTrue);
     expect(BossCinematicConfig.isCinematicBoss('shadow_phoenix'), isFalse);
+  });
+
+  test('elite cinematic boss ids exclude shadow phoenix', () {
+    expect(BossCinematicConfig.isEliteCinematicBoss('slime_king'), isTrue);
+    expect(BossCinematicConfig.isEliteCinematicBoss('egg_guardian'), isTrue);
+    expect(BossCinematicConfig.isEliteCinematicBoss('shadow_phoenix'), isFalse);
+    expect(BossCinematicConfig.isEliteCinematicBoss('slime_boss'), isFalse);
   });
 
   test('bird boss ids are detected', () {
