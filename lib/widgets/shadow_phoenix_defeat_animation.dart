@@ -20,7 +20,7 @@ class ShadowPhoenixDefeatAnimation extends StatefulWidget {
     required this.onComplete,
   });
 
-  static const duration = Duration(milliseconds: 12000);
+  static const duration = Duration(milliseconds: 13500);
 
   final BackgroundTheme theme;
   final BossBattleDefinition boss;
@@ -36,7 +36,7 @@ class ShadowPhoenixDefeatAnimation extends StatefulWidget {
 
 class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimation>
     with SingleTickerProviderStateMixin {
-  static const _totalMs = 12000.0;
+  static const _totalMs = 13500.0;
   static const _skipAfterMs = 1000.0;
   static const _flapStartMs = 1000.0;
   static const _descentStartMs = 4500.0;
@@ -44,7 +44,16 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   static const _topViewStartMs = 6500.0;
   static const _fallStartMs = 7500.0;
   static const _impactMs = 8800.0;
-  static const _smokeEndMs = 10200.0;
+  static const _laughStartMs = 9150.0;
+  static const _laughEndMs = 10950.0;
+  static const _smokeEndMs = 11200.0;
+  static const _effectFadeStartMs = 11200.0;
+  static const _effectFadeEndMs = 13000.0;
+  static const _titleStartMs = 11400.0;
+  static const _titlePopEndMs = 12000.0;
+  static const _titleOpacityEndMs = 11800.0;
+  static const _rewardsStartMs = 11800.0;
+  static const _rewardsEndMs = 12800.0;
   static const _baseSpriteSize = 168.0;
   static const _sizeBoost = 1.38;
 
@@ -96,6 +105,21 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   }
 
   double _timeMs() => _controller.value * _totalMs;
+
+  /// 0 = wide grin, 1 = open laughing mouth; pulses ~3.5 times during laugh phase.
+  double _mouthLaughOpen(double t) {
+    if (t < _laughStartMs || t >= _laughEndMs) {
+      return t >= _impactMs && t < _laughEndMs ? 0.18 : 0.0;
+    }
+    final localT = (t - _laughStartMs) / (_laughEndMs - _laughStartMs);
+    const laughCycles = 3.5;
+    final wave = math.sin(localT * laughCycles * math.pi * 2 - math.pi / 2);
+    final open = (wave + 1) / 2;
+    final rampIn = Curves.easeOut.transform(_phase(_laughStartMs, _laughStartMs + 250));
+    final rampOut =
+        1 - Curves.easeIn.transform(_phase(_laughEndMs - 550, _laughEndMs));
+    return (0.15 + open * 0.85) * rampIn * rampOut;
+  }
 
   _WingFlapSnapshot _wingFlap(
     double t,
@@ -267,17 +291,22 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
         final emberTrail = t >= _descentStartMs && t < _impactMs
             ? _phase(_descentStartMs, _impactMs)
             : 0.0;
-        final effectFade = (1 - _phase(10200, 11800)).clamp(0.0, 1.0);
+        final effectFade =
+            (1 - _phase(_effectFadeStartMs, _effectFadeEndMs)).clamp(0.0, 1.0);
 
         final faceFadeIn = Curves.easeOut.transform(_phase(_impactMs, _impactMs + 450));
         final faceFadeOut =
-            1 - Curves.easeIn.transform(_phase(_smokeEndMs - 700, _smokeEndMs));
+            1 - Curves.easeIn.transform(_phase(_smokeEndMs - 800, _smokeEndMs));
         final faceOpacity =
             t >= _impactMs ? (faceFadeIn * faceFadeOut * effectFade).clamp(0.0, 1.0) : 0.0;
+        final mouthOpen = _mouthLaughOpen(t);
 
-        final titleProgress = Curves.elasticOut.transform(_phase(10200, 10800));
-        final titleOpacity = Curves.easeOut.transform(_phase(10200, 10600));
-        final rewardsOpacity = Curves.easeOut.transform(_phase(10600, 11600));
+        final titleProgress =
+            Curves.elasticOut.transform(_phase(_titleStartMs, _titlePopEndMs));
+        final titleOpacity =
+            Curves.easeOut.transform(_phase(_titleStartMs, _titleOpacityEndMs));
+        final rewardsOpacity =
+            Curves.easeOut.transform(_phase(_rewardsStartMs, _rewardsEndMs));
         final rewardsSlide = (1 - rewardsOpacity) * 28;
 
         return Material(
@@ -354,6 +383,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                     painter: _ShadowSmokeFacePainter(
                       expand: smokeExpand,
                       opacity: faceOpacity,
+                      mouthOpen: mouthOpen,
                       timeMs: t,
                       fade: effectFade,
                     ),
@@ -1036,17 +1066,19 @@ class _ShadowSmokePainter extends CustomPainter {
       oldDelegate.fade != fade;
 }
 
-/// Angry red eyes and jack-o-lantern grin inside the purple smoke cloud.
+/// Angry red eyes and animated jack-o-lantern laugh inside the purple smoke cloud.
 class _ShadowSmokeFacePainter extends CustomPainter {
   _ShadowSmokeFacePainter({
     required this.expand,
     required this.opacity,
+    required this.mouthOpen,
     required this.timeMs,
     required this.fade,
   });
 
   final double expand;
   final double opacity;
+  final double mouthOpen;
   final double timeMs;
   final double fade;
 
@@ -1064,9 +1096,12 @@ class _ShadowSmokeFacePainter extends CustomPainter {
     final mouthW = faceW * 0.62;
     final mouthH = faceW * 0.34;
 
-    final flicker = 1.0 + math.sin(timeMs / 85 * math.pi) * 0.07;
+    final flicker = 1.0 + math.sin(timeMs / 85 * math.pi) * 0.04;
+    final laughGlow = (1.0 + mouthOpen * 0.22).clamp(1.0, 1.22);
     final alpha = (opacity * flicker * fade).clamp(0.0, 1.0);
     if (alpha <= 0.02) return;
+
+    final eyeSquint = mouthOpen * 0.14;
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
@@ -1076,19 +1111,22 @@ class _ShadowSmokeFacePainter extends CustomPainter {
       Offset(-eyeSpacing, -faceW * 0.08),
       size: eyeSize,
       isLeft: true,
-      alpha: alpha,
+      alpha: (alpha * laughGlow).clamp(0.0, 1.0),
+      squint: eyeSquint,
     );
     _drawAngryEye(
       canvas,
       Offset(eyeSpacing, -faceW * 0.08),
       size: eyeSize,
       isLeft: false,
-      alpha: alpha,
+      alpha: (alpha * laughGlow).clamp(0.0, 1.0),
+      squint: eyeSquint,
     );
-    _drawJackOLanternMouth(
+    _drawLaughingMouth(
       canvas,
       width: mouthW,
       height: mouthH,
+      openAmount: mouthOpen,
       alpha: alpha,
     );
 
@@ -1101,9 +1139,10 @@ class _ShadowSmokeFacePainter extends CustomPainter {
     required double size,
     required bool isLeft,
     required double alpha,
+    required double squint,
   }) {
     final w = size;
-    final h = size * 0.72;
+    final h = size * (0.72 - squint);
     final path = Path();
     if (isLeft) {
       path.moveTo(center.dx + w * 0.45, center.dy - h * 0.35);
@@ -1121,12 +1160,12 @@ class _ShadowSmokeFacePainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.28)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * 0.18),
+        ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.32)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * 0.2),
     );
     canvas.drawPath(
       path,
-      Paint()..color = const Color(0xFFFF5252).withValues(alpha: alpha * 0.95),
+      Paint()..color = const Color(0xFFFF5252).withValues(alpha: alpha.clamp(0.0, 1.0)),
     );
     canvas.drawPath(
       path,
@@ -1136,69 +1175,127 @@ class _ShadowSmokeFacePainter extends CustomPainter {
         ..strokeWidth = size * 0.08,
     );
     canvas.drawCircle(
-      center + Offset(isLeft ? -w * 0.08 : w * 0.08, 0),
-      size * 0.12,
-      Paint()..color = const Color(0xFFFFCDD2).withValues(alpha: alpha * 0.75),
+      center + Offset(isLeft ? -w * 0.08 : w * 0.08, squint * 2),
+      size * (0.12 - squint * 0.04),
+      Paint()..color = const Color(0xFFFFCDD2).withValues(alpha: alpha * 0.8),
     );
   }
 
-  void _drawJackOLanternMouth(
+  void _drawLaughingMouth(
     Canvas canvas, {
     required double width,
     required double height,
+    required double openAmount,
     required double alpha,
   }) {
     final halfW = width / 2;
-    final baseY = height * 0.22;
+    final lipY = height * 0.18;
+    final jawDrop = height * (0.38 + openAmount * 0.52);
+    final innerCurve = height * (0.48 + openAmount * 0.38);
+    final glowStrength = 0.18 + openAmount * 0.38;
 
-    final grin = Path()
-      ..moveTo(-halfW, baseY)
-      ..quadraticBezierTo(0, height, halfW, baseY)
-      ..quadraticBezierTo(0, height * 0.62, -halfW, baseY)
+    // Upper jagged lip.
+    final upperLip = Path()
+      ..moveTo(-halfW, lipY)
+      ..lineTo(-halfW * 0.55, lipY - height * 0.06 * (1 - openAmount * 0.5))
+      ..lineTo(-halfW * 0.18, lipY - height * 0.03)
+      ..lineTo(0, lipY - height * 0.05 * (1 - openAmount * 0.3))
+      ..lineTo(halfW * 0.18, lipY - height * 0.03)
+      ..lineTo(halfW * 0.55, lipY - height * 0.06 * (1 - openAmount * 0.5))
+      ..lineTo(halfW, lipY);
+
+    // Full mouth cavity — grin crescent when closed, tall oval when open.
+    final mouth = Path()
+      ..moveTo(-halfW, lipY)
+      ..quadraticBezierTo(
+        -halfW * 0.35,
+        lipY + innerCurve * 0.35,
+        0,
+        lipY + innerCurve + jawDrop * 0.15,
+      )
+      ..quadraticBezierTo(
+        halfW * 0.35,
+        lipY + innerCurve * 0.35,
+        halfW,
+        lipY,
+      )
+      ..quadraticBezierTo(
+        halfW * 0.72,
+        lipY + jawDrop,
+        0,
+        lipY + jawDrop + innerCurve * 0.25,
+      )
+      ..quadraticBezierTo(
+        -halfW * 0.72,
+        lipY + jawDrop,
+        -halfW,
+        lipY,
+      )
       ..close();
 
     canvas.drawPath(
-      grin,
+      mouth,
       Paint()
-        ..color = const Color(0xFFFF6D00).withValues(alpha: alpha * 0.22)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, width * 0.08),
+        ..color = const Color(0xFFFF6D00).withValues(alpha: alpha * glowStrength)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, width * (0.06 + openAmount * 0.06)),
     );
     canvas.drawPath(
-      grin,
-      Paint()..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.92),
-    );
-    canvas.drawPath(
-      grin,
-      Paint()
-        ..color = const Color(0xFFBF360C).withValues(alpha: alpha * 0.8)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width * 0.035,
+      mouth,
+      Paint()..color = const Color(0xFFFF1744).withValues(alpha: alpha * (0.82 + openAmount * 0.15)),
     );
 
-    final tooth = Paint()
-      ..color = const Color(0xFF4A148C).withValues(alpha: alpha * 0.88)
+    // Inner dark cutout grows when mouth opens.
+    final inner = Path()
+      ..moveTo(-halfW * 0.82, lipY + height * 0.04)
+      ..quadraticBezierTo(
+        0,
+        lipY + innerCurve * (0.55 + openAmount * 0.35) + jawDrop * 0.35,
+        halfW * 0.82,
+        lipY + height * 0.04,
+      )
+      ..quadraticBezierTo(
+        0,
+        lipY + height * 0.02,
+        -halfW * 0.82,
+        lipY + height * 0.04,
+      )
+      ..close();
+    canvas.drawPath(
+      inner,
+      Paint()..color = const Color(0xFF4A148C).withValues(alpha: alpha * (0.72 + openAmount * 0.2)),
+    );
+
+    // Triangular jack-o-lantern teeth — spread apart when laughing.
+    final toothPaint = Paint()
+      ..color = const Color(0xFF311B92).withValues(alpha: alpha * 0.92)
       ..style = PaintingStyle.fill;
-    final toothSpacing = width / 5.5;
+    final toothSpacing = width / (4.8 - openAmount * 0.6);
+    final toothBase = lipY + height * (0.06 + openAmount * 0.1);
+    final toothH = height * (0.22 + openAmount * 0.28);
     for (var i = -2; i <= 2; i++) {
       final tx = i * toothSpacing;
-      final tw = width * 0.09;
-      final th = height * 0.38;
+      final tw = width * (0.07 + openAmount * 0.02);
       final toothPath = Path()
-        ..moveTo(tx - tw, baseY + height * 0.08)
-        ..lineTo(tx, baseY + height * 0.08 + th)
-        ..lineTo(tx + tw, baseY + height * 0.08)
+        ..moveTo(tx - tw, toothBase)
+        ..lineTo(tx, toothBase + toothH)
+        ..lineTo(tx + tw, toothBase)
         ..close();
-      canvas.drawPath(toothPath, tooth);
+      canvas.drawPath(toothPath, toothPaint);
     }
 
     canvas.drawPath(
-      Path()
-        ..moveTo(-halfW * 0.85, baseY - height * 0.06)
-        ..quadraticBezierTo(0, baseY + height * 0.08, halfW * 0.85, baseY - height * 0.06),
+      upperLip,
       Paint()
-        ..color = const Color(0xFFFFAB40).withValues(alpha: alpha * 0.55)
+        ..color = const Color(0xFFFFAB40).withValues(alpha: alpha * (0.45 + openAmount * 0.25))
         ..style = PaintingStyle.stroke
-        ..strokeWidth = width * 0.03,
+        ..strokeWidth = width * 0.032,
+    );
+    canvas.drawPath(
+      mouth,
+      Paint()
+        ..color = const Color(0xFFBF360C).withValues(alpha: alpha * 0.82)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width * 0.028,
     );
   }
 
@@ -1206,6 +1303,7 @@ class _ShadowSmokeFacePainter extends CustomPainter {
   bool shouldRepaint(covariant _ShadowSmokeFacePainter oldDelegate) =>
       oldDelegate.expand != expand ||
       oldDelegate.opacity != opacity ||
+      oldDelegate.mouthOpen != mouthOpen ||
       oldDelegate.timeMs != timeMs ||
       oldDelegate.fade != fade;
 }
