@@ -9,6 +9,7 @@ import '../models/boss_reward_grant.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/custom_sprite_data.dart';
+import '../models/finisher_reward.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 import '../services/custom_sprite_service.dart';
@@ -21,6 +22,7 @@ import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
 import '../widgets/boss_battle_background.dart';
 import '../widgets/boss_defeat_animation.dart';
+import '../widgets/boss_finisher_slash_overlay.dart';
 import '../widgets/boss_last_life_glow.dart';
 import '../widgets/boss_projectile_widget.dart';
 import '../widgets/boss_sprite.dart';
@@ -103,6 +105,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _rewardsApplied = false;
   var _resultDialogShown = false;
   var _showVictoryAnimation = false;
+  var _showFinisherSlash = false;
+  var _finisherRewardsApplied = false;
+  var _finisherBonusCoins = 0;
+  var _finisherBonusTokens = 0;
   var _victoryCoinReward = 0;
   var _victoryTokenReward = 0;
   String? _earnedRewardAnimalName;
@@ -226,6 +232,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _rewardsApplied = false;
     _resultDialogShown = false;
     _showVictoryAnimation = false;
+    _showFinisherSlash = false;
+    _finisherRewardsApplied = false;
+    _finisherBonusCoins = 0;
+    _finisherBonusTokens = 0;
     _victoryCoinReward = 0;
     _victoryTokenReward = 0;
     _earnedRewardAnimalName = null;
@@ -565,13 +575,35 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _applyRewardsOnce();
 
     if (won) {
-      setState(() => _showVictoryAnimation = true);
+      setState(() => _showFinisherSlash = true);
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _showResultDialog();
     });
+  }
+
+  void _onFinisherSlashComplete(FinisherRewardTotals totals) {
+    if (!mounted || !_showFinisherSlash) return;
+    _applyFinisherRewardsOnce(totals);
+    setState(() {
+      _showFinisherSlash = false;
+      _finisherBonusCoins = totals.bonusCoins;
+      _finisherBonusTokens = totals.bonusTokens;
+      _showVictoryAnimation = true;
+    });
+  }
+
+  void _applyFinisherRewardsOnce(FinisherRewardTotals totals) {
+    if (_finisherRewardsApplied) return;
+    _finisherRewardsApplied = true;
+    if (totals.bonusCoins > 0 || totals.bonusTokens > 0) {
+      widget.game.applyManualFinisherBonus(
+        coins: totals.bonusCoins,
+        tokens: totals.bonusTokens,
+      );
+    }
   }
 
   void _onVictoryAnimationComplete() {
@@ -638,6 +670,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         bossHitsLanded: _bossHitsLanded,
         coinReward: _won ? boss.coinReward * rewardMultiplier : 0,
         tokenReward: _won ? boss.battleTokenReward * rewardMultiplier : 0,
+        finisherBonusCoins: _finisherBonusCoins,
+        finisherBonusTokens: _finisherBonusTokens,
         rewardAnimalName: _earnedRewardAnimalName,
         rewardGrant: _earnedRewardGrant,
         customSprites: widget.customSprites,
@@ -660,7 +694,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (_gameOver || _isPaused || _showVictoryAnimation) {
+    if (_gameOver || _isPaused || _showVictoryAnimation || _showFinisherSlash) {
       return KeyEventResult.ignored;
     }
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -761,7 +795,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             requiredMisses: _requiredMisses,
                             showPauseButton: !_gameOver &&
                                 !_isPaused &&
-                                !_showVictoryAnimation,
+                                !_showVictoryAnimation &&
+                                !_showFinisherSlash,
                             onPause: _pauseBattle,
                           ),
                           const SizedBox(height: 12),
@@ -837,6 +872,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             canShoot: !_gameOver &&
                                 !_isPaused &&
                                 !_showVictoryAnimation &&
+                                !_showFinisherSlash &&
                                 !_shieldActive &&
                                 _activeEgg == null &&
                                 _eggCooldownRemaining <= 0,
@@ -859,6 +895,16 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             onToggleBattleBackgrounds:
                                 widget.preferences.setShowBattleBackgrounds,
                           ),
+                        ),
+                      ),
+                    if (_showFinisherSlash)
+                      Positioned.fill(
+                        child: BossFinisherSlashOverlay(
+                          boss: boss,
+                          theme: currentTheme,
+                          showBattleBackgrounds:
+                              widget.preferences.showBattleBackgrounds,
+                          onComplete: _onFinisherSlashComplete,
                         ),
                       ),
                     if (_showVictoryAnimation)
@@ -1481,6 +1527,8 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.bossHitsLanded,
     required this.coinReward,
     required this.tokenReward,
+    this.finisherBonusCoins = 0,
+    this.finisherBonusTokens = 0,
     this.rewardAnimalName,
     this.rewardGrant,
     this.customSprites,
@@ -1499,6 +1547,8 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final int bossHitsLanded;
   final int coinReward;
   final int tokenReward;
+  final int finisherBonusCoins;
+  final int finisherBonusTokens;
   final String? rewardAnimalName;
   final BossRewardGrant? rewardGrant;
   final CustomSpriteService? customSprites;
@@ -1624,6 +1674,26 @@ class _ManualBattleResultDialog extends StatelessWidget {
               Text(
                 '🪙 ${formatCoins(coinReward)} · ⚔️ +$tokenReward',
                 style: TextStyle(color: theme.cardTextPrimaryColor),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Finisher Bonus:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                finisherBonusCoins > 0 || finisherBonusTokens > 0
+                    ? '🪙 +${formatCoins(finisherBonusCoins)} · ⚔️ +$finisherBonusTokens'
+                    : 'No finisher bonus this time.',
+                style: TextStyle(
+                  color: finisherBonusCoins > 0 || finisherBonusTokens > 0
+                      ? Colors.amber.shade300
+                      : theme.cardTextSecondaryColor,
+                  fontSize: 13,
+                ),
               ),
               if (rewardAnimalName != null) ...[
                 const SizedBox(height: 8),

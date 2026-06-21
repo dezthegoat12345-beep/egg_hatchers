@@ -1444,6 +1444,31 @@ class GameService extends ChangeNotifier {
     return grant;
   }
 
+  /// Applies finisher slash bonus coins/tokens once after the 5-second slash window.
+  void applyManualFinisherBonus({
+    required int coins,
+    required int tokens,
+  }) {
+    if (coins <= 0 && tokens <= 0) return;
+
+    var progress = _state.questProgress;
+    if (tokens > 0) {
+      progress = progress.copyWith(
+        totalBattleTokensEarned:
+            progress.totalBattleTokensEarned + tokens,
+      );
+    }
+
+    _state = _state.copyWith(
+      coins: _state.coins + coins,
+      battleTokens: _state.battleTokens + tokens,
+      questProgress: progress,
+    );
+    _refreshQuestNotifications();
+    notifyListeners();
+    save();
+  }
+
   QuestProgress _questProgressAfterBossWin(
     QuestProgress progress,
     String bossId,
