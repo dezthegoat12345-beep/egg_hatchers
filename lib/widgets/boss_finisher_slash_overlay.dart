@@ -120,23 +120,44 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
 
     final elapsedMs = _elapsed * 1000;
     final maxRolls = BossFinisherRewards.maxBonusRolls(widget.boss);
-    final canRoll = _bonusRollCount < maxRolls &&
-        elapsedMs - _lastRewardSlashMs >=
-            BossFinisherRewards.slashRewardCooldownMs;
 
-    if (!canRoll) return;
+    if (_bonusRollCount >= maxRolls) {
+      return;
+    }
 
+    if (elapsedMs - _lastRewardSlashMs <
+        BossFinisherRewards.slashRewardCooldownMs) {
+      return;
+    }
     _lastRewardSlashMs = elapsedMs;
+
+    if (!BossFinisherRewards.passesRewardGate(_random)) {
+      _addFloater(
+        mid,
+        BossFinisherRewards.noRewardMessageFor(widget.boss.id),
+        isNoReward: true,
+      );
+      return;
+    }
+
     _bonusRollCount++;
     final roll = BossFinisherRewards.rollBonus(widget.boss.id, _random);
     _totals = _totals.addRoll(roll);
+    _addFloater(mid, roll.message, isReward: roll.grantsReward);
+  }
 
+  void _addFloater(
+    Offset position,
+    String label, {
+    bool isReward = false,
+    bool isNoReward = false,
+  }) {
     _floaters.add(
       _FloatingFinisherText(
-        position: mid - const Offset(0, 18),
-        label: roll.message,
-        isSpark: false,
-        isReward: roll.grantsReward,
+        position: position - const Offset(0, 18),
+        label: label,
+        isReward: isReward,
+        isNoReward: isNoReward,
       ),
     );
   }
@@ -164,6 +185,7 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
   Widget build(BuildContext context) {
     final remaining =
         (BossFinisherRewards.slashWindowSeconds - _elapsed).ceil().clamp(0, 5);
+    final maxRolls = BossFinisherRewards.maxBonusRolls(widget.boss);
 
     return Material(
       color: Colors.black.withValues(alpha: 0.88),
@@ -223,9 +245,12 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
                           style: TextStyle(
                             color: f.isReward
                                 ? Colors.amber.shade200
-                                : _style.sparkColor,
-                            fontSize: f.isReward ? 13 : 10,
-                            fontWeight: FontWeight.bold,
+                                : f.isNoReward
+                                    ? Colors.white.withValues(alpha: 0.58)
+                                    : _style.sparkColor,
+                            fontSize: f.isReward ? 13 : (f.isNoReward ? 11 : 10),
+                            fontWeight:
+                                f.isReward ? FontWeight.bold : FontWeight.w600,
                             shadows: const [
                               Shadow(color: Colors.black87, blurRadius: 4),
                             ],
@@ -261,6 +286,30 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
                           color: Colors.white.withValues(alpha: 0.92),
                           shadows: const [
                             Shadow(color: Colors.black54, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Slash for a 50% bonus chance!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.72),
+                          shadows: const [
+                            Shadow(color: Colors.black54, blurRadius: 3),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Bonus found: $_bonusRollCount / $maxRolls',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: widget.theme.secondaryColor.withValues(alpha: 0.9),
+                          shadows: const [
+                            Shadow(color: Colors.black54, blurRadius: 3),
                           ],
                         ),
                       ),
@@ -313,14 +362,14 @@ class _FloatingFinisherText {
   _FloatingFinisherText({
     required this.position,
     required this.label,
-    required this.isSpark,
     this.isReward = false,
+    this.isNoReward = false,
   });
 
   final Offset position;
   final String label;
-  final bool isSpark;
   final bool isReward;
+  final bool isNoReward;
   double age = 0;
 }
 

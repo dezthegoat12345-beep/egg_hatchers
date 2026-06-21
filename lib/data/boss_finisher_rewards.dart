@@ -26,11 +26,35 @@ class BossFinisherRewards {
   static const slashMinDistance = 55.0;
   static const slashRewardCooldownMs = 280;
   static const slashWindowSeconds = 5.0;
+  static const rewardGateChance = 0.50;
   static const maxBonusRollsNormal = 6;
   static const maxBonusRollsElite = 8;
 
   static int maxBonusRolls(BossBattleDefinition boss) =>
       boss.isEliteBoss ? maxBonusRollsElite : maxBonusRollsNormal;
+
+  /// True when a valid slash passes the 50/50 bonus gate.
+  static bool passesRewardGate(Random random) =>
+      random.nextDouble() < rewardGateChance;
+
+  /// Lightweight flavor text when the bonus gate fails.
+  static String noRewardMessageFor(String bossId) {
+    if (isBirdBoss(bossId)) return 'Feathers!';
+    switch (bossId) {
+      case 'slime_boss':
+        return 'Splat!';
+      case 'egg_golem':
+        return 'Clank!';
+      case 'slime_king':
+        return 'Royal Splat!';
+      case 'egg_guardian':
+        return 'Spark!';
+      case 'shadow_phoenix':
+        return 'Smoke!';
+      default:
+        return 'Slash!';
+    }
+  }
 
   static bool isBirdBoss(String bossId) =>
       bossId == 'shadow_rooster' ||

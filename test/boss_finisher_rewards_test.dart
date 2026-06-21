@@ -6,6 +6,21 @@ import 'package:egg_hatchers/data/boss_data.dart';
 import 'package:egg_hatchers/data/boss_finisher_rewards.dart';
 
 void main() {
+  test('reward gate passes roughly half the time', () {
+    final random = Random(99);
+    var passes = 0;
+    for (var i = 0; i < 1000; i++) {
+      if (BossFinisherRewards.passesRewardGate(random)) passes++;
+    }
+    expect(passes, inInclusiveRange(400, 600));
+  });
+
+  test('no-reward messages are boss-specific', () {
+    expect(BossFinisherRewards.noRewardMessageFor('slime_boss'), 'Splat!');
+    expect(BossFinisherRewards.noRewardMessageFor('egg_golem'), 'Clank!');
+    expect(BossFinisherRewards.noRewardMessageFor('shadow_phoenix'), 'Smoke!');
+  });
+
   test('finisher bonus roll produces mixed outcomes', () {
     final random = Random(42);
     var withReward = 0;
