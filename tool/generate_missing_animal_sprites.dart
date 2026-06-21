@@ -12,6 +12,11 @@ void main() {
   const outDir = 'assets/images/animals';
 
   final generators = <String, img.Image Function()>{
+    'chicken': _drawChicken,
+    'mouse': _drawMouse,
+    'rabbit': _drawRabbit,
+    'fox': _drawFox,
+    'cow': _drawCow,
     'deer': _drawDeer,
     'bear': _drawBear,
     'tiger': _drawTiger,
@@ -45,12 +50,7 @@ void main() {
           belly: _c(176, 190, 197),
           blocky: true,
         ),
-    'royal_chicken': () => _drawCuteMascot(
-          body: _c(255, 215, 0),
-          accent: _c(255, 193, 7),
-          belly: _c(255, 241, 118),
-          crown: true,
-        ),
+    'royal_chicken': _drawRoyalChicken,
     'crown_fox': () => _drawCuteMascot(
           body: _c(255, 87, 34),
           accent: _c(255, 171, 64),
@@ -64,12 +64,7 @@ void main() {
           belly: _c(225, 190, 231),
           horns: true,
         ),
-    'cloud_bunny': () => _drawCuteMascot(
-          body: _c(236, 239, 241),
-          accent: _c(144, 202, 249),
-          belly: _c(255, 255, 255),
-          ears: true,
-        ),
+    'cloud_bunny': _drawCloudBunny,
     'sun_lion': () => _drawCuteMascot(
           body: _c(255, 193, 7),
           accent: _c(255, 152, 0),
@@ -82,12 +77,7 @@ void main() {
           belly: _c(255, 183, 77),
           wings: true,
         ),
-    'void_mouse': () => _drawCuteMascot(
-          body: _c(66, 66, 66),
-          accent: _c(103, 58, 183),
-          belly: _c(158, 158, 158),
-          ears: true,
-        ),
+    'void_mouse': _drawVoidMouse,
     'eclipse_wolf': () => _drawCuteMascot(
           body: _c(55, 71, 79),
           accent: _c(176, 190, 197),
@@ -234,6 +224,186 @@ void _drawOutlinedBody(
 }) {
   _fillEllipse(image, cx, cy, rx + 3, ry + 3, outline);
   _fillEllipse(image, cx, cy, rx, ry, fill);
+}
+
+void _drawWhiskers(img.Image image, int cx, int cy) {
+  for (final dy in [-3, 0, 3]) {
+    _fillRoundedRect(image, cx - 24, cy + dy, cx - 12, cy + dy + 2, 1, _c(70, 70, 70));
+    _fillRoundedRect(image, cx + 12, cy + dy, cx + 24, cy + dy + 2, 1, _c(70, 70, 70));
+  }
+}
+
+img.Image _drawChicken() {
+  final image = _canvas();
+  _fillEllipse(image, 48, 80, 14, 18, _c(240, 240, 245));
+  _strokeEllipse(image, 48, 80, 14, 18, 2, _c(200, 200, 210));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 78,
+    rx: 32,
+    ry: 28,
+    fill: _c(255, 255, 255),
+    outline: _c(210, 210, 215),
+  );
+  _fillEllipse(image, 64, 82, 18, 14, _c(250, 250, 252));
+  _fillCircle(image, 64, 50, 20, _c(255, 255, 255));
+  _strokeEllipse(image, 64, 50, 20, 20, 2, _c(210, 210, 215));
+  for (final x in [56, 64, 72]) {
+    _fillEllipse(image, x, 26, 5, 7, _c(229, 57, 53));
+  }
+  _fillRoundedRect(image, 56, 26, 72, 34, 3, _c(211, 47, 47));
+  _fillEllipse(image, 64, 58, 9, 7, _c(255, 152, 0));
+  _fillEllipse(image, 64, 59, 7, 5, _c(255, 193, 7));
+  _drawEyes(image, 64, 48, 7, 4);
+  _fillEllipse(image, 90, 72, 11, 15, _c(255, 255, 255));
+  _fillEllipse(image, 98, 66, 9, 12, _c(235, 235, 240));
+  _fillRoundedRect(image, 52, 102, 58, 114, 2, _c(255, 152, 0));
+  _fillRoundedRect(image, 70, 102, 76, 114, 2, _c(255, 152, 0));
+  return image;
+}
+
+img.Image _drawRoyalChicken() {
+  final image = _drawChicken();
+  _fillRoundedRect(image, 50, 18, 78, 28, 2, _c(255, 215, 0));
+  for (final x in [54, 64, 74]) {
+    _fillEllipse(image, x, 16, 4, 6, _c(255, 235, 59));
+  }
+  return image;
+}
+
+img.Image _drawMouse() {
+  final image = _canvas();
+  for (final cx in [42, 86]) {
+    _fillCircle(image, cx, 36, 17, _c(140, 140, 140));
+    _fillCircle(image, cx, 36, 11, _c(255, 182, 193));
+  }
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 76,
+    rx: 30,
+    ry: 26,
+    fill: _c(158, 158, 158),
+    outline: _c(90, 90, 90),
+  );
+  _fillEllipse(image, 64, 80, 18, 15, _c(189, 189, 189));
+  _fillCircle(image, 64, 52, 18, _c(158, 158, 158));
+  _strokeEllipse(image, 64, 52, 18, 18, 2, _c(90, 90, 90));
+  _drawEyes(image, 64, 50, 6, 4);
+  _fillCircle(image, 64, 58, 4, _c(255, 140, 160));
+  _drawWhiskers(image, 64, 58);
+  for (var i = 0; i < 10; i++) {
+    _fillCircle(image, 90 + i, 76 - i, 3, _c(120, 120, 120));
+  }
+  _fillEllipse(image, 48, 96, 8, 5, _c(130, 130, 130));
+  _fillEllipse(image, 80, 96, 8, 5, _c(130, 130, 130));
+  return image;
+}
+
+img.Image _drawVoidMouse() {
+  final image = _drawMouse();
+  _fillEllipse(image, 64, 80, 20, 16, _c(103, 58, 183, 90));
+  for (final cx in [42, 86]) {
+    _fillCircle(image, cx, 36, 17, _c(66, 66, 66));
+    _fillCircle(image, cx, 36, 11, _c(126, 87, 194));
+  }
+  return image;
+}
+
+img.Image _drawRabbit() {
+  final image = _canvas();
+  for (final cx in [48, 80]) {
+    _fillEllipse(image, cx, 28, 11, 30, _c(240, 235, 230));
+    _strokeEllipse(image, cx, 28, 11, 30, 2, _c(195, 185, 180));
+    _fillEllipse(image, cx, 28, 5, 20, _c(255, 200, 210));
+  }
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 78,
+    rx: 28,
+    ry: 26,
+    fill: _c(245, 240, 235),
+    outline: _c(195, 185, 180),
+  );
+  _fillEllipse(image, 64, 82, 16, 14, _c(255, 255, 255));
+  _fillCircle(image, 64, 58, 18, _c(245, 240, 235));
+  _strokeEllipse(image, 64, 58, 18, 18, 2, _c(195, 185, 180));
+  _drawEyes(image, 64, 56, 6, 4);
+  _fillCircle(image, 64, 64, 3, _c(255, 180, 190));
+  _fillCircle(image, 94, 82, 11, _c(255, 255, 255));
+  _strokeEllipse(image, 94, 82, 11, 11, 1, _c(220, 220, 225));
+  _fillEllipse(image, 50, 98, 11, 6, _c(245, 240, 235));
+  _fillEllipse(image, 78, 98, 11, 6, _c(245, 240, 235));
+  return image;
+}
+
+img.Image _drawCloudBunny() {
+  final image = _drawRabbit();
+  for (final cx in [48, 80]) {
+    _fillEllipse(image, cx, 28, 11, 30, _c(236, 239, 241));
+    _fillEllipse(image, cx, 28, 5, 20, _c(144, 202, 249));
+  }
+  return image;
+}
+
+img.Image _drawFox() {
+  final image = _canvas();
+  _fillEllipse(image, 38, 34, 12, 22, _c(255, 87, 34));
+  _fillEllipse(image, 90, 34, 12, 22, _c(255, 87, 34));
+  _fillEllipse(image, 38, 34, 6, 14, _c(30, 30, 30));
+  _fillEllipse(image, 90, 34, 6, 14, _c(30, 30, 30));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 74,
+    rx: 32,
+    ry: 28,
+    fill: _c(255, 87, 34),
+    outline: _c(191, 54, 12),
+  );
+  _fillEllipse(image, 64, 78, 18, 16, _c(255, 224, 178));
+  _fillCircle(image, 64, 52, 20, _c(255, 87, 34));
+  _strokeEllipse(image, 64, 52, 20, 20, 2, _c(191, 54, 12));
+  _fillEllipse(image, 64, 58, 10, 8, _c(255, 255, 255));
+  _drawEyes(image, 64, 48, 7, 4);
+  _fillCircle(image, 64, 58, 3, _c(30, 30, 30));
+  _fillEllipse(image, 96, 76, 16, 12, _c(255, 87, 34));
+  _fillEllipse(image, 104, 72, 12, 10, _c(255, 255, 255));
+  _fillEllipse(image, 50, 96, 8, 5, _c(191, 54, 12));
+  _fillEllipse(image, 78, 96, 8, 5, _c(191, 54, 12));
+  return image;
+}
+
+img.Image _drawCow() {
+  final image = _canvas();
+  _fillCircle(image, 36, 40, 12, _c(255, 255, 255));
+  _fillCircle(image, 92, 40, 12, _c(255, 255, 255));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 74,
+    rx: 36,
+    ry: 30,
+    fill: _c(255, 255, 255),
+    outline: _c(120, 120, 130),
+  );
+  _fillEllipse(image, 48, 70, 14, 12, _c(50, 50, 55));
+  _fillEllipse(image, 80, 78, 12, 10, _c(50, 50, 55));
+  _fillEllipse(image, 64, 78, 20, 18, _c(255, 220, 220));
+  _fillCircle(image, 64, 50, 20, _c(255, 255, 255));
+  _strokeEllipse(image, 64, 50, 20, 20, 2, _c(120, 120, 130));
+  _fillEllipse(image, 64, 58, 14, 10, _c(255, 200, 210));
+  _fillCircle(image, 58, 58, 2, _c(80, 50, 50));
+  _fillCircle(image, 70, 58, 2, _c(80, 50, 50));
+  _drawEyes(image, 64, 46, 7, 4);
+  for (final dx in [-14, 14]) {
+    _fillEllipse(image, 64 + dx, 36, 4, 8, _c(240, 240, 245));
+  }
+  _fillEllipse(image, 48, 98, 9, 5, _c(255, 255, 255));
+  _fillEllipse(image, 80, 98, 9, 5, _c(255, 255, 255));
+  return image;
 }
 
 img.Image _drawDeer() {
