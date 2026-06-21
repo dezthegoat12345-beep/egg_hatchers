@@ -120,6 +120,26 @@ class BossBattleLogic {
     return boss.id != 'slime_boss' && maxLives > 1 && livesRemaining == 1;
   }
 
+  /// Extra speed multiplier applied during last-life Rage Mode (visual difficulty bump).
+  static const double manualRageModeSpeedMultiplier = 1.20;
+
+  static double rageModeSpeedScale({
+    required BossBattleDefinition boss,
+    required int livesRemaining,
+    required int maxLives,
+    required bool rageModeActive,
+  }) {
+    if (!rageModeActive) return 1.0;
+    if (!showManualLastLifeGlow(
+      boss,
+      livesRemaining: livesRemaining,
+      maxLives: maxLives,
+    )) {
+      return 1.0;
+    }
+    return manualRageModeSpeedMultiplier;
+  }
+
   static int manualRewardMultiplier(ManualBattleMode mode) {
     switch (mode) {
       case ManualBattleMode.hard:
@@ -228,12 +248,44 @@ class BossBattleLogic {
           };
     final hitScale = 0.12 * _hitStrengthScale(mode, boss: bossDef);
     final scaled = baseInterval / (1 + bossHitCount * hitScale);
-    final minInterval = _isEliteDifficulty(bossDef)
-        ? eliteMinProjectileIntervalMs
-        : mode == ManualBattleMode.nightmare
-            ? nightmareMinProjectileIntervalMs
-            : manualMinProjectileIntervalMs;
+    final minInterval = _manualMinProjectileIntervalMs(bossDef, mode);
     return max(minInterval, scaled.round());
+  }
+
+  static int _manualMinProjectileIntervalMs(
+    BossBattleDefinition bossDef,
+    ManualBattleMode mode,
+  ) =>
+      _isEliteDifficulty(bossDef)
+          ? eliteMinProjectileIntervalMs
+          : mode == ManualBattleMode.nightmare
+              ? nightmareMinProjectileIntervalMs
+              : manualMinProjectileIntervalMs;
+
+  static int manualProjectileIntervalMsWithRage(
+    BossBattleDefinition bossDef,
+    int bossHitCount, {
+    ManualBattleMode mode = ManualBattleMode.normal,
+    required bool rageModeActive,
+    required int livesRemaining,
+    required int maxLives,
+  }) {
+    final base = manualProjectileIntervalMs(
+      bossDef,
+      bossHitCount,
+      mode: mode,
+    );
+    final scale = rageModeSpeedScale(
+      boss: bossDef,
+      livesRemaining: livesRemaining,
+      maxLives: maxLives,
+      rageModeActive: rageModeActive,
+    );
+    if (scale <= 1.0) return base;
+    return max(
+      _manualMinProjectileIntervalMs(bossDef, mode),
+      (base / scale).round(),
+    );
   }
 
   static double manualBossMoveSpeed(

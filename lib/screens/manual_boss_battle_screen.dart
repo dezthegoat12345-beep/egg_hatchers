@@ -95,6 +95,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _spawnAccumulator = 0.0;
   var _shieldFlash = 0.0;
   var _bossSpeedBannerRemaining = 0.0;
+  var _bossSpeedBannerIsRage = false;
+  var _rageModeActive = false;
   var _gameOver = false;
   var _won = false;
   var _isPaused = false;
@@ -144,19 +146,32 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         bossHitCount: _successfulEggHits,
         mode: _mode,
         boss: boss,
-      );
+      ) *
+      _rageModeSpeedScale;
 
   int get _currentProjectileIntervalMs =>
-      BossBattleLogic.manualProjectileIntervalMs(
+      BossBattleLogic.manualProjectileIntervalMsWithRage(
         boss,
         _successfulEggHits,
         mode: _mode,
+        rageModeActive: _rageModeActive,
+        livesRemaining: _bossLives,
+        maxLives: _bossMaxLives,
       );
 
-  double get _currentBossMoveSpeed => BossBattleLogic.manualBossMoveSpeed(
+  double get _currentBossMoveSpeed =>
+      BossBattleLogic.manualBossMoveSpeed(
         boss,
         _successfulEggHits,
         mode: _mode,
+      ) *
+      _rageModeSpeedScale;
+
+  double get _rageModeSpeedScale => BossBattleLogic.rageModeSpeedScale(
+        boss: boss,
+        livesRemaining: _bossLives,
+        maxLives: _bossMaxLives,
+        rageModeActive: _rageModeActive,
       );
 
   double get _bossCenterY => _bossTop + _bossSize / 2;
@@ -203,6 +218,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _spawnAccumulator = 0;
     _shieldFlash = 0;
     _bossSpeedBannerRemaining = 0;
+    _bossSpeedBannerIsRage = false;
+    _rageModeActive = false;
     _gameOver = false;
     _won = false;
     _isPaused = false;
@@ -507,7 +524,22 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       return;
     }
     _regenerateShieldAfterHit();
-    _bossSpeedBannerRemaining = 1.8;
+
+    final enteringRage = !_rageModeActive &&
+        BossBattleLogic.showManualLastLifeGlow(
+          boss,
+          livesRemaining: _bossLives,
+          maxLives: _bossMaxLives,
+        );
+    if (enteringRage) {
+      _rageModeActive = true;
+      _bossSpeedBannerIsRage = true;
+      _bossSpeedBannerRemaining = 2.0;
+      _shieldFlash = 0.45;
+    } else {
+      _bossSpeedBannerIsRage = false;
+      _bossSpeedBannerRemaining = 1.8;
+    }
   }
 
   void _shootEgg() {
@@ -759,6 +791,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                                   bossMaxLives: _bossMaxLives,
                                   bossSpeedBannerRemaining:
                                       _bossSpeedBannerRemaining,
+                                  bossSpeedBannerIsRage: _bossSpeedBannerIsRage,
                                   playerSize: _playerSize,
                                   bossSize: _bossSize,
                                   fighterCustomSprite: _fighterCustomSprite,
@@ -1164,6 +1197,7 @@ class _Arena extends StatelessWidget {
     required this.bossLives,
     required this.bossMaxLives,
     required this.bossSpeedBannerRemaining,
+    required this.bossSpeedBannerIsRage,
     required this.playerSize,
     required this.bossSize,
     required this.fighterCustomSprite,
@@ -1192,6 +1226,7 @@ class _Arena extends StatelessWidget {
   final int bossLives;
   final int bossMaxLives;
   final double bossSpeedBannerRemaining;
+  final bool bossSpeedBannerIsRage;
   final double playerSize;
   final double bossSize;
   final CustomSpriteData? fighterCustomSprite;
@@ -1301,17 +1336,37 @@ class _Arena extends StatelessWidget {
               right: 0,
               top: bossTop + bossSize + 4,
               child: IgnorePointer(
-                child: Text(
-                  'Boss speed increased!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.orange.shade300,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    shadows: const [
-                      Shadow(color: Colors.black54, blurRadius: 4),
-                    ],
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      bossSpeedBannerIsRage ? 'Rage Mode!' : 'Boss speed increased!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: bossSpeedBannerIsRage
+                            ? Colors.red.shade400
+                            : Colors.orange.shade300,
+                        fontSize: bossSpeedBannerIsRage ? 14 : 12,
+                        fontWeight: FontWeight.bold,
+                        shadows: const [
+                          Shadow(color: Colors.black54, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                    if (bossSpeedBannerIsRage)
+                      Text(
+                        'The boss is faster!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red.shade200,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          shadows: const [
+                            Shadow(color: Colors.black54, blurRadius: 3),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

@@ -60,6 +60,46 @@ void main() {
     );
   });
 
+  test('rage mode applies only to multi-life bosses on last life', () {
+    final slime = BossData.bossById('slime_boss')!;
+    final golem = BossData.bossById('egg_golem')!;
+
+    expect(
+      BossBattleLogic.showManualLastLifeGlow(
+        slime,
+        livesRemaining: 1,
+        maxLives: 1,
+      ),
+      isFalse,
+    );
+    expect(
+      BossBattleLogic.showManualLastLifeGlow(
+        golem,
+        livesRemaining: 1,
+        maxLives: 2,
+      ),
+      isTrue,
+    );
+    expect(
+      BossBattleLogic.rageModeSpeedScale(
+        boss: golem,
+        livesRemaining: 1,
+        maxLives: 2,
+        rageModeActive: true,
+      ),
+      BossBattleLogic.manualRageModeSpeedMultiplier,
+    );
+    expect(
+      BossBattleLogic.rageModeSpeedScale(
+        boss: slime,
+        livesRemaining: 1,
+        maxLives: 1,
+        rageModeActive: true,
+      ),
+      1.0,
+    );
+  });
+
   test('hard phase unlock requires five boss wins', () {
     expect(BossBattleLogic.isHardPhaseUnlocked(0), isFalse);
     expect(BossBattleLogic.isHardPhaseUnlocked(4), isFalse);

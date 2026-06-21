@@ -1054,44 +1054,75 @@ class _ShadowSmokeFacePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (opacity <= 0 || expand <= 0) return;
 
+    final maxDim = math.max(size.width, size.height);
     final impact = Offset(size.width * 0.5, size.height * 0.74);
     final center = impact - Offset(0, expand * 42);
-    final scale = 0.55 + expand * 0.65;
+    final smokeW = 52 + expand * maxDim * 0.38;
+    final faceW = smokeW * 0.76;
+    final eyeSpacing = faceW * 0.22;
+    final eyeSize = faceW * 0.15;
+    final mouthW = faceW * 0.62;
+    final mouthH = faceW * 0.34;
+
     final flicker = 1.0 + math.sin(timeMs / 85 * math.pi) * 0.07;
     final alpha = (opacity * flicker * fade).clamp(0.0, 1.0);
     if (alpha <= 0.02) return;
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.scale(scale);
 
-    _drawAngryEye(canvas, const Offset(-20, -10), isLeft: true, alpha: alpha);
-    _drawAngryEye(canvas, const Offset(20, -10), isLeft: false, alpha: alpha);
-    _drawJackOLanternMouth(canvas, alpha: alpha);
+    _drawAngryEye(
+      canvas,
+      Offset(-eyeSpacing, -faceW * 0.08),
+      size: eyeSize,
+      isLeft: true,
+      alpha: alpha,
+    );
+    _drawAngryEye(
+      canvas,
+      Offset(eyeSpacing, -faceW * 0.08),
+      size: eyeSize,
+      isLeft: false,
+      alpha: alpha,
+    );
+    _drawJackOLanternMouth(
+      canvas,
+      width: mouthW,
+      height: mouthH,
+      alpha: alpha,
+    );
 
     canvas.restore();
   }
 
-  void _drawAngryEye(Canvas canvas, Offset center, {required bool isLeft, required double alpha}) {
+  void _drawAngryEye(
+    Canvas canvas,
+    Offset center, {
+    required double size,
+    required bool isLeft,
+    required double alpha,
+  }) {
+    final w = size;
+    final h = size * 0.72;
     final path = Path();
     if (isLeft) {
-      path.moveTo(center.dx + 10, center.dy - 5);
-      path.lineTo(center.dx - 8, center.dy - 9);
-      path.lineTo(center.dx - 10, center.dy + 2);
-      path.lineTo(center.dx + 6, center.dy + 7);
+      path.moveTo(center.dx + w * 0.45, center.dy - h * 0.35);
+      path.lineTo(center.dx - w * 0.42, center.dy - h * 0.55);
+      path.lineTo(center.dx - w * 0.48, center.dy + h * 0.08);
+      path.lineTo(center.dx + w * 0.28, center.dy + h * 0.48);
     } else {
-      path.moveTo(center.dx - 10, center.dy - 5);
-      path.lineTo(center.dx + 8, center.dy - 9);
-      path.lineTo(center.dx + 10, center.dy + 2);
-      path.lineTo(center.dx - 6, center.dy + 7);
+      path.moveTo(center.dx - w * 0.45, center.dy - h * 0.35);
+      path.lineTo(center.dx + w * 0.42, center.dy - h * 0.55);
+      path.lineTo(center.dx + w * 0.48, center.dy + h * 0.08);
+      path.lineTo(center.dx - w * 0.28, center.dy + h * 0.48);
     }
     path.close();
 
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.25)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.28)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * 0.18),
     );
     canvas.drawPath(
       path,
@@ -1102,27 +1133,35 @@ class _ShadowSmokeFacePainter extends CustomPainter {
       Paint()
         ..color = const Color(0xFF7F0000).withValues(alpha: alpha * 0.85)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = size * 0.08,
     );
     canvas.drawCircle(
-      center + Offset(isLeft ? -2 : 2, 0),
-      2.2,
-      Paint()..color = const Color(0xFFFFCDD2).withValues(alpha: alpha * 0.7),
+      center + Offset(isLeft ? -w * 0.08 : w * 0.08, 0),
+      size * 0.12,
+      Paint()..color = const Color(0xFFFFCDD2).withValues(alpha: alpha * 0.75),
     );
   }
 
-  void _drawJackOLanternMouth(Canvas canvas, {required double alpha}) {
+  void _drawJackOLanternMouth(
+    Canvas canvas, {
+    required double width,
+    required double height,
+    required double alpha,
+  }) {
+    final halfW = width / 2;
+    final baseY = height * 0.22;
+
     final grin = Path()
-      ..moveTo(-28, 8)
-      ..quadraticBezierTo(0, 28, 28, 8)
-      ..quadraticBezierTo(0, 18, -28, 8)
+      ..moveTo(-halfW, baseY)
+      ..quadraticBezierTo(0, height, halfW, baseY)
+      ..quadraticBezierTo(0, height * 0.62, -halfW, baseY)
       ..close();
 
     canvas.drawPath(
       grin,
       Paint()
-        ..color = const Color(0xFFFF6D00).withValues(alpha: alpha * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        ..color = const Color(0xFFFF6D00).withValues(alpha: alpha * 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, width * 0.08),
     );
     canvas.drawPath(
       grin,
@@ -1133,32 +1172,33 @@ class _ShadowSmokeFacePainter extends CustomPainter {
       Paint()
         ..color = const Color(0xFFBF360C).withValues(alpha: alpha * 0.8)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2,
+        ..strokeWidth = width * 0.035,
     );
 
-    // Triangular jack-o-lantern teeth cutouts.
     final tooth = Paint()
-      ..color = const Color(0xFF4A148C).withValues(alpha: alpha * 0.85)
+      ..color = const Color(0xFF4A148C).withValues(alpha: alpha * 0.88)
       ..style = PaintingStyle.fill;
+    final toothSpacing = width / 5.5;
     for (var i = -2; i <= 2; i++) {
-      final tx = i * 11.0;
+      final tx = i * toothSpacing;
+      final tw = width * 0.09;
+      final th = height * 0.38;
       final toothPath = Path()
-        ..moveTo(tx - 5, 10)
-        ..lineTo(tx, 20)
-        ..lineTo(tx + 5, 10)
+        ..moveTo(tx - tw, baseY + height * 0.08)
+        ..lineTo(tx, baseY + height * 0.08 + th)
+        ..lineTo(tx + tw, baseY + height * 0.08)
         ..close();
       canvas.drawPath(toothPath, tooth);
     }
 
-    // Upper lip curve for mischievous laugh.
     canvas.drawPath(
       Path()
-        ..moveTo(-24, 6)
-        ..quadraticBezierTo(0, 12, 24, 6),
+        ..moveTo(-halfW * 0.85, baseY - height * 0.06)
+        ..quadraticBezierTo(0, baseY + height * 0.08, halfW * 0.85, baseY - height * 0.06),
       Paint()
         ..color = const Color(0xFFFFAB40).withValues(alpha: alpha * 0.55)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = width * 0.03,
     );
   }
 
