@@ -111,6 +111,15 @@ class BossBattleLogic {
     }
   }
 
+  /// True when a multi-life boss (not Slime Boss) is on its final life.
+  static bool showManualLastLifeGlow(
+    BossBattleDefinition boss, {
+    required int livesRemaining,
+    required int maxLives,
+  }) {
+    return boss.id != 'slime_boss' && maxLives > 1 && livesRemaining == 1;
+  }
+
   static int manualRewardMultiplier(ManualBattleMode mode) {
     switch (mode) {
       case ManualBattleMode.hard:

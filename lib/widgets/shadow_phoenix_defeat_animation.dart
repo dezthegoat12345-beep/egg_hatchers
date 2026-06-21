@@ -269,6 +269,12 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
             : 0.0;
         final effectFade = (1 - _phase(10200, 11800)).clamp(0.0, 1.0);
 
+        final faceFadeIn = Curves.easeOut.transform(_phase(_impactMs, _impactMs + 450));
+        final faceFadeOut =
+            1 - Curves.easeIn.transform(_phase(_smokeEndMs - 700, _smokeEndMs));
+        final faceOpacity =
+            t >= _impactMs ? (faceFadeIn * faceFadeOut * effectFade).clamp(0.0, 1.0) : 0.0;
+
         final titleProgress = Curves.elasticOut.transform(_phase(10200, 10800));
         final titleOpacity = Curves.easeOut.transform(_phase(10200, 10600));
         final rewardsOpacity = Curves.easeOut.transform(_phase(10600, 11600));
@@ -340,6 +346,15 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
                       puffs: _smokePuffs,
                       expand: smokeExpand,
                       shockwave: shockwave,
+                      fade: effectFade,
+                    ),
+                  ),
+                if (smokeExpand > 0 && faceOpacity > 0.02)
+                  CustomPaint(
+                    painter: _ShadowSmokeFacePainter(
+                      expand: smokeExpand,
+                      opacity: faceOpacity,
+                      timeMs: t,
                       fade: effectFade,
                     ),
                   ),
@@ -1018,5 +1033,139 @@ class _ShadowSmokePainter extends CustomPainter {
   bool shouldRepaint(covariant _ShadowSmokePainter oldDelegate) =>
       oldDelegate.expand != expand ||
       oldDelegate.shockwave != shockwave ||
+      oldDelegate.fade != fade;
+}
+
+/// Angry red eyes and jack-o-lantern grin inside the purple smoke cloud.
+class _ShadowSmokeFacePainter extends CustomPainter {
+  _ShadowSmokeFacePainter({
+    required this.expand,
+    required this.opacity,
+    required this.timeMs,
+    required this.fade,
+  });
+
+  final double expand;
+  final double opacity;
+  final double timeMs;
+  final double fade;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (opacity <= 0 || expand <= 0) return;
+
+    final impact = Offset(size.width * 0.5, size.height * 0.74);
+    final center = impact - Offset(0, expand * 42);
+    final scale = 0.55 + expand * 0.65;
+    final flicker = 1.0 + math.sin(timeMs / 85 * math.pi) * 0.07;
+    final alpha = (opacity * flicker * fade).clamp(0.0, 1.0);
+    if (alpha <= 0.02) return;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(scale);
+
+    _drawAngryEye(canvas, const Offset(-20, -10), isLeft: true, alpha: alpha);
+    _drawAngryEye(canvas, const Offset(20, -10), isLeft: false, alpha: alpha);
+    _drawJackOLanternMouth(canvas, alpha: alpha);
+
+    canvas.restore();
+  }
+
+  void _drawAngryEye(Canvas canvas, Offset center, {required bool isLeft, required double alpha}) {
+    final path = Path();
+    if (isLeft) {
+      path.moveTo(center.dx + 10, center.dy - 5);
+      path.lineTo(center.dx - 8, center.dy - 9);
+      path.lineTo(center.dx - 10, center.dy + 2);
+      path.lineTo(center.dx + 6, center.dy + 7);
+    } else {
+      path.moveTo(center.dx - 10, center.dy - 5);
+      path.lineTo(center.dx + 8, center.dy - 9);
+      path.lineTo(center.dx + 10, center.dy + 2);
+      path.lineTo(center.dx - 6, center.dy + 7);
+    }
+    path.close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.25)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+    canvas.drawPath(
+      path,
+      Paint()..color = const Color(0xFFFF5252).withValues(alpha: alpha * 0.95),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF7F0000).withValues(alpha: alpha * 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    canvas.drawCircle(
+      center + Offset(isLeft ? -2 : 2, 0),
+      2.2,
+      Paint()..color = const Color(0xFFFFCDD2).withValues(alpha: alpha * 0.7),
+    );
+  }
+
+  void _drawJackOLanternMouth(Canvas canvas, {required double alpha}) {
+    final grin = Path()
+      ..moveTo(-28, 8)
+      ..quadraticBezierTo(0, 28, 28, 8)
+      ..quadraticBezierTo(0, 18, -28, 8)
+      ..close();
+
+    canvas.drawPath(
+      grin,
+      Paint()
+        ..color = const Color(0xFFFF6D00).withValues(alpha: alpha * 0.2)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+    canvas.drawPath(
+      grin,
+      Paint()..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.92),
+    );
+    canvas.drawPath(
+      grin,
+      Paint()
+        ..color = const Color(0xFFBF360C).withValues(alpha: alpha * 0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+
+    // Triangular jack-o-lantern teeth cutouts.
+    final tooth = Paint()
+      ..color = const Color(0xFF4A148C).withValues(alpha: alpha * 0.85)
+      ..style = PaintingStyle.fill;
+    for (var i = -2; i <= 2; i++) {
+      final tx = i * 11.0;
+      final toothPath = Path()
+        ..moveTo(tx - 5, 10)
+        ..lineTo(tx, 20)
+        ..lineTo(tx + 5, 10)
+        ..close();
+      canvas.drawPath(toothPath, tooth);
+    }
+
+    // Upper lip curve for mischievous laugh.
+    canvas.drawPath(
+      Path()
+        ..moveTo(-24, 6)
+        ..quadraticBezierTo(0, 12, 24, 6),
+      Paint()
+        ..color = const Color(0xFFFFAB40).withValues(alpha: alpha * 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ShadowSmokeFacePainter oldDelegate) =>
+      oldDelegate.expand != expand ||
+      oldDelegate.opacity != opacity ||
+      oldDelegate.timeMs != timeMs ||
       oldDelegate.fade != fade;
 }

@@ -21,6 +21,7 @@ import '../utils/boss_battle_logic.dart';
 import '../utils/format_utils.dart';
 import '../widgets/boss_battle_background.dart';
 import '../widgets/boss_defeat_animation.dart';
+import '../widgets/boss_last_life_glow.dart';
 import '../widgets/boss_projectile_widget.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_background.dart';
@@ -754,6 +755,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                                   playerX: _playerX,
                                   bossX: _bossX,
                                   bossTop: _bossTop,
+                                  bossLives: _bossLives,
+                                  bossMaxLives: _bossMaxLives,
                                   bossSpeedBannerRemaining:
                                       _bossSpeedBannerRemaining,
                                   playerSize: _playerSize,
@@ -1158,6 +1161,8 @@ class _Arena extends StatelessWidget {
     required this.playerX,
     required this.bossX,
     required this.bossTop,
+    required this.bossLives,
+    required this.bossMaxLives,
     required this.bossSpeedBannerRemaining,
     required this.playerSize,
     required this.bossSize,
@@ -1184,6 +1189,8 @@ class _Arena extends StatelessWidget {
   final double playerX;
   final double bossX;
   final double bossTop;
+  final int bossLives;
+  final int bossMaxLives;
   final double bossSpeedBannerRemaining;
   final double playerSize;
   final double bossSize;
@@ -1259,12 +1266,19 @@ class _Arena extends StatelessWidget {
             top: bossTop,
             child: Stack(
               alignment: Alignment.center,
+              clipBehavior: Clip.none,
               children: [
-                BossSprite(
-                  spritePath: boss.spritePath,
-                  fallbackEmoji: boss.emoji,
+                BossLastLifeGlow(
+                  boss: boss,
+                  bossLivesRemaining: bossLives,
+                  bossMaxLives: bossMaxLives,
                   size: bossSize,
-                  semanticLabel: boss.name,
+                  child: BossSprite(
+                    spritePath: boss.spritePath,
+                    fallbackEmoji: boss.emoji,
+                    size: bossSize,
+                    semanticLabel: boss.name,
+                  ),
                 ),
                 if (shieldActive)
                   Container(
