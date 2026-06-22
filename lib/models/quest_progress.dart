@@ -28,6 +28,7 @@ class QuestProgress {
     this.totalBossEggsHatched = 0,
     this.totalBossMutationsApplied = 0,
     this.perfectRatedSpriteKeys = const [],
+    this.questCountedRatedSpriteKeys = const [],
     this.claimedQuestIds = const [],
     this.notifiedCompletedQuestIds = const [],
   });
@@ -61,6 +62,9 @@ class QuestProgress {
 
   /// Tracks sprite versions already counted toward perfect rating quests.
   final List<String> perfectRatedSpriteKeys;
+
+  /// Tracks sprite versions already counted toward rate-sprite quests.
+  final List<String> questCountedRatedSpriteKeys;
   final List<String> claimedQuestIds;
   final List<String> notifiedCompletedQuestIds;
 
@@ -99,6 +103,7 @@ class QuestProgress {
     int? totalBossEggsHatched,
     int? totalBossMutationsApplied,
     List<String>? perfectRatedSpriteKeys,
+    List<String>? questCountedRatedSpriteKeys,
     List<String>? claimedQuestIds,
     List<String>? notifiedCompletedQuestIds,
   }) {
@@ -144,6 +149,8 @@ class QuestProgress {
           totalBossMutationsApplied ?? this.totalBossMutationsApplied,
       perfectRatedSpriteKeys:
           perfectRatedSpriteKeys ?? this.perfectRatedSpriteKeys,
+      questCountedRatedSpriteKeys: questCountedRatedSpriteKeys ??
+          this.questCountedRatedSpriteKeys,
       claimedQuestIds: claimedQuestIds ?? this.claimedQuestIds,
       notifiedCompletedQuestIds:
           notifiedCompletedQuestIds ?? this.notifiedCompletedQuestIds,
@@ -178,6 +185,7 @@ class QuestProgress {
         'totalBossEggsHatched': totalBossEggsHatched,
         'totalBossMutationsApplied': totalBossMutationsApplied,
         'perfectRatedSpriteKeys': perfectRatedSpriteKeys,
+        'questCountedRatedSpriteKeys': questCountedRatedSpriteKeys,
         'claimedQuestIds': claimedQuestIds,
         'notifiedCompletedQuestIds': notifiedCompletedQuestIds,
       };
@@ -218,6 +226,11 @@ class QuestProgress {
           json['totalBossMutationsApplied'] as int? ?? 0,
       perfectRatedSpriteKeys:
           (json['perfectRatedSpriteKeys'] as List<dynamic>?)
+                  ?.map((key) => key as String)
+                  .toList() ??
+              const [],
+      questCountedRatedSpriteKeys:
+          (json['questCountedRatedSpriteKeys'] as List<dynamic>?)
                   ?.map((key) => key as String)
                   .toList() ??
               const [],

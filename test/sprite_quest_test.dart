@@ -61,12 +61,58 @@ void main() {
       spriteHash: 'perfect1',
     );
 
-    expect(game.questProgress.totalSpritesRated, 2);
+    expect(game.questProgress.totalSpritesRated, 1);
     expect(game.questProgress.totalPerfectSpriteRatings, 1);
+    expect(game.questProgress.questCountedRatedSpriteKeys, ['chicken:perfect1']);
     expect(
       QuestLogic.isComplete(questById('sprite_perfect_1'), game.state),
       isTrue,
     );
+  });
+
+  test('repeat rating same sprite does not increment quest progress', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.recordSpriteRated(
+      animalId: 'chicken',
+      score: 7,
+      spriteHash: 'same_hash',
+    );
+    game.recordSpriteRated(
+      animalId: 'chicken',
+      score: 7,
+      spriteHash: 'same_hash',
+    );
+    game.recordSpriteRated(
+      animalId: 'chicken',
+      score: 7,
+      spriteHash: 'same_hash',
+    );
+
+    expect(game.questProgress.totalSpritesRated, 1);
+    expect(game.isSpriteRatingCountedForQuest('chicken', 'same_hash'), isTrue);
+  });
+
+  test('different sprite hash counts as new rating', () async {
+    SharedPreferences.setMockInitialValues({});
+    final game = GameService();
+    await game.initialize();
+
+    game.recordSpriteRated(
+      animalId: 'chicken',
+      score: 6,
+      spriteHash: 'hash_a',
+    );
+    game.recordSpriteRated(
+      animalId: 'chicken',
+      score: 8,
+      spriteHash: 'hash_b',
+    );
+
+    expect(game.questProgress.totalSpritesRated, 2);
+    expect(game.questProgress.bestSpriteRatingScore, 8);
   });
 
   test('claiming sprite rating reward updates claim quest progress', () async {
@@ -154,6 +200,7 @@ void main() {
     expect(game.questProgress.totalSpriteRatingRewardsClaimed, 0);
     expect(game.questProgress.totalReferenceOverlaysUnlocked, 0);
     expect(game.questProgress.perfectRatedSpriteKeys, isEmpty);
+    expect(game.questProgress.questCountedRatedSpriteKeys, isEmpty);
   });
 
   test('sprite quest stats serialize and deserialize', () {
@@ -164,6 +211,7 @@ void main() {
       totalPerfectSpriteRatings: 1,
       totalReferenceOverlaysUnlocked: 3,
       perfectRatedSpriteKeys: const ['chicken:abc123'],
+      questCountedRatedSpriteKeys: const ['chicken:abc123', 'fox:def456'],
     );
 
     final restored = QuestProgress.fromJson(progress.toJson());
@@ -173,5 +221,7 @@ void main() {
     expect(restored.totalPerfectSpriteRatings, 1);
     expect(restored.totalReferenceOverlaysUnlocked, 3);
     expect(restored.perfectRatedSpriteKeys, ['chicken:abc123']);
+    expect(restored.questCountedRatedSpriteKeys,
+        ['chicken:abc123', 'fox:def456']);
   });
 }

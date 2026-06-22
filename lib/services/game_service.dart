@@ -1868,27 +1868,40 @@ class GameService extends ChangeNotifier {
   }
 
   /// Records a successful Rate Sprite (Beta) rating on a supported animal.
-  void recordSpriteRated({
+  /// Returns true when this sprite version was newly counted for quest progress.
+  bool recordSpriteRated({
     required String animalId,
     required int score,
     required String spriteHash,
   }) {
+    final ratingKey = SpriteRatingLogic.questRatingKey(animalId, spriteHash);
+    final alreadyCounted = _state.questProgress.questCountedRatedSpriteKeys
+        .contains(ratingKey);
+
     var progress = _state.questProgress.copyWith(
-      totalSpritesRated: _state.questProgress.totalSpritesRated + 1,
       bestSpriteRatingScore: max(
         _state.questProgress.bestSpriteRatingScore,
         score,
       ),
     );
 
+    if (!alreadyCounted) {
+      progress = progress.copyWith(
+        totalSpritesRated: progress.totalSpritesRated + 1,
+        questCountedRatedSpriteKeys: [
+          ...progress.questCountedRatedSpriteKeys,
+          ratingKey,
+        ],
+      );
+    }
+
     if (score == 10) {
-      final perfectKey = '$animalId:$spriteHash';
-      if (!progress.perfectRatedSpriteKeys.contains(perfectKey)) {
+      if (!progress.perfectRatedSpriteKeys.contains(ratingKey)) {
         progress = progress.copyWith(
           totalPerfectSpriteRatings: progress.totalPerfectSpriteRatings + 1,
           perfectRatedSpriteKeys: [
             ...progress.perfectRatedSpriteKeys,
-            perfectKey,
+            ratingKey,
           ],
         );
       }
@@ -1898,6 +1911,14 @@ class GameService extends ChangeNotifier {
     _refreshQuestNotifications();
     notifyListeners();
     save();
+    return !alreadyCounted;
+  }
+
+  /// Whether quest progress already counted this exact sprite drawing.
+  bool isSpriteRatingCountedForQuest(String animalId, String spriteHash) {
+    return _state.questProgress.questCountedRatedSpriteKeys.contains(
+      SpriteRatingLogic.questRatingKey(animalId, spriteHash),
+    );
   }
 
   /// Records a successful sprite rating reward claim (not a duplicate).
@@ -2070,6 +2091,7 @@ class GameService extends ChangeNotifier {
         totalBossEggsHatched: 0,
         totalBossMutationsApplied: 0,
         perfectRatedSpriteKeys: const [],
+        questCountedRatedSpriteKeys: const [],
         notifiedCompletedQuestIds: const [],
       ),
     );
@@ -2207,6 +2229,7 @@ class GameService extends ChangeNotifier {
         totalPerfectSpriteRatings: 0,
         totalReferenceOverlaysUnlocked: 0,
         perfectRatedSpriteKeys: const [],
+        questCountedRatedSpriteKeys: const [],
         notifiedCompletedQuestIds: const [],
       ),
     );

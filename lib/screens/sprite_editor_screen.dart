@@ -201,15 +201,23 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       currentCoins: widget.game.coins,
     );
 
-    setState(() {
-      _ratedScore = score;
-      _ratedReward = reward;
-    });
-
     widget.game.recordSpriteRated(
       animalId: widget.animal.id,
       score: score,
       spriteHash: SpriteRatingLogic.computeSpriteHash(_data),
+    );
+
+    setState(() {
+      _ratedScore = score;
+      _ratedReward = reward;
+    });
+  }
+
+  bool get _ratingAlreadyCountedForCurrentDrawing {
+    if (!_data.hasVisiblePixels) return false;
+    return widget.game.isSpriteRatingCountedForQuest(
+      widget.animal.id,
+      SpriteRatingLogic.computeSpriteHash(_data),
     );
   }
 
@@ -508,6 +516,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                         ratingReference: ratingReference,
                         ratedScore: _ratedScore,
                         ratedReward: _ratedReward,
+                        ratingAlreadyCounted:
+                            _ratingAlreadyCountedForCurrentDrawing,
                         alreadyClaimed: alreadyClaimed,
                         hasUnsavedChanges: _hasUnsavedChanges,
                         canClaim: canClaim,
@@ -950,6 +960,7 @@ class _RatingCard extends StatelessWidget {
     required this.ratingReference,
     required this.ratedScore,
     required this.ratedReward,
+    required this.ratingAlreadyCounted,
     required this.alreadyClaimed,
     required this.hasUnsavedChanges,
     required this.canClaim,
@@ -963,6 +974,7 @@ class _RatingCard extends StatelessWidget {
   final CustomSpriteData? ratingReference;
   final int? ratedScore;
   final int? ratedReward;
+  final bool ratingAlreadyCounted;
   final bool alreadyClaimed;
   final bool hasUnsavedChanges;
   final bool canClaim;
@@ -983,9 +995,9 @@ class _RatingCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Local similarity check against the polished built-in sprite. '
-            'Rewards clear shapes, animal features, and matching colors. '
-            'This is not online AI and does not detect inappropriate drawings.',
+            'Draw a custom sprite and rate how closely it matches the animal. '
+            'Clear shapes, legs, ears, tails, wings, and matching colors help '
+            'your score.',
             style: TextStyle(
               fontSize: 12,
               height: 1.35,
@@ -1067,14 +1079,28 @@ class _RatingCard extends StatelessWidget {
               ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: onRate,
+              onPressed: ratingAlreadyCounted ? null : onRate,
               style: GameTheme.filledButton(
                 theme,
-                color: theme.panelAccentColor,
+                color: ratingAlreadyCounted
+                    ? theme.disabledColor
+                    : theme.panelAccentColor,
                 height: 48,
               ),
-              child: const Text('Rate Sprite (Beta)'),
+              child: Text(
+                ratingAlreadyCounted ? 'Rated' : 'Rate Sprite (Beta)',
+              ),
             ),
+            if (ratingAlreadyCounted) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Edit your sprite to rate a new drawing.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.cardTextSecondaryColor,
+                ),
+              ),
+            ],
             if (ratedScore != null && ratedScore! >= 1) ...[
               const SizedBox(height: 10),
               FilledButton(

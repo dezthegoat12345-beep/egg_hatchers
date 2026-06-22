@@ -33,6 +33,10 @@ class SpriteRatingLogic {
     return computeSpriteHash(a) == computeSpriteHash(b);
   }
 
+  /// Stable quest key for a rated sprite version (`animalId:spriteHash`).
+  static String questRatingKey(String animalId, String spriteHash) =>
+      '$animalId:$spriteHash';
+
   /// Raw similarity in [0, 1] against the polished built-in reference grid.
   static double rawSimilarity(
     CustomSpriteData custom,
