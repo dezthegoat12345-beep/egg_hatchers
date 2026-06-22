@@ -33,39 +33,30 @@ void main() {
     'penguin': _drawPenguin,
     'seal': _drawSeal,
     'raptor': _drawRaptor,
-    'scarab_beetle': () => _drawCuteMascot(
-          body: _c(121, 85, 72),
-          accent: _c(255, 193, 7),
-          belly: _c(255, 224, 130),
-        ),
+    'scarab_beetle': _drawScarabBeetle,
     'saber_cub': _drawSaberCub,
-    'stone_golem': () => _drawCuteMascot(
-          body: _c(120, 144, 156),
-          accent: _c(69, 90, 100),
-          belly: _c(176, 190, 197),
-          blocky: true,
-        ),
+    'stone_golem': _drawStoneGolem,
     'royal_chicken': _drawRoyalChicken,
     'crown_fox': _drawCrownFox,
-    'gem_dragon': () => _drawCuteMascot(
-          body: _c(171, 71, 188),
-          accent: _c(233, 30, 99),
-          belly: _c(225, 190, 231),
-          horns: true,
-        ),
+    'gem_dragon': _drawGemDragon,
     'cloud_bunny': _drawCloudBunny,
     'sun_lion': _drawSunLion,
-    'cosmic_phoenix': () => _drawCuteMascot(
-          body: _c(244, 67, 54),
-          accent: _c(156, 39, 176),
-          belly: _c(255, 183, 77),
-          wings: true,
-        ),
+    'cosmic_phoenix': _drawCosmicPhoenix,
     'void_mouse': _drawVoidMouse,
     'eclipse_wolf': _drawEclipseWolf,
     'nebula_hydra': _drawNebulaHydra,
     'dragon': _drawDragon,
+    'unicorn': _drawUnicorn,
+    'shark': _drawShark,
+    'polar_bear': _drawPolarBear,
+    'snow_owl': _drawSnowOwl,
+    'triceratops': _drawTriceratops,
+    't_rex': _drawTRex,
+    'fossil_dragon': _drawFossilDragon,
     'moon_cat': _drawMoonCat,
+    'star_fox': _drawStarFox,
+    'alien_slime': _drawAlienSlime,
+    'galaxy_dragon': _drawGalaxyDragon,
     'night_rooster': _drawNightRooster,
   };
 
@@ -631,25 +622,24 @@ img.Image _drawMonkey() {
 
 img.Image _drawParrot() {
   final image = _canvas();
-  _fillRoundedRect(image, 58, 24, 70, 40, 4, _c(255, 80, 80));
+  _fillRoundedRect(image, 58, 18, 70, 34, 4, _c(255, 80, 80));
   _drawOutlinedBody(
     image,
     cx: 64,
-    cy: 68,
-    rx: 30,
-    ry: 32,
+    cy: 62,
+    rx: 28,
+    ry: 26,
     fill: _c(67, 160, 71),
     outline: _c(30, 100, 40),
   );
-  _fillEllipse(image, 64, 58, 18, 16, _c(120, 200, 90));
-  _drawEyes(image, 64, 54, 7, 4);
-  _fillEllipse(image, 78, 62, 10, 6, _c(255, 200, 0));
-  _fillEllipse(image, 86, 64, 4, 3, _c(30, 30, 30));
-  // Wing
-  _fillEllipse(image, 48, 72, 12, 18, _c(30, 120, 50));
-  // Tail
-  _fillEllipse(image, 40, 84, 10, 16, _c(30, 136, 229));
-  _fillEllipse(image, 30, 90, 8, 12, _c(229, 57, 53));
+  _fillEllipse(image, 64, 52, 18, 14, _c(120, 200, 90));
+  _drawEyes(image, 64, 48, 7, 4);
+  _fillEllipse(image, 78, 56, 10, 6, _c(255, 200, 0));
+  _fillEllipse(image, 86, 58, 4, 3, _c(30, 30, 30));
+  _fillEllipse(image, 48, 66, 12, 16, _c(30, 120, 50));
+  _fillEllipse(image, 36, 78, 10, 14, _c(30, 136, 229));
+  _fillEllipse(image, 28, 84, 8, 10, _c(229, 57, 53));
+  _drawBirdLegs(image, [54, 74], 106, _c(255, 143, 0));
   return image;
 }
 
@@ -794,37 +784,40 @@ img.Image _drawPenguin() {
 
 img.Image _drawSeal() {
   final image = _canvas();
-  _fillEllipse(image, 64, 74, 38, 22, _c(144, 164, 174));
-  _strokeEllipse(image, 64, 74, 38, 22, 3, _c(96, 125, 139));
-  _fillEllipse(image, 64, 52, 20, 18, _c(176, 190, 197));
-  _drawEyes(image, 64, 48, 7, 4);
-  _fillEllipse(image, 64, 58, 8, 5, _c(120, 130, 140));
-  // Flippers
-  _fillEllipse(image, 30, 78, 12, 8, _c(120, 144, 156));
-  _fillEllipse(image, 98, 78, 12, 8, _c(120, 144, 156));
+  _fillEllipse(image, 64, 66, 38, 20, _c(144, 164, 174));
+  _strokeEllipse(image, 64, 66, 38, 20, 3, _c(96, 125, 139));
+  _fillEllipse(image, 64, 44, 20, 16, _c(176, 190, 197));
+  _drawEyes(image, 64, 40, 7, 4);
+  _fillEllipse(image, 64, 50, 8, 5, _c(120, 130, 140));
+  _drawWhiskers(image, 64, 50);
+  _fillEllipse(image, 28, 68, 12, 8, _c(120, 144, 156));
+  _fillEllipse(image, 100, 68, 12, 8, _c(120, 144, 156));
+  _fillEllipse(image, 64, 82, 10, 6, _c(120, 144, 156));
+  _fillEllipse(image, 52, 104, 8, 4, _c(96, 125, 139));
+  _fillEllipse(image, 76, 104, 8, 4, _c(96, 125, 139));
   return image;
 }
 
 img.Image _drawRaptor() {
   final image = _canvas();
-  _fillEllipse(image, 64, 58, 18, 22, _c(102, 187, 106));
-  _strokeEllipse(image, 64, 58, 18, 22, 2, _c(46, 125, 50));
+  _fillEllipse(image, 64, 48, 18, 20, _c(102, 187, 106));
+  _strokeEllipse(image, 64, 48, 18, 20, 2, _c(46, 125, 50));
   _drawOutlinedBody(
     image,
     cx: 64,
-    cy: 82,
+    cy: 70,
     rx: 26,
-    ry: 18,
+    ry: 22,
     fill: _c(67, 160, 71),
     outline: _c(27, 94, 32),
   );
-  _drawEyes(image, 64, 52, 7, 4);
-  _fillEllipse(image, 70, 60, 8, 5, _c(255, 80, 80));
-  // Tail
-  _fillEllipse(image, 92, 86, 16, 8, _c(56, 142, 60));
-  // Claws
-  for (final dx in [-10, 0, 10]) {
-    _fillRoundedRect(image, 58 + dx, 96, 62 + dx, 108, 1, _c(255, 235, 59));
+  _drawEyes(image, 64, 44, 7, 4);
+  _fillEllipse(image, 70, 52, 8, 5, _c(255, 80, 80));
+  _fillEllipse(image, 96, 76, 18, 8, _c(56, 142, 60));
+  _drawLegSegment(image, 48, 88, 100, 4, _c(67, 160, 71));
+  _drawLegSegment(image, 80, 88, 100, 4, _c(67, 160, 71));
+  for (final x in [44, 48, 52, 76, 80, 84]) {
+    _fillRoundedRect(image, x, 100, x + 2, 108, 1, _c(255, 235, 59));
   }
   return image;
 }
@@ -1007,69 +1000,333 @@ img.Image _drawMoonCat() {
 
 img.Image _drawNightRooster() {
   final image = _drawChicken();
-  // Darken body for night theme
   _fillEllipse(image, 64, 70, 30, 24, _c(45, 45, 65, 200));
   _fillCircle(image, 64, 42, 18, _c(45, 45, 65, 200));
   _fillEllipse(image, 64, 70, 16, 12, _c(70, 70, 90, 180));
-  // Star on comb
   _fillCircle(image, 64, 18, 3, _c(255, 235, 59));
   return image;
 }
 
-img.Image _drawCuteMascot({
-  required img.ColorRgba8 body,
-  required img.ColorRgba8 accent,
-  required img.ColorRgba8 belly,
-  bool ears = false,
-  bool crown = false,
-  bool horns = false,
-  bool mane = false,
-  bool wings = false,
-  bool blocky = false,
-}) {
+img.Image _drawScarabBeetle() {
   final image = _canvas();
-  if (wings) {
-    _fillEllipse(image, 34, 70, 14, 22, accent);
-    _fillEllipse(image, 94, 70, 14, 22, accent);
+  _fillEllipse(image, 64, 66, 34, 28, _c(121, 85, 72));
+  _strokeEllipse(image, 64, 66, 34, 28, 3, _c(78, 52, 46));
+  _fillEllipse(image, 48, 62, 14, 20, _c(93, 64, 55));
+  _fillEllipse(image, 80, 62, 14, 20, _c(93, 64, 55));
+  _fillEllipse(image, 64, 58, 12, 10, _c(255, 193, 7));
+  _fillEllipse(image, 64, 58, 6, 5, _c(255, 224, 130));
+  _drawEyes(image, 64, 48, 8, 4);
+  for (final dx in [-10, 10]) {
+    _fillRoundedRect(image, 64 + dx - 2, 28, 64 + dx + 2, 42, 1, _c(78, 52, 46));
   }
-  if (mane) {
-    _fillEllipse(image, 64, 50, 30, 24, accent);
+  for (final pos in [(44, 88), (54, 92), (64, 94), (74, 92), (84, 88), (50, 96)]) {
+    _drawLegSegment(image, pos.$1, pos.$2 - 6, pos.$2, 2, _c(78, 52, 46));
+    _fillCircle(image, pos.$1, pos.$2 + 1, 2, _c(62, 39, 35));
   }
-  if (blocky) {
-    _fillRoundedRect(image, 40, 58, 88, 96, 6, body);
-    _fillRoundedRect(image, 48, 68, 80, 88, 4, belly);
-  } else {
-    _drawOutlinedBody(
-      image,
-      cx: 64,
-      cy: 78,
-      rx: 28,
-      ry: 24,
-      fill: body,
-      outline: accent,
-    );
-    _fillEllipse(image, 64, 82, 16, 14, belly);
+  return image;
+}
+
+img.Image _drawStoneGolem() {
+  final image = _canvas();
+  _fillRoundedRect(image, 38, 52, 90, 92, 8, _c(120, 144, 156));
+  _fillRoundedRect(image, 44, 58, 84, 86, 6, _c(176, 190, 197));
+  _fillRoundedRect(image, 50, 64, 78, 80, 4, _c(144, 164, 174));
+  _fillRoundedRect(image, 48, 28, 80, 56, 6, _c(120, 144, 156));
+  _fillRoundedRect(image, 54, 34, 74, 50, 4, _c(176, 190, 197));
+  _drawEyes(image, 64, 42, 10, 5);
+  _fillRoundedRect(image, 58, 52, 70, 58, 2, _c(69, 90, 100));
+  for (final x in [52, 64, 76]) {
+    _fillRoundedRect(image, x - 2, 48, x + 2, 92, 1, _c(96, 125, 139, 120));
   }
-  _fillEllipse(image, 64, 48, 22, 20, body);
-  _strokeEllipse(image, 64, 48, 22, 20, 2, accent);
-  if (ears) {
-    _fillEllipse(image, 46, 34, 8, 14, body);
-    _fillEllipse(image, 82, 34, 8, 14, body);
+  _drawLegSegment(image, 48, 90, 106, 8, _c(96, 125, 139));
+  _drawLegSegment(image, 80, 90, 106, 8, _c(96, 125, 139));
+  _fillRoundedRect(image, 40, 104, 56, 112, 3, _c(69, 90, 100));
+  _fillRoundedRect(image, 72, 104, 88, 112, 3, _c(69, 90, 100));
+  return image;
+}
+
+img.Image _drawGemDragon() {
+  final image = _canvas();
+  _fillEllipse(image, 34, 68, 14, 22, _c(186, 104, 200));
+  _fillEllipse(image, 94, 68, 14, 22, _c(186, 104, 200));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 64,
+    rx: 32,
+    ry: 26,
+    fill: _c(171, 71, 188),
+    outline: _c(233, 30, 99),
+  );
+  _fillEllipse(image, 64, 68, 18, 14, _c(225, 190, 231));
+  _fillCircle(image, 64, 40, 20, _c(171, 71, 188));
+  _strokeEllipse(image, 64, 40, 20, 20, 2, _c(233, 30, 99));
+  _drawEyes(image, 64, 36, 7, 4);
+  _fillEllipse(image, 64, 48, 8, 5, _c(233, 30, 99));
+  _fillEllipse(image, 52, 26, 6, 12, _c(233, 30, 99));
+  _fillEllipse(image, 76, 26, 6, 12, _c(233, 30, 99));
+  _fillEllipse(image, 52, 24, 4, 6, _c(186, 104, 200));
+  _fillEllipse(image, 76, 24, 4, 6, _c(186, 104, 200));
+  for (var i = 0; i < 10; i++) {
+    _fillCircle(image, 98 + i, 58 - i, 4, _c(171, 71, 188));
   }
-  if (horns) {
-    _fillEllipse(image, 52, 30, 5, 10, accent);
-    _fillEllipse(image, 76, 30, 5, 10, accent);
+  _drawHooves(image, [(48, 108), (80, 108)], _c(171, 71, 188), _c(126, 87, 194));
+  return image;
+}
+
+img.Image _drawCosmicPhoenix() {
+  final image = _canvas();
+  _fillEllipse(image, 28, 66, 16, 24, _c(244, 67, 54, 200));
+  _fillEllipse(image, 100, 66, 16, 24, _c(156, 39, 176, 200));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 64,
+    rx: 28,
+    ry: 24,
+    fill: _c(244, 67, 54),
+    outline: _c(156, 39, 176),
+  );
+  _fillEllipse(image, 64, 68, 16, 12, _c(255, 183, 77));
+  _fillCircle(image, 64, 42, 18, _c(244, 67, 54));
+  _strokeEllipse(image, 64, 42, 18, 18, 2, _c(156, 39, 176));
+  _drawEyes(image, 64, 38, 6, 4);
+  _fillEllipse(image, 64, 48, 8, 6, _c(255, 193, 7));
+  _fillEllipse(image, 36, 84, 12, 16, _c(255, 152, 0));
+  _fillEllipse(image, 48, 92, 10, 14, _c(156, 39, 176));
+  _fillEllipse(image, 80, 92, 10, 14, _c(255, 87, 34));
+  _drawBirdLegs(image, [54, 74], 106, _c(255, 152, 0));
+  return image;
+}
+
+img.Image _drawUnicorn() {
+  final image = _canvas();
+  _fillEllipse(image, 64, 40, 14, 24, _c(255, 255, 255));
+  _strokeEllipse(image, 64, 40, 14, 24, 2, _c(220, 220, 230));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 66,
+    rx: 32,
+    ry: 24,
+    fill: _c(255, 255, 255),
+    outline: _c(220, 220, 230),
+  );
+  _fillEllipse(image, 64, 36, 12, 12, _c(255, 240, 250));
+  _drawEyes(image, 64, 32, 6, 4);
+  _fillEllipse(image, 64, 40, 6, 4, _c(255, 180, 200));
+  _fillRoundedRect(image, 50, 20, 58, 36, 3, _c(255, 200, 230));
+  _fillEllipse(image, 64, 14, 4, 14, _c(255, 215, 0));
+  _fillEllipse(image, 64, 10, 3, 5, _c(255, 255, 200));
+  _fillEllipse(image, 28, 66, 10, 6, _c(255, 255, 255));
+  for (final x in [48, 54, 74, 80]) {
+    _drawLegSegment(image, x, 86, 102, 3, _c(255, 240, 250));
   }
-  if (crown) {
-    _fillRoundedRect(image, 50, 24, 78, 34, 2, _c(255, 215, 0));
-    for (final x in [54, 64, 74]) {
-      _fillEllipse(image, x, 22, 4, 6, _c(255, 235, 59));
-    }
+  _drawHooves(image, [(48, 108), (54, 110), (74, 110), (80, 108)], _c(255, 240, 250), _c(200, 180, 200));
+  return image;
+}
+
+img.Image _drawShark() {
+  final image = _canvas();
+  _drawOutlinedBody(
+    image,
+    cx: 58,
+    cy: 64,
+    rx: 36,
+    ry: 20,
+    fill: _c(96, 125, 139),
+    outline: _c(55, 71, 79),
+  );
+  _fillEllipse(image, 58, 68, 24, 12, _c(236, 239, 241));
+  _fillEllipse(image, 96, 64, 16, 18, _c(69, 90, 100));
+  _fillEllipse(image, 108, 64, 8, 12, _c(55, 71, 79));
+  _fillEllipse(image, 64, 42, 8, 16, _c(69, 90, 100));
+  _drawEyes(image, 44, 58, 0, 5);
+  _fillCircle(image, 44, 58, 2, _c(20, 20, 30));
+  for (final dx in [52, 58, 64]) {
+    _fillEllipse(image, 72 + dx - 58, 62, 2, 3, _c(255, 255, 255));
   }
-  _drawEyes(image, 64, 46, 7, 4);
-  _fillEllipse(image, 64, 56, 6, 4, accent);
-  for (final pos in [(50, 100), (78, 100)]) {
-    _fillEllipse(image, pos.$1, pos.$2, 8, 5, accent);
+  _fillEllipse(image, 24, 66, 10, 8, _c(69, 90, 100));
+  return image;
+}
+
+img.Image _drawPolarBear() {
+  final image = _canvas();
+  _fillCircle(image, 36, 36, 14, _c(230, 240, 250));
+  _fillCircle(image, 92, 36, 14, _c(230, 240, 250));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 62,
+    rx: 38,
+    ry: 30,
+    fill: _c(255, 255, 255),
+    outline: _c(200, 220, 235),
+  );
+  _fillEllipse(image, 64, 60, 20, 16, _c(240, 248, 255));
+  _drawEyes(image, 64, 56, 10, 6);
+  _fillEllipse(image, 64, 68, 10, 7, _c(180, 200, 220));
+  _fillCircle(image, 64, 64, 4, _c(120, 140, 160));
+  _drawHooves(image, [(48, 108), (80, 108)], _c(255, 255, 255), _c(180, 200, 215));
+  return image;
+}
+
+img.Image _drawSnowOwl() {
+  final image = _canvas();
+  _fillEllipse(image, 64, 62, 32, 30, _c(250, 250, 255));
+  _strokeEllipse(image, 64, 62, 32, 30, 3, _c(200, 210, 225));
+  _fillEllipse(image, 64, 66, 20, 22, _c(255, 255, 255));
+  _fillCircle(image, 64, 48, 22, _c(250, 250, 255));
+  _fillCircle(image, 52, 46, 10, _c(255, 255, 255));
+  _fillCircle(image, 76, 46, 10, _c(255, 255, 255));
+  _fillCircle(image, 52, 46, 7, _c(255, 235, 59));
+  _fillCircle(image, 76, 46, 7, _c(255, 235, 59));
+  _fillCircle(image, 52, 46, 4, _c(20, 20, 30));
+  _fillCircle(image, 76, 46, 4, _c(20, 20, 30));
+  _fillEllipse(image, 64, 56, 6, 8, _c(255, 160, 0));
+  _fillEllipse(image, 28, 68, 14, 22, _c(240, 240, 248));
+  _fillEllipse(image, 100, 68, 14, 22, _c(240, 240, 248));
+  _drawBirdLegs(image, [54, 74], 106, _c(255, 160, 0));
+  return image;
+}
+
+img.Image _drawTriceratops() {
+  final image = _canvas();
+  _fillEllipse(image, 64, 52, 28, 16, _c(255, 183, 77));
+  _strokeEllipse(image, 64, 52, 28, 16, 2, _c(230, 140, 50));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 72,
+    rx: 34,
+    ry: 22,
+    fill: _c(255, 167, 38),
+    outline: _c(230, 120, 0),
+  );
+  _fillCircle(image, 64, 44, 16, _c(255, 183, 77));
+  _drawEyes(image, 64, 42, 6, 3);
+  for (final dx in [-12, 0, 12]) {
+    _fillEllipse(image, 64 + dx, 36, 4, 10, _c(240, 240, 245));
   }
+  _drawLegSegment(image, 44, 90, 104, 5, _c(255, 167, 38));
+  _drawLegSegment(image, 84, 90, 104, 5, _c(255, 167, 38));
+  _drawLegSegment(image, 52, 92, 106, 4, _c(255, 167, 38));
+  _drawLegSegment(image, 76, 92, 106, 4, _c(255, 167, 38));
+  _drawHooves(image, [(44, 108), (52, 110), (76, 110), (84, 108)], _c(255, 167, 38), _c(180, 100, 20));
+  return image;
+}
+
+img.Image _drawTRex() {
+  final image = _canvas();
+  _fillEllipse(image, 64, 44, 26, 22, _c(76, 175, 80));
+  _strokeEllipse(image, 64, 44, 26, 22, 3, _c(46, 125, 50));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 72,
+    rx: 28,
+    ry: 20,
+    fill: _c(67, 160, 71),
+    outline: _c(27, 94, 32),
+  );
+  _drawEyes(image, 64, 38, 8, 5);
+  _fillEllipse(image, 64, 50, 14, 8, _c(46, 125, 50));
+  for (final dx in [-4, 4]) {
+    _fillRoundedRect(image, 64 + dx - 1, 50, 64 + dx + 1, 58, 1, _c(255, 255, 240));
+  }
+  _fillEllipse(image, 38, 70, 6, 10, _c(67, 160, 71));
+  _fillEllipse(image, 90, 70, 6, 10, _c(67, 160, 71));
+  _fillEllipse(image, 98, 78, 20, 10, _c(56, 142, 60));
+  _drawLegSegment(image, 48, 88, 104, 6, _c(67, 160, 71));
+  _drawLegSegment(image, 80, 88, 104, 6, _c(67, 160, 71));
+  _drawHooves(image, [(48, 110), (80, 110)], _c(67, 160, 71), _c(40, 80, 40));
+  return image;
+}
+
+img.Image _drawFossilDragon() {
+  final image = _canvas();
+  _fillEllipse(image, 34, 68, 14, 22, _c(188, 170, 140, 180));
+  _fillEllipse(image, 94, 68, 14, 22, _c(188, 170, 140, 180));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 66,
+    rx: 32,
+    ry: 26,
+    fill: _c(215, 204, 200),
+    outline: _c(141, 110, 99),
+  );
+  _fillEllipse(image, 64, 70, 18, 14, _c(240, 235, 230));
+  _fillCircle(image, 64, 42, 20, _c(215, 204, 200));
+  _strokeEllipse(image, 64, 42, 20, 20, 2, _c(141, 110, 99));
+  _drawEyes(image, 64, 38, 7, 4);
+  _fillEllipse(image, 64, 52, 10, 6, _c(188, 170, 140));
+  for (var i = 0; i < 5; i++) {
+    _fillRoundedRect(image, 52 + i * 6, 74, 56 + i * 6, 82, 1, _c(141, 110, 99));
+  }
+  _fillEllipse(image, 52, 28, 5, 10, _c(188, 170, 140));
+  _fillEllipse(image, 76, 28, 5, 10, _c(188, 170, 140));
+  for (var i = 0; i < 10; i++) {
+    _fillCircle(image, 98 + i, 58 - i, 4, _c(188, 170, 140));
+  }
+  _drawHooves(image, [(48, 108), (80, 108)], _c(188, 170, 140), _c(109, 76, 65));
+  return image;
+}
+
+img.Image _drawStarFox() {
+  final image = _drawFox();
+  for (final pos in [(24, 24), (104, 20), (64, 12), (20, 64), (108, 72)]) {
+    _fillCircle(image, pos.$1, pos.$2, 3, _c(255, 235, 59));
+    _fillCircle(image, pos.$1, pos.$2, 1, _c(255, 255, 255));
+  }
+  return image;
+}
+
+img.Image _drawAlienSlime() {
+  final image = _canvas();
+  _fillEllipse(image, 64, 72, 36, 30, _c(102, 187, 106));
+  _strokeEllipse(image, 64, 72, 36, 30, 3, _c(56, 142, 60));
+  _fillEllipse(image, 64, 64, 26, 22, _c(165, 214, 167));
+  _fillEllipse(image, 64, 56, 18, 14, _c(200, 230, 201));
+  _drawEyes(image, 64, 58, 10, 6);
+  _fillEllipse(image, 64, 68, 8, 5, _c(46, 125, 50));
+  _fillCircle(image, 48, 48, 5, _c(129, 199, 132, 180));
+  _fillCircle(image, 80, 52, 4, _c(129, 199, 132, 180));
+  for (final dx in [-14, 14]) {
+    _fillRoundedRect(image, 64 + dx - 2, 24, 64 + dx + 2, 40, 2, _c(156, 39, 176));
+    _fillCircle(image, 64 + dx, 22, 4, _c(186, 104, 200));
+  }
+  _fillEllipse(image, 52, 98, 8, 5, _c(76, 175, 80));
+  _fillEllipse(image, 76, 98, 8, 5, _c(76, 175, 80));
+  return image;
+}
+
+img.Image _drawGalaxyDragon() {
+  final image = _canvas();
+  _fillEllipse(image, 34, 68, 14, 22, _c(63, 81, 181, 200));
+  _fillEllipse(image, 94, 68, 14, 22, _c(156, 39, 176, 200));
+  _drawOutlinedBody(
+    image,
+    cx: 64,
+    cy: 64,
+    rx: 32,
+    ry: 26,
+    fill: _c(40, 53, 147),
+    outline: _c(171, 71, 188),
+  );
+  _fillEllipse(image, 64, 68, 18, 14, _c(92, 107, 192));
+  _fillCircle(image, 64, 40, 20, _c(40, 53, 147));
+  _strokeEllipse(image, 64, 40, 20, 20, 2, _c(171, 71, 188));
+  _drawEyes(image, 64, 36, 7, 4);
+  _fillEllipse(image, 64, 48, 8, 5, _c(171, 71, 188));
+  for (final pos in [(52, 70), (76, 74), (60, 58), (72, 62), (64, 78)]) {
+    _fillCircle(image, pos.$1, pos.$2, 2, _c(255, 255, 255));
+  }
+  _fillEllipse(image, 52, 26, 5, 10, _c(171, 71, 188));
+  _fillEllipse(image, 76, 26, 5, 10, _c(171, 71, 188));
+  for (var i = 0; i < 10; i++) {
+    _fillCircle(image, 98 + i, 58 - i, 4, _c(63, 81, 181));
+  }
+  _drawHooves(image, [(48, 108), (80, 108)], _c(40, 53, 147), _c(26, 35, 126));
   return image;
 }

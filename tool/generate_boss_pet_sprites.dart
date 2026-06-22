@@ -13,7 +13,6 @@ void main() {
   final generators = <String, img.Image Function()>{
     'slime_pet': _drawSlimePet,
     'egg_golem_pet': _drawEggGolemPet,
-    'night_rooster': _drawNightRooster,
   };
 
   Directory(outDir).createSync(recursive: true);
@@ -117,9 +116,9 @@ img.Image _drawSlimePet() {
   _fillEllipse(image, 80, 96, 10, 6, _c(46, 125, 50));
   _fillCircle(image, 62, 70, 6, _c(129, 199, 132, 180));
   _fillCircle(image, 98, 74, 5, _c(129, 199, 132, 180));
-  for (final pos in [(58, 124), (102, 124)]) {
-    _fillEllipse(image, pos.$1, pos.$2, 8, 5, _c(67, 160, 71));
-  }
+  _fillCircle(image, 80, 58, 4, _c(255, 255, 255, 200));
+  _fillEllipse(image, 58, 124, 8, 5, _c(67, 160, 71));
+  _fillEllipse(image, 102, 124, 8, 5, _c(67, 160, 71));
   return image;
 }
 
@@ -133,28 +132,11 @@ img.Image _drawEggGolemPet() {
   _fillEllipse(image, 80, 94, 12, 6, _c(96, 125, 139));
   _fillEllipse(image, 64, 66, 8, 10, _c(255, 213, 79));
   _fillEllipse(image, 96, 64, 7, 9, _c(255, 193, 7));
-  for (final pos in [(60, 128), (100, 128)]) {
-    _fillEllipse(image, pos.$1, pos.$2, 10, 6, _c(69, 90, 100));
+  _fillEllipse(image, 80, 72, 14, 10, _c(255, 248, 225, 180));
+  for (final x in [68, 80, 92]) {
+    _fillEllipse(image, x, 92, 2, 6, _c(120, 144, 156, 150));
   }
-  return image;
-}
-
-img.Image _drawNightRooster() {
-  final image = _canvas();
-  _fillEllipse(image, 80, 54, 30, 24, _c(40, 40, 48));
-  _strokeEllipse(image, 80, 54, 30, 24, 3, _c(18, 18, 24));
-  _fillEllipse(image, 80, 98, 42, 40, _c(28, 28, 36));
-  _strokeEllipse(image, 80, 98, 42, 40, 3, _c(12, 12, 18));
-  _fillEllipse(image, 80, 100, 20, 22, _c(66, 66, 78));
-  _fillEllipse(image, 104, 50, 14, 18, _c(24, 24, 32));
-  _fillEllipse(image, 56, 50, 14, 18, _c(24, 24, 32));
-  _fillEllipse(image, 118, 70, 14, 8, _c(183, 28, 28));
-  _fillEllipse(image, 66, 42, 7, 9, _c(211, 47, 47));
-  _drawEyes(image, 80, 52, 10, 5);
-  _fillEllipse(image, 80, 60, 6, 8, _c(255, 193, 7));
-  for (final pos in [(58, 130), (102, 130), (80, 136)]) {
-    _fillEllipse(image, pos.$1, pos.$2, 9, 5, _c(255, 143, 0));
-  }
-  _fillEllipse(image, 80, 110, 16, 10, _c(183, 28, 28, 120));
+  _fillEllipse(image, 64, 128, 10, 6, _c(69, 90, 100));
+  _fillEllipse(image, 96, 128, 10, 6, _c(69, 90, 100));
   return image;
 }
