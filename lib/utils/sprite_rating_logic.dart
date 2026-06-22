@@ -8,9 +8,14 @@ import '../utils/custom_egg_logic.dart';
 class SpriteRatingLogic {
   SpriteRatingLogic._();
 
-  static const double _maskWeight = 0.40;
-  static const double _colorWeight = 0.40;
-  static const double _shapeWeight = 0.20;
+  /// Bump when scoring weights or heuristics change (v2: polished sprite baseline).
+  static const int algorithmVersion = 2;
+
+  static const double _silhouetteWeight = 0.35;
+  static const double _featureWeight = 0.25;
+  static const double _colorWeight = 0.20;
+  static const double _readabilityWeight = 0.10;
+  static const double _coverageWeight = 0.10;
 
   /// Stable FNV-1a hash for a 16×16 sprite grid (hex string key).
   static String computeSpriteHash(CustomSpriteData data) {
@@ -28,39 +33,25 @@ class SpriteRatingLogic {
     return computeSpriteHash(a) == computeSpriteHash(b);
   }
 
-  /// Raw similarity in [0, 1].
-  static double rawSimilarity(CustomSpriteData custom, CustomSpriteData reference) {
+  /// Raw similarity in [0, 1] against the polished built-in reference grid.
+  static double rawSimilarity(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
     if (!custom.hasVisiblePixels) return 0.0;
 
-    var maskMatches = 0;
-    var colorTotal = 0.0;
-    var colorCount = 0;
+    final silhouette = _silhouetteScore(custom, reference);
+    final features = _featureRegionScore(custom, reference);
+    final color = _colorPaletteScore(custom, reference);
+    final readability = _readabilityScore(custom, reference);
+    final coverage = _coverageScore(custom, reference);
 
-    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
-      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
-        final customPixel = custom.pixelAt(x, y);
-        final referencePixel = reference.pixelAt(x, y);
-        final customOpaque = customPixel != null;
-        final referenceOpaque = referencePixel != null;
-
-        if (customOpaque == referenceOpaque) {
-          maskMatches++;
-        }
-
-        if (customOpaque && referenceOpaque) {
-          colorCount++;
-          colorTotal += _colorSimilarity(customPixel, referencePixel);
-        }
-      }
-    }
-
-    final maskScore = maskMatches / CustomSpriteData.cellCount;
-    final colorScore = colorCount > 0 ? colorTotal / colorCount : 0.0;
-    final shapeScore = _shapePlacementScore(custom, reference);
-
-    return (_maskWeight * maskScore) +
-        (_colorWeight * colorScore) +
-        (_shapeWeight * shapeScore);
+    return (_silhouetteWeight * silhouette +
+            _featureWeight * features +
+            _colorWeight * color +
+            _readabilityWeight * readability +
+            _coverageWeight * coverage)
+        .clamp(0.0, 1.0);
   }
 
   /// Display score 0–10.
@@ -69,12 +60,52 @@ class SpriteRatingLogic {
   }
 
   static String ratingMessage(int score) {
-    if (score <= 1) return 'Barely recognizable — keep trying!';
-    if (score <= 3) return 'A start — refine the shape and colors.';
-    if (score <= 5) return 'Getting the general idea.';
-    if (score <= 7) return 'Nice resemblance!';
-    if (score <= 9) return 'Very close to the original!';
+    if (score <= 1) return 'Barely recognizable — add animal features!';
+    if (score <= 3) return 'A start — try clearer legs, ears, or colors.';
+    if (score <= 5) return 'Getting the general animal shape.';
+    if (score <= 7) return 'Nice resemblance — good animal features!';
+    if (score <= 9) return 'Very close to the built-in sprite!';
     return 'Almost a perfect match!';
+  }
+
+  /// Contextual tip based on the weakest scoring area.
+  static String ratingFeedback(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+    int score,
+  ) {
+    if (!custom.hasVisiblePixels) {
+      return 'Draw your animal before rating.';
+    }
+    if (score >= 9) return 'Almost a perfect match!';
+
+    if (score <= 3 && _isBlobLike(custom, reference)) {
+      return 'This looks too much like a blob. Add defining animal features.';
+    }
+
+    final features = _featureRegionScore(custom, reference);
+    final color = _colorPaletteScore(custom, reference);
+    final silhouette = _silhouetteScore(custom, reference);
+
+    if (features < 0.45 && _regionHasFeatures(reference, _Region.legs)) {
+      return 'Try adding clearer legs or feet.';
+    }
+    if (features < 0.5 &&
+        (_regionHasFeatures(reference, _Region.head) ||
+            _regionHasFeatures(reference, _Region.sides))) {
+      return 'Try adding the animal\'s tail, ears, wings, or horns.';
+    }
+    if (silhouette < 0.45) {
+      return 'Great animal shape — match the built-in silhouette more closely.';
+    }
+    if (color < 0.45) {
+      return 'Nice colors are close — use the built-in palette for a higher score.';
+    }
+    if (_readabilityScore(custom, reference) < 0.5) {
+      return 'Make the face and key details easier to see at small size.';
+    }
+
+    return ratingMessage(score);
   }
 
   /// Tier base used for rating rewards and overlay unlock pricing.
@@ -113,14 +144,10 @@ class SpriteRatingLogic {
 
     var cost = (perfectReward * 0.25).round();
     cost = max(25, cost);
-
-    // Never greater than the perfect-score estimated reward.
     cost = min(cost, perfectReward);
 
     if (displayedReward != null && displayedReward > 0) {
-      // Cap at 50% of the displayed actual reward preview.
       cost = min(cost, (displayedReward * 0.5).round());
-      // Keep cost in line with the visible reward (avoids old ~10× mismatch).
       cost = min(cost, displayedReward);
     }
 
@@ -149,8 +176,263 @@ class SpriteRatingLogic {
     return reward;
   }
 
-  static double _colorSimilarity(int a, int b) {
+  static double _silhouetteScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    var maskMatches = 0;
+    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
+      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+        final customOpaque = custom.pixelAt(x, y) != null;
+        final referenceOpaque = reference.pixelAt(x, y) != null;
+        if (customOpaque == referenceOpaque) maskMatches++;
+      }
+    }
+    final maskScore = maskMatches / CustomSpriteData.cellCount;
+    final shapeScore = _shapePlacementScore(custom, reference);
+    return (maskScore * 0.55 + shapeScore * 0.45).clamp(0.0, 1.0);
+  }
+
+  static double _featureRegionScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    var weightedTotal = 0.0;
+    var weightSum = 0.0;
+
+    for (final region in _Region.values) {
+      final refCount = _opaqueCountInRegion(reference, region);
+      if (refCount == 0) continue;
+
+      final matchScore = _regionMatchScore(custom, reference, region);
+      final weight = refCount.toDouble();
+      weightedTotal += matchScore * weight;
+      weightSum += weight;
+    }
+
+    if (weightSum == 0) return 0.0;
+    return (weightedTotal / weightSum).clamp(0.0, 1.0);
+  }
+
+  static double _regionMatchScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+    _Region region,
+  ) {
+    var matches = 0;
+    var refCells = 0;
+
+    for (final (x, y) in _cellsInRegion(region)) {
+      if (reference.pixelAt(x, y) == null) continue;
+      refCells++;
+      if (_hasOpaqueNear(custom, x, y)) matches++;
+    }
+
+    if (refCells == 0) return 1.0;
+    return matches / refCells;
+  }
+
+  static bool _hasOpaqueNear(CustomSpriteData data, int cx, int cy) {
+    for (var dy = -1; dy <= 1; dy++) {
+      for (var dx = -1; dx <= 1; dx++) {
+        final x = cx + dx;
+        final y = cy + dy;
+        if (x < 0 ||
+            y < 0 ||
+            x >= CustomSpriteData.gridSize ||
+            y >= CustomSpriteData.gridSize) {
+          continue;
+        }
+        if (data.pixelAt(x, y) != null) return true;
+      }
+    }
+    return false;
+  }
+
+  static double _colorPaletteScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    var total = 0.0;
+    var count = 0;
+
+    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
+      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+        final customPixel = custom.pixelAt(x, y);
+        final referencePixel = reference.pixelAt(x, y);
+        if (customPixel == null || referencePixel == null) continue;
+        count++;
+        total += _colorFamilySimilarity(customPixel, referencePixel);
+      }
+    }
+
+    if (count == 0) return 0.0;
+
+    final overlapScore = total / count;
+    final paletteScore = _paletteDistributionScore(custom, reference);
+    return (overlapScore * 0.7 + paletteScore * 0.3).clamp(0.0, 1.0);
+  }
+
+  static double _paletteDistributionScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    final refFamilies = _colorFamilies(reference);
+    if (refFamilies.isEmpty) return 0.0;
+
+    final customFamilies = _colorFamilies(custom);
+    if (customFamilies.isEmpty) return 0.0;
+
+    var matched = 0;
+    for (final family in refFamilies) {
+      if (customFamilies.contains(family)) matched++;
+    }
+    return matched / refFamilies.length;
+  }
+
+  static Set<int> _colorFamilies(CustomSpriteData data) {
+    final families = <int>{};
+    for (final pixel in data.pixels) {
+      if (pixel == null) continue;
+      families.add(_colorFamily(pixel));
+    }
+    return families;
+  }
+
+  static double _readabilityScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    final customCount = _opaqueCount(custom);
+    if (customCount < 6) return 0.1;
+
+    var score = 1.0;
+
+    if (_isBlobLike(custom, reference)) {
+      score *= 0.35;
+    }
+
+    final refFamilies = _colorFamilies(reference).length;
+    final customFamilies = _colorFamilies(custom).length;
+    if (refFamilies >= 3 && customFamilies <= 1) {
+      score *= 0.5;
+    }
+
+    final customBounds = _opaqueBounds(custom);
+    if (customBounds != null) {
+      final height = customBounds.maxY - customBounds.minY + 1;
+      if (height <= 4 && _regionHasFeatures(reference, _Region.legs)) {
+        score *= 0.6;
+      }
+    }
+
+    return score.clamp(0.0, 1.0);
+  }
+
+  static double _coverageScore(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    final customCount = _opaqueCount(custom);
+    final refCount = _opaqueCount(reference);
+    if (refCount == 0) return customCount > 0 ? 0.5 : 0.0;
+    if (customCount == 0) return 0.0;
+
+    final ratio = customCount / refCount;
+    if (ratio >= 0.55 && ratio <= 1.35) return 1.0;
+    if (ratio >= 0.35 && ratio <= 1.6) return 0.75;
+    if (ratio >= 0.2 && ratio <= 2.0) return 0.45;
+    return 0.2;
+  }
+
+  static bool _isBlobLike(
+    CustomSpriteData custom,
+    CustomSpriteData reference,
+  ) {
+    final refFill = _opaqueCount(reference) / CustomSpriteData.cellCount;
+    if (refFill > 0.55) return false;
+
+    final customCount = _opaqueCount(custom);
+    if (customCount < 12) return false;
+
+    final bounds = _opaqueBounds(custom);
+    if (bounds == null) return false;
+
+    final bboxArea = bounds.area;
+    final fillRatio = customCount / bboxArea;
+    if (fillRatio < 0.72) return false;
+
+    final families = _colorFamilies(custom);
+    if (families.length > 2) return false;
+
+    final refFamilies = _colorFamilies(reference).length;
+    return refFamilies >= 2 || _regionHasFeatures(reference, _Region.legs);
+  }
+
+  static bool _regionHasFeatures(CustomSpriteData reference, _Region region) {
+    return _opaqueCountInRegion(reference, region) >= 3;
+  }
+
+  static int _opaqueCount(CustomSpriteData data) {
+    var count = 0;
+    for (final pixel in data.pixels) {
+      if (pixel != null) count++;
+    }
+    return count;
+  }
+
+  static int _opaqueCountInRegion(CustomSpriteData data, _Region region) {
+    var count = 0;
+    for (final (x, y) in _cellsInRegion(region)) {
+      if (data.pixelAt(x, y) != null) count++;
+    }
+    return count;
+  }
+
+  static Iterable<(int, int)> _cellsInRegion(_Region region) sync* {
+    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
+      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+        switch (region) {
+          case _Region.head:
+            if (y <= 4) yield (x, y);
+          case _Region.body:
+            if (y >= 4 && y <= 10) yield (x, y);
+          case _Region.legs:
+            if (y >= 11) yield (x, y);
+          case _Region.sides:
+            if (x <= 2 || x >= 13) yield (x, y);
+        }
+      }
+    }
+  }
+
+  static int _colorFamily(int color) {
+    final r = (color >> 16) & 0xFF;
+    final g = (color >> 8) & 0xFF;
+    final b = color & 0xFF;
+    final maxC = max(r, max(g, b));
+    final minC = min(r, min(g, b));
+    final spread = maxC - minC;
+
+    if (maxC < 60) return 0;
+    if (spread < 25 && maxC > 200) return 1;
+    if (spread < 30 && maxC > 140) return 2;
+
+    if (r > g + 25 && r > b + 25) {
+      if (g > 140) return 3;
+      return 4;
+    }
+    if (g > r + 15 && g > b + 15) return 5;
+    if (b > r + 15 && b > g + 15) return 6;
+    if (r > 180 && g > 120 && b < 100) return 3;
+    if (r > 150 && b > 120) return 7;
+    if (r > 120 && g > 80 && b < 90) return 8;
+    return 9;
+  }
+
+  static double _colorFamilySimilarity(int a, int b) {
     if (a == b) return 1.0;
+    if (_colorFamily(a) == _colorFamily(b)) return 0.88;
 
     final ar = (a >> 16) & 0xFF;
     final ag = (a >> 8) & 0xFF;
@@ -163,7 +445,7 @@ class SpriteRatingLogic {
     final dg = ag - bg;
     final db = ab - bb;
     final distance = sqrt(dr * dr + dg * dg + db * db);
-    const maxDistance = 441.6729559; // sqrt(3 * 255^2)
+    const maxDistance = 441.6729559;
 
     return max(0.0, 1.0 - distance / maxDistance);
   }
@@ -256,6 +538,8 @@ class SpriteRatingLogic {
     return (sumX / count, sumY / count);
   }
 }
+
+enum _Region { head, body, legs, sides }
 
 class _SpriteBounds {
   const _SpriteBounds({

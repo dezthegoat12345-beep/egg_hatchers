@@ -504,6 +504,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                       _RatingCard(
                         theme: theme,
                         hasReference: hasReference,
+                        customData: _data,
+                        ratingReference: ratingReference,
                         ratedScore: _ratedScore,
                         ratedReward: _ratedReward,
                         alreadyClaimed: alreadyClaimed,
@@ -944,6 +946,8 @@ class _RatingCard extends StatelessWidget {
   const _RatingCard({
     required this.theme,
     required this.hasReference,
+    required this.customData,
+    required this.ratingReference,
     required this.ratedScore,
     required this.ratedReward,
     required this.alreadyClaimed,
@@ -955,6 +959,8 @@ class _RatingCard extends StatelessWidget {
 
   final BackgroundTheme theme;
   final bool hasReference;
+  final CustomSpriteData customData;
+  final CustomSpriteData? ratingReference;
   final int? ratedScore;
   final int? ratedReward;
   final bool alreadyClaimed;
@@ -977,8 +983,9 @@ class _RatingCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Local similarity check. This is not online AI and does not '
-            'detect inappropriate drawings.',
+            'Local similarity check against the polished built-in sprite. '
+            'Rewards clear shapes, animal features, and matching colors. '
+            'This is not online AI and does not detect inappropriate drawings.',
             style: TextStyle(
               fontSize: 12,
               height: 1.35,
@@ -1016,7 +1023,13 @@ class _RatingCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                SpriteRatingLogic.ratingMessage(ratedScore!),
+                ratingReference == null
+                    ? SpriteRatingLogic.ratingMessage(ratedScore!)
+                    : SpriteRatingLogic.ratingFeedback(
+                        customData,
+                        ratingReference!,
+                        ratedScore!,
+                      ),
                 style: TextStyle(
                   fontSize: 13,
                   color: theme.cardTextSecondaryColor,

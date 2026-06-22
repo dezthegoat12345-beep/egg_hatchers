@@ -27,6 +27,29 @@ void main() {
     );
   });
 
+  test('sprite rating algorithm version is 2', () {
+    expect(SpriteRatingLogic.algorithmVersion, 2);
+    expect(SpriteReferenceData.referenceVersion, 2);
+  });
+
+  test('blob scribble scores lower than structured match on chicken', () {
+    final reference = SpriteReferenceData.referenceFor('chicken')!;
+    final blob = CustomSpriteData(
+      pixels: [
+        for (var y = 0; y < 16; y++)
+          for (var x = 0; x < 16; x++)
+            (x >= 4 && x <= 11 && y >= 4 && y <= 11)
+                ? 0xFFFFFFFF
+                : null,
+      ],
+    );
+
+    expect(
+      SpriteRatingLogic.displayScore(blob, reference),
+      lessThan(SpriteRatingLogic.displayScore(reference, reference)),
+    );
+  });
+
   test('blank sprite scores low against chicken reference', () {
     final reference = SpriteReferenceData.referenceFor('chicken')!;
     final blank = CustomSpriteData.empty();

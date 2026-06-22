@@ -8,11 +8,16 @@ import 'package:image/image.dart' as img;
 /// Generates lib/data/sprite_reference_data.dart from built-in animal PNGs.
 /// Run: dart run tool/generate_sprite_references.dart
 void main() {
+  /// Expanded palette aligned with polished built-in sprite colors.
   const palette = <int>[
     0xFF000000,
     0xFFFFFFFF,
+    0xFFECEFF1,
+    0xFFBDBDBD,
     0xFF9E9E9E,
+    0xFF616161,
     0xFFE53935,
+    0xFFFF5722,
     0xFFFF9800,
     0xFFFFEB3B,
     0xFF43A047,
@@ -20,6 +25,8 @@ void main() {
     0xFF8E24AA,
     0xFFF06292,
     0xFF6D4C41,
+    0xFF795548,
+    0xFFB3E5FC,
   ];
 
   const animals = <String, String>{
@@ -68,14 +75,21 @@ void main() {
     'void_mouse': 'assets/images/animals/void_mouse.png',
     'eclipse_wolf': 'assets/images/animals/eclipse_wolf.png',
     'nebula_hydra': 'assets/images/animals/nebula_hydra.png',
+    'slime_pet': 'assets/images/animals/slime_pet.png',
+    'egg_golem_pet': 'assets/images/animals/egg_golem_pet.png',
+    'night_rooster': 'assets/images/animals/night_rooster.png',
   };
 
   final buffer = StringBuffer()
     ..writeln("import '../models/custom_sprite_data.dart';")
     ..writeln()
     ..writeln('/// Pre-baked 16×16 reference grids for built-in animal PNG sprites.')
+    ..writeln('/// Generated from polished sprites — run tool/generate_sprite_references.dart')
     ..writeln('class SpriteReferenceData {')
     ..writeln('  SpriteReferenceData._();')
+    ..writeln()
+    ..writeln('  /// Bump when reference grids or rating expectations change.')
+    ..writeln('  static const int referenceVersion = 2;')
     ..writeln()
     ..writeln('  static const Map<String, CustomSpriteData> references = {');
 
