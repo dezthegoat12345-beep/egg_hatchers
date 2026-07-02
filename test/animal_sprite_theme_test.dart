@@ -61,33 +61,38 @@ void main() {
     );
   });
 
-  test('Retro Pixel priority animals use native 64x64 art', () {
-    for (final id in RetroPixelNative64Sprites.priorityIds) {
-      final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
-      expect(sprite.width, 64, reason: id);
-      expect(sprite.height, 64, reason: id);
+  test('Every built-in animal uses native64 Retro Pixel art', () {
+    for (final animal in GameData.animals) {
+      final sprite = RetroPixelAnimalSprites.spriteFor(animal.id)!;
+      expect(sprite.width, 64, reason: animal.id);
+      expect(sprite.height, 64, reason: animal.id);
       expect(
-        RetroPixelAnimalSprites.sourceFor(id),
+        RetroPixelAnimalSprites.sourceFor(animal.id),
         RetroPixelSpriteSource.native64,
-        reason: id,
+        reason: animal.id,
       );
       expect(
         sprite.pixels,
-        RetroPixelNative64Sprites.all[id]!.pixels,
-        reason: id,
+        RetroPixelNative64Sprites.all[animal.id]!.pixels,
+        reason: animal.id,
       );
     }
+
+    expect(
+      RetroPixelNative64Sprites.native64Ids.length,
+      GameData.animals.length,
+    );
   });
 
-  test('Native priority sprites are not pure upscale of legacy 32x32', () {
-    for (final id in RetroPixelNative64Sprites.priorityIds) {
-      final legacy = RetroPixelHandAuthoredSprites.all[id];
+  test('Native sprites are not pure upscale of legacy 32x32', () {
+    for (final animal in GameData.animals) {
+      final legacy = RetroPixelHandAuthoredSprites.all[animal.id];
       if (legacy == null) continue;
-      final native = RetroPixelAnimalSprites.spriteFor(id)!;
+      final native = RetroPixelAnimalSprites.spriteFor(animal.id)!;
       expect(
         _isPureUpscale(legacy, native, 2),
         isFalse,
-        reason: '$id should be redrawn, not 2x upscale',
+        reason: '${animal.id} should be redrawn, not 2x upscale',
       );
     }
   });

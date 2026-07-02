@@ -1,5 +1,6 @@
 import '../models/retro_pixel_sprite_definition.dart';
 import 'retro_pixel_native_64_canvas.dart';
+import 'retro_pixel_native_64_extended.dart';
 import 'retro_pixel_palette.dart';
 
 /// True native 64×64 Retro Pixel art — not upscaled legacy grids.
@@ -46,7 +47,14 @@ class RetroPixelNative64Sprites {
 
   static final Map<String, RetroPixelSpriteDefinition> all = {
     for (final id in priorityIds) id: _builders[id]!(),
+    ...RetroPixelNative64Extended.all,
   };
+
+  /// Every animal id with native high-detail Retro Pixel art.
+  static Set<String> get native64Ids => {
+        ...priorityIds,
+        ...RetroPixelNative64Extended.extendedIds,
+      };
 
   static final Map<String, RetroPixelSpriteDefinition Function()> _builders = {
     'chicken': _chicken,

@@ -52,7 +52,7 @@ class RetroPixelAnimalSprites {
 
   /// Debug/diagnostic: how this animal's Retro Pixel art was produced.
   static RetroPixelSpriteSource sourceFor(String animalId) {
-    if (RetroPixelNative64Sprites.priorityIds.contains(animalId)) {
+    if (RetroPixelNative64Sprites.native64Ids.contains(animalId)) {
       return RetroPixelSpriteSource.native64;
     }
     if (RetroPixelAnimalCatalog.generated.containsKey(animalId)) {

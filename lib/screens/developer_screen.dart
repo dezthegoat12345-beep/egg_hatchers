@@ -7,7 +7,6 @@ import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../models/forced_hatch_result.dart';
 import '../data/retro_pixel_animal_sprites.dart';
-import '../data/retro_pixel_native_64_sprites.dart';
 import '../models/retro_pixel_sprite_source.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
@@ -837,24 +836,24 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
           const SizedBox(height: 32),
           _SectionTitle('Retro Pixel Sprite Debug'),
           Text(
-            'Priority animals with native 64×64 art vs legacy upscaled catalog.',
+            'All built-in animals should use native64 art.',
             style: DevToolsTheme.bodyText(muted: true),
           ),
           const SizedBox(height: 12),
-          for (final id in RetroPixelNative64Sprites.priorityIds) ...[
+          for (final animal in GameData.animals) ...[
             Builder(
               builder: (context) {
-                final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
-                final source = RetroPixelAnimalSprites.sourceFor(id);
+                final sprite = RetroPixelAnimalSprites.spriteFor(animal.id)!;
+                final source = RetroPixelAnimalSprites.sourceFor(animal.id);
                 final sourceLabel = switch (source) {
                   RetroPixelSpriteSource.native64 => 'native64',
-                  RetroPixelSpriteSource.legacyUpscaled => 'legacy32+',
+                  RetroPixelSpriteSource.legacyUpscaled => 'legacy',
                   RetroPixelSpriteSource.catalogGenerated => 'catalog',
                 };
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
-                    '$id — ${sprite.width}×${sprite.height} — $sourceLabel',
+                    '${animal.id} — ${sprite.width}×${sprite.height} — $sourceLabel',
                     style: DevToolsTheme.bodyText(),
                   ),
                 );

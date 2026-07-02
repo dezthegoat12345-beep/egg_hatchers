@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../data/retro_pixel_animal_sprites.dart';
 import '../models/animal.dart';
 import '../models/animal_sprite_theme.dart';
 import '../models/background_theme.dart';
@@ -104,6 +106,21 @@ class _BuiltinSpritePreviewSheet extends StatelessWidget {
                       color: theme.cardTextSecondaryColor,
                     ),
                   ),
+                  if (kDebugMode &&
+                      preferences.animalSpriteTheme.id ==
+                          AnimalSpriteThemes.retroPixel.id) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Retro Pixel ${RetroPixelAnimalSprites.spriteFor(animal.id)!.width}×'
+                      '${RetroPixelAnimalSprites.spriteFor(animal.id)!.height} · '
+                      '${RetroPixelAnimalSprites.sourceFor(animal.id).name}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.cardTextSecondaryColor,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   _PreviewPanel(
                     theme: theme,
