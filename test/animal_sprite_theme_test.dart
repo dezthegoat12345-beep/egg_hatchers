@@ -6,6 +6,7 @@ import 'package:egg_hatchers/data/retro_pixel_hand_authored_sprites.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/animal_sprite_theme.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
+import 'package:egg_hatchers/models/retro_pixel_sprite_definition.dart';
 
 void main() {
   test('AnimalSpriteThemes defaults invalid ids to classic', () {
@@ -14,7 +15,7 @@ void main() {
     expect(AnimalSpriteThemes.byId('retroPixel').id, 'retroPixel');
   });
 
-  test('Retro Pixel library includes expanded hand-authored batch', () {
+  test('Retro Pixel library uses higher-detail grids than custom sprites', () {
     const expected = [
       'chicken',
       'mouse',
@@ -38,22 +39,23 @@ void main() {
     expect(RetroPixelAnimalSprites.supportedAnimalIds, containsAll(expected));
 
     for (final id in expected) {
-      expect(RetroPixelAnimalSprites.hasSprite(id), isTrue,
-          reason: 'missing retro pixel sprite for $id');
       final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
       expect(sprite.hasVisiblePixels, isTrue);
-      expect(sprite.pixels.length, CustomSpriteData.cellCount);
+      expect(sprite.width, greaterThan(CustomSpriteData.gridSize));
+      expect(sprite.height, greaterThan(CustomSpriteData.gridSize));
       expect(sprite.pixels, contains(0xFF000000),
           reason: '$id should have black outline pixels');
     }
   });
 
-  test('Retro Pixel chicken uses user reference grid, not rating reference', () {
+  test('Retro Pixel chicken is upscaled reference, not rating reference', () {
     final chicken = RetroPixelAnimalSprites.spriteFor('chicken')!;
     final ratingReference = SpriteReferenceData.referenceFor('chicken')!;
 
-    expect(chicken.pixels, RetroPixelChickenReference.data.pixels);
-    expect(chicken.pixels, isNot(equals(ratingReference.pixels)));
+    expect(chicken.width, 32);
+    expect(chicken.height, 32);
+    expect(chicken.pixels, RetroPixelChickenReference.definition.pixels);
+    expect(chicken.pixels.length, isNot(ratingReference.pixels.length));
   });
 
   test('Retro Pixel mouse and rabbit are not rating reference copies', () {
@@ -61,10 +63,20 @@ void main() {
       final retro = RetroPixelAnimalSprites.spriteFor(id)!;
       final rating = SpriteReferenceData.referenceFor(id)!;
 
-      expect(retro.pixels, isNot(equals(rating.pixels)),
-          reason: '$id retro pixel must not copy rating reference');
+      expect(retro.width, 32);
+      expect(retro.pixels.length, isNot(rating.pixels.length));
       expect(retro.pixels, RetroPixelHandAuthoredSprites.all[id]!.pixels);
     }
+  });
+
+  test('RetroPixelSpriteDefinition supports per-sprite dimensions', () {
+    final wide = RetroPixelSpriteDefinition(
+      width: 24,
+      height: 32,
+      pixels: List<int?>.filled(24 * 32, null),
+    );
+    expect(wide.cellCount, 768);
+    expect(wide.scale2x().width, 48);
   });
 
   test('unimplemented animals return null for retro pixel lookup', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/retro_pixel_animal_sprites.dart';
-import 'pixel_sprite.dart';
+import 'retro_pixel_sprite.dart';
 
 /// Crisp retro pixel-art animal sprite (nearest-neighbor block scaling).
 class RetroPixelAnimalSprite extends StatelessWidget {
@@ -18,14 +18,17 @@ class RetroPixelAnimalSprite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = RetroPixelAnimalSprites.spriteFor(animalId);
-    if (data == null || !data.hasVisiblePixels) {
+    final definition = RetroPixelAnimalSprites.spriteFor(animalId);
+    if (definition == null || !definition.hasVisiblePixels) {
       return SizedBox(width: size, height: size);
     }
 
     return Semantics(
       label: semanticLabel,
-      child: PixelSprite(data: data, size: size),
+      child: RetroPixelSprite(
+        definition: definition,
+        size: size,
+      ),
     );
   }
 }

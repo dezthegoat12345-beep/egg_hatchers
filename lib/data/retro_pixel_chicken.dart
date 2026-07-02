@@ -1,9 +1,9 @@
-import '../models/custom_sprite_data.dart';
+import '../models/retro_pixel_sprite_definition.dart';
 
 /// Retro Pixel chicken transcribed from the user-provided reference image.
 ///
-/// Style: thick black outline, off-white body, red comb/wattle, orange beak,
-/// blocky 16×16 silhouette — not derived from sprite rating reference data.
+/// Stored at 16×16 then upscaled to 32×32 for higher-detail Retro Pixel theme
+/// rendering — separate from the custom sprite editor grid.
 class RetroPixelChickenReference {
   RetroPixelChickenReference._();
 
@@ -12,7 +12,7 @@ class RetroPixelChickenReference {
   static const int red = 0xFFE53935;
   static const int orange = 0xFFFF8A65;
 
-  static final List<int?> _pixels = [
+  static final List<int?> _pixels16 = [
     null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
     null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
     null, null, null, null, null, black, red, red, black, null, null, null, null, null, null, null,
@@ -31,7 +31,8 @@ class RetroPixelChickenReference {
     null, null, null, null, null, null, black, black, black, black, black, null, null, null, null, null,
   ];
 
-  static final CustomSpriteData data = CustomSpriteData(
-    pixels: _pixels,
-  );
+  static final RetroPixelSpriteDefinition definition =
+      RetroPixelSpriteDefinition.fromCustomSpriteGrid(
+        pixels: _pixels16,
+      ).scale2x();
 }

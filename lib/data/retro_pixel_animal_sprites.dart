@@ -1,11 +1,11 @@
-import '../models/custom_sprite_data.dart';
+import '../models/retro_pixel_sprite_definition.dart';
 import 'retro_pixel_chicken.dart';
 import 'retro_pixel_hand_authored_sprites.dart';
 
-/// Retro Pixel animal sprites — explicit hand-authored 16×16 grids only.
+/// Retro Pixel animal sprites — explicit hand-authored grids only.
 ///
-/// These sprites are separate from [SpriteReferenceData] used by Rate Sprite Beta.
-/// Animals without an entry here fall back to Classic PNG rendering.
+/// These sprites are separate from [SpriteReferenceData] and the 16×16 custom
+/// sprite editor. Animals without an entry fall back to Classic PNG rendering.
 class RetroPixelAnimalSprites {
   RetroPixelAnimalSprites._();
 
@@ -30,16 +30,17 @@ class RetroPixelAnimalSprites {
     'slime_pet',
   };
 
-  static final Map<String, CustomSpriteData> _sprites = _buildSprites();
+  static final Map<String, RetroPixelSpriteDefinition> _sprites = _buildSprites();
 
-  static Map<String, CustomSpriteData> _buildSprites() {
+  static Map<String, RetroPixelSpriteDefinition> _buildSprites() {
     return {
-      'chicken': RetroPixelChickenReference.data,
+      'chicken': RetroPixelChickenReference.definition,
       ...RetroPixelHandAuthoredSprites.all,
     };
   }
 
   static bool hasSprite(String animalId) => _sprites.containsKey(animalId);
 
-  static CustomSpriteData? spriteFor(String animalId) => _sprites[animalId];
+  static RetroPixelSpriteDefinition? spriteFor(String animalId) =>
+      _sprites[animalId];
 }

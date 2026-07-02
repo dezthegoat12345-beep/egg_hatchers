@@ -1,93 +1,29 @@
-import '../models/custom_sprite_data.dart';
+import '../models/retro_pixel_sprite_definition.dart';
+import 'retro_pixel_palette.dart';
 
-/// Shared colors for hand-authored Retro Pixel animal sprites.
-class RetroPixelPalette {
-  RetroPixelPalette._();
-
-  static const black = 0xFF000000;
-  static const offWhite = 0xFFF5F5F5;
-  static const lightGray = 0xFFBDBDBD;
-  static const gray = 0xFF9E9E9E;
-  static const darkGray = 0xFF616161;
-  static const earPink = 0xFFFFCDD2;
-  static const pink = 0xFFF06292;
-  static const red = 0xFFE53935;
-  static const orange = 0xFFFF8A65;
-  static const yellow = 0xFFFFEB3B;
-  static const green = 0xFF66BB6A;
-  static const darkGreen = 0xFF43A047;
-  static const blue = 0xFF64B5F6;
-  static const darkBlue = 0xFF1565C0;
-  static const brown = 0xFF795548;
-  static const darkBrown = 0xFF5D4037;
-  static const tan = 0xFFD7CCC8;
-  static const cream = 0xFFFFF9C4;
-  static const slimeGreen = 0xFF81C784;
-  static const slimeDark = 0xFF388E3C;
-
-  /// Parses a 16×16 pattern where each character maps to a palette color.
-  static CustomSpriteData fromPattern(
-    List<String> rows,
-    Map<String, int> colors,
-  ) {
-    if (rows.length != CustomSpriteData.gridSize) {
-      throw ArgumentError('Expected ${CustomSpriteData.gridSize} rows');
-    }
-
-    final pixels = <int?>[];
-    for (final row in rows) {
-      if (row.length != CustomSpriteData.gridSize) {
-        throw ArgumentError('Each row must be ${CustomSpriteData.gridSize} chars');
-      }
-      for (var i = 0; i < row.length; i++) {
-        final ch = row[i];
-        if (ch == '.') {
-          pixels.add(null);
-        } else {
-          final color = colors[ch];
-          if (color == null) {
-            throw ArgumentError('Unknown color key "$ch"');
-          }
-          pixels.add(color);
-        }
-      }
-    }
-
-    return CustomSpriteData(pixels: pixels);
-  }
-}
-
-/// Hand-authored Retro Pixel sprites — not derived from sprite rating references.
+/// Hand-authored Retro Pixel sprites at higher detail (32×32 grids).
+///
+/// Separate from the 16×16 custom sprite editor grid and rating references.
 class RetroPixelHandAuthoredSprites {
   RetroPixelHandAuthoredSprites._();
 
-  static const _keys = {
-    'K': RetroPixelPalette.black,
-    'W': RetroPixelPalette.offWhite,
-    'G': RetroPixelPalette.lightGray,
-    'g': RetroPixelPalette.gray,
-    'D': RetroPixelPalette.darkGray,
-    'P': RetroPixelPalette.earPink,
-    'p': RetroPixelPalette.pink,
-    'R': RetroPixelPalette.red,
-    'O': RetroPixelPalette.orange,
-    'Y': RetroPixelPalette.yellow,
-    'E': RetroPixelPalette.green,
-    'e': RetroPixelPalette.darkGreen,
-    'L': RetroPixelPalette.blue,
-    'l': RetroPixelPalette.darkBlue,
-    'B': RetroPixelPalette.brown,
-    'b': RetroPixelPalette.darkBrown,
-    'T': RetroPixelPalette.tan,
-    'C': RetroPixelPalette.cream,
-    'S': RetroPixelPalette.slimeGreen,
-    's': RetroPixelPalette.slimeDark,
-  };
+  static RetroPixelSpriteDefinition _p16(List<String> rows) =>
+      RetroPixelPalette.fromPattern(rows).scale2x();
 
-  static CustomSpriteData _p(List<String> rows) =>
-      RetroPixelPalette.fromPattern(rows, _keys);
+  static RetroPixelSpriteDefinition _p16Patch(
+    List<String> rows,
+    Map<(int x, int y), int?> patches,
+  ) =>
+      _p16(rows).withPatches(patches);
 
-  static final mouse = _p([
+  static const _k = RetroPixelPalette.black;
+  static const _w = RetroPixelPalette.offWhite;
+  static const _p = RetroPixelPalette.earPink;
+  static const _o = RetroPixelPalette.orange;
+
+  // --- 16×16 bases (scaled to 32×32) ----------------------------------------
+
+  static const _mouse16 = [
     '................',
     '................',
     '..KK.....KK.....',
@@ -104,9 +40,9 @@ class RetroPixelHandAuthoredSprites {
     '....KKK.........',
     '................',
     '................',
-  ]);
+  ];
 
-  static final rabbit = _p([
+  static const _rabbit16 = [
     '................',
     '.KK.....KK......',
     'KPPK...KPPK.....',
@@ -123,9 +59,9 @@ class RetroPixelHandAuthoredSprites {
     '....KK.KK.......',
     '................',
     '................',
-  ]);
+  ];
 
-  static final turtle = _p([
+  static const _turtle16 = [
     '................',
     '................',
     '......KKK.......',
@@ -142,9 +78,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final pig = _p([
+  static const _pig16 = [
     '................',
     '................',
     '.....KKKKK......',
@@ -161,9 +97,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final cow = _p([
+  static const _cow16 = [
     '................',
     '................',
     '.....KKKKK......',
@@ -180,9 +116,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final sheep = _p([
+  static const _sheep16 = [
     '................',
     '................',
     '....KKKKKKK.....',
@@ -199,9 +135,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final penguin = _p([
+  static const _penguin16 = [
     '................',
     '................',
     '......KKK.......',
@@ -218,9 +154,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final frog = _p([
+  static const _frog16 = [
     '................',
     '................',
     '....KK...KK.....',
@@ -237,9 +173,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final moonCat = _p([
+  static const _cat16 = [
     '................',
     '................',
     '..KK.....KK.....',
@@ -256,9 +192,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final fish = _p([
+  static const _fish16 = [
     '................',
     '................',
     '................',
@@ -275,9 +211,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final horse = _p([
+  static const _horse16 = [
     '................',
     '................',
     '......KKKK......',
@@ -294,9 +230,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final monkey = _p([
+  static const _monkey16 = [
     '................',
     '................',
     '...KK.....KK....',
@@ -313,9 +249,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final parrot = _p([
+  static const _parrot16 = [
     '................',
     '................',
     '......KKK.......',
@@ -332,9 +268,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final deer = _p([
+  static const _deer16 = [
     '................',
     '...KK...KK......',
     '..KBBK.KBBK.....',
@@ -351,9 +287,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final fox = _p([
+  static const _fox16 = [
     '................',
     '................',
     '..KK.....KK.....',
@@ -370,9 +306,9 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
 
-  static final slimePet = _p([
+  static const _slime16 = [
     '................',
     '................',
     '.....KKKKK......',
@@ -389,10 +325,321 @@ class RetroPixelHandAuthoredSprites {
     '................',
     '................',
     '................',
-  ]);
+  ];
+
+  // --- 32×32 detailed sprites ------------------------------------------------
+
+  static final mouse = _p16Patch(_mouse16, {
+    (6, 18): _k,
+    (7, 18): _k,
+    (24, 18): _k,
+    (25, 18): _k,
+    (8, 26): _k,
+    (9, 26): _k,
+    (22, 26): _k,
+    (23, 26): _k,
+  });
+
+  static final rabbit = _p16Patch(_rabbit16, {
+    (10, 12): _k,
+    (22, 12): _k,
+    (8, 16): _k,
+    (24, 16): _k,
+    (14, 18): _p,
+    (15, 19): _k,
+    (16, 19): _k,
+    (26, 14): _w,
+    (27, 14): _w,
+    (28, 14): _w,
+    (27, 15): _w,
+    (10, 28): _k,
+    (11, 28): _k,
+    (12, 29): _k,
+    (20, 28): _k,
+    (21, 28): _k,
+    (22, 29): _k,
+    (14, 26): _k,
+    (15, 26): _k,
+    (16, 26): _k,
+    (17, 26): _k,
+  });
+
+  static final turtle = _p16Patch(_turtle16, {
+    (14, 8): _k,
+    (17, 8): _k,
+    (15, 9): RetroPixelPalette.white,
+    (16, 9): RetroPixelPalette.white,
+    (14, 10): _k,
+    (17, 10): _k,
+    (6, 22): RetroPixelPalette.darkGreen,
+    (7, 22): RetroPixelPalette.darkGreen,
+    (24, 22): RetroPixelPalette.darkGreen,
+    (25, 22): RetroPixelPalette.darkGreen,
+    (6, 24): _k,
+    (7, 24): _k,
+    (24, 24): _k,
+    (25, 24): _k,
+    (14, 24): RetroPixelPalette.darkGreen,
+    (15, 24): RetroPixelPalette.darkGreen,
+    (16, 24): RetroPixelPalette.darkGreen,
+    (17, 24): RetroPixelPalette.darkGreen,
+  });
+
+  static final pig = _p16Patch(_pig16, {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): RetroPixelPalette.white,
+    (21, 11): RetroPixelPalette.white,
+    (14, 14): _k,
+    (15, 14): _k,
+    (16, 14): _k,
+    (17, 14): _k,
+    (18, 14): _k,
+    (26, 16): RetroPixelPalette.pink,
+    (27, 16): RetroPixelPalette.pink,
+    (28, 17): RetroPixelPalette.pink,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+  });
+
+  static final cow = _p16Patch(_cow16, {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): RetroPixelPalette.white,
+    (21, 11): RetroPixelPalette.white,
+    (14, 14): _k,
+    (15, 14): _k,
+    (16, 14): _k,
+    (17, 14): _k,
+    (10, 8): _k,
+    (22, 8): _k,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+    (28, 18): _k,
+    (29, 18): _k,
+    (30, 19): _k,
+  });
+
+  static final sheep = _p16Patch(_sheep16, {
+    (12, 14): _k,
+    (20, 14): _k,
+    (13, 15): RetroPixelPalette.white,
+    (21, 15): RetroPixelPalette.white,
+    (14, 16): _k,
+    (15, 16): _k,
+    (16, 16): _k,
+    (17, 16): _k,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+  });
+
+  static final penguin = _p16Patch(_penguin16, {
+    (14, 10): _k,
+    (17, 10): _k,
+    (15, 11): RetroPixelPalette.white,
+    (16, 11): RetroPixelPalette.white,
+    (12, 14): RetroPixelPalette.gray,
+    (13, 14): RetroPixelPalette.gray,
+    (18, 14): RetroPixelPalette.gray,
+    (19, 14): RetroPixelPalette.gray,
+    (10, 24): _o,
+    (11, 24): _o,
+    (12, 24): _o,
+    (18, 24): _o,
+    (19, 24): _o,
+    (20, 24): _o,
+    (8, 20): RetroPixelPalette.darkGray,
+    (22, 20): RetroPixelPalette.darkGray,
+  });
+
+  static final frog = _p16Patch(_frog16, {
+    (10, 8): _k,
+    (22, 8): _k,
+    (11, 9): RetroPixelPalette.white,
+    (23, 9): RetroPixelPalette.white,
+    (12, 10): _k,
+    (24, 10): _k,
+    (14, 18): _k,
+    (15, 18): _k,
+    (16, 18): _k,
+    (17, 18): _k,
+    (8, 24): RetroPixelPalette.darkGreen,
+    (9, 24): RetroPixelPalette.darkGreen,
+    (22, 24): RetroPixelPalette.darkGreen,
+    (23, 24): RetroPixelPalette.darkGreen,
+    (6, 26): _k,
+    (7, 26): _k,
+    (24, 26): _k,
+    (25, 26): _k,
+  });
+
+  static final moonCat = _p16Patch(_cat16, {
+    (10, 12): _k,
+    (22, 12): _k,
+    (8, 16): _k,
+    (24, 16): _k,
+    (14, 18): _p,
+    (15, 19): _k,
+    (16, 19): _k,
+    (28, 20): _w,
+    (29, 20): _w,
+    (30, 21): _w,
+    (14, 26): _k,
+    (15, 26): _k,
+    (16, 26): _k,
+    (17, 26): _k,
+  });
+
+  static final fish = _p16Patch(_fish16, {
+    (18, 12): _k,
+    (19, 12): RetroPixelPalette.white,
+    (20, 12): _k,
+    (16, 14): _k,
+    (17, 14): _k,
+    (8, 10): RetroPixelPalette.darkBlue,
+    (8, 11): RetroPixelPalette.darkBlue,
+    (8, 18): RetroPixelPalette.darkBlue,
+    (8, 19): RetroPixelPalette.darkBlue,
+    (24, 16): RetroPixelPalette.darkBlue,
+    (25, 16): RetroPixelPalette.darkBlue,
+    (26, 15): RetroPixelPalette.darkBlue,
+    (26, 16): RetroPixelPalette.darkBlue,
+    (26, 17): RetroPixelPalette.darkBlue,
+  });
+
+  static final horse = _p16Patch(_horse16, {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): RetroPixelPalette.white,
+    (21, 11): RetroPixelPalette.white,
+    (14, 14): _k,
+    (15, 14): _k,
+    (16, 14): _k,
+    (10, 6): RetroPixelPalette.darkBrown,
+    (11, 6): RetroPixelPalette.darkBrown,
+    (12, 6): RetroPixelPalette.darkBrown,
+    (18, 6): RetroPixelPalette.darkBrown,
+    (19, 6): RetroPixelPalette.darkBrown,
+    (20, 6): RetroPixelPalette.darkBrown,
+    (8, 26): _k,
+    (9, 26): _k,
+    (22, 26): _k,
+    (23, 26): _k,
+    (28, 14): RetroPixelPalette.darkBrown,
+    (29, 14): RetroPixelPalette.darkBrown,
+    (30, 15): RetroPixelPalette.darkBrown,
+  });
+
+  static final monkey = _p16Patch(_monkey16, {
+    (12, 12): _k,
+    (20, 12): _k,
+    (13, 13): RetroPixelPalette.white,
+    (21, 13): RetroPixelPalette.white,
+    (14, 16): _k,
+    (15, 16): _k,
+    (16, 16): _k,
+    (17, 16): _k,
+    (8, 22): RetroPixelPalette.brown,
+    (24, 22): RetroPixelPalette.brown,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+    (28, 18): RetroPixelPalette.brown,
+    (29, 18): RetroPixelPalette.brown,
+    (30, 19): RetroPixelPalette.brown,
+  });
+
+  static final parrot = _p16Patch(_parrot16, {
+    (14, 10): _k,
+    (17, 10): _k,
+    (15, 11): RetroPixelPalette.white,
+    (10, 14): RetroPixelPalette.red,
+    (11, 14): RetroPixelPalette.yellow,
+    (12, 16): RetroPixelPalette.green,
+    (13, 16): RetroPixelPalette.blue,
+    (18, 14): RetroPixelPalette.red,
+    (19, 16): RetroPixelPalette.blue,
+    (8, 18): RetroPixelPalette.darkGreen,
+    (9, 18): RetroPixelPalette.darkGreen,
+    (10, 24): _o,
+    (11, 24): _o,
+    (12, 24): _k,
+    (18, 24): _o,
+    (19, 24): _o,
+    (20, 24): _k,
+    (26, 16): RetroPixelPalette.red,
+    (27, 16): RetroPixelPalette.yellow,
+    (28, 17): RetroPixelPalette.blue,
+  });
+
+  static final deer = _p16Patch(_deer16, {
+    (12, 12): _k,
+    (20, 12): _k,
+    (13, 13): RetroPixelPalette.white,
+    (21, 13): RetroPixelPalette.white,
+    (14, 16): _k,
+    (15, 16): _k,
+    (16, 16): _k,
+    (6, 4): _k,
+    (7, 4): _k,
+    (8, 2): _k,
+    (24, 4): _k,
+    (25, 4): _k,
+    (26, 2): _k,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+    (28, 18): RetroPixelPalette.brown,
+    (29, 18): _k,
+  });
+
+  static final fox = _p16Patch(_fox16, {
+    (10, 12): _k,
+    (22, 12): _k,
+    (8, 16): _k,
+    (24, 16): _k,
+    (14, 18): _k,
+    (15, 19): _k,
+    (16, 19): _k,
+    (12, 20): _w,
+    (13, 20): _w,
+    (18, 20): _w,
+    (14, 26): _k,
+    (15, 26): _k,
+    (16, 26): _k,
+    (17, 26): _k,
+    (28, 16): _w,
+    (29, 16): _w,
+    (30, 17): _w,
+  });
+
+  static final slimePet = _p16Patch(_slime16, {
+    (12, 12): _k,
+    (20, 12): _k,
+    (13, 13): RetroPixelPalette.white,
+    (21, 13): RetroPixelPalette.white,
+    (14, 16): _k,
+    (15, 16): _k,
+    (16, 16): _k,
+    (17, 16): _k,
+    (10, 10): RetroPixelPalette.white,
+    (11, 10): RetroPixelPalette.white,
+    (8, 22): RetroPixelPalette.slimeDark,
+    (24, 22): RetroPixelPalette.slimeDark,
+    (12, 28): RetroPixelPalette.slimeDark,
+    (18, 28): RetroPixelPalette.slimeDark,
+  });
 
   /// All explicit hand-authored sprites keyed by animal id.
-  static final Map<String, CustomSpriteData> all = {
+  static final Map<String, RetroPixelSpriteDefinition> all = {
     'mouse': mouse,
     'rabbit': rabbit,
     'turtle': turtle,
