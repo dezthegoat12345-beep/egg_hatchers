@@ -23,7 +23,7 @@ class RetroPixelBossProjectiles {
     };
   }
 
-  static final _slimeGlob = RetroPixelPalette.fromPattern([
+  static final _slimeGlob = _projectile10([
     '..........',
     '..KKKKKK..',
     '.KGGGGGGK.',
@@ -36,7 +36,7 @@ class RetroPixelBossProjectiles {
     '..........',
   ]);
 
-  static final _rockEgg = RetroPixelPalette.fromPattern([
+  static final _rockEgg = _projectile10([
     '..........',
     '....KK....',
     '..KBBBBK..',
@@ -49,7 +49,7 @@ class RetroPixelBossProjectiles {
     '....KK....',
   ]);
 
-  static final _shadowFeather = RetroPixelPalette.fromPattern([
+  static final _shadowFeather = _projectile10([
     '..........',
     '....KK....',
     '..KPPPPK..',
@@ -62,7 +62,7 @@ class RetroPixelBossProjectiles {
     '....KK....',
   ]);
 
-  static final _royalSlime = RetroPixelPalette.fromPattern([
+  static final _royalSlime = _projectile10([
     '..........',
     '..KKYYKK..',
     '.KGGGGGGK.',
@@ -74,13 +74,15 @@ class RetroPixelBossProjectiles {
     '...KKKK...',
     '..........',
   ]).withPatches({
-    (4, 0): _y,
-    (5, 0): _y,
-    (4, 1): _k,
-    (5, 1): _k,
+    (8, 0): _y,
+    (9, 0): _y,
+    (10, 0): _y,
+    (8, 1): _k,
+    (9, 1): _k,
+    (10, 1): _k,
   });
 
-  static final _guardianShard = RetroPixelPalette.fromPattern([
+  static final _guardianShard = _projectile10([
     '..........',
     '....KK....',
     '..KYYBBK..',
@@ -92,12 +94,12 @@ class RetroPixelBossProjectiles {
     '....KK....',
     '..........',
   ]).withPatches({
-    (4, 3): _l,
-    (5, 4): _l,
-    (4, 5): _l,
+    (8, 6): _l,
+    (10, 8): _l,
+    (8, 10): _l,
   });
 
-  static final _phoenixFlame = RetroPixelPalette.fromPattern([
+  static final _phoenixFlame = _projectile10([
     '..........',
     '....KK....',
     '..KLLPPK..',
@@ -109,4 +111,8 @@ class RetroPixelBossProjectiles {
     '...KPPK...',
     '....KK....',
   ]);
+
+  /// 10×10 base patterns upscaled to 20×20 for sharper pixel projectiles.
+  static RetroPixelSpriteDefinition _projectile10(List<String> rows) =>
+      RetroPixelPalette.fromPattern(rows).scale2x();
 }

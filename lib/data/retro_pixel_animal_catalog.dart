@@ -2,6 +2,7 @@ import '../models/retro_pixel_sprite_definition.dart';
 import 'retro_pixel_chicken.dart';
 import 'retro_pixel_extra_templates.dart';
 import 'retro_pixel_hand_authored_sprites.dart';
+import 'retro_pixel_massive_sprites.dart';
 import 'retro_pixel_palette.dart';
 
 /// Generates Retro Pixel sprites for every built-in animal not in the core batch.
@@ -113,7 +114,7 @@ class RetroPixelAnimalCatalog {
           (10, 18): RetroPixelPalette.lightGray,
         }),
     'stone_golem': () => RetroPixelExtraTemplates.golem,
-    'royal_chicken': () => RetroPixelChickenReference.definition.withPatches({
+    'royal_chicken': () => RetroPixelChickenReference.definition32.withPatches({
           (14, 2): _y,
           (16, 0): _y,
           (18, 0): _y,
@@ -133,14 +134,7 @@ class RetroPixelAnimalCatalog {
           (14, 10): RetroPixelPalette.pink,
           (18, 12): RetroPixelPalette.green,
         }),
-    'cloud_bunny': () => RetroPixelHandAuthoredSprites.rabbit.withPatches({
-          (4, 8): _w,
-          (6, 6): _w,
-          (26, 8): _w,
-          (28, 6): _w,
-          (8, 4): _w,
-          (24, 4): _w,
-        }),
+    'cloud_bunny': () => RetroPixelMassiveSprites.cloudBunny,
     'sun_lion': () => RetroPixelExtraTemplates.lion,
     'cosmic_phoenix': () => RetroPixelExtraTemplates.phoenix,
     'void_mouse': () => RetroPixelHandAuthoredSprites.mouse.recolor({
@@ -175,7 +169,7 @@ class RetroPixelAnimalCatalog {
           (16, 2): RetroPixelPalette.yellow,
           (18, 2): RetroPixelPalette.yellow,
         }),
-    'night_rooster': () => RetroPixelChickenReference.definition.recolor({
+    'night_rooster': () => RetroPixelChickenReference.definition32.recolor({
           RetroPixelPalette.offWhite: RetroPixelPalette.darkGray,
           RetroPixelPalette.red: RetroPixelPalette.purple,
         }).withPatches({

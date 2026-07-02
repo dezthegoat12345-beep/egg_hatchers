@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/retro_pixel_animal_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_boss_projectiles.dart';
-import 'package:egg_hatchers/data/retro_pixel_chicken.dart';
-import 'package:egg_hatchers/data/retro_pixel_hand_authored_sprites.dart';
+import 'package:egg_hatchers/data/retro_pixel_massive_sprites.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/animal_sprite_theme.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
@@ -27,7 +26,8 @@ void main() {
       );
       final sprite = RetroPixelAnimalSprites.spriteFor(animal.id)!;
       expect(sprite.hasVisiblePixels, isTrue);
-      expect(sprite.width, greaterThan(CustomSpriteData.gridSize));
+      expect(sprite.width, greaterThanOrEqualTo(48));
+      expect(sprite.height, greaterThanOrEqualTo(48));
       expect(sprite.pixels, contains(0xFF000000));
     }
 
@@ -41,19 +41,29 @@ void main() {
     final chicken = RetroPixelAnimalSprites.spriteFor('chicken')!;
     final ratingReference = SpriteReferenceData.referenceFor('chicken')!;
 
-    expect(chicken.width, 32);
-    expect(chicken.pixels, RetroPixelChickenReference.definition.pixels);
+    expect(chicken.width, 64);
+    expect(chicken.height, 64);
+    expect(chicken.pixels, RetroPixelMassiveSprites.chicken.pixels);
     expect(chicken.pixels.length, isNot(ratingReference.pixels.length));
   });
 
-  test('Retro Pixel mouse and rabbit are not rating reference copies', () {
+  test('Retro Pixel mouse and rabbit use massive-grid art', () {
     for (final id in ['mouse', 'rabbit']) {
       final retro = RetroPixelAnimalSprites.spriteFor(id)!;
       final rating = SpriteReferenceData.referenceFor(id)!;
 
-      expect(retro.width, 32);
+      expect(retro.width, 64);
+      expect(retro.height, 64);
       expect(retro.pixels.length, isNot(rating.pixels.length));
-      expect(retro.pixels, RetroPixelHandAuthoredSprites.all[id]!.pixels);
+      expect(retro.pixels, RetroPixelMassiveSprites.priority[id]!.pixels);
+    }
+  });
+
+  test('Retro Pixel priority animals use 64x64 grids', () {
+    for (final id in RetroPixelMassiveSprites.priority.keys) {
+      final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
+      expect(sprite.width, 64, reason: id);
+      expect(sprite.height, 64, reason: id);
     }
   });
 
@@ -71,10 +81,11 @@ void main() {
       final art = RetroPixelBossProjectiles.forType(type);
       expect(art, isNotNull);
       expect(art!.hasVisiblePixels, isTrue);
+      expect(art.width, greaterThanOrEqualTo(20));
     }
   });
 
-  test('RetroPixelSpriteDefinition supports per-sprite dimensions', () {
+  test('RetroPixelSpriteDefinition supports per-sprite dimensions and scale', () {
     final wide = RetroPixelSpriteDefinition(
       width: 24,
       height: 32,
@@ -82,6 +93,9 @@ void main() {
     );
     expect(wide.cellCount, 768);
     expect(wide.scale2x().width, 48);
+    expect(wide.scale(4).width, 96);
+    expect(wide.scaleToMinDimension(64).width, 96);
+    expect(wide.scaleToMinDimension(64).height, 128);
   });
 
   test('unimplemented ids outside game data return null', () {

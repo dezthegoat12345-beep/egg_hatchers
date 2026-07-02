@@ -2,7 +2,7 @@ import '../models/retro_pixel_sprite_definition.dart';
 
 /// Retro Pixel chicken transcribed from the user-provided reference image.
 ///
-/// Stored at 16×16 then upscaled to 32×32 for higher-detail Retro Pixel theme
+/// Stored at 16×16 then upscaled to 64×64 for massive-grid Retro Pixel theme
 /// rendering — separate from the custom sprite editor grid.
 class RetroPixelChickenReference {
   RetroPixelChickenReference._();
@@ -31,8 +31,11 @@ class RetroPixelChickenReference {
     null, null, null, null, null, null, black, black, black, black, black, null, null, null, null, null,
   ];
 
-  static final RetroPixelSpriteDefinition definition =
+  static final RetroPixelSpriteDefinition definition32 =
       RetroPixelSpriteDefinition.fromCustomSpriteGrid(
         pixels: _pixels16,
       ).scale2x();
+
+  /// 64×64 massive-grid chicken (4× upscale from user reference).
+  static final RetroPixelSpriteDefinition definition = definition32.scale2x();
 }

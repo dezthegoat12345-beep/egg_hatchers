@@ -49,14 +49,17 @@ class _RetroPixelSpritePainter extends CustomPainter {
 
     if (!definition.hasVisiblePixels) return;
 
-    final cell = math.min(
+    final fitCell = math.min(
       size.width / definition.width,
       size.height / definition.height,
     );
+    final cell = fitCell * definition.displayScale;
     final drawnW = cell * definition.width;
     final drawnH = cell * definition.height;
-    final offsetX = (size.width - drawnW) / 2;
-    final offsetY = (size.height - drawnH) / 2;
+    final offsetX =
+        (size.width - drawnW) / 2 + definition.horizontalOffset * cell;
+    final offsetY =
+        (size.height - drawnH) / 2 + definition.verticalOffset * cell;
 
     final paint = Paint()..isAntiAlias = false;
 
