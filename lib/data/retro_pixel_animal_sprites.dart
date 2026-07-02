@@ -1,18 +1,16 @@
 import '../models/custom_sprite_data.dart';
 import 'retro_pixel_chicken.dart';
-import 'sprite_reference_data.dart';
+import 'retro_pixel_hand_authored_sprites.dart';
 
-/// Retro Pixel animal sprites — 16×16 grids rendered with crisp scaling.
+/// Retro Pixel animal sprites — explicit hand-authored 16×16 grids only.
 ///
-/// Chicken uses the user-provided reference transcribed to grid data.
-/// Other v1 animals reuse reference silhouettes with a black outline pass.
+/// These sprites are separate from [SpriteReferenceData] used by Rate Sprite Beta.
+/// Animals without an entry here fall back to Classic PNG rendering.
 class RetroPixelAnimalSprites {
   RetroPixelAnimalSprites._();
 
-  static const int outlineBlack = 0xFF000000;
-
-  /// Animals with dedicated Retro Pixel art in v1.
-  static const v1AnimalIds = <String>{
+  /// Animals with dedicated Retro Pixel art.
+  static const supportedAnimalIds = <String>{
     'chicken',
     'mouse',
     'rabbit',
@@ -20,64 +18,28 @@ class RetroPixelAnimalSprites {
     'pig',
     'cow',
     'sheep',
-    'fox',
     'penguin',
+    'alien_slime',
     'moon_cat',
+    'fish',
+    'horse',
+    'monkey',
+    'parrot',
+    'deer',
+    'fox',
+    'slime_pet',
   };
 
   static final Map<String, CustomSpriteData> _sprites = _buildSprites();
 
   static Map<String, CustomSpriteData> _buildSprites() {
-    final sprites = <String, CustomSpriteData>{
+    return {
       'chicken': RetroPixelChickenReference.data,
+      ...RetroPixelHandAuthoredSprites.all,
     };
-
-    for (final animalId in v1AnimalIds) {
-      if (animalId == 'chicken') continue;
-
-      final reference = SpriteReferenceData.referenceFor(animalId);
-      if (reference == null) continue;
-
-      sprites[animalId] = _withBlackOutline(reference);
-    }
-
-    return sprites;
   }
 
   static bool hasSprite(String animalId) => _sprites.containsKey(animalId);
 
   static CustomSpriteData? spriteFor(String animalId) => _sprites[animalId];
-
-  /// Adds a 1-cell black outline around visible pixels (4-direction neighbors).
-  static CustomSpriteData _withBlackOutline(CustomSpriteData source) {
-    final size = CustomSpriteData.gridSize;
-    final filled = source.pixels;
-
-    bool isColored(int x, int y) {
-      if (x < 0 || x >= size || y < 0 || y >= size) return false;
-      return filled[y * size + x] != null;
-    }
-
-    final next = List<int?>.filled(CustomSpriteData.cellCount, null);
-
-    for (var y = 0; y < size; y++) {
-      for (var x = 0; x < size; x++) {
-        final index = y * size + x;
-        final color = filled[index];
-        if (color != null) {
-          next[index] = color;
-          continue;
-        }
-
-        if (isColored(x - 1, y) ||
-            isColored(x + 1, y) ||
-            isColored(x, y - 1) ||
-            isColored(x, y + 1)) {
-          next[index] = outlineBlack;
-        }
-      }
-    }
-
-    return CustomSpriteData(pixels: next);
-  }
 }

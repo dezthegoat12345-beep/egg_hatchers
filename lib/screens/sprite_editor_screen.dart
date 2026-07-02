@@ -721,7 +721,7 @@ class _ReferencePreviewsPanel extends StatelessWidget {
               final tiles = <Widget>[
                 _PreviewTile(
                   theme: theme,
-                  label: 'Original',
+                  label: 'Built-in Style',
                   child: CustomSpritePreview(
                     animalId: animal.id,
                     spritePath: animal.spritePath,
