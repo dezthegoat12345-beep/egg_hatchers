@@ -48,7 +48,7 @@ void main() {
     expect(erased.pixelAt(2, 2), 0xFFFFEB3B);
   });
 
-  test('expanded palette keeps legacy colors and grows color count', () {
+  test('expanded palette includes polished sprite accent colors', () {
     const legacyColors = <int>[
       0xFF000000,
       0xFFFFFFFF,
@@ -63,8 +63,18 @@ void main() {
       0xFF6D4C41,
     ];
 
+    const animalAccents = <int>[
+      0xFFFF5722,
+      0xFF66BB6A,
+      0xFFB3E5FC,
+      0xFF37474F,
+    ];
+
     expect(SpritePalette.colors.length, greaterThan(legacyColors.length));
     for (final color in legacyColors) {
+      expect(SpritePalette.colors, contains(color));
+    }
+    for (final color in animalAccents) {
       expect(SpritePalette.colors, contains(color));
     }
 

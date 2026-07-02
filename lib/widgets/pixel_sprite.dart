@@ -7,6 +7,7 @@ enum SpriteEditorTool {
   pencil,
   fill,
   eraser,
+  eyedropper,
 }
 
 /// Renders a pixel grid with CustomPaint at any display size.
@@ -147,6 +148,7 @@ class PixelSpriteEditor extends StatefulWidget {
     required this.onChanged,
     this.onStrokeStart,
     this.onStrokeEnd,
+    this.onColorPicked,
     this.canvasSize = 256,
     this.themeColor,
     this.referenceOverlay,
@@ -162,6 +164,7 @@ class PixelSpriteEditor extends StatefulWidget {
   final ValueChanged<CustomSpriteData> onChanged;
   final VoidCallback? onStrokeStart;
   final VoidCallback? onStrokeEnd;
+  final ValueChanged<int?>? onColorPicked;
   final double canvasSize;
   final Color? themeColor;
   final CustomSpriteData? referenceOverlay;
@@ -230,6 +233,14 @@ class _PixelSpriteEditorState extends State<PixelSpriteEditor> {
   }
 
   void _handleDown(Offset position) {
+    final cell = _cellAt(position);
+    if (cell == null) return;
+
+    if (widget.tool == SpriteEditorTool.eyedropper) {
+      widget.onColorPicked?.call(widget.data.pixelAt(cell.$1, cell.$2));
+      return;
+    }
+
     _beginStroke();
     _applyAt(position);
     if (widget.tool == SpriteEditorTool.fill) {

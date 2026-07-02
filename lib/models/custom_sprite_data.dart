@@ -156,6 +156,18 @@ class SpritePalette {
       SpritePaletteEntry(0xFF4A148C, 'Dark purple'),
       SpritePaletteEntry(0xFFCE93D8, 'Lavender'),
     ]),
+    SpritePaletteGroup('Animal accents', [
+      SpritePaletteEntry(0xFFFFF8E1, 'Warm cream'),
+      SpritePaletteEntry(0xFFFFCDD2, 'Ear pink'),
+      SpritePaletteEntry(0xFFFF8A65, 'Beak orange'),
+      SpritePaletteEntry(0xFFFF5722, 'Deep orange'),
+      SpritePaletteEntry(0xFF795548, 'Hoof brown'),
+      SpritePaletteEntry(0xFFB3E5FC, 'Sky blue'),
+      SpritePaletteEntry(0xFF66BB6A, 'Slime green'),
+      SpritePaletteEntry(0xFF37474F, 'Shadow slate'),
+      SpritePaletteEntry(0xFFAB47BC, 'Magic purple'),
+      SpritePaletteEntry(0xFF263238, 'Night blue'),
+    ]),
     SpritePaletteGroup('Special', [
       SpritePaletteEntry(0xFFFFC107, 'Gold'),
       SpritePaletteEntry(0xFFE040FB, 'Bright magenta'),

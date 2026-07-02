@@ -128,6 +128,50 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     _setData(CustomSpriteData.empty());
   }
 
+  Future<void> _confirmClear() async {
+    if (!_data.hasVisiblePixels) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear sprite?'),
+        content: const Text('This will erase your current drawing.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      _clear();
+    }
+  }
+
+  void _onColorPicked(int? color) {
+    if (color == null) {
+      showGameSnackBar(
+        context,
+        message: 'No color here — try another pixel.',
+        backgroundColor: Colors.orange.shade700,
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedColor = color;
+      _tool = SpriteEditorTool.pencil;
+      _ratedScore = null;
+      _ratedReward = null;
+    });
+  }
+
   void _clearRating() {
     setState(() {
       _ratedScore = null;
@@ -364,6 +408,9 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     });
   }
 
+  bool get _showsBrushSize =>
+      _tool == SpriteEditorTool.pencil || _tool == SpriteEditorTool.eraser;
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
@@ -436,7 +483,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                         child: Column(
                           children: [
                             Text(
-                              'Tap or drag to draw. Pick a tool, brush, and color.',
+                              'Tap or drag to draw. Use pencil, fill, eraser, '
+                              'or eyedropper. Undo and redo your changes.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
@@ -449,6 +497,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                               tool: _tool,
                               brushSize: _brushSize,
                               showGrid: _showGrid,
+                              showBrushSize: _showsBrushSize,
                               canUndo: _canUndo,
                               canRedo: _canRedo,
                               onToolSelected: _selectTool,
@@ -468,6 +517,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                               showGrid: _showGrid,
                               onStrokeStart: _onStrokeStart,
                               onChanged: _onEditorChanged,
+                              onColorPicked: _onColorPicked,
                               canvasSize: 240,
                               themeColor: theme.primaryColor,
                               referenceOverlay: ratingReference,
@@ -590,7 +640,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: _clear,
+                              onPressed:
+                                  _data.hasVisiblePixels ? _confirmClear : null,
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(0, 48),
                                 foregroundColor: theme.cardTextPrimaryColor,
@@ -1126,6 +1177,7 @@ class _ToolsPanel extends StatelessWidget {
     required this.tool,
     required this.brushSize,
     required this.showGrid,
+    required this.showBrushSize,
     required this.canUndo,
     required this.canRedo,
     required this.onToolSelected,
@@ -1139,6 +1191,7 @@ class _ToolsPanel extends StatelessWidget {
   final SpriteEditorTool tool;
   final int brushSize;
   final bool showGrid;
+  final bool showBrushSize;
   final bool canUndo;
   final bool canRedo;
   final ValueChanged<SpriteEditorTool> onToolSelected;
@@ -1179,31 +1232,40 @@ class _ToolsPanel extends StatelessWidget {
               selected: tool == SpriteEditorTool.eraser,
               onTap: () => onToolSelected(SpriteEditorTool.eraser),
             ),
+            _ToolChip(
+              theme: theme,
+              label: 'Pick',
+              icon: Icons.colorize_rounded,
+              selected: tool == SpriteEditorTool.eyedropper,
+              onTap: () => onToolSelected(SpriteEditorTool.eyedropper),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
-        Text(
-          'Brush: ${brushSize}x$brushSize',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: theme.cardTextSecondaryColor,
+        if (showBrushSize) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Brush: ${brushSize}x$brushSize',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.cardTextSecondaryColor,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final size in [1, 2, 3])
-              _ToolChip(
-                theme: theme,
-                label: '${size}x$size',
-                selected: brushSize == size,
-                onTap: () => onBrushSizeSelected(size),
-              ),
-          ],
-        ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final size in [1, 2, 3])
+                _ToolChip(
+                  theme: theme,
+                  label: '${size}x$size',
+                  selected: brushSize == size,
+                  onTap: () => onBrushSizeSelected(size),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 12),
         Row(
           children: [
