@@ -1,34 +1,16 @@
+import '../data/game_data.dart';
 import '../models/retro_pixel_sprite_definition.dart';
+import 'retro_pixel_animal_catalog.dart';
 import 'retro_pixel_chicken.dart';
 import 'retro_pixel_hand_authored_sprites.dart';
 
 /// Retro Pixel animal sprites — explicit hand-authored grids only.
 ///
 /// These sprites are separate from [SpriteReferenceData] and the 16×16 custom
-/// sprite editor. Animals without an entry fall back to Classic PNG rendering.
+/// sprite editor. Full coverage of [GameData.animals]; missing entries fall
+/// back to Classic PNG rendering only if generation fails.
 class RetroPixelAnimalSprites {
   RetroPixelAnimalSprites._();
-
-  /// Animals with dedicated Retro Pixel art.
-  static const supportedAnimalIds = <String>{
-    'chicken',
-    'mouse',
-    'rabbit',
-    'turtle',
-    'pig',
-    'cow',
-    'sheep',
-    'penguin',
-    'alien_slime',
-    'moon_cat',
-    'fish',
-    'horse',
-    'monkey',
-    'parrot',
-    'deer',
-    'fox',
-    'slime_pet',
-  };
 
   static final Map<String, RetroPixelSpriteDefinition> _sprites = _buildSprites();
 
@@ -36,8 +18,13 @@ class RetroPixelAnimalSprites {
     return {
       'chicken': RetroPixelChickenReference.definition,
       ...RetroPixelHandAuthoredSprites.all,
+      ...RetroPixelAnimalCatalog.generated,
     };
   }
+
+  /// Every built-in animal id from game data.
+  static Set<String> get supportedAnimalIds =>
+      GameData.animals.map((animal) => animal.id).toSet();
 
   static bool hasSprite(String animalId) => _sprites.containsKey(animalId);
 

@@ -1,0 +1,293 @@
+import '../models/retro_pixel_sprite_definition.dart';
+import 'retro_pixel_palette.dart';
+
+/// Additional 16×16 Retro Pixel bases for animals beyond the core batch.
+class RetroPixelExtraTemplates {
+  RetroPixelExtraTemplates._();
+
+  static RetroPixelSpriteDefinition _p16(List<String> rows) =>
+      RetroPixelPalette.fromPattern(rows).scale2x();
+
+  static RetroPixelSpriteDefinition _p16Patch(
+    List<String> rows,
+    Map<(int x, int y), int?> patches,
+  ) =>
+      _p16(rows).withPatches(patches);
+
+  static const _k = RetroPixelPalette.black;
+  static const _w = RetroPixelPalette.offWhite;
+
+  static final dragon = _p16Patch([
+    '................',
+    '......KKK.......',
+    '.....KRRRK......',
+    '....KRRRRRK.....',
+    '...KRRRRRRRK....',
+    '...KRRKRRRK.....',
+    '...KRRRRRRRK....',
+    '....KRRRRRK.....',
+    '.....KRRRK......',
+    '....KeE.EeK.....',
+    '....KeE.EeK.....',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (14, 8): _k,
+    (17, 8): _k,
+    (15, 9): _w,
+    (16, 9): _w,
+    (4, 6): RetroPixelPalette.red,
+    (22, 6): RetroPixelPalette.red,
+    (2, 10): RetroPixelPalette.red,
+    (26, 10): RetroPixelPalette.red,
+  });
+
+  static final snake = _p16Patch([
+    '................',
+    '................',
+    '......KKK.......',
+    '.....KGGGK......',
+    '....KGGGGGK.....',
+    '...KGGGGGGGK....',
+    '....KGGGGGK.....',
+    '.....KGGGGK.....',
+    '......KGGGK.....',
+    '.......KGGK.....',
+    '........KGK.....',
+    '.........KK.....',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (14, 6): _k,
+    (15, 7): _w,
+    (16, 7): _k,
+    (14, 8): RetroPixelPalette.pink,
+  });
+
+  static final seal = _p16Patch([
+    '................',
+    '................',
+    '.....KKKKK......',
+    '....KGGGGGK.....',
+    '...KGGGGGGGK....',
+    '...KGGKGGGGK....',
+    '...KGGGGGGGK....',
+    '....KGGGGGK.....',
+    '.....KeEeK......',
+    '.....KeEeK......',
+    '......KKK.......',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): _w,
+    (21, 11): _w,
+    (14, 12): _k,
+    (15, 12): _k,
+    (16, 12): _k,
+  });
+
+  static final owl = _p16Patch([
+    '................',
+    '.....KKKKK......',
+    '....KWWWWWK.....',
+    '...KWWKWWWK.....',
+    '...KWWWWWWWK....',
+    '...KWWKOKWWK....',
+    '...KWWWWWWWK....',
+    '....KWWWWWK.....',
+    '.....KWWWK......',
+    '.....KOOOK......',
+    '.....KOOOK......',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): RetroPixelPalette.yellow,
+    (21, 11): RetroPixelPalette.yellow,
+  });
+
+  static final beetle = _p16Patch([
+    '................',
+    '................',
+    '......KKK.......',
+    '.....KBBBK......',
+    '....KBBBBBK.....',
+    '...KBBBBBBBK....',
+    '...KBBKBBBK.....',
+    '...KBBBBBBBK....',
+    '....KBBBBBK.....',
+    '.....KeEeK......',
+    '.....KeEeK......',
+    '......KKK.......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (14, 8): _k,
+    (15, 9): RetroPixelPalette.yellow,
+    (16, 9): _k,
+    (2, 6): RetroPixelPalette.darkGreen,
+    (26, 6): RetroPixelPalette.darkGreen,
+  });
+
+  static final golem = _p16Patch([
+    '................',
+    '.....KKKKK......',
+    '....KGGGGGK.....',
+    '...KGGGGGGGK....',
+    '...KGGKGGGGK....',
+    '...KGGGGGGGK....',
+    '...KGGGGGGGK....',
+    '....KGGGGGK.....',
+    '.....KGGGK......',
+    '.....KeEeK......',
+    '.....KeEeK......',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 8): _k,
+    (20, 8): _k,
+    (13, 9): RetroPixelPalette.lightGray,
+    (21, 9): RetroPixelPalette.lightGray,
+    (14, 12): RetroPixelPalette.lightGray,
+    (15, 12): RetroPixelPalette.lightGray,
+    (16, 12): RetroPixelPalette.lightGray,
+    (17, 12): RetroPixelPalette.lightGray,
+  });
+
+  static final dino = _p16Patch([
+    '................',
+    '................',
+    '......KKK.......',
+    '.....KGGGK......',
+    '....KGGGGGK.....',
+    '....KGGKGGGK....',
+    '....KGGGGGGK....',
+    '....KGGGGGGK....',
+    '.....KGGGGK.....',
+    '....KeE.EeK.....',
+    '....KeE.EeK.....',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 8): _k,
+    (20, 8): _k,
+    (13, 9): _w,
+    (21, 9): _w,
+    (14, 12): _k,
+    (15, 12): _k,
+    (16, 12): _k,
+    (26, 14): RetroPixelPalette.darkGreen,
+    (27, 14): RetroPixelPalette.darkGreen,
+    (28, 15): RetroPixelPalette.darkGreen,
+  });
+
+  static final lion = _p16Patch([
+    '................',
+    '....KKKKKKK.....',
+    '...KYYYYYYYK....',
+    '...KYYKYYYK.....',
+    '...KYYYYYYYK....',
+    '...KYYKOKYK.....',
+    '...KYYYYYYYK....',
+    '....KYYYYYK.....',
+    '.....KYYYYK.....',
+    '.....KeEeK......',
+    '.....KeEeK......',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 12): _k,
+    (20, 12): _k,
+    (13, 13): _w,
+    (21, 13): _w,
+    (14, 16): _k,
+    (15, 16): _k,
+    (16, 16): _k,
+    (17, 16): _k,
+  });
+
+  static final phoenix = _p16Patch([
+    '................',
+    '......KKK.......',
+    '.....KRRRK......',
+    '....KRYYYYK.....',
+    '....KRYYYYK.....',
+    '....KRYYYYK.....',
+    '....KRYYYYK.....',
+    '.....KRYYK......',
+    '.....KOOOK......',
+    '.....KOOOK......',
+    '.....KKKKK......',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (14, 8): _k,
+    (17, 8): _k,
+    (15, 9): _w,
+    (2, 12): RetroPixelPalette.red,
+    (3, 10): RetroPixelPalette.orange,
+    (26, 12): RetroPixelPalette.red,
+    (27, 10): RetroPixelPalette.orange,
+    (28, 14): RetroPixelPalette.yellow,
+    (29, 14): RetroPixelPalette.orange,
+  });
+
+  static final bear = _p16Patch([
+    '................',
+    '...KK.....KK....',
+    '..KBBK...KBBK...',
+    '..KBBKKKKKBBK...',
+    '..KBBBBBBBBBK...',
+    '..KBBKOKKBBK....',
+    '..KBBBBBBBBK....',
+    '...KBBBBBBK.....',
+    '....KBBBBK......',
+    '....KeEeK.......',
+    '....KeEeK.......',
+    '....KKKKK.......',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], {
+    (12, 10): _k,
+    (20, 10): _k,
+    (13, 11): _w,
+    (21, 11): _w,
+    (14, 14): _k,
+    (15, 14): _k,
+    (16, 14): _k,
+    (10, 26): _k,
+    (11, 26): _k,
+    (20, 26): _k,
+    (21, 26): _k,
+  });
+}

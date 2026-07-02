@@ -38,6 +38,17 @@ class RetroPixelSpriteDefinition {
     return result;
   }
 
+  /// Swaps palette colors in-place (null pixels stay null).
+  RetroPixelSpriteDefinition recolor(Map<int, int> colorMap) {
+    return RetroPixelSpriteDefinition(
+      width: width,
+      height: height,
+      pixels: pixels
+          .map((color) => color == null ? null : (colorMap[color] ?? color))
+          .toList(),
+    );
+  }
+
   /// Nearest-neighbor 2× upscale for preserving existing 16×16 art.
   RetroPixelSpriteDefinition scale2x() {
     final w = width * 2;

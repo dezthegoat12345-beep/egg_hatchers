@@ -25,6 +25,7 @@ class RetroPixelPalette {
   static const slimeGreen = 0xFF81C784;
   static const slimeDark = 0xFF388E3C;
   static const white = 0xFFFFFFFF;
+  static const purple = 0xFF8E24AA;
 
   static const colorKeys = {
     'K': black,

@@ -2,7 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/retro_pixel_boss_projectiles.dart';
+import '../models/animal_sprite_theme.dart';
 import '../utils/boss_visual_config.dart';
+import 'animal_sprite_theme_scope.dart';
+import 'retro_pixel_sprite.dart';
 import 'rotten_egg_projectile.dart';
 
 /// Boss-specific falling projectile visual (same hitbox as rotten egg).
@@ -21,6 +25,17 @@ class BossProjectileWidget extends StatelessWidget {
     final type = BossVisualConfig.projectileTypeForBossId(bossId);
     if (type == BossProjectileVisualType.rottenEgg) {
       return RottenEggProjectile(size: size);
+    }
+
+    final animalTheme = AnimalSpriteThemeScope.of(context);
+    if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
+      final pixelArt = RetroPixelBossProjectiles.forType(type);
+      if (pixelArt != null) {
+        return RetroPixelSprite(
+          definition: pixelArt,
+          size: size,
+        );
+      }
     }
 
     return SizedBox(
