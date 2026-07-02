@@ -1,9 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:egg_hatchers/data/retro_pixel_animal_sprites.dart';
+import 'package:egg_hatchers/data/retro_pixel_chicken.dart';
+import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/animal_sprite_theme.dart';
 import 'package:egg_hatchers/models/custom_sprite_data.dart';
-import 'package:egg_hatchers/data/sprite_reference_data.dart';
 
 void main() {
   test('AnimalSpriteThemes defaults invalid ids to classic', () {
@@ -35,11 +36,16 @@ void main() {
     }
   });
 
-  test('Retro Pixel chicken matches sprite reference grid', () {
+  test('Retro Pixel chicken uses user reference grid, not rating reference', () {
     final chicken = RetroPixelAnimalSprites.spriteFor('chicken')!;
-    final reference = SpriteReferenceData.referenceFor('chicken')!;
+    final ratingReference = SpriteReferenceData.referenceFor('chicken')!;
 
-    expect(chicken.pixels, reference.pixels);
+    expect(chicken.pixels, RetroPixelChickenReference.data.pixels);
+    expect(chicken.pixels, isNot(equals(ratingReference.pixels)));
+    expect(chicken.pixels, contains(RetroPixelChickenReference.red));
+    expect(chicken.pixels, contains(RetroPixelChickenReference.orange));
+    expect(chicken.pixels, contains(RetroPixelChickenReference.black));
+    expect(chicken.pixels, contains(RetroPixelChickenReference.offWhite));
   });
 
   test('Retro Pixel adds black outline to non-chicken sprites', () {

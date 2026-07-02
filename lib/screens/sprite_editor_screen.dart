@@ -723,6 +723,7 @@ class _ReferencePreviewsPanel extends StatelessWidget {
                   theme: theme,
                   label: 'Original',
                   child: CustomSpritePreview(
+                    animalId: animal.id,
                     spritePath: animal.spritePath,
                     fallbackEmoji: animal.emoji,
                     size: previewSize,

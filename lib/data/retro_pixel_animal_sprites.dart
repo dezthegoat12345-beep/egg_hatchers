@@ -1,9 +1,10 @@
 import '../models/custom_sprite_data.dart';
+import 'retro_pixel_chicken.dart';
 import 'sprite_reference_data.dart';
 
 /// Retro Pixel animal sprites — 16×16 grids rendered with crisp scaling.
 ///
-/// Chicken uses the polished sprite reference grid directly (player style guide).
+/// Chicken uses the user-provided reference transcribed to grid data.
 /// Other v1 animals reuse reference silhouettes with a black outline pass.
 class RetroPixelAnimalSprites {
   RetroPixelAnimalSprites._();
@@ -27,18 +28,17 @@ class RetroPixelAnimalSprites {
   static final Map<String, CustomSpriteData> _sprites = _buildSprites();
 
   static Map<String, CustomSpriteData> _buildSprites() {
-    final sprites = <String, CustomSpriteData>{};
+    final sprites = <String, CustomSpriteData>{
+      'chicken': RetroPixelChickenReference.data,
+    };
 
     for (final animalId in v1AnimalIds) {
+      if (animalId == 'chicken') continue;
+
       final reference = SpriteReferenceData.referenceFor(animalId);
       if (reference == null) continue;
 
-      if (animalId == 'chicken') {
-        // Match the uploaded / editor reference chicken pixel-for-pixel.
-        sprites[animalId] = reference;
-      } else {
-        sprites[animalId] = _withBlackOutline(reference);
-      }
+      sprites[animalId] = _withBlackOutline(reference);
     }
 
     return sprites;

@@ -281,6 +281,7 @@ class _AnimalSpriteTile extends StatelessWidget {
                 ),
                 child: CustomSpritePreview(
                   customSprite: customSprite,
+                  animalId: animal.id,
                   spritePath: animal.spritePath,
                   fallbackEmoji: animal.emoji,
                   size: 44,

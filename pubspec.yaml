@@ -56,6 +56,7 @@ flutter:
 
   assets:
     - assets/images/animals/
+    - assets/images/animal_themes/retro_pixel/
     - assets/images/eggs/
     - assets/images/mutations/
     - assets/images/ui/
