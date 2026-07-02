@@ -519,6 +519,7 @@ class _PhoenixFlappingBody extends StatelessWidget {
                 child: BossSprite(
                   spritePath: boss.spritePath,
                   fallbackEmoji: boss.emoji,
+                  bossId: boss.id,
                   size: spriteSize,
                   semanticLabel: boss.name,
                 ),

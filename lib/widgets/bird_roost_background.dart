@@ -2,12 +2,24 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/animal_sprite_theme.dart';
+import 'animal_sprite_theme_scope.dart';
+import 'retro_pixel_boss_battle_background.dart';
+
 /// Moonlit farm roost backdrop for the base bird boss defeat cinematic.
 class BirdRoostBackground extends StatelessWidget {
   const BirdRoostBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final animalTheme = AnimalSpriteThemeScope.of(context);
+    if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
+      return const RetroPixelBossBattleBackground(
+        bossId: 'shadow_rooster',
+        showOverlay: false,
+      );
+    }
+
     return const CustomPaint(painter: _BirdRoostPainter());
   }
 }

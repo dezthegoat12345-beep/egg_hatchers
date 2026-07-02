@@ -1362,6 +1362,7 @@ class _Arena extends StatelessWidget {
                   child: BossSprite(
                     spritePath: boss.spritePath,
                     fallbackEmoji: boss.emoji,
+                    bossId: boss.id,
                     size: bossSize,
                     semanticLabel: boss.name,
                   ),

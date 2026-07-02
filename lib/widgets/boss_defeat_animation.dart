@@ -424,6 +424,7 @@ class _BossDefeatBody extends StatelessWidget {
     Widget sprite = BossSprite(
       spritePath: boss.spritePath,
       fallbackEmoji: boss.emoji,
+      bossId: boss.id,
       size: size,
       semanticLabel: boss.name,
     );

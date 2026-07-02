@@ -195,6 +195,7 @@ class _EggGolemDefeatAnimationState extends State<EggGolemDefeatAnimation>
                           BossSprite(
                             spritePath: widget.boss.spritePath,
                             fallbackEmoji: widget.boss.emoji,
+                            bossId: widget.boss.id,
                             size: _baseSpriteSize,
                             semanticLabel: widget.boss.name,
                           ),

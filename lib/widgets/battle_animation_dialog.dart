@@ -249,6 +249,7 @@ class _BattleAnimationDialogState extends State<BattleAnimationDialog> {
                       sprite: BossSprite(
                         spritePath: widget.boss.spritePath,
                         fallbackEmoji: widget.boss.emoji,
+                        bossId: widget.boss.id,
                         size: bossSize,
                         semanticLabel: widget.boss.name,
                       ),

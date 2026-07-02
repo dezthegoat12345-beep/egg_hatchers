@@ -113,6 +113,7 @@ class AutoBattleResultDialog extends StatelessWidget {
                     BossSprite(
                       spritePath: result.boss.spritePath,
                       fallbackEmoji: result.boss.emoji,
+                      bossId: result.boss.id,
                       size: 64,
                       semanticLabel: result.boss.name,
                     ),

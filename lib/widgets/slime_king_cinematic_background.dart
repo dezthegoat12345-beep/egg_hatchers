@@ -2,12 +2,24 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/animal_sprite_theme.dart';
+import 'animal_sprite_theme_scope.dart';
+import 'retro_pixel_boss_battle_background.dart';
+
 /// Dedicated royal slime palace backdrop for the Slime King defeat cinematic.
 class SlimeKingCinematicBackground extends StatelessWidget {
   const SlimeKingCinematicBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final animalTheme = AnimalSpriteThemeScope.of(context);
+    if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
+      return const RetroPixelBossBattleBackground(
+        bossId: 'slime_king',
+        showOverlay: false,
+      );
+    }
+
     return const CustomPaint(painter: _SlimeKingCinematicPainter());
   }
 }

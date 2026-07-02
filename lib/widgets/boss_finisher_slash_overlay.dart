@@ -226,6 +226,7 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
                     child: BossSprite(
                       spritePath: widget.boss.spritePath,
                       fallbackEmoji: widget.boss.emoji,
+                      bossId: widget.boss.id,
                       size: _bossDisplaySize,
                       semanticLabel: widget.boss.name,
                     ),

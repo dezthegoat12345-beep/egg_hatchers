@@ -985,6 +985,7 @@ class _BossCard extends StatelessWidget {
                     ? BossSprite(
                         spritePath: boss.spritePath,
                         fallbackEmoji: boss.emoji,
+                        bossId: boss.id,
                         size: 52,
                         semanticLabel: boss.name,
                       )

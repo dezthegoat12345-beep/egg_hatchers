@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/animal_sprite_theme.dart';
 import '../utils/boss_visual_config.dart';
+import 'animal_sprite_theme_scope.dart';
+import 'retro_pixel_boss_battle_background.dart';
 
 /// Full-arena boss-specific battle background for manual battles.
 class BossBattleBackground extends StatelessWidget {
@@ -17,6 +20,14 @@ class BossBattleBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final animalTheme = AnimalSpriteThemeScope.of(context);
+    if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
+      return RetroPixelBossBattleBackground(
+        bossId: bossId,
+        showOverlay: showOverlay,
+      );
+    }
+
     final type = BossVisualConfig.backgroundTypeForBossId(bossId);
     return Stack(
       fit: StackFit.expand,

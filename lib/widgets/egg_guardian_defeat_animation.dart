@@ -240,6 +240,7 @@ class _EggGuardianDefeatAnimationState extends State<EggGuardianDefeatAnimation>
                               BossSprite(
                                 spritePath: widget.boss.spritePath,
                                 fallbackEmoji: widget.boss.emoji,
+                                bossId: widget.boss.id,
                                 size: _baseSpriteSize,
                                 semanticLabel: widget.boss.name,
                               ),

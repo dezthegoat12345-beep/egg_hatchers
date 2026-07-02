@@ -187,6 +187,7 @@ class _BirdBossDefeatAnimationState extends State<BirdBossDefeatAnimation>
                               BossSprite(
                                 spritePath: widget.boss.spritePath,
                                 fallbackEmoji: widget.boss.emoji,
+                                bossId: widget.boss.id,
                                 size: _baseSpriteSize,
                                 semanticLabel: widget.boss.name,
                               ),

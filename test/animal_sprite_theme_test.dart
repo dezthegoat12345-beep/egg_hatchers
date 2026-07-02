@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/retro_pixel_animal_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_boss_projectiles.dart';
+import 'package:egg_hatchers/data/retro_pixel_boss_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_hand_authored_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_native_64_sprites.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
@@ -125,6 +126,21 @@ void main() {
       expect(art!.hasVisiblePixels, isTrue);
       expect(art.width, greaterThanOrEqualTo(20));
     }
+  });
+
+  test('Retro Pixel boss sprite art exists for all bosses', () {
+    for (final bossId in RetroPixelBossSprites.bossIds) {
+      final art = RetroPixelBossSprites.forBossId(bossId);
+      expect(art, isNotNull, reason: bossId);
+      expect(art!.hasVisiblePixels, isTrue, reason: bossId);
+      expect(art.width, 64, reason: bossId);
+      expect(art.height, 64, reason: bossId);
+      expect(art.pixels, contains(0xFF000000), reason: bossId);
+    }
+
+    expect(RetroPixelBossSprites.forBossId('night_rooster'), isNotNull);
+    expect(RetroPixelBossSprites.forBossId('night_crow'), isNotNull);
+    expect(RetroPixelBossSprites.forBossId('unknown_boss'), isNull);
   });
 
   test('RetroPixelSpriteDefinition supports per-sprite dimensions and scale', () {

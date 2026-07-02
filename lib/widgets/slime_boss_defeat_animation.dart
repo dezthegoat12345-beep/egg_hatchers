@@ -459,6 +459,7 @@ class _SlimeBossStage extends StatelessWidget {
           BossSprite(
             spritePath: boss.spritePath,
             fallbackEmoji: boss.emoji,
+            bossId: boss.id,
             size: spriteSize,
             semanticLabel: boss.name,
           ),
