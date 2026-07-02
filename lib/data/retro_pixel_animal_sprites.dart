@@ -1,8 +1,10 @@
 import '../data/game_data.dart';
 import '../models/retro_pixel_sprite_definition.dart';
+import '../models/retro_pixel_sprite_source.dart';
 import 'retro_pixel_animal_catalog.dart';
 import 'retro_pixel_hand_authored_sprites.dart';
 import 'retro_pixel_massive_sprites.dart';
+import 'retro_pixel_native_64_sprites.dart';
 
 /// Retro Pixel animal sprites — explicit hand-authored grids only.
 ///
@@ -20,7 +22,7 @@ class RetroPixelAnimalSprites {
     final merged = <String, RetroPixelSpriteDefinition>{
       ...RetroPixelHandAuthoredSprites.all,
       ...RetroPixelAnimalCatalog.generated,
-      ...RetroPixelMassiveSprites.priority,
+      ...RetroPixelNative64Sprites.all,
     };
 
     return {
@@ -32,7 +34,8 @@ class RetroPixelAnimalSprites {
   static RetroPixelSpriteDefinition _normalizeGrid(
     RetroPixelSpriteDefinition sprite,
   ) {
-    if (sprite.width >= minBuiltInGridSize && sprite.height >= minBuiltInGridSize) {
+    if (sprite.width >= minBuiltInGridSize &&
+        sprite.height >= minBuiltInGridSize) {
       return sprite;
     }
     return RetroPixelMassiveSprites.ensureMassiveGrid(sprite);
@@ -46,4 +49,18 @@ class RetroPixelAnimalSprites {
 
   static RetroPixelSpriteDefinition? spriteFor(String animalId) =>
       _sprites[animalId];
+
+  /// Debug/diagnostic: how this animal's Retro Pixel art was produced.
+  static RetroPixelSpriteSource sourceFor(String animalId) {
+    if (RetroPixelNative64Sprites.priorityIds.contains(animalId)) {
+      return RetroPixelSpriteSource.native64;
+    }
+    if (RetroPixelAnimalCatalog.generated.containsKey(animalId)) {
+      return RetroPixelSpriteSource.catalogGenerated;
+    }
+    if (RetroPixelHandAuthoredSprites.all.containsKey(animalId)) {
+      return RetroPixelSpriteSource.legacyUpscaled;
+    }
+    return RetroPixelSpriteSource.legacyUpscaled;
+  }
 }

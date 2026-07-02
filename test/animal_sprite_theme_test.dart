@@ -3,12 +3,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/retro_pixel_animal_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_boss_projectiles.dart';
-import 'package:egg_hatchers/data/retro_pixel_massive_sprites.dart';
+import 'package:egg_hatchers/data/retro_pixel_hand_authored_sprites.dart';
+import 'package:egg_hatchers/data/retro_pixel_native_64_sprites.dart';
 import 'package:egg_hatchers/data/sprite_reference_data.dart';
 import 'package:egg_hatchers/models/animal_sprite_theme.dart';
-import 'package:egg_hatchers/models/custom_sprite_data.dart';
 import 'package:egg_hatchers/models/retro_pixel_sprite_definition.dart';
+import 'package:egg_hatchers/models/retro_pixel_sprite_source.dart';
 import 'package:egg_hatchers/utils/boss_visual_config.dart';
+
+bool _isPureUpscale(
+  RetroPixelSpriteDefinition small,
+  RetroPixelSpriteDefinition large,
+  int factor,
+) {
+  if (large.width != small.width * factor || large.height != small.height * factor) {
+    return false;
+  }
+  for (var y = 0; y < small.height; y++) {
+    for (var x = 0; x < small.width; x++) {
+      final c = small.pixelAt(x, y);
+      for (var dy = 0; dy < factor; dy++) {
+        for (var dx = 0; dx < factor; dx++) {
+          if (large.pixelAt(x * factor + dx, y * factor + dy) != c) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
 
 void main() {
   test('AnimalSpriteThemes defaults invalid ids to classic', () {
@@ -37,34 +61,47 @@ void main() {
     );
   });
 
-  test('Retro Pixel chicken is upscaled reference, not rating reference', () {
+  test('Retro Pixel priority animals use native 64x64 art', () {
+    for (final id in RetroPixelNative64Sprites.priorityIds) {
+      final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
+      expect(sprite.width, 64, reason: id);
+      expect(sprite.height, 64, reason: id);
+      expect(
+        RetroPixelAnimalSprites.sourceFor(id),
+        RetroPixelSpriteSource.native64,
+        reason: id,
+      );
+      expect(
+        sprite.pixels,
+        RetroPixelNative64Sprites.all[id]!.pixels,
+        reason: id,
+      );
+    }
+  });
+
+  test('Native priority sprites are not pure upscale of legacy 32x32', () {
+    for (final id in RetroPixelNative64Sprites.priorityIds) {
+      final legacy = RetroPixelHandAuthoredSprites.all[id];
+      if (legacy == null) continue;
+      final native = RetroPixelAnimalSprites.spriteFor(id)!;
+      expect(
+        _isPureUpscale(legacy, native, 2),
+        isFalse,
+        reason: '$id should be redrawn, not 2x upscale',
+      );
+    }
+  });
+
+  test('Retro Pixel chicken is native64, not rating reference', () {
     final chicken = RetroPixelAnimalSprites.spriteFor('chicken')!;
     final ratingReference = SpriteReferenceData.referenceFor('chicken')!;
 
     expect(chicken.width, 64);
-    expect(chicken.height, 64);
-    expect(chicken.pixels, RetroPixelMassiveSprites.chicken.pixels);
     expect(chicken.pixels.length, isNot(ratingReference.pixels.length));
-  });
-
-  test('Retro Pixel mouse and rabbit use massive-grid art', () {
-    for (final id in ['mouse', 'rabbit']) {
-      final retro = RetroPixelAnimalSprites.spriteFor(id)!;
-      final rating = SpriteReferenceData.referenceFor(id)!;
-
-      expect(retro.width, 64);
-      expect(retro.height, 64);
-      expect(retro.pixels.length, isNot(rating.pixels.length));
-      expect(retro.pixels, RetroPixelMassiveSprites.priority[id]!.pixels);
-    }
-  });
-
-  test('Retro Pixel priority animals use 64x64 grids', () {
-    for (final id in RetroPixelMassiveSprites.priority.keys) {
-      final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
-      expect(sprite.width, 64, reason: id);
-      expect(sprite.height, 64, reason: id);
-    }
+    expect(
+      RetroPixelAnimalSprites.sourceFor('chicken'),
+      RetroPixelSpriteSource.native64,
+    );
   });
 
   test('Retro Pixel boss projectile art exists for all boss types', () {

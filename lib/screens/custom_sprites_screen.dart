@@ -12,6 +12,7 @@ import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/builtin_sprite_preview_sheet.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
@@ -181,6 +182,7 @@ class CustomSpritesScreen extends StatelessWidget {
                     _AnimalSpriteTile(
                       animal: animal,
                       theme: theme,
+                      preferences: preferences,
                       hasCustom: customSprites.hasCustomSprite(animal.id),
                       customSprite: customSprites.getSprite(animal.id),
                       onTap: () => openWithThemedTransition(
@@ -245,6 +247,7 @@ class _AnimalSpriteTile extends StatelessWidget {
   const _AnimalSpriteTile({
     required this.animal,
     required this.theme,
+    required this.preferences,
     required this.hasCustom,
     required this.customSprite,
     required this.onTap,
@@ -252,9 +255,19 @@ class _AnimalSpriteTile extends StatelessWidget {
 
   final Animal animal;
   final BackgroundTheme theme;
+  final PreferencesService preferences;
   final bool hasCustom;
   final CustomSpriteData? customSprite;
   final VoidCallback onTap;
+
+  void _openLargePreview(BuildContext context) {
+    showBuiltinSpritePreviewSheet(
+      context: context,
+      animal: animal,
+      preferences: preferences,
+      customSprite: customSprite,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -268,25 +281,42 @@ class _AnimalSpriteTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: theme.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: theme.cardBorderColor.withValues(alpha: 0.45),
+              GestureDetector(
+                onTap: () => _openLargePreview(context),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: theme.cardBorderColor.withValues(alpha: 0.45),
+                    ),
                   ),
-                ),
-                child: CustomSpritePreview(
-                  customSprite: customSprite,
-                  animalId: animal.id,
-                  spritePath: animal.spritePath,
-                  fallbackEmoji: animal.emoji,
-                  size: 44,
-                  emojiFontSize: 30,
-                  semanticLabel: animal.name,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomSpritePreview(
+                        customSprite: customSprite,
+                        animalId: animal.id,
+                        spritePath: animal.spritePath,
+                        fallbackEmoji: animal.emoji,
+                        size: 44,
+                        emojiFontSize: 30,
+                        semanticLabel: animal.name,
+                      ),
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Icon(
+                          Icons.zoom_in_rounded,
+                          size: 14,
+                          color: theme.primaryColor.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 14),

@@ -6,6 +6,9 @@ import '../models/animal.dart';
 import '../models/background_theme.dart';
 import '../models/mutation.dart';
 import '../models/forced_hatch_result.dart';
+import '../data/retro_pixel_animal_sprites.dart';
+import '../data/retro_pixel_native_64_sprites.dart';
+import '../models/retro_pixel_sprite_source.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/developer_tools_preferences.dart';
@@ -831,6 +834,33 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
               _showMessage('Claimed quests cleared.');
             },
           ),
+          const SizedBox(height: 32),
+          _SectionTitle('Retro Pixel Sprite Debug'),
+          Text(
+            'Priority animals with native 64×64 art vs legacy upscaled catalog.',
+            style: DevToolsTheme.bodyText(muted: true),
+          ),
+          const SizedBox(height: 12),
+          for (final id in RetroPixelNative64Sprites.priorityIds) ...[
+            Builder(
+              builder: (context) {
+                final sprite = RetroPixelAnimalSprites.spriteFor(id)!;
+                final source = RetroPixelAnimalSprites.sourceFor(id);
+                final sourceLabel = switch (source) {
+                  RetroPixelSpriteSource.native64 => 'native64',
+                  RetroPixelSpriteSource.legacyUpscaled => 'legacy32+',
+                  RetroPixelSpriteSource.catalogGenerated => 'catalog',
+                };
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    '$id — ${sprite.width}×${sprite.height} — $sourceLabel',
+                    style: DevToolsTheme.bodyText(),
+                  ),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 32),
           _SectionTitle('Sprite Quest Testing'),
           Wrap(
