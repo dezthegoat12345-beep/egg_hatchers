@@ -327,6 +327,7 @@ class _HatchDialogState extends State<HatchDialog>
     return GameAnimalPortrait(
       customSprite:
           widget.customSprites?.getDisplaySprite(widget.result.animal.id),
+      animalId: widget.result.animal.id,
       spritePath: widget.result.animal.spritePath,
       fallbackEmoji: widget.result.animal.emoji,
       size: isMutated ? 84 : 76,

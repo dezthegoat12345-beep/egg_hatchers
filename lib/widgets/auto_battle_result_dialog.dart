@@ -81,6 +81,7 @@ class AutoBattleResultDialog extends StatelessWidget {
                       GameSprite(
                         customSprite:
                             customSprites.getDisplaySprite(animal.id),
+                        animalId: animal.id,
                         spritePath: animal.spritePath,
                         fallbackEmoji: mutation.displayEmoji(animal),
                         size: 56,

@@ -166,6 +166,7 @@ class AnimalCard extends StatelessWidget {
                   ),
                   child: GameAnimalPortrait(
                     customSprite: customSprites?.getDisplaySprite(animal.id),
+                    animalId: animal.id,
                     spritePath: animal.spritePath,
                     fallbackEmoji: activeMutation.displayEmoji(animal),
                     size: compact ? 48 : 58,
@@ -527,6 +528,7 @@ class _BattlingAnimalCard extends StatelessWidget {
                         child: GameAnimalPortrait(
                           customSprite:
                               customSprites?.getDisplaySprite(animal.id),
+                          animalId: animal.id,
                           spritePath: animal.spritePath,
                           fallbackEmoji: activeMutation.displayEmoji(animal),
                           size: spriteSize,

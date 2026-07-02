@@ -8,6 +8,7 @@ import 'services/game_service.dart';
 import 'services/preferences_service.dart';
 import 'services/sprite_rating_service.dart';
 import 'services/sprite_reference_overlay_service.dart';
+import 'widgets/animal_sprite_theme_scope.dart';
 import 'widgets/app_theme_background.dart';
 import 'widgets/tutorial_host.dart';
 import 'navigation/app_page_route.dart';
@@ -124,10 +125,13 @@ class _EggHatchersAppState extends State<EggHatchersApp>
         }
         return AppThemeBackground(
           theme: theme,
-          child: TutorialHost(
-            game: _game,
-            theme: theme,
-            child: content,
+          child: AnimalSpriteThemeScope(
+            theme: _preferences.animalSpriteTheme,
+            child: TutorialHost(
+              game: _game,
+              theme: theme,
+              child: content,
+            ),
           ),
         );
       },

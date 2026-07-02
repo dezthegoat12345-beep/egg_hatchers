@@ -408,6 +408,7 @@ class _TripleResultTile extends StatelessWidget {
                 GameAnimalPortrait(
                   customSprite:
                       customSprites?.getDisplaySprite(result.animal.id),
+                  animalId: result.animal.id,
                   spritePath: result.animal.spritePath,
                   fallbackEmoji: result.animal.emoji,
                   size: 52,
@@ -451,6 +452,7 @@ class _TripleResultTile extends StatelessWidget {
                 GameAnimalPortrait(
                   customSprite:
                       customSprites?.getDisplaySprite(result.animal.id),
+                  animalId: result.animal.id,
                   spritePath: result.animal.spritePath,
                   fallbackEmoji: result.animal.emoji,
                   size: 56,

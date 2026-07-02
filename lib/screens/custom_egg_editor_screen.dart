@@ -725,6 +725,7 @@ class _AnimalWeightTile extends StatelessWidget {
                     GameSprite(
                       customSprite:
                           customSprites.getDisplaySprite(animal.id),
+                      animalId: animal.id,
                       spritePath: animal.spritePath,
                       fallbackEmoji: animal.emoji,
                       size: 32,

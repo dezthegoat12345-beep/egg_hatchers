@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../data/retro_pixel_animal_sprites.dart';
+import '../models/animal_sprite_theme.dart';
 import '../models/custom_sprite_data.dart';
 import '../models/mutation.dart';
 import '../theme/game_theme.dart';
+import 'animal_sprite_theme_scope.dart';
 import 'pixel_sprite.dart';
+import 'retro_pixel_animal_sprite.dart';
 
-/// Shows custom pixel art, a sprite image, or emoji fallback (in that order).
+/// Shows custom pixel art, retro pixel art, a sprite image, or emoji fallback.
 class GameSprite extends StatelessWidget {
   const GameSprite({
     super.key,
     this.customSprite,
+    this.animalId,
     this.spritePath,
     required this.fallbackEmoji,
     required this.size,
@@ -19,6 +24,7 @@ class GameSprite extends StatelessWidget {
   });
 
   final CustomSpriteData? customSprite;
+  final String? animalId;
   final String? spritePath;
   final String fallbackEmoji;
   final double size;
@@ -38,6 +44,18 @@ class GameSprite extends StatelessWidget {
       );
     }
 
+    final theme = AnimalSpriteThemeScope.of(context);
+    final id = animalId;
+    if (theme.id == AnimalSpriteThemes.retroPixel.id &&
+        id != null &&
+        RetroPixelAnimalSprites.hasSprite(id)) {
+      return RetroPixelAnimalSprite(
+        animalId: id,
+        size: size,
+        semanticLabel: semanticLabel,
+      );
+    }
+
     if (spritePath == null || spritePath!.isEmpty) {
       return _emojiFallback(emojiSize);
     }
@@ -50,6 +68,7 @@ class GameSprite extends StatelessWidget {
         width: size,
         height: size,
         fit: fit,
+        filterQuality: FilterQuality.none,
         semanticLabel: semanticLabel,
         errorBuilder: (_, _, _) => _emojiFallback(emojiSize),
       ),
@@ -76,6 +95,7 @@ class GameAnimalPortrait extends StatelessWidget {
   const GameAnimalPortrait({
     super.key,
     this.customSprite,
+    this.animalId,
     required this.spritePath,
     required this.fallbackEmoji,
     required this.size,
@@ -85,6 +105,7 @@ class GameAnimalPortrait extends StatelessWidget {
   });
 
   final CustomSpriteData? customSprite;
+  final String? animalId;
   final String? spritePath;
   final String fallbackEmoji;
   final double size;
@@ -131,6 +152,7 @@ class GameAnimalPortrait extends StatelessWidget {
         children: [
           GameSprite(
             customSprite: customSprite,
+            animalId: animalId,
             spritePath: spritePath,
             fallbackEmoji: fallbackEmoji,
             size: innerSize.clamp(size * 0.75, size * 0.98),

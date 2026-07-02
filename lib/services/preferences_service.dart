@@ -1,18 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/animal_sprite_theme.dart';
 import '../models/background_theme.dart';
 
 /// Persists visual preferences separately from gameplay save data.
 class PreferencesService extends ChangeNotifier {
   static const _backgroundKey = 'selectedBackgroundThemeId';
+  static const _animalSpriteThemeKey = 'animalSpriteTheme';
   static const _showBattleBackgroundsKey = 'showBattleBackgrounds';
 
   BackgroundTheme _selectedTheme = BackgroundThemes.defaultTheme;
+  AnimalSpriteTheme _animalSpriteTheme = AnimalSpriteThemes.defaultTheme;
   var _showBattleBackgrounds = true;
   bool _isInitialized = false;
 
   BackgroundTheme get selectedTheme => _selectedTheme;
+  AnimalSpriteTheme get animalSpriteTheme => _animalSpriteTheme;
   bool get showBattleBackgrounds => _showBattleBackgrounds;
   bool get isInitialized => _isInitialized;
 
@@ -22,6 +26,8 @@ class PreferencesService extends ChangeNotifier {
     _selectedTheme = savedId != null
         ? BackgroundThemes.byId(savedId)
         : BackgroundThemes.defaultTheme;
+    _animalSpriteTheme =
+        AnimalSpriteThemes.byId(prefs.getString(_animalSpriteThemeKey));
     _showBattleBackgrounds = prefs.getBool(_showBattleBackgroundsKey) ?? true;
     _isInitialized = true;
     notifyListeners();
@@ -35,6 +41,16 @@ class PreferencesService extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_backgroundKey, theme.id);
+  }
+
+  Future<void> setAnimalSpriteTheme(AnimalSpriteTheme theme) async {
+    if (_animalSpriteTheme.id == theme.id) return;
+
+    _animalSpriteTheme = theme;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_animalSpriteThemeKey, theme.id);
   }
 
   Future<void> setShowBattleBackgrounds(bool value) async {

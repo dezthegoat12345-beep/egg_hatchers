@@ -254,6 +254,7 @@ class BattlesScreen extends StatelessWidget {
                           leading: GameAnimalPortrait(
                             customSprite:
                                 customSprites.getDisplaySprite(animal.id),
+                            animalId: animal.id,
                             spritePath: animal.spritePath,
                             fallbackEmoji: mutation.displayEmoji(animal),
                             size: 48,
@@ -1321,6 +1322,7 @@ class _FighterTile extends StatelessWidget {
             children: [
               GameAnimalPortrait(
                 customSprite: customSprites.getDisplaySprite(animal.id),
+                animalId: animal.id,
                 spritePath: animal.spritePath,
                 fallbackEmoji: mutation.displayEmoji(animal),
                 size: 40,

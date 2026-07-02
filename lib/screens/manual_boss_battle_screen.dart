@@ -68,6 +68,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   late int _battlePower;
   late String _fighterName;
   late String? _fighterSpritePath;
+  late String _fighterAnimalId;
   late String _fighterEmoji;
   late CustomSpriteData? _fighterCustomSprite;
   late Mutation _fighterMutation;
@@ -199,6 +200,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _fighterMutation =
         GameData.mutationById(widget.fighter.mutationId) ?? GameData.mutations.first;
     _fighterName = _fighterMutation.fullName(animal);
+    _fighterAnimalId = animal.id;
     _fighterSpritePath = animal.spritePath;
     _fighterEmoji = _fighterMutation.displayEmoji(animal);
     _fighterCustomSprite =
@@ -830,6 +832,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                                   playerSize: _playerSize,
                                   bossSize: _bossSize,
                                   fighterCustomSprite: _fighterCustomSprite,
+                                  fighterAnimalId: _fighterAnimalId,
                                   fighterSpritePath: _fighterSpritePath,
                                   fighterEmoji: _fighterEmoji,
                                   fighterMutation: _fighterMutation,
@@ -1247,6 +1250,7 @@ class _Arena extends StatelessWidget {
     required this.playerSize,
     required this.bossSize,
     required this.fighterCustomSprite,
+    required this.fighterAnimalId,
     required this.fighterSpritePath,
     required this.fighterEmoji,
     required this.fighterMutation,
@@ -1276,6 +1280,7 @@ class _Arena extends StatelessWidget {
   final double playerSize;
   final double bossSize;
   final CustomSpriteData? fighterCustomSprite;
+  final String fighterAnimalId;
   final String? fighterSpritePath;
   final String fighterEmoji;
   final Mutation fighterMutation;
@@ -1444,6 +1449,7 @@ class _Arena extends StatelessWidget {
             top: playerY,
             child: GameAnimalPortrait(
               customSprite: fighterCustomSprite,
+              animalId: fighterAnimalId,
               spritePath: fighterSpritePath,
               fallbackEmoji: fighterEmoji,
               size: playerSize,
@@ -1703,6 +1709,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
                       customSprite: customSprites?.getDisplaySprite(
                         rewardGrant!.animal.id,
                       ),
+                      animalId: rewardGrant!.animal.id,
                       spritePath: rewardGrant!.animal.spritePath,
                       fallbackEmoji: rewardGrant!.animal.emoji,
                       size: 72,

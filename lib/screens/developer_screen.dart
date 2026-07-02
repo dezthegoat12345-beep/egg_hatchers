@@ -1039,6 +1039,7 @@ class _DevAnimalPreview extends StatelessWidget {
           const SizedBox(height: 12),
           GameAnimalPortrait(
             customSprite: customSprites.getDisplaySprite(animal.id),
+            animalId: animal.id,
             spritePath: animal.spritePath,
             fallbackEmoji: animal.emoji,
             size: 72,
@@ -1078,6 +1079,7 @@ class _DevAnimalDropdownRow extends StatelessWidget {
           height: 32,
           child: GameSprite(
             customSprite: customSprites.getDisplaySprite(animal.id),
+            animalId: animal.id,
             spritePath: animal.spritePath,
             fallbackEmoji: animal.emoji,
             size: 28,

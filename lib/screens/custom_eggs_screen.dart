@@ -288,6 +288,7 @@ class _CustomEggTile extends StatelessWidget {
                     message: animal.name,
                     child: GameSprite(
                       customSprite: customSprites.getDisplaySprite(animal.id),
+                      animalId: animal.id,
                       spritePath: animal.spritePath,
                       fallbackEmoji: animal.emoji,
                       size: 32,
