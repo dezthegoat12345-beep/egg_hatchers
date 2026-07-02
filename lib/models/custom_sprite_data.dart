@@ -1,33 +1,41 @@
 import 'dart:convert';
 
-/// A 16×16 pixel art sprite stored as ARGB color values (null = transparent).
+/// A pixel art sprite stored as ARGB color values (null = transparent).
 class CustomSpriteData {
-  const CustomSpriteData({required this.pixels});
+  const CustomSpriteData({
+    required this.pixels,
+    this.size = defaultGridSize,
+  });
 
-  static const int gridSize = 16;
-  static const int cellCount = gridSize * gridSize;
+  static const int defaultGridSize = 16;
+  static const int expandedGridSize = 24;
 
+  /// Legacy alias — default editor grid size.
+  static const int gridSize = defaultGridSize;
+
+  final int size;
   final List<int?> pixels;
 
-  factory CustomSpriteData.empty() {
+  int get cellCount => size * size;
+
+  factory CustomSpriteData.empty({int gridSize = defaultGridSize}) {
+    final safeSize = _normalizeSize(gridSize);
     return CustomSpriteData(
-      pixels: List<int?>.filled(cellCount, null),
+      size: safeSize,
+      pixels: List<int?>.filled(safeSize * safeSize, null),
     );
   }
 
   factory CustomSpriteData.fromJson(Map<String, dynamic> json) {
-    final size = json['size'] as int? ?? gridSize;
-    if (size != gridSize) {
-      throw FormatException('Unsupported custom sprite size: $size');
-    }
-
+    final size = _normalizeSize(json['size'] as int? ?? defaultGridSize);
+    final expected = size * size;
     final raw = json['pixels'] as List<dynamic>? ?? [];
-    final pixels = List<int?>.filled(cellCount, null);
-    for (var i = 0; i < cellCount && i < raw.length; i++) {
+    final pixels = List<int?>.filled(expected, null);
+    for (var i = 0; i < expected && i < raw.length; i++) {
       final value = raw[i];
       pixels[i] = value == null ? null : (value as num).toInt();
     }
-    return CustomSpriteData(pixels: pixels);
+    return CustomSpriteData(size: size, pixels: pixels);
   }
 
   factory CustomSpriteData.fromJsonString(String jsonString) {
@@ -38,8 +46,13 @@ class CustomSpriteData {
     return CustomSpriteData.fromJson(decoded);
   }
 
+  static int _normalizeSize(int value) {
+    if (value == expandedGridSize) return expandedGridSize;
+    return defaultGridSize;
+  }
+
   Map<String, dynamic> toJson() => {
-        'size': gridSize,
+        'size': size,
         'pixels': pixels,
       };
 
@@ -47,22 +60,25 @@ class CustomSpriteData {
 
   bool get hasVisiblePixels => pixels.any((color) => color != null);
 
-  CustomSpriteData copyWith({List<int?>? pixels}) {
-    return CustomSpriteData(pixels: pixels ?? List<int?>.from(this.pixels));
+  CustomSpriteData copyWith({List<int?>? pixels, int? size}) {
+    return CustomSpriteData(
+      size: size ?? this.size,
+      pixels: pixels ?? List<int?>.from(this.pixels),
+    );
   }
 
   CustomSpriteData setPixel(int x, int y, int? color) {
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
+    if (x < 0 || x >= size || y < 0 || y >= size) {
       return this;
     }
     final next = List<int?>.from(pixels);
-    next[y * gridSize + x] = color;
-    return CustomSpriteData(pixels: next);
+    next[y * size + x] = color;
+    return CustomSpriteData(size: size, pixels: next);
   }
 
   int? pixelAt(int x, int y) {
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return null;
-    return pixels[y * gridSize + x];
+    if (x < 0 || x >= size || y < 0 || y >= size) return null;
+    return pixels[y * size + x];
   }
 
   /// Paints a square brush anchored at the tapped cell (clamped to the grid).
@@ -83,7 +99,7 @@ class CustomSpriteData {
 
   /// Flood-fills connected cells matching the tapped cell's starting color.
   CustomSpriteData floodFill(int x, int y, int? fillColor) {
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return this;
+    if (x < 0 || x >= size || y < 0 || y >= size) return this;
 
     final targetColor = pixelAt(x, y);
     if (targetColor == fillColor) return this;
@@ -94,9 +110,9 @@ class CustomSpriteData {
 
     while (queue.isNotEmpty) {
       final (cx, cy) = queue.removeLast();
-      final idx = cy * gridSize + cx;
+      final idx = cy * size + cx;
       if (visited.contains(idx)) continue;
-      if (cx < 0 || cx >= gridSize || cy < 0 || cy >= gridSize) continue;
+      if (cx < 0 || cx >= size || cy < 0 || cy >= size) continue;
       if (next[idx] != targetColor) continue;
 
       visited.add(idx);
@@ -107,7 +123,7 @@ class CustomSpriteData {
       queue.add((cx, cy - 1));
     }
 
-    return CustomSpriteData(pixels: next);
+    return CustomSpriteData(size: size, pixels: next);
   }
 }
 

@@ -7,6 +7,7 @@ enum BossProjectileVisualType {
   guardianShard,
   phoenixFlame,
   rottenEgg,
+  rottenShell,
 }
 
 /// Scene style for manual-battle arena backgrounds.
@@ -17,6 +18,7 @@ enum BossBattleBackgroundType {
   royalPalace,
   guardianNest,
   phoenixLair,
+  rottenNest,
   genericArena,
 }
 
@@ -35,6 +37,7 @@ class BossVisualConfig {
       'slime_king' => BossProjectileVisualType.royalSlime,
       'egg_guardian' => BossProjectileVisualType.guardianShard,
       'shadow_phoenix' => BossProjectileVisualType.phoenixFlame,
+      'rotten_shell' => BossProjectileVisualType.rottenShell,
       _ => BossProjectileVisualType.rottenEgg,
     };
   }
@@ -50,6 +53,7 @@ class BossVisualConfig {
       'slime_king' => BossBattleBackgroundType.royalPalace,
       'egg_guardian' => BossBattleBackgroundType.guardianNest,
       'shadow_phoenix' => BossBattleBackgroundType.phoenixLair,
+      'rotten_shell' => BossBattleBackgroundType.rottenNest,
       _ => BossBattleBackgroundType.genericArena,
     };
   }

@@ -30,6 +30,7 @@ class EggCard extends StatelessWidget {
     this.onTripleHatch,
     this.battleTokens,
     this.masteryProgress,
+    this.unlockMessageOverride,
   });
 
   final Egg egg;
@@ -46,6 +47,7 @@ class EggCard extends StatelessWidget {
   final VoidCallback? onTripleHatch;
   final int? battleTokens;
   final EggMasteryProgress? masteryProgress;
+  final String? unlockMessageOverride;
 
   bool get _showEggMastery => EggMasteryLogic.isMasteryEligibleEgg(egg.id);
 
@@ -188,7 +190,7 @@ class EggCard extends StatelessWidget {
               Text(
                 _usesBattleTokens
                     ? 'Hatch an animal to unlock Boss Battles and Battle Eggs.'
-                    : egg.unlockMessage,
+                    : (unlockMessageOverride ?? egg.unlockMessage),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

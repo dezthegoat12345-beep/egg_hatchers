@@ -63,6 +63,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   static const _maxHistory = 30;
 
   late CustomSpriteData _data;
+  late int _canvasSize;
   int? _selectedColor = SpritePalette.colors.first;
   SpriteEditorTool _tool = SpriteEditorTool.pencil;
   int _brushSize = 1;
@@ -82,7 +83,13 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     super.initState();
     _data = widget.customSprites.getSprite(widget.animal.id) ??
         CustomSpriteData.empty();
+    _canvasSize = _data.size;
   }
+
+  int get _maxCanvasSize => widget.game.maxCustomSpriteGridSize;
+
+  CustomSpriteData _emptyCanvas() =>
+      CustomSpriteData.empty(gridSize: _canvasSize);
 
   void _clearHistory() {
     _undoStack.clear();
@@ -125,7 +132,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
 
   void _clear() {
     _pushUndo();
-    _setData(CustomSpriteData.empty());
+    _setData(_emptyCanvas());
   }
 
   Future<void> _confirmClear() async {
@@ -372,7 +379,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     if (!mounted) return;
     _clearHistory();
     setState(() {
-      _data = CustomSpriteData.empty();
+      _data = _emptyCanvas();
       _ratedScore = null;
       _ratedReward = null;
     });
@@ -508,6 +515,48 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
                               onUndo: _undo,
                               onRedo: _redo,
                             ),
+                            if (_maxCanvasSize >
+                                CustomSpriteData.defaultGridSize) ...[
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Canvas:',
+                                    style: TextStyle(
+                                      color: theme.cardTextSecondaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  DropdownButton<int>(
+                                    value: _canvasSize,
+                                    items: [
+                                      CustomSpriteData.defaultGridSize,
+                                      if (_maxCanvasSize >=
+                                          CustomSpriteData.expandedGridSize)
+                                        CustomSpriteData.expandedGridSize,
+                                    ]
+                                        .map(
+                                          (size) => DropdownMenuItem(
+                                            value: size,
+                                            child: Text('${size}×$size'),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: _data.hasVisiblePixels
+                                        ? null
+                                        : (value) {
+                                            if (value == null) return;
+                                            setState(() {
+                                              _canvasSize = value;
+                                              _data = _emptyCanvas();
+                                              _clearHistory();
+                                            });
+                                          },
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 14),
                             PixelSpriteEditor(
                               data: _data,

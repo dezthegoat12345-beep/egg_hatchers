@@ -13,6 +13,7 @@ import 'boss_sprite.dart';
 import 'egg_golem_defeat_animation.dart';
 import 'egg_guardian_defeat_animation.dart';
 import 'slime_boss_defeat_animation.dart';
+import 'rotten_shell_defeat_animation.dart';
 import 'shadow_phoenix_defeat_animation.dart';
 import 'slime_king_defeat_animation.dart';
 
@@ -126,6 +127,7 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
       BossDefeatAnimationType.shadowFeathers => const Color(0xFF7E57C2),
       BossDefeatAnimationType.guardianShatter => const Color(0xFF42A5F5),
       BossDefeatAnimationType.shadowPhoenixFlame => const Color(0xFF1565C0),
+      BossDefeatAnimationType.rottenBurst => const Color(0xFF66BB6A),
       BossDefeatAnimationType.generic => Colors.white,
     };
     return base.withValues(alpha: flash * 0.55);
@@ -213,6 +215,17 @@ class _BossDefeatAnimationState extends State<BossDefeatAnimation>
         coinReward: common.coinReward,
         tokenReward: common.tokenReward,
         animalRewardName: common.animalRewardName,
+        onComplete: common.onComplete,
+      );
+    }
+
+    if (widget.boss.id == 'rotten_shell') {
+      return RottenShellDefeatAnimation(
+        theme: common.theme,
+        boss: common.boss,
+        coinReward: common.coinReward,
+        tokenReward: common.tokenReward,
+        eggShardReward: widget.boss.eggShardReward,
         onComplete: common.onComplete,
       );
     }
@@ -755,6 +768,13 @@ class _AnimParticle {
               const Color(0xFF5C6BC0),
               const Color(0xFF283593),
               const Color(0xFF82B1FF),
+            ],
+          BossDefeatAnimationType.rottenBurst => [
+              const Color(0xFF81C784),
+              const Color(0xFF66BB6A),
+              const Color(0xFF8E24AA),
+              const Color(0xFF4A148C),
+              const Color(0xFFFFF59D),
             ],
           BossDefeatAnimationType.generic => [
               const Color(0xFFFFEB3B),

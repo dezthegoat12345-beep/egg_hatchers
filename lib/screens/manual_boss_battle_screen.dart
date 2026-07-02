@@ -112,6 +112,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _finisherBonusTokens = 0;
   var _victoryCoinReward = 0;
   var _victoryTokenReward = 0;
+  var _victoryEggShardReward = 0;
+  var _livesLostThisBattle = 0;
   String? _earnedRewardAnimalName;
   BossRewardGrant? _earnedRewardGrant;
 
@@ -240,6 +242,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _finisherBonusTokens = 0;
     _victoryCoinReward = 0;
     _victoryTokenReward = 0;
+    _victoryEggShardReward = 0;
+    _livesLostThisBattle = 0;
     _earnedRewardAnimalName = null;
     _earnedRewardGrant = null;
     _lastTickElapsed = null;
@@ -507,6 +511,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   void _loseLife() {
     if (_gameOver) return;
+    _livesLostThisBattle++;
     _lives = max(0, _lives - 1);
     _floatingDamages.add(
       _FloatingDamage(
@@ -625,6 +630,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     _victoryCoinReward = coinReward;
     _victoryTokenReward = tokenReward;
+    _victoryEggShardReward =
+        _won && boss.eggShardReward > 0 ? boss.eggShardReward : 0;
 
     final result = BossBattleResult(
       won: _won,
@@ -644,6 +651,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       result,
       mode: _won ? _mode : ManualBattleMode.normal,
       rewardAnimalId: _won ? boss.rewardAnimalId : null,
+      livesLostThisBattle: _livesLostThisBattle,
     );
     _earnedRewardAnimalName = grant?.displayName;
     _earnedRewardGrant = grant;
@@ -674,6 +682,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         tokenReward: _won ? boss.battleTokenReward * rewardMultiplier : 0,
         finisherBonusCoins: _finisherBonusCoins,
         finisherBonusTokens: _finisherBonusTokens,
+        eggShardReward: _victoryEggShardReward,
         rewardAnimalName: _earnedRewardAnimalName,
         rewardGrant: _earnedRewardGrant,
         customSprites: widget.customSprites,
@@ -1536,6 +1545,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
     required this.tokenReward,
     this.finisherBonusCoins = 0,
     this.finisherBonusTokens = 0,
+    this.eggShardReward = 0,
     this.rewardAnimalName,
     this.rewardGrant,
     this.customSprites,
@@ -1556,6 +1566,7 @@ class _ManualBattleResultDialog extends StatelessWidget {
   final int tokenReward;
   final int finisherBonusCoins;
   final int finisherBonusTokens;
+  final int eggShardReward;
   final String? rewardAnimalName;
   final BossRewardGrant? rewardGrant;
   final CustomSpriteService? customSprites;
@@ -1679,7 +1690,11 @@ class _ManualBattleResultDialog extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '🪙 ${formatCoins(coinReward)} · ⚔️ +$tokenReward',
+                [
+                  '🪙 ${formatCoins(coinReward)}',
+                  '⚔️ +$tokenReward',
+                  if (eggShardReward > 0) '🥚 +$eggShardReward Shards',
+                ].join(' · '),
                 style: TextStyle(color: theme.cardTextPrimaryColor),
               ),
               const SizedBox(height: 10),

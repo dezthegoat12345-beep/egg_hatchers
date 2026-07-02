@@ -13,6 +13,7 @@ class BossCinematicVictoryOverlay extends StatelessWidget {
     required this.coinReward,
     required this.tokenReward,
     this.animalRewardName,
+    this.eggShardReward = 0,
     required this.titleProgress,
     required this.titleOpacity,
     required this.rewardsOpacity,
@@ -27,6 +28,7 @@ class BossCinematicVictoryOverlay extends StatelessWidget {
   final int coinReward;
   final int tokenReward;
   final String? animalRewardName;
+  final int eggShardReward;
   final double titleProgress;
   final double titleOpacity;
   final double rewardsOpacity;
@@ -125,6 +127,11 @@ class BossCinematicVictoryOverlay extends StatelessWidget {
                         BossCinematicRewardChip(
                           label: '⚔️ +$tokenReward',
                           color: const Color(0xFF1565C0),
+                        ),
+                      if (eggShardReward > 0)
+                        BossCinematicRewardChip(
+                          label: '🥚 +$eggShardReward Shards',
+                          color: const Color(0xFF558B2F),
                         ),
                       if (animalRewardName != null)
                         BossCinematicRewardChip(

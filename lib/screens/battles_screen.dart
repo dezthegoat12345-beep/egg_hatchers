@@ -13,11 +13,13 @@ import '../theme/game_theme.dart';
 import '../utils/battle_power_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
+import '../utils/egg_shard_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
 import '../widgets/coin_header.dart';
+import '../widgets/egg_shard_upgrades_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
@@ -99,7 +101,7 @@ class BattlesScreen extends StatelessWidget {
   }
 
   Future<void> _upgradeBattleHoming(BuildContext context) async {
-    if (game.battleHomingLevel >= BattleUpgradeLogic.maxLevel) return;
+    if (game.battleHomingLevel >= game.battleHomingMaxLevel) return;
 
     if (game.battleTokens < game.battleHomingUpgradeCost()) {
       showGameSnackBar(
@@ -120,7 +122,7 @@ class BattlesScreen extends StatelessWidget {
   }
 
   Future<void> _upgradeBattleShotSpeed(BuildContext context) async {
-    if (game.battleShotSpeedLevel >= BattleUpgradeLogic.maxLevel) return;
+    if (game.battleShotSpeedLevel >= game.battleShotSpeedMaxLevel) return;
 
     if (game.battleTokens < game.battleShotSpeedUpgradeCost()) {
       showGameSnackBar(
@@ -141,7 +143,7 @@ class BattlesScreen extends StatelessWidget {
   }
 
   Future<void> _upgradeBattleExtraLife(BuildContext context) async {
-    if (game.battleExtraLifeLevel >= BattleUpgradeLogic.extraLifeMaxLevel) {
+    if (game.battleExtraLifeLevel >= game.battleExtraLifeMaxLevel) {
       return;
     }
 
@@ -586,13 +588,28 @@ class BattlesScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    'Battle Tokens: ${game.battleTokens}',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.cardTextPrimaryColor,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Battle Tokens: ${game.battleTokens}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.cardTextPrimaryColor,
+                                        ),
+                                      ),
+                                      if (game.eggShards > 0)
+                                        Text(
+                                          '🥚 Egg Shards: ${game.eggShards}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: theme.secondaryColor,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                                 if (game.totalBossWins > 0)
@@ -676,6 +693,8 @@ class BattlesScreen extends StatelessWidget {
                               ),
                             ),
                           ],
+                          const SizedBox(height: 14),
+                          EggShardUpgradesCard(theme: theme, game: game),
                           const SizedBox(height: 16),
                         ],
                       ),
@@ -735,7 +754,7 @@ class _BattleUpgradesCard extends StatelessWidget {
             description:
                 'Your egg shots curve toward bosses a little better.',
             level: game.battleHomingLevel,
-            maxLevel: BattleUpgradeLogic.maxLevel,
+            maxLevel: game.battleHomingMaxLevel,
             nextCost: game.battleHomingUpgradeCost(),
             canAfford: game.battleTokens >= game.battleHomingUpgradeCost(),
             onUpgrade: onUpgradeBattleHoming,
@@ -746,7 +765,7 @@ class _BattleUpgradesCard extends StatelessWidget {
             title: 'Egg Speed',
             description: 'Your egg shots fly faster in Manual Battle.',
             level: game.battleShotSpeedLevel,
-            maxLevel: BattleUpgradeLogic.maxLevel,
+            maxLevel: game.battleShotSpeedMaxLevel,
             nextCost: game.battleShotSpeedUpgradeCost(),
             canAfford: game.battleTokens >= game.battleShotSpeedUpgradeCost(),
             onUpgrade: onUpgradeBattleShotSpeed,
@@ -758,7 +777,7 @@ class _BattleUpgradesCard extends StatelessWidget {
             description:
                 'Start Manual Battles with one more life per level.',
             level: game.battleExtraLifeLevel,
-            maxLevel: BattleUpgradeLogic.extraLifeMaxLevel,
+            maxLevel: game.battleExtraLifeMaxLevel,
             nextCost: game.battleExtraLifeUpgradeCost(),
             canAfford: game.battleTokens >= game.battleExtraLifeUpgradeCost(),
             onUpgrade: onUpgradeBattleExtraLife,
@@ -961,9 +980,21 @@ class _BossCard extends StatelessWidget {
     final rewardAnimal = boss.rewardAnimalId != null
         ? GameData.animalById(boss.rewardAnimalId!)
         : null;
+    final isEndgame = boss.isEndgameBoss;
+    final defeatedCount = isEndgame ? game.rottenShellUnlockProgress() : 0;
+    final flawlessDone = game.shadowPhoenixFlawlessWin;
 
     return Container(
-      decoration: GameTheme.cardDecoration(theme, locked: !isUnlocked),
+      decoration: isEndgame
+          ? GameTheme.cardDecoration(theme, locked: !isUnlocked).copyWith(
+              border: Border.all(
+                color: isUnlocked
+                    ? const Color(0xFF8E24AA)
+                    : theme.disabledColor.withValues(alpha: 0.5),
+                width: 2,
+              ),
+            )
+          : GameTheme.cardDecoration(theme, locked: !isUnlocked),
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -981,13 +1012,16 @@ class _BossCard extends StatelessWidget {
                       : theme.disabledColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: isUnlocked
-                    ? BossSprite(
-                        spritePath: boss.spritePath,
-                        fallbackEmoji: boss.emoji,
-                        bossId: boss.id,
-                        size: 52,
-                        semanticLabel: boss.name,
+                child: isUnlocked || isEndgame
+                    ? Opacity(
+                        opacity: isUnlocked ? 1.0 : 0.6,
+                        child: BossSprite(
+                          spritePath: boss.spritePath,
+                          fallbackEmoji: boss.emoji,
+                          bossId: boss.id,
+                          size: 52,
+                          semanticLabel: boss.name,
+                        ),
                       )
                     : Text(
                         '🔒',
@@ -1047,8 +1081,46 @@ class _BossCard extends StatelessWidget {
                 theme: theme,
                 label: '⚔️ +${boss.battleTokenReward}',
               ),
+              if (boss.eggShardReward > 0)
+                _StatChip(
+                  theme: theme,
+                  label: '🥚 +${boss.eggShardReward} Shards',
+                ),
             ],
           ),
+          if (isEndgame && !isUnlocked) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Unlock requirements',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: theme.secondaryColor,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Defeat every boss at least once '
+              '($defeatedCount / ${EggShardLogic.prerequisiteBossIds.length})',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.cardTextSecondaryColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              flawlessDone
+                  ? '✓ Defeat Shadow Phoenix without losing a life'
+                  : '○ Defeat Shadow Phoenix without losing a life',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: flawlessDone
+                    ? Colors.green.shade600
+                    : theme.cardTextSecondaryColor,
+              ),
+            ),
+          ],
           if (winCount > 0) ...[
             const SizedBox(height: 8),
             Text(
@@ -1084,6 +1156,16 @@ class _BossCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
+              ] else if (boss.eggShardReward > 0) ...[
+                Text(
+                  'Reward: 🥚 +${boss.eggShardReward} Egg Shards',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: theme.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
               ],
               FilledButton(
                 onPressed: onManualBattle,
@@ -1095,6 +1177,15 @@ class _BossCard extends StatelessWidget {
                   'Battle',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+              ),
+            ] else if (isEndgame) ...[
+              FilledButton(
+                onPressed: null,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: theme.disabledColor,
+                ),
+                child: const Text('Final Boss Locked'),
               ),
             ] else ...[
               FilledButton(

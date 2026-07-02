@@ -6,6 +6,7 @@ enum BossDefeatAnimationType {
   royalSlimeBurst,
   guardianShatter,
   shadowPhoenixFlame,
+  rottenBurst,
   generic,
 }
 
@@ -24,6 +25,7 @@ class BossDefeatAnimationConfig {
       'slime_king' => BossDefeatAnimationType.royalSlimeBurst,
       'egg_guardian' => BossDefeatAnimationType.guardianShatter,
       'shadow_phoenix' => BossDefeatAnimationType.shadowPhoenixFlame,
+      'rotten_shell' => BossDefeatAnimationType.rottenBurst,
       _ => BossDefeatAnimationType.generic,
     };
   }
@@ -49,6 +51,7 @@ class BossDefeatAnimationConfig {
       BossDefeatAnimationType.royalSlimeBurst => 'ROYAL SPLAT!',
       BossDefeatAnimationType.guardianShatter => 'GUARDIAN SHATTERED!',
       BossDefeatAnimationType.shadowPhoenixFlame => 'PHOENIX EXTINGUISHED!',
+      BossDefeatAnimationType.rottenBurst => 'ROTTEN BURST!',
       BossDefeatAnimationType.generic =>
         isEliteBoss ? 'ELITE BOSS DEFEATED!' : 'BOSS DEFEATED!',
     };

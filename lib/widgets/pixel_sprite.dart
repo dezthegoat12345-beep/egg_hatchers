@@ -78,8 +78,8 @@ class _PixelSpritePainter extends CustomPainter {
     double cell, {
     double opacity = 1.0,
   }) {
-    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
-      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+    for (var y = 0; y < sprite.size; y++) {
+      for (var x = 0; x < sprite.size; x++) {
         final argb = sprite.pixelAt(x, y);
         if (argb != null) {
           final paint = Paint()..color = Color(argb).withValues(alpha: opacity);
@@ -98,7 +98,7 @@ class _PixelSpritePainter extends CustomPainter {
       canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor!);
     }
 
-    final cell = size.width / CustomSpriteData.gridSize;
+    final cell = size.width / data.size;
 
     if (showReferenceOverlay && referenceOverlay != null) {
       _drawPixels(
@@ -116,7 +116,7 @@ class _PixelSpritePainter extends CustomPainter {
         ..color = gridColor
         ..strokeWidth = 1;
 
-      for (var i = 0; i <= CustomSpriteData.gridSize; i++) {
+      for (var i = 0; i <= data.size; i++) {
         final offset = i * cell;
         canvas.drawLine(Offset(offset, 0), Offset(offset, size.height), gridPaint);
         canvas.drawLine(Offset(0, offset), Offset(size.width, offset), gridPaint);
@@ -186,13 +186,13 @@ class _PixelSpriteEditorState extends State<PixelSpriteEditor> {
   }
 
   (int x, int y)? _cellAt(Offset localPosition) {
-    final cell = widget.canvasSize / CustomSpriteData.gridSize;
+    final cell = widget.canvasSize / widget.data.size;
     final x = (localPosition.dx / cell).floor();
     final y = (localPosition.dy / cell).floor();
     if (x < 0 ||
-        x >= CustomSpriteData.gridSize ||
+        x >= widget.data.size ||
         y < 0 ||
-        y >= CustomSpriteData.gridSize) {
+        y >= widget.data.size) {
       return null;
     }
     return (x, y);

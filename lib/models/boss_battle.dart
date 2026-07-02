@@ -34,6 +34,8 @@ class BossBattleDefinition {
     this.unlockNightmareWinsRequired = 3,
     this.rewardAnimalId,
     this.eliteShieldBaseMisses,
+    this.isEndgameBoss = false,
+    this.eggShardReward = 0,
   });
 
   final String id;
@@ -72,6 +74,10 @@ class BossBattleDefinition {
   final String? rewardAnimalId;
   /// Initial shield miss requirement for elite bosses.
   final int? eliteShieldBaseMisses;
+  /// Final endgame boss unlocked via special requirements.
+  final bool isEndgameBoss;
+  /// Egg Shards granted on manual victory (endgame boss).
+  final int eggShardReward;
 }
 
 /// One line in the auto-battle log.

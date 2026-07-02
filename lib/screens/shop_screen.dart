@@ -79,9 +79,7 @@ class ShopScreen extends StatelessWidget {
     if (!game.isEggUnlocked(egg)) {
       showGameSnackBar(
         context,
-        message: egg.unlockRebirthLevel > 0
-            ? egg.rebirthUnlockSnackbarMessage
-            : egg.unlockMessage,
+        message: game.eggLockedDisplayMessage(egg),
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -139,9 +137,7 @@ class ShopScreen extends StatelessWidget {
         context,
         message: egg.usesBattleTokens
             ? 'Hatch an animal to unlock Boss Battles and Battle Eggs.'
-            : egg.unlockRebirthLevel > 0
-                ? egg.rebirthUnlockSnackbarMessage
-                : egg.unlockMessage,
+            : game.eggLockedDisplayMessage(egg),
         backgroundColor: Colors.orange.shade700,
       );
       return;
@@ -260,6 +256,10 @@ class ShopScreen extends StatelessWidget {
                                           : null,
                                       isUnlocked:
                                           game.isEggUnlocked(GameData.eggs[i]),
+                                      unlockMessageOverride:
+                                          game.eggLockedDisplayMessage(
+                                        GameData.eggs[i],
+                                      ),
                                       canAfford:
                                           game.canAfford(GameData.eggs[i]),
                                       lifetimeCoinsEarned:

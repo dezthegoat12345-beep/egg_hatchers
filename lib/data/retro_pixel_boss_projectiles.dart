@@ -10,6 +10,7 @@ class RetroPixelBossProjectiles {
   static const _g = RetroPixelPalette.slimeGreen;
   static const _y = RetroPixelPalette.yellow;
   static const _l = RetroPixelPalette.blue;
+  static const _p = RetroPixelPalette.purple;
 
   static RetroPixelSpriteDefinition? forType(BossProjectileVisualType type) {
     return switch (type) {
@@ -19,6 +20,7 @@ class RetroPixelBossProjectiles {
       BossProjectileVisualType.royalSlime => _royalSlime,
       BossProjectileVisualType.guardianShard => _guardianShard,
       BossProjectileVisualType.phoenixFlame => _phoenixFlame,
+      BossProjectileVisualType.rottenShell => _rottenShell,
       BossProjectileVisualType.rottenEgg => null,
     };
   }
@@ -111,6 +113,23 @@ class RetroPixelBossProjectiles {
     '...KPPK...',
     '....KK....',
   ]);
+
+  static final _rottenShell = _projectile10([
+    '..........',
+    '..KKKKKK..',
+    '.KGGPPGGK.',
+    'KGGGPPGGGK',
+    'KGGwPPwGGK',
+    'KGGGPPGGGK',
+    '.KGGPPGGK.',
+    '..KGGGGK..',
+    '...KKKK...',
+    '..........',
+  ]).withPatches({
+    (8, 2): _y,
+    (10, 4): _p,
+    (6, 6): _p,
+  });
 
   /// 10×10 base patterns upscaled to 20×20 for sharper pixel projectiles.
   static RetroPixelSpriteDefinition _projectile10(List<String> rows) =>

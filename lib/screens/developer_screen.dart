@@ -680,6 +680,34 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: 'Add 10 Egg Shards',
+                onPressed: () {
+                  game.devAddEggShards(10);
+                  _showMessage('Added 10 Egg Shards.');
+                },
+              ),
+              _QuickButton(
+                label: 'Unlock Rotten Shell reqs',
+                onPressed: () {
+                  game.devUnlockRottenShellRequirements();
+                  _showMessage('Rotten Shell requirements met.');
+                },
+              ),
+              _QuickButton(
+                label: 'Shadow Phoenix flawless',
+                onPressed: () {
+                  game.devSetShadowPhoenixFlawlessWin(true);
+                  _showMessage('Shadow Phoenix flawless win set.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset Egg Shard upgrades',
+                onPressed: () {
+                  game.devResetEggShardUpgrades();
+                  _showMessage('Egg Shard upgrades reset.');
+                },
+              ),
+              _QuickButton(
                 label: 'Mark Elite Reward Animals',
                 onPressed: () {
                   game.devMarkEliteRewardAnimals();

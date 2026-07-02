@@ -91,6 +91,8 @@ class _RetroPixelBossBattleBackgroundPainter extends CustomPainter {
         _paintGuardianNest(canvas, size, block);
       case BossBattleBackgroundType.phoenixLair:
         _paintPhoenixLair(canvas, size, block, topViewPhase);
+      case BossBattleBackgroundType.rottenNest:
+        _paintRottenNest(canvas, size, block);
       case BossBattleBackgroundType.genericArena:
         _paintGenericArena(canvas, size, block);
     }
@@ -400,6 +402,49 @@ class _RetroPixelBossBattleBackgroundPainter extends CustomPainter {
           height: block * 2,
         ),
         Paint()..color = const Color(0xFF4E342E),
+      );
+    }
+  }
+
+  void _paintRottenNest(Canvas canvas, Size size, double block) {
+    _fillBand(canvas, size, 0, 0.45, const Color(0xFF1A1028));
+    _fillBand(canvas, size, 0.45, 0.62, const Color(0xFF311B92));
+    _ditherGround(canvas, size, block, const Color(0xFF33691E), const Color(0xFF4A148C));
+
+    // Cracked shell floor tiles
+    for (final tile in [
+      (0.12, 0.72, 4, 2),
+      (0.35, 0.78, 5, 2),
+      (0.58, 0.74, 4, 2),
+      (0.78, 0.8, 3, 2),
+    ]) {
+      canvas.drawRect(
+        Rect.fromLTWH(
+          size.width * tile.$1,
+          size.height * tile.$2,
+          block * tile.$3,
+          block * tile.$4,
+        ),
+        Paint()..color = const Color(0xFF8D6E63),
+      );
+    }
+
+    // Toxic fog bands
+    for (var i = 0; i < 4; i++) {
+      canvas.drawRect(
+        Rect.fromLTWH(
+          0,
+          size.height * (0.5 + i * 0.06),
+          size.width,
+          block * 1.5,
+        ),
+        Paint()
+          ..color = Color.lerp(
+            const Color(0xFF66BB6A),
+            const Color(0xFF8E24AA),
+            i / 3,
+          )!
+          .withValues(alpha: 0.35),
       );
     }
   }

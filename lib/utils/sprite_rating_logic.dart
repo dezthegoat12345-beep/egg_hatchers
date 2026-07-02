@@ -184,15 +184,16 @@ class SpriteRatingLogic {
     CustomSpriteData custom,
     CustomSpriteData reference,
   ) {
+    final side = custom.size < reference.size ? custom.size : reference.size;
     var maskMatches = 0;
-    for (var y = 0; y < CustomSpriteData.gridSize; y++) {
-      for (var x = 0; x < CustomSpriteData.gridSize; x++) {
+    for (var y = 0; y < side; y++) {
+      for (var x = 0; x < side; x++) {
         final customOpaque = custom.pixelAt(x, y) != null;
         final referenceOpaque = reference.pixelAt(x, y) != null;
         if (customOpaque == referenceOpaque) maskMatches++;
       }
     }
-    final maskScore = maskMatches / CustomSpriteData.cellCount;
+    final maskScore = maskMatches / (side * side);
     final shapeScore = _shapePlacementScore(custom, reference);
     return (maskScore * 0.55 + shapeScore * 0.45).clamp(0.0, 1.0);
   }
@@ -353,7 +354,7 @@ class SpriteRatingLogic {
     CustomSpriteData custom,
     CustomSpriteData reference,
   ) {
-    final refFill = _opaqueCount(reference) / CustomSpriteData.cellCount;
+    final refFill = _opaqueCount(reference) / reference.cellCount;
     if (refFill > 0.55) return false;
 
     final customCount = _opaqueCount(custom);

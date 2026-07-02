@@ -74,6 +74,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         _paintGuardianNest(canvas, size);
       case BossBattleBackgroundType.phoenixLair:
         _paintPhoenixLair(canvas, size);
+      case BossBattleBackgroundType.rottenNest:
+        _paintRottenNest(canvas, size);
       case BossBattleBackgroundType.genericArena:
         _paintGenericArena(canvas, size);
     }
@@ -360,6 +362,58 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       ),
       flame,
     );
+  }
+
+  void _paintRottenNest(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF1A1028),
+            Color(0xFF311B92),
+            Color(0xFF33691E),
+            Color(0xFF1B5E20),
+          ],
+        ).createShader(rect),
+    );
+
+    final fog = Paint()..color = const Color(0xFF66BB6A).withValues(alpha: 0.25);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.3, size.height * 0.65),
+        width: size.width * 0.5,
+        height: 40,
+      ),
+      fog,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.72, size.height * 0.72),
+        width: size.width * 0.45,
+        height: 32,
+      ),
+      Paint()..color = const Color(0xFF8E24AA).withValues(alpha: 0.28),
+    );
+
+    final shell = Paint()..color = const Color(0xFF8D6E63);
+    for (var i = 0; i < 6; i++) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            size.width * (0.08 + i * 0.15),
+            size.height * 0.78,
+            size.width * 0.12,
+            14,
+          ),
+          const Radius.circular(4),
+        ),
+        shell,
+      );
+    }
   }
 
   void _paintGenericArena(Canvas canvas, Size size) {

@@ -1,4 +1,4 @@
-import '../utils/battle_upgrade_logic.dart';
+import '../utils/egg_shard_logic.dart';
 import '../utils/egg_mastery_logic.dart';
 import 'active_auto_battle.dart';
 import 'daily_quest_progress.dart';
@@ -30,6 +30,12 @@ class PlayerState {
     this.battleHomingLevel = 0,
     this.battleShotSpeedLevel = 0,
     this.battleExtraLifeLevel = 0,
+    this.eggShards = 0,
+    this.shadowPhoenixFlawlessWin = false,
+    this.battleLimitBreakLevel = 0,
+    this.extraLifeLimitBreakLevel = 0,
+    this.eggRebirthReductionLevel = 0,
+    this.customSpriteCanvasTier = 0,
     this.lastDailyRewardClaimDate,
     this.dailyRewardStreak = 0,
     this.bestDailyRewardStreak = 0,
@@ -60,6 +66,12 @@ class PlayerState {
   final int battleHomingLevel;
   final int battleShotSpeedLevel;
   final int battleExtraLifeLevel;
+  final int eggShards;
+  final bool shadowPhoenixFlawlessWin;
+  final int battleLimitBreakLevel;
+  final int extraLifeLimitBreakLevel;
+  final int eggRebirthReductionLevel;
+  final int customSpriteCanvasTier;
   final String? lastDailyRewardClaimDate;
   final int dailyRewardStreak;
   final int bestDailyRewardStreak;
@@ -103,6 +115,12 @@ class PlayerState {
     int? battleHomingLevel,
     int? battleShotSpeedLevel,
     int? battleExtraLifeLevel,
+    int? eggShards,
+    bool? shadowPhoenixFlawlessWin,
+    int? battleLimitBreakLevel,
+    int? extraLifeLimitBreakLevel,
+    int? eggRebirthReductionLevel,
+    int? customSpriteCanvasTier,
     String? lastDailyRewardClaimDate,
     bool clearLastDailyRewardClaimDate = false,
     int? dailyRewardStreak,
@@ -142,6 +160,17 @@ class PlayerState {
       battleHomingLevel: battleHomingLevel ?? this.battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel ?? this.battleShotSpeedLevel,
       battleExtraLifeLevel: battleExtraLifeLevel ?? this.battleExtraLifeLevel,
+      eggShards: eggShards ?? this.eggShards,
+      shadowPhoenixFlawlessWin:
+          shadowPhoenixFlawlessWin ?? this.shadowPhoenixFlawlessWin,
+      battleLimitBreakLevel:
+          battleLimitBreakLevel ?? this.battleLimitBreakLevel,
+      extraLifeLimitBreakLevel:
+          extraLifeLimitBreakLevel ?? this.extraLifeLimitBreakLevel,
+      eggRebirthReductionLevel:
+          eggRebirthReductionLevel ?? this.eggRebirthReductionLevel,
+      customSpriteCanvasTier:
+          customSpriteCanvasTier ?? this.customSpriteCanvasTier,
       lastDailyRewardClaimDate: clearLastDailyRewardClaimDate
           ? null
           : lastDailyRewardClaimDate ?? this.lastDailyRewardClaimDate,
@@ -183,6 +212,12 @@ class PlayerState {
         'battleHomingLevel': battleHomingLevel,
         'battleShotSpeedLevel': battleShotSpeedLevel,
         'battleExtraLifeLevel': battleExtraLifeLevel,
+        'eggShards': eggShards,
+        'shadowPhoenixFlawlessWin': shadowPhoenixFlawlessWin,
+        'battleLimitBreakLevel': battleLimitBreakLevel,
+        'extraLifeLimitBreakLevel': extraLifeLimitBreakLevel,
+        'eggRebirthReductionLevel': eggRebirthReductionLevel,
+        'customSpriteCanvasTier': customSpriteCanvasTier,
         if (lastDailyRewardClaimDate != null)
           'lastDailyRewardClaimDate': lastDailyRewardClaimDate,
         'dailyRewardStreak': dailyRewardStreak,
@@ -199,6 +234,12 @@ class PlayerState {
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
     final coins = json['coins'] as int;
+    final battleLimitBreak = EggShardLogic.clampBattleLimitBreak(
+      json['battleLimitBreakLevel'] as int? ?? 0,
+    );
+    final extraLifeLimitBreak = EggShardLogic.clampExtraLifeLimitBreak(
+      json['extraLifeLimitBreakLevel'] as int? ?? 0,
+    );
     return PlayerState(
       coins: coins,
       ownedAnimals: (json['ownedAnimals'] as List<dynamic>)
@@ -229,14 +270,28 @@ class PlayerState {
       tutorialSkipped: json['tutorialSkipped'] as bool? ?? false,
       tutorialVersionCompleted:
           json['tutorialVersionCompleted'] as int? ?? 0,
-      battleHomingLevel: BattleUpgradeLogic.clampLevel(
+      battleHomingLevel: EggShardLogic.clampHomingLevel(
         json['battleHomingLevel'] as int? ?? 0,
+        battleLimitBreak,
       ),
-      battleShotSpeedLevel: BattleUpgradeLogic.clampLevel(
+      battleShotSpeedLevel: EggShardLogic.clampShotSpeedLevel(
         json['battleShotSpeedLevel'] as int? ?? 0,
+        battleLimitBreak,
       ),
-      battleExtraLifeLevel: BattleUpgradeLogic.clampExtraLifeLevel(
+      battleExtraLifeLevel: EggShardLogic.clampExtraLifeLevel(
         json['battleExtraLifeLevel'] as int? ?? 0,
+        extraLifeLimitBreak,
+      ),
+      eggShards: (json['eggShards'] as num?)?.toInt() ?? 0,
+      shadowPhoenixFlawlessWin:
+          json['shadowPhoenixFlawlessWin'] as bool? ?? false,
+      battleLimitBreakLevel: battleLimitBreak,
+      extraLifeLimitBreakLevel: extraLifeLimitBreak,
+      eggRebirthReductionLevel: EggShardLogic.clampEggRebirthReduction(
+        json['eggRebirthReductionLevel'] as int? ?? 0,
+      ),
+      customSpriteCanvasTier: EggShardLogic.clampCustomSpriteCanvas(
+        json['customSpriteCanvasTier'] as int? ?? 0,
       ),
       lastDailyRewardClaimDate: json['lastDailyRewardClaimDate'] as String?,
       dailyRewardStreak: (json['dailyRewardStreak'] as num?)?.toInt() ?? 0,

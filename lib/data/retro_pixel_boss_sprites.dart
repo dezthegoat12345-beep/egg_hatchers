@@ -13,6 +13,7 @@ class RetroPixelBossSprites {
     'slime_king',
     'egg_guardian',
     'shadow_phoenix',
+    'rotten_shell',
   ];
 
   /// Maps bird boss variants to the shared shadow rooster sprite.
@@ -57,6 +58,7 @@ class RetroPixelBossSprites {
     'slime_king': _slimeKing,
     'egg_guardian': _eggGuardian,
     'shadow_phoenix': _shadowPhoenix,
+    'rotten_shell': _rottenShell,
   };
 
   static RetroPixelSpriteDefinition _slimeBoss() {
@@ -293,6 +295,42 @@ class RetroPixelBossSprites {
     c.fillRect(35, 48, 3, 6, _o);
     c.set(25, 53, _k);
     c.set(38, 53, _k);
+    return c.build();
+  }
+
+  static RetroPixelSpriteDefinition _rottenShell() {
+    final c = RetroPixelNative64Canvas();
+    // Jagged shell spikes
+    c.fillRect(18, 14, 4, 6, _g);
+    c.fillRect(26, 10, 4, 8, _g);
+    c.fillRect(34, 12, 4, 7, _g);
+    c.fillRect(42, 16, 4, 5, _g);
+    for (var x = 17; x <= 46; x++) {
+      c.set(x, 13, _k);
+    }
+    // Main corrupted shell body
+    c.outlineEllipse(32, 38, 20, 22, _g, _k);
+    c.fillEllipse(26, 34, 7, 9, _s);
+    // Purple rot patches
+    c.fillRect(24, 40, 8, 6, _p);
+    c.fillRect(34, 42, 10, 5, _p);
+    c.fillRect(28, 48, 6, 4, _sd);
+    // Dark yolk core
+    c.fillEllipse(32, 44, 8, 7, _o);
+    c.fillRect(30, 42, 4, 4, _y);
+    // Angry eyes
+    c.fillRect(22, 30, 5, 4, _k);
+    c.fillRect(37, 30, 5, 4, _k);
+    c.set(23, 31, _r);
+    c.set(38, 31, _r);
+    c.set(24, 32, _k);
+    c.set(39, 32, _k);
+    // Toxic drips
+    c.fillRect(20, 56, 4, 5, _sd);
+    c.fillRect(30, 58, 5, 4, _p);
+    c.fillRect(40, 56, 4, 5, _sd);
+    c.set(19, 55, _k);
+    c.set(44, 55, _k);
     return c.build();
   }
 }

@@ -69,9 +69,51 @@ class _BossProjectilePainter extends CustomPainter {
         _paintGuardianShard(canvas, size);
       case BossProjectileVisualType.phoenixFlame:
         _paintPhoenixFlame(canvas, size);
+      case BossProjectileVisualType.rottenShell:
+        _paintRottenShell(canvas, size);
       case BossProjectileVisualType.rottenEgg:
         break;
     }
+  }
+
+  void _paintRottenShell(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.54);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center,
+        width: size.width * 0.8,
+        height: size.height * 0.82,
+      ),
+      Paint()
+        ..shader = const RadialGradient(
+          colors: [
+            Color(0xFFDCEDC8),
+            Color(0xFF81C784),
+            Color(0xFF6A1B9A),
+          ],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: size.width * 0.45),
+        ),
+    );
+    final crack = Paint()
+      ..color = const Color(0xFF1B5E20)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(size.width * 0.35, size.height * 0.3),
+      Offset(size.width * 0.5, size.height * 0.55),
+      crack,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.65, size.height * 0.32),
+      Offset(size.width * 0.52, size.height * 0.58),
+      crack,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.42, size.height * 0.46),
+      size.width * 0.06,
+      Paint()..color = const Color(0xFFE53935).withValues(alpha: 0.85),
+    );
   }
 
   void _paintSlimeGlob(Canvas canvas, Size size) {

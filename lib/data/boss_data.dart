@@ -153,8 +153,37 @@ class BossData {
     ),
   ];
 
+  static const endgameBosses = <BossBattleDefinition>[
+    BossBattleDefinition(
+      id: 'rotten_shell',
+      name: 'The Rotten Shell',
+      description:
+          'A corrupted final egg pulsing with toxic rot and jagged shell shards.',
+      emoji: '🥚☠️',
+      maxHp: 500000,
+      recommendedPower: 50000,
+      coinReward: 2000000,
+      battleTokenReward: 20,
+      unlockRequirementText:
+          'Defeat every boss at least once · flawless Shadow Phoenix',
+      autoBattleSeconds: 55,
+      projectileIntervalMs: 480,
+      projectileSpeed: 360,
+      manualBossMoveSpeed: 122,
+      manualAimAccuracy: 0.96,
+      manualPredictionStrength: 17,
+      manualAimErrorMax: 14,
+      manualAimRecalcMs: 235,
+      isEliteBoss: true,
+      manualBattleOnly: true,
+      isEndgameBoss: true,
+      eggShardReward: 3,
+      eliteShieldBaseMisses: 13,
+    ),
+  ];
+
   static List<BossBattleDefinition> get bosses =>
-      [...standardBosses, ...eliteBosses];
+      [...standardBosses, ...eliteBosses, ...endgameBosses];
 
   static BossBattleDefinition? bossById(String id) {
     for (final boss in bosses) {

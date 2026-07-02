@@ -34,6 +34,7 @@ import '../utils/built_in_egg_logic.dart';
 import '../utils/egg_mastery_logic.dart';
 import '../utils/battle_power_logic.dart';
 import '../utils/boss_battle_logic.dart';
+import '../utils/egg_shard_logic.dart';
 import '../utils/sprite_rating_logic.dart';
 import 'save_service.dart';
 import 'sprite_reference_overlay_service.dart';
@@ -462,10 +463,51 @@ class GameService extends ChangeNotifier {
     if (egg.usesBattleTokens) {
       return _state.ownedAnimals.isNotEmpty;
     }
-    return egg.isUnlocked(
-      lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
-      rebirthLevel: _state.rebirthLevel,
+    final effectiveRebirth = EggShardLogic.effectiveRebirthRequirement(
+      egg.unlockRebirthLevel,
+      _state.eggRebirthReductionLevel,
     );
+    if (effectiveRebirth > 0 && _state.rebirthLevel < effectiveRebirth) {
+      return false;
+    }
+    if (egg.unlockLifetimeCoins > 0 &&
+        _state.lifetimeCoinsEarned < egg.unlockLifetimeCoins) {
+      return false;
+    }
+    return true;
+  }
+
+  int get eggShards => _state.eggShards;
+  bool get shadowPhoenixFlawlessWin => _state.shadowPhoenixFlawlessWin;
+  int get battleLimitBreakLevel => _state.battleLimitBreakLevel;
+  int get extraLifeLimitBreakLevel => _state.extraLifeLimitBreakLevel;
+  int get eggRebirthReductionLevel => _state.eggRebirthReductionLevel;
+  int get customSpriteCanvasTier => _state.customSpriteCanvasTier;
+
+  int get battleHomingMaxLevel =>
+      EggShardLogic.homingMaxLevel(_state.battleLimitBreakLevel);
+  int get battleShotSpeedMaxLevel =>
+      EggShardLogic.shotSpeedMaxLevel(_state.battleLimitBreakLevel);
+  int get battleExtraLifeMaxLevel =>
+      EggShardLogic.extraLifeMaxLevel(_state.extraLifeLimitBreakLevel);
+  int get maxCustomSpriteGridSize =>
+      EggShardLogic.maxCustomSpriteGridSize(_state.customSpriteCanvasTier);
+
+  int rottenShellUnlockProgress() =>
+      EggShardLogic.defeatedPrerequisiteCount(_state);
+
+  int effectiveEggRebirthRequirement(Egg egg) =>
+      EggShardLogic.effectiveRebirthRequirement(
+        egg.unlockRebirthLevel,
+        _state.eggRebirthReductionLevel,
+      );
+
+  String eggLockedDisplayMessage(Egg egg) {
+    final effective = effectiveEggRebirthRequirement(egg);
+    if (effective > 0 && _state.rebirthLevel < effective) {
+      return 'Requires Rebirth Level $effective';
+    }
+    return egg.unlockMessage;
   }
 
   bool get bossMutationUnlocked => _state.bossMutationUnlocked;
@@ -662,6 +704,12 @@ class GameService extends ChangeNotifier {
     final battleHomingLevel = _state.battleHomingLevel;
     final battleShotSpeedLevel = _state.battleShotSpeedLevel;
     final battleExtraLifeLevel = _state.battleExtraLifeLevel;
+    final eggShards = _state.eggShards;
+    final shadowPhoenixFlawlessWin = _state.shadowPhoenixFlawlessWin;
+    final battleLimitBreakLevel = _state.battleLimitBreakLevel;
+    final extraLifeLimitBreakLevel = _state.extraLifeLimitBreakLevel;
+    final eggRebirthReductionLevel = _state.eggRebirthReductionLevel;
+    final customSpriteCanvasTier = _state.customSpriteCanvasTier;
     final lastDailyRewardClaimDate = _state.lastDailyRewardClaimDate;
     final dailyRewardStreak = _state.dailyRewardStreak;
     final bestDailyRewardStreak = _state.bestDailyRewardStreak;
@@ -692,6 +740,12 @@ class GameService extends ChangeNotifier {
       battleHomingLevel: battleHomingLevel,
       battleShotSpeedLevel: battleShotSpeedLevel,
       battleExtraLifeLevel: battleExtraLifeLevel,
+      eggShards: eggShards,
+      shadowPhoenixFlawlessWin: shadowPhoenixFlawlessWin,
+      battleLimitBreakLevel: battleLimitBreakLevel,
+      extraLifeLimitBreakLevel: extraLifeLimitBreakLevel,
+      eggRebirthReductionLevel: eggRebirthReductionLevel,
+      customSpriteCanvasTier: customSpriteCanvasTier,
       lastDailyRewardClaimDate: lastDailyRewardClaimDate,
       dailyRewardStreak: dailyRewardStreak,
       bestDailyRewardStreak: bestDailyRewardStreak,
@@ -1389,6 +1443,7 @@ class GameService extends ChangeNotifier {
     ManualBattleMode mode = ManualBattleMode.normal,
     String? rewardAnimalId,
     bool isManualBattle = true,
+    int livesLostThisBattle = 0,
   }) {
     var progress = _state.questProgress;
     if (result.won) {
@@ -1427,9 +1482,25 @@ class GameService extends ChangeNotifier {
     if (rewardAnimalId != null) {
       grant = grantBossRewardAnimal(rewardAnimalId);
     }
+
+    final bossDef = BossData.bossById(bossId);
+    var eggShardReward = 0;
+    if (bossDef != null && bossDef.eggShardReward > 0) {
+      eggShardReward = bossDef.eggShardReward;
+    }
+
+    var shadowPhoenixFlawlessWin = _state.shadowPhoenixFlawlessWin;
+    if (isManualBattle &&
+        bossId == 'shadow_phoenix' &&
+        livesLostThisBattle == 0) {
+      shadowPhoenixFlawlessWin = true;
+    }
+
     _state = _state.copyWith(
       coins: _state.coins + result.coinReward,
       battleTokens: _state.battleTokens + result.battleTokenReward,
+      eggShards: _state.eggShards + eggShardReward,
+      shadowPhoenixFlawlessWin: shadowPhoenixFlawlessWin,
       bossWins: wins,
       hardPhaseWins: hardPhaseWins,
       nightmareWins: nightmareWins,
@@ -1703,7 +1774,7 @@ class GameService extends ChangeNotifier {
       BattleUpgradeLogic.shotSpeedUpgradeCost(_state.battleShotSpeedLevel);
 
   bool upgradeBattleHoming() {
-    if (_state.battleHomingLevel >= BattleUpgradeLogic.maxLevel) return false;
+    if (_state.battleHomingLevel >= battleHomingMaxLevel) return false;
     final cost = battleHomingUpgradeCost();
     if (_state.battleTokens < cost) return false;
     _state = _state.copyWith(
@@ -1717,7 +1788,7 @@ class GameService extends ChangeNotifier {
   }
 
   bool upgradeBattleShotSpeed() {
-    if (_state.battleShotSpeedLevel >= BattleUpgradeLogic.maxLevel) return false;
+    if (_state.battleShotSpeedLevel >= battleShotSpeedMaxLevel) return false;
     final cost = battleShotSpeedUpgradeCost();
     if (_state.battleTokens < cost) return false;
     _state = _state.copyWith(
@@ -1734,7 +1805,7 @@ class GameService extends ChangeNotifier {
       BattleUpgradeLogic.extraLifeUpgradeCost(_state.battleExtraLifeLevel);
 
   bool upgradeBattleExtraLife() {
-    if (_state.battleExtraLifeLevel >= BattleUpgradeLogic.extraLifeMaxLevel) {
+    if (_state.battleExtraLifeLevel >= battleExtraLifeMaxLevel) {
       return false;
     }
     final cost = battleExtraLifeUpgradeCost();
@@ -1747,6 +1818,99 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return true;
+  }
+
+  bool purchaseBattleLimitBreak() {
+    final level = _state.battleLimitBreakLevel;
+    if (level >= EggShardLogic.battleLimitBreakMaxLevel) return false;
+    final cost = EggShardLogic.battleLimitBreakCost(level);
+    if (_state.eggShards < cost) return false;
+    _state = _state.copyWith(
+      eggShards: _state.eggShards - cost,
+      battleLimitBreakLevel: level + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool purchaseExtraLifeLimitBreak() {
+    final level = _state.extraLifeLimitBreakLevel;
+    if (level >= EggShardLogic.extraLifeLimitBreakMaxLevel) return false;
+    final cost = EggShardLogic.extraLifeLimitBreakCost;
+    if (_state.eggShards < cost) return false;
+    _state = _state.copyWith(
+      eggShards: _state.eggShards - cost,
+      extraLifeLimitBreakLevel: level + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool purchaseEggRebirthReduction() {
+    final level = _state.eggRebirthReductionLevel;
+    if (level >= EggShardLogic.eggRebirthReductionMaxLevel) return false;
+    final cost = EggShardLogic.eggRebirthReductionCost(level);
+    if (_state.eggShards < cost) return false;
+    _state = _state.copyWith(
+      eggShards: _state.eggShards - cost,
+      eggRebirthReductionLevel: level + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  bool purchaseCustomSpriteCanvas() {
+    final level = _state.customSpriteCanvasTier;
+    if (level >= EggShardLogic.customSpriteCanvasMaxLevel) return false;
+    final cost = EggShardLogic.customSpriteCanvasCost;
+    if (_state.eggShards < cost) return false;
+    _state = _state.copyWith(
+      eggShards: _state.eggShards - cost,
+      customSpriteCanvasTier: level + 1,
+    );
+    notifyListeners();
+    save();
+    return true;
+  }
+
+  void devAddEggShards(int amount) {
+    if (amount <= 0) return;
+    _state = _state.copyWith(eggShards: _state.eggShards + amount);
+    notifyListeners();
+    save();
+  }
+
+  void devUnlockRottenShellRequirements() {
+    final wins = Map<String, int>.from(_state.bossWins);
+    for (final id in EggShardLogic.prerequisiteBossIds) {
+      wins[id] = max(wins[id] ?? 0, 1);
+    }
+    _state = _state.copyWith(
+      bossWins: wins,
+      shadowPhoenixFlawlessWin: true,
+    );
+    notifyListeners();
+    save();
+  }
+
+  void devSetShadowPhoenixFlawlessWin(bool value) {
+    _state = _state.copyWith(shadowPhoenixFlawlessWin: value);
+    notifyListeners();
+    save();
+  }
+
+  void devResetEggShardUpgrades() {
+    _state = _state.copyWith(
+      battleLimitBreakLevel: 0,
+      extraLifeLimitBreakLevel: 0,
+      eggRebirthReductionLevel: 0,
+      customSpriteCanvasTier: 0,
+    );
+    notifyListeners();
+    save();
   }
 
   void devResetBossWins() {

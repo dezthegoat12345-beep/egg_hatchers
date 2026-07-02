@@ -6,6 +6,7 @@ import '../models/owned_animal.dart';
 import '../models/player_state.dart';
 import 'battle_power_logic.dart';
 import 'collection_quest_logic.dart';
+import 'egg_shard_logic.dart';
 
 /// Boss unlock checks and auto-battle simulation.
 class BossBattleLogic {
@@ -106,6 +107,8 @@ class BossBattleLogic {
         return 4;
       case 'shadow_phoenix':
         return 5;
+      case 'rotten_shell':
+        return 7;
       default:
         return 3;
     }
@@ -385,6 +388,9 @@ class BossBattleLogic {
   }
 
   static bool isBossUnlocked(BossBattleDefinition boss, PlayerState state) {
+    if (boss.isEndgameBoss) {
+      return EggShardLogic.isRottenShellUnlocked(state);
+    }
     if (boss.unlockNightmareWinsBossId != null) {
       return isEliteBossUnlocked(boss, state);
     }

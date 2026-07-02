@@ -11,7 +11,8 @@ class BossCinematicConfig {
       'night_crow' ||
       'slime_king' ||
       'egg_guardian' ||
-      'shadow_phoenix' =>
+      'shadow_phoenix' ||
+      'rotten_shell' =>
         true,
       _ => false,
     };
