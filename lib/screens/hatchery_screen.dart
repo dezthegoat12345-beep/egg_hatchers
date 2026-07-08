@@ -405,13 +405,13 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
                           ),
                         ),
                         _HatcheryNavItem(
-                          label: '✏️ Sprites',
+                          label: '✏️ Custom Animals',
                           color: bg.secondaryColor.withValues(alpha: 0.85),
                           onTap: () => openWithThemedTransition(
                             context,
                             theme: bg,
                             icon: '✏️',
-                            label: 'Opening Sprites',
+                            label: 'Opening Custom Animals',
                             settings:
                                 const RouteSettings(name: kCustomSpritesRouteName),
                             builder: (_) => CustomSpritesScreen(

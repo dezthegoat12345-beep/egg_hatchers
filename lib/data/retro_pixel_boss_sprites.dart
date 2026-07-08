@@ -300,37 +300,91 @@ class RetroPixelBossSprites {
 
   static RetroPixelSpriteDefinition _rottenShell() {
     final c = RetroPixelNative64Canvas();
-    // Jagged shell spikes
-    c.fillRect(18, 14, 4, 6, _g);
-    c.fillRect(26, 10, 4, 8, _g);
-    c.fillRect(34, 12, 4, 7, _g);
-    c.fillRect(42, 16, 4, 5, _g);
-    for (var x = 17; x <= 46; x++) {
-      c.set(x, 13, _k);
+    // Dirty off-white shell top with jagged crown crack
+    c.fillRect(20, 8, 6, 4, _t);
+    c.fillRect(28, 6, 8, 5, _w);
+    c.fillRect(38, 8, 6, 4, _t);
+    c.fillRect(24, 4, 4, 3, _g);
+    c.fillRect(34, 3, 5, 4, _g);
+    c.set(22, 7, _k);
+    c.set(30, 5, _k);
+    c.set(40, 7, _k);
+    // Crown spikes / broken shell rim
+    c.fillRect(16, 12, 4, 5, _g);
+    c.fillRect(22, 10, 3, 6, _w);
+    c.fillRect(28, 9, 4, 7, _t);
+    c.fillRect(34, 10, 3, 6, _w);
+    c.fillRect(40, 12, 4, 5, _g);
+    c.fillRect(44, 14, 3, 4, _db);
+    for (var x = 15; x <= 47; x++) {
+      c.set(x, 11, _k);
     }
-    // Main corrupted shell body
-    c.outlineEllipse(32, 38, 20, 22, _g, _k);
-    c.fillEllipse(26, 34, 7, 9, _s);
-    // Purple rot patches
-    c.fillRect(24, 40, 8, 6, _p);
-    c.fillRect(34, 42, 10, 5, _p);
-    c.fillRect(28, 48, 6, 4, _sd);
-    // Dark yolk core
-    c.fillEllipse(32, 44, 8, 7, _o);
-    c.fillRect(30, 42, 4, 4, _y);
-    // Angry eyes
-    c.fillRect(22, 30, 5, 4, _k);
-    c.fillRect(37, 30, 5, 4, _k);
-    c.set(23, 31, _r);
-    c.set(38, 31, _r);
-    c.set(24, 32, _k);
-    c.set(39, 32, _k);
-    // Toxic drips
-    c.fillRect(20, 56, 4, 5, _sd);
-    c.fillRect(30, 58, 5, 4, _p);
-    c.fillRect(40, 56, 4, 5, _sd);
-    c.set(19, 55, _k);
-    c.set(44, 55, _k);
+    // Main asymmetrical shell body
+    c.outlineEllipse(32, 36, 21, 23, _t, _k);
+    c.fillEllipse(24, 32, 8, 10, _w);
+    c.fillEllipse(38, 34, 6, 8, _g);
+    // Interior corruption / dark yolk core
+    c.fillEllipse(32, 38, 14, 12, _sd);
+    c.fillEllipse(32, 40, 10, 8, _p);
+    c.fillRect(28, 36, 8, 6, _o);
+    c.fillRect(30, 38, 4, 3, _y);
+    c.set(31, 37, _k);
+    // Glowing crack lines
+    c.fillRect(26, 18, 2, 12, _y);
+    c.fillRect(32, 14, 2, 14, _l);
+    c.fillRect(38, 20, 2, 10, _y);
+    c.set(27, 17, _k);
+    c.set(33, 13, _k);
+    c.set(39, 19, _k);
+    // Purple/green rot patches on shell
+    c.fillRect(18, 34, 7, 6, _p);
+    c.fillRect(40, 36, 8, 5, _sd);
+    c.fillRect(22, 44, 6, 4, _s);
+    c.fillRect(36, 46, 7, 4, _p);
+    // Angry red pixel eyes with black outline
+    c.fillRect(20, 28, 6, 5, _k);
+    c.fillRect(38, 28, 6, 5, _k);
+    c.fillRect(21, 29, 4, 3, _r);
+    c.fillRect(39, 29, 4, 3, _r);
+    c.set(22, 30, _w);
+    c.set(40, 30, _w);
+    c.set(24, 30, _k);
+    c.set(42, 30, _k);
+    // Angry brows
+    c.fillRect(19, 26, 5, 2, _k);
+    c.fillRect(40, 26, 5, 2, _k);
+    // Jagged mouth crack
+    c.fillRect(26, 44, 3, 2, _k);
+    c.fillRect(30, 46, 4, 2, _k);
+    c.fillRect(35, 44, 3, 2, _k);
+    c.set(29, 45, _o);
+    // Blocky purple fumes
+    c.fillRect(10, 20, 4, 3, _p);
+    c.fillRect(8, 24, 5, 3, _sd);
+    c.fillRect(50, 18, 4, 3, _p);
+    c.fillRect(52, 22, 5, 3, _s);
+    c.fillRect(14, 14, 3, 3, _p);
+    c.fillRect(48, 12, 3, 3, _sd);
+    // Shell shard spikes
+    c.fillRect(12, 30, 3, 4, _g);
+    c.fillRect(11, 28, 2, 2, _k);
+    c.fillRect(50, 32, 3, 4, _g);
+    c.fillRect(52, 30, 2, 2, _k);
+    c.fillRect(46, 48, 4, 3, _db);
+    c.fillRect(14, 50, 3, 3, _db);
+    // Toxic slime drips
+    c.fillRect(16, 54, 4, 5, _s);
+    c.fillRect(17, 58, 2, 3, _y);
+    c.fillRect(28, 56, 5, 4, _sd);
+    c.fillRect(30, 59, 3, 3, _p);
+    c.fillRect(40, 54, 4, 5, _s);
+    c.fillRect(42, 58, 2, 3, _y);
+    for (var x = 15; x <= 45; x++) {
+      c.set(x, 53, _k);
+      c.set(x, 62, _k);
+    }
+    // Ground shadow
+    c.fillRect(18, 60, 28, 2, _k);
     return c.build();
   }
 }

@@ -352,7 +352,7 @@ Future<void> returnToCustomSpritesWithTransition(
   return returnToRouteWithTransition(
     context,
     theme: theme,
-    label: 'Returning to Sprites',
+    label: 'Returning to Custom Animals',
     icon: '✏️',
     stopAtRouteName: kCustomSpritesRouteName,
   );

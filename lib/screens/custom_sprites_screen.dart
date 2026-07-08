@@ -46,7 +46,7 @@ class CustomSpritesScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(GameTheme.cardRadius),
         ),
         title: Text(
-          'Reset All Custom Sprites?',
+          'Reset All Custom Animals?',
           style: TextStyle(
             color: theme.cardTextPrimaryColor,
             fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class CustomSpritesScreen extends StatelessWidget {
 
     showGameSnackBar(
       context,
-      message: 'All custom sprites reset.',
+      message: 'All custom animals reset.',
       backgroundColor: Colors.red.shade400,
     );
   }
@@ -110,7 +110,7 @@ class CustomSpritesScreen extends StatelessWidget {
         final scaffold = Scaffold(
           backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
-            title: '🎨 Custom Sprites',
+            title: '🎨 Custom Animals',
             titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             backgroundColor: theme.appBarColor,
             foregroundColor: Colors.white,
@@ -154,7 +154,7 @@ class CustomSpritesScreen extends StatelessWidget {
                       child: SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(
-                          'Show Custom Sprites',
+                          'Show Custom Animals',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -211,7 +211,7 @@ class CustomSpritesScreen extends StatelessWidget {
                       color: Colors.red.shade700,
                     ),
                     label: Text(
-                      'Reset All Custom Sprites',
+                      'Reset All Custom Animals',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

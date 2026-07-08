@@ -107,7 +107,7 @@ class BackgroundsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Choose how built-in animals look. Custom sprites always override this.',
+                    'Choose how built-in animals look. Custom animals always override this.',
                     style: TextStyle(
                       fontSize: 13,
                       color: selected.cardTextSecondaryColor,
@@ -125,43 +125,36 @@ class BackgroundsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 8),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final compact = constraints.maxWidth < 360;
-                      return SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () => pushThemedAppRoute(
-                            context,
-                            theme: selected,
-                            settings:
-                                const RouteSettings(name: kCustomSpritesRouteName),
-                            builder: (_) => CustomSpritesScreen(
-                              preferences: preferences,
-                              customSprites: customSprites,
-                              game: game,
-                              spriteRating: spriteRating,
-                              referenceOverlay: referenceOverlay,
-                            ),
-                          ),
-                          icon: const Icon(Icons.brush_rounded),
-                          label: Text(
-                            compact
-                                ? 'Custom Sprites'
-                                : 'Custom Animal Sprites',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: GameTheme.filledButton(
-                            selected,
-                            color: selected.secondaryColor,
-                            height: 52,
-                          ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => pushThemedAppRoute(
+                        context,
+                        theme: selected,
+                        settings:
+                            const RouteSettings(name: kCustomSpritesRouteName),
+                        builder: (_) => CustomSpritesScreen(
+                          preferences: preferences,
+                          customSprites: customSprites,
+                          game: game,
+                          spriteRating: spriteRating,
+                          referenceOverlay: referenceOverlay,
                         ),
-                      );
-                    },
+                      ),
+                      icon: const Icon(Icons.brush_rounded),
+                      label: const Text(
+                        'Custom Animals',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: GameTheme.filledButton(
+                        selected,
+                        color: selected.secondaryColor,
+                        height: 52,
+                      ),
+                    ),
                   ),
                 ],
               ),

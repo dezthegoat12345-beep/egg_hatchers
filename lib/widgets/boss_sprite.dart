@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/retro_pixel_boss_sprites.dart';
 import '../models/animal_sprite_theme.dart';
+import '../utils/egg_shard_logic.dart';
 import 'animal_sprite_theme_scope.dart';
 import 'game_sprite.dart';
 import 'retro_pixel_boss_sprite.dart';
+import 'rotten_shell_classic_sprite.dart';
 
 /// Boss portrait with PNG sprite and emoji fallback.
 ///
@@ -37,6 +39,13 @@ class BossSprite extends StatelessWidget {
           semanticLabel: semanticLabel,
         );
       }
+    }
+
+    if (bossId == EggShardLogic.rottenShellBossId) {
+      return RottenShellClassicSprite(
+        size: size,
+        semanticLabel: semanticLabel,
+      );
     }
 
     return GameSprite(
