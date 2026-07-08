@@ -104,9 +104,19 @@ class _EggGuardianDefeatAnimationState extends State<EggGuardianDefeatAnimation>
   void _playPhaseSounds(double t) {
     final audio = AudioScope.maybeOf(context);
     if (audio == null) return;
-    _soundGuard.maybeAt(t, 'leftArm', _leftArmStart, () => audio.playSfx(Sfx.guardianShatter));
-    _soundGuard.maybeAt(t, 'torso', _torsoStartMs, () => audio.playSfx(Sfx.guardianShatter));
-    _soundGuard.maybeAt(t, 'burst', _burstEndMs, () => audio.playSfx(Sfx.guardianShatter));
+    _soundGuard.maybeAt(t, 'firstCrack', 1000, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'leftArm', _leftArmStart, () {
+      audio.playEggCrack();
+      audio.playSfx(Sfx.guardianShatter);
+    });
+    _soundGuard.maybeAt(t, 'rightArm', _rightArmStart, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'leftLeg', _leftLegStart, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'rightLeg', _rightLegStart, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'torso', _torsoStartMs, () {
+      audio.playEggCrack();
+      audio.playSfx(Sfx.guardianShatter);
+    });
+    _soundGuard.maybeAt(t, 'burst', _burstEndMs, audio.playEggCrack);
   }
 
   double _stageProgress(double start, double end) =>

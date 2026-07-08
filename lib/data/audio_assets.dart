@@ -49,7 +49,7 @@ enum MusicTrack {
 }
 
 enum Sfx {
-  eggCrack(AudioAssets.sfxEggCrack, cooldownMs: 0),
+  eggCrack(AudioAssets.sfxEggCrack, cooldownMs: 80),
   hatchReveal(AudioAssets.sfxHatchReveal, cooldownMs: 0),
   rareChime(AudioAssets.sfxRareChime, cooldownMs: 0),
   coinReward(AudioAssets.sfxCoinReward, cooldownMs: 200),

@@ -126,20 +126,23 @@ class AudioService extends ChangeNotifier {
 
   Future<void> stopMusic() => _stopMusic();
 
-  Future<void> playSfx(Sfx sfx) async {
+  Future<void> playSfx(Sfx sfx, {double volumeScale = 1.0}) async {
     if (!_sfxEnabled || !_userUnlocked) return;
     if (!_canPlaySfx(sfx)) return;
 
     final player = _sfxPlayers[_sfxRoundRobin++ % _sfxPlayers.length];
     try {
       await player.stop();
-      await player.setVolume(_sfxVolume);
+      await player.setVolume((_sfxVolume * volumeScale).clamp(0.0, 1.0));
       await player.play(AssetSource(sfx.assetPath));
       _lastSfxPlayed[sfx] = DateTime.now();
     } catch (e) {
       debugPrint('SFX play failed (${sfx.name}): $e');
     }
   }
+
+  /// Short shell-crack SFX for hatches and boss shell breaks.
+  Future<void> playEggCrack() => playSfx(Sfx.eggCrack, volumeScale: 0.78);
 
   bool _canPlaySfx(Sfx sfx) {
     if (sfx.cooldownMs <= 0) return true;

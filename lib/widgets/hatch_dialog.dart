@@ -117,13 +117,17 @@ class _HatchDialogState extends State<HatchDialog>
       _stage = _HatchStage.cracking;
       _shakeController.duration = const Duration(milliseconds: 120);
     });
-    AudioScope.maybeOf(context)?.playSfx(Sfx.eggCrack);
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    AudioScope.maybeOf(context)?.playEggCrack();
+    await Future<void>.delayed(const Duration(milliseconds: 550));
+    if (!mounted) return;
+    AudioScope.maybeOf(context)?.playEggCrack();
+    await Future<void>.delayed(const Duration(milliseconds: 550));
     if (!mounted) return;
 
     // Stage 3: pop
     setState(() => _stage = _HatchStage.pop);
     _shakeController.stop();
+    AudioScope.maybeOf(context)?.playEggCrack();
     await _popController.forward();
     if (!mounted) return;
 

@@ -81,8 +81,49 @@ Write-MusicLoopWav (Join-Path $musicDir 'hatchery_loop.wav') @(262, 330, 392, 33
 Write-MusicLoopWav (Join-Path $musicDir 'boss_battle_loop.wav') @(196, 247, 294, 247, 220) 0.42 0.24
 Write-MusicLoopWav (Join-Path $musicDir 'final_boss_loop.wav') @(147, 175, 208, 233, 175) 0.4 0.26
 
+function Write-ShellCrackWav {
+    param([string]$Path)
+    $sampleRate = 22050
+    $duration = 0.16
+    $sampleCount = [int]($sampleRate * $duration)
+    Write-WavSamples -Path $Path -Duration $duration -Volume 0.28 -SampleRate $sampleRate -SampleGenerator {
+        param($t, $dur)
+        $rng = [System.Random]::new(42)
+        $env = 1.0
+        if ($t -lt 0.008) { $env = $t / 0.008 }
+        elseif ($t -gt ($dur - 0.025)) { $env = [math]::Max(0, ($dur - $t) / 0.025) }
+
+        $noise = 0.0
+        if ($t -lt 0.035) {
+            $noise = ($rng.NextDouble() * 2 - 1) * [math]::Exp(-$t * 120)
+        }
+
+        $snap1 = 0.0
+        if ($t -ge 0.004 -and $t -lt 0.045) {
+            $local = $t - 0.004
+            $snap1 = [math]::Sin(2 * [math]::PI * 1680 * $local) * [math]::Exp(-$local * 95)
+        }
+
+        $snap2 = 0.0
+        if ($t -ge 0.038 -and $t -lt 0.09) {
+            $local = $t - 0.038
+            $snap2 = [math]::Sin(2 * [math]::PI * 920 * $local) * [math]::Exp(-$local * 70) * 0.65
+        }
+
+        $thump = 0.0
+        if ($t -ge 0.01 -and $t -lt 0.07) {
+            $local = $t - 0.01
+            $thump = [math]::Sin(2 * [math]::PI * 210 * $local) * [math]::Exp(-$local * 55) * 0.35
+        }
+
+        ($noise * 0.55 + $snap1 * 0.85 + $snap2 + $thump) * $env
+    }
+}
+
+Write-ShellCrackWav (Join-Path $sfxDir 'egg_crack.wav')
+
 $sfx = @{
-    'egg_crack.wav' = @{ f = 420; d = 0.1 }
+    'egg_crack.wav' = $null  # generated separately
     'hatch_reveal.wav' = @{ f = 659; d = 0.2 }
     'rare_chime.wav' = @{ f = 880; d = 0.18 }
     'coin_reward.wav' = @{ f = 988; d = 0.14 }
@@ -116,6 +157,7 @@ $sfx = @{
 }
 
 foreach ($entry in $sfx.GetEnumerator()) {
+    if ($null -eq $entry.Value) { continue }
     Write-ToneWav (Join-Path $sfxDir $entry.Key) $entry.Value.f $entry.Value.d
 }
 

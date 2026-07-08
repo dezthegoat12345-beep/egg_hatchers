@@ -99,9 +99,14 @@ class _EggGolemDefeatAnimationState extends State<EggGolemDefeatAnimation>
   void _playPhaseSounds(double t) {
     final audio = AudioScope.maybeOf(context);
     if (audio == null) return;
-    _soundGuard.maybeAt(t, 'crack', _armDetachStartMs, () => audio.playSfx(Sfx.golemCrack));
+    _soundGuard.maybeAt(t, 'crackSpread', 1000, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'crackDeep', 3500, audio.playEggCrack);
+    _soundGuard.maybeAt(t, 'armDetach', _armDetachStartMs, audio.playEggCrack);
     _soundGuard.maybeAt(t, 'lightning', _lightningStartMs, () => audio.playSfx(Sfx.golemCrack));
-    _soundGuard.maybeAt(t, 'burst', _collapseStartMs, () => audio.playSfx(Sfx.golemCrack));
+    _soundGuard.maybeAt(t, 'collapse', _collapseStartMs, () {
+      audio.playEggCrack();
+      audio.playSfx(Sfx.golemCrack);
+    });
   }
 
   @override

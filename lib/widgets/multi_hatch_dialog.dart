@@ -7,6 +7,7 @@ import '../models/owned_animal.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
+import 'audio_scope.dart';
 import 'game_sprite.dart';
 import 'hatching_egg_widgets.dart';
 
@@ -119,11 +120,16 @@ class _MultiHatchDialogState extends State<MultiHatchDialog>
       _stage = _HatchStage.cracking;
       _shakeController.duration = const Duration(milliseconds: 120);
     });
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    AudioScope.maybeOf(context)?.playEggCrack();
+    await Future<void>.delayed(const Duration(milliseconds: 550));
+    if (!mounted) return;
+    AudioScope.maybeOf(context)?.playEggCrack();
+    await Future<void>.delayed(const Duration(milliseconds: 550));
     if (!mounted) return;
 
     setState(() => _stage = _HatchStage.pop);
     _shakeController.stop();
+    AudioScope.maybeOf(context)?.playEggCrack();
     await _popController.forward();
     if (!mounted) return;
 
