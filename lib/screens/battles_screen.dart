@@ -5,6 +5,7 @@ import '../data/game_data.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/owned_animal.dart';
+import '../data/audio_assets.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
@@ -24,6 +25,7 @@ import '../widgets/game_background.dart';
 import '../widgets/boss_sprite.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
+import '../widgets/audio_scope.dart';
 import 'manual_boss_battle_screen.dart';
 
 /// Boss battle selection and auto-battle results.
@@ -443,6 +445,9 @@ class BattlesScreen extends StatelessWidget {
         mode: mode,
       ),
     );
+    if (context.mounted) {
+      AudioScope.of(context).playMusic(MusicTrack.hatchery);
+    }
   }
 
   Future<OwnedAnimal?> _pickFighter(

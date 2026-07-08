@@ -123,6 +123,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   Duration? _lastTickElapsed;
 
+  AudioService? _audioService;
+
   final List<_FallingProjectile> _bossProjectiles = [];
   _EggProjectile? _activeEgg;
   final List<_FloatingDamage> _floatingDamages = [];
@@ -192,6 +194,12 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   double get _bossSpawnY => _bossTop + _bossSize - 4;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _audioService ??= AudioScope.maybeOf(context);
+  }
+
+  @override
   void initState() {
     super.initState();
     _random = Random();
@@ -204,11 +212,17 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       final track = boss.id == EggShardLogic.rottenShellBossId
           ? MusicTrack.finalBoss
           : MusicTrack.bossBattle;
-      AudioScope.of(context).playMusic(track);
+      debugPrint('[AUDIO] ManualBattle start ${track.name}');
+      _audio.playMusic(track);
     });
   }
 
-  AudioService get _audio => AudioScope.of(context);
+  AudioService get _audio => _audioService ?? AudioScope.of(context);
+
+  void _restoreHatcheryMusic() {
+    debugPrint('[AUDIO] ManualBattle restore hatchery');
+    _audioService?.playMusic(MusicTrack.hatchery);
+  }
 
   void _initFighterInfo() {
     final animal = GameData.animalById(widget.fighter.animalId)!;
@@ -295,8 +309,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   @override
   void dispose() {
-    final audio = AudioScope.maybeOf(context);
-    audio?.playMusic(MusicTrack.hatchery);
+    _restoreHatcheryMusic();
     _ticker.dispose();
     super.dispose();
   }
@@ -717,6 +730,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         rewardGrant: _earnedRewardGrant,
         customSprites: widget.customSprites,
         onBackToBattles: () {
+          _restoreHatcheryMusic();
           Navigator.pop(dialogContext);
           if (mounted) Navigator.pop(context);
         },
@@ -796,7 +810,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         return Focus(
           autofocus: true,
           onKeyEvent: _handleKey,
-          child: Scaffold(
+          child: PopScope(
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) _restoreHatcheryMusic();
+            },
+            child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: PhoneWidthAppBar(
               title: boss.name,
@@ -967,6 +985,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                 ),
               ),
             ),
+          ),
           ),
         );
       },

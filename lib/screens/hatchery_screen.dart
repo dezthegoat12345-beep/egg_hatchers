@@ -83,6 +83,7 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     _tutorialService = TutorialService.instance;
     _wasTutorialActive = _tutorialService.isActive;
     _tutorialService.addListener(_onTutorialServiceChanged);
+    AppNavigationTracker.instance.addRouteListener(_onNavigationRouteChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeAutoStartTutorial();
       _scheduleDailyRewardPopup();
@@ -94,9 +95,16 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
 
   @override
   void dispose() {
+    AppNavigationTracker.instance.removeRouteListener(_onNavigationRouteChanged);
     _tutorialService.removeListener(_onTutorialServiceChanged);
     TutorialTargetRegistry.unregisterAll(_hatcheryTutorialTargets);
     super.dispose();
+  }
+
+  void _onNavigationRouteChanged() {
+    if (!mounted) return;
+    if (AppNavigationTracker.instance.topRouteName != null) return;
+    AudioScope.of(context).playMusic(MusicTrack.hatchery);
   }
 
   void _onTutorialServiceChanged() {

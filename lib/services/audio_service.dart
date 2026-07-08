@@ -104,24 +104,49 @@ class AudioService extends ChangeNotifier {
 
   Future<void> playMusic(MusicTrack track) async {
     _pendingTrack = track;
-    if (!_musicEnabled) return;
-    if (!_userUnlocked) return;
+    if (!_musicEnabled) {
+      debugPrint('[AUDIO] playMusic ${track.name} skipped (music disabled)');
+      return;
+    }
+    if (!_userUnlocked) {
+      debugPrint('[AUDIO] playMusic ${track.name} queued (awaiting unlock)');
+      return;
+    }
 
     if (_currentTrack == track) {
       try {
-        if (_musicPlayer.state == PlayerState.playing) return;
+        if (_musicPlayer.state == PlayerState.playing) {
+          debugPrint('[AUDIO] playMusic ${track.name} already playing');
+          return;
+        }
       } catch (_) {}
     }
 
-    _currentTrack = track;
-    _pendingTrack = null;
+    final previous = _currentTrack?.name ?? 'none';
+    debugPrint('[AUDIO] switch from $previous to ${track.name}');
     await _stopMusic();
 
+    _pendingTrack = null;
     final played = await _tryPlayMusicAsset(track.assetPath);
-    if (!played && track == MusicTrack.finalBoss) {
-      await _tryPlayMusicAsset(MusicTrack.bossBattle.assetPath);
-      _currentTrack = MusicTrack.bossBattle;
+    if (played) {
+      _currentTrack = track;
+      return;
     }
+
+    if (track == MusicTrack.finalBoss) {
+      debugPrint('[AUDIO] finalBoss failed, falling back to bossBattle');
+      final fallbackPlayed =
+          await _tryPlayMusicAsset(MusicTrack.bossBattle.assetPath);
+      if (fallbackPlayed) {
+        _currentTrack = MusicTrack.bossBattle;
+      } else {
+        _currentTrack = null;
+      }
+      return;
+    }
+
+    debugPrint('[AUDIO] playMusic ${track.name} failed');
+    _currentTrack = null;
   }
 
   Future<void> stopMusic() => _stopMusic();
