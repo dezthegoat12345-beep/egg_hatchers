@@ -4,6 +4,7 @@ import '../data/game_data.dart';
 import '../models/egg.dart';
 import '../utils/custom_egg_logic.dart';
 import '../utils/egg_mastery_logic.dart';
+import '../data/audio_assets.dart';
 import '../navigation/app_page_route.dart';
 import '../services/custom_egg_service.dart';
 import '../services/custom_sprite_service.dart';
@@ -13,6 +14,7 @@ import '../theme/game_theme.dart';
 import '../utils/quest_notification_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/coin_header.dart';
+import '../widgets/audio_scope.dart';
 import '../widgets/egg_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/hatch_dialog.dart';
@@ -77,6 +79,7 @@ class ShopScreen extends StatelessWidget {
     final bg = preferences.selectedTheme;
 
     if (!game.isEggUnlocked(egg)) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.errorLocked);
       showGameSnackBar(
         context,
         message: game.eggLockedDisplayMessage(egg),
@@ -86,6 +89,7 @@ class ShopScreen extends StatelessWidget {
     }
 
     if (!game.canAffordTripleHatch(egg)) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.errorLocked);
       showGameSnackBar(
         context,
         message: egg.usesBattleTokens
@@ -101,6 +105,7 @@ class ShopScreen extends StatelessWidget {
         : null;
 
     game.buyTripleHatch(egg);
+    AudioScope.maybeOf(context)?.playSfx(Sfx.purchase);
     final results = game.hatchEggMultiple(
       egg,
       3,
@@ -133,6 +138,7 @@ class ShopScreen extends StatelessWidget {
     final bg = preferences.selectedTheme;
 
     if (!game.isEggUnlocked(egg)) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.errorLocked);
       showGameSnackBar(
         context,
         message: egg.usesBattleTokens
@@ -144,6 +150,7 @@ class ShopScreen extends StatelessWidget {
     }
 
     if (!game.canAfford(egg)) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.errorLocked);
       showGameSnackBar(
         context,
         message: egg.usesBattleTokens
@@ -159,6 +166,7 @@ class ShopScreen extends StatelessWidget {
         : null;
 
     game.buyEgg(egg);
+    AudioScope.maybeOf(context)?.playSfx(Sfx.purchase);
     TutorialService.instance.notifyEggPurchased();
     final result = game.hatchEgg(egg, customEgg: customDefinition);
 

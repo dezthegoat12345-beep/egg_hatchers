@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
 import '../services/custom_sprite_service.dart';
 import '../theme/game_theme.dart';
 import 'animal_card.dart';
+import 'audio_scope.dart';
 import 'game_sprite.dart';
 
 /// Stages of the egg cracking hatch reveal animation.
@@ -115,6 +117,7 @@ class _HatchDialogState extends State<HatchDialog>
       _stage = _HatchStage.cracking;
       _shakeController.duration = const Duration(milliseconds: 120);
     });
+    AudioScope.maybeOf(context)?.playSfx(Sfx.eggCrack);
     await Future<void>.delayed(const Duration(milliseconds: 1100));
     if (!mounted) return;
 
@@ -126,6 +129,11 @@ class _HatchDialogState extends State<HatchDialog>
 
     // Stage 4: reveal result
     setState(() => _stage = _HatchStage.revealed);
+    final audio = AudioScope.maybeOf(context);
+    audio?.playSfx(Sfx.hatchReveal);
+    if (widget.result.animal.rarity.sortOrder >= 4) {
+      audio?.playSfx(Sfx.rareChime);
+    }
     await _revealController.forward();
   }
 

@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
+import '../utils/cinematic_sound_guard.dart';
+import 'audio_scope.dart';
 import '../models/boss_battle.dart';
 import '../utils/format_utils.dart';
 import 'boss_sprite.dart';
@@ -51,12 +54,14 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
 
   late final AnimationController _controller;
   late final List<_GooParticle> _particles;
+  late final CinematicSoundGuard _soundGuard;
   var _completed = false;
 
   @override
   void initState() {
     super.initState();
     _particles = _GooParticle.generate();
+    _soundGuard = CinematicSoundGuard();
     _controller = AnimationController(
       vsync: this,
       duration: SlimeBossDefeatAnimation.duration,
@@ -94,6 +99,16 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
 
   double _timeMs() => _controller.value * _totalMs;
 
+  void _playPhaseSounds(double t) {
+    final audio = AudioScope.maybeOf(context);
+    if (audio == null) return;
+    _soundGuard.maybeAt(t, 'wobble', 2000, () => audio.playSfx(Sfx.buttonTap));
+    _soundGuard.maybeAt(t, 'pop', _explosionStartMs, () => audio.playSfx(Sfx.slimePop));
+    if (widget.coinReward > 0) {
+      _soundGuard.maybeAt(t, 'coins', 9000, () => audio.playSfx(Sfx.coinReward));
+    }
+  }
+
   _SlimeExpression _expression(double t) {
     if (t < 1000) return _SlimeExpression.none;
     if (t < 6800) return _SlimeExpression.dizzy;
@@ -107,6 +122,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
       animation: _controller,
       builder: (context, _) {
         final t = _timeMs();
+        _playPhaseSounds(t);
         final expression = _expression(t);
 
         final zoomPhase = Curves.easeOutCubic.transform(_phase(0, 1000));

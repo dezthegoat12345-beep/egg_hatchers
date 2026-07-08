@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
+import '../utils/cinematic_sound_guard.dart';
+import 'audio_scope.dart';
 import '../models/boss_battle.dart';
 import 'bird_roost_background.dart';
 import 'boss_cinematic_ui.dart';
@@ -45,6 +48,7 @@ class _BirdBossDefeatAnimationState extends State<BirdBossDefeatAnimation>
   late final AnimationController _controller;
   late final List<_FeatherParticle> _feathers;
   late final List<_ShadowWisp> _wisps;
+  late final CinematicSoundGuard _soundGuard;
   var _completed = false;
 
   @override
@@ -52,6 +56,7 @@ class _BirdBossDefeatAnimationState extends State<BirdBossDefeatAnimation>
     super.initState();
     _feathers = _FeatherParticle.generate(36);
     _wisps = _ShadowWisp.generate(14);
+    _soundGuard = CinematicSoundGuard();
     _controller = AnimationController(
       vsync: this,
       duration: BirdBossDefeatAnimation.duration,
@@ -89,12 +94,20 @@ class _BirdBossDefeatAnimationState extends State<BirdBossDefeatAnimation>
 
   double _timeMs() => _controller.value * _totalMs;
 
+  void _playPhaseSounds(double t) {
+    final audio = AudioScope.maybeOf(context);
+    if (audio == null) return;
+    _soundGuard.maybeAt(t, 'burst', _burstStartMs, () => audio.playSfx(Sfx.featherBurst));
+    _soundGuard.maybeAt(t, 'dissolve', _burstEndMs, () => audio.playSfx(Sfx.featherBurst));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         final t = _timeMs();
+        _playPhaseSounds(t);
         final zoomPhase = Curves.easeOutCubic.transform(_phase(0, 1000));
         final zoomScale = 0.86 + zoomPhase * 0.52;
         final darken = (0.28 + zoomPhase * 0.32).clamp(0.0, 0.65);

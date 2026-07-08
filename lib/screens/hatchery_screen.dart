@@ -8,9 +8,11 @@ import '../services/game_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
+import '../data/audio_assets.dart';
 import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/audio_scope.dart';
 import '../widgets/auto_battle_notification_listener.dart';
 import '../services/tutorial_service.dart';
 import '../widgets/daily_reward_popup.dart';
@@ -84,6 +86,9 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeAutoStartTutorial();
       _scheduleDailyRewardPopup();
+      if (mounted) {
+        AudioScope.of(context).playMusic(MusicTrack.hatchery);
+      }
     });
   }
 

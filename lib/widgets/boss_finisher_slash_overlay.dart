@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../data/boss_finisher_rewards.dart';
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/finisher_reward.dart';
 import 'boss_battle_background.dart';
 import 'boss_sprite.dart';
+import 'audio_scope.dart';
 
 /// Five-second post-victory slash window before the boss defeat cinematic.
 class BossFinisherSlashOverlay extends StatefulWidget {
@@ -117,6 +119,7 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
 
     final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
     _slashes.add(_SlashVisual(start: start, end: end));
+    AudioScope.maybeOf(context)?.playSfx(Sfx.finisherSlash);
 
     final elapsedMs = _elapsed * 1000;
     final maxRolls = BossFinisherRewards.maxBonusRolls(widget.boss);
@@ -143,6 +146,9 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
     _bonusRollCount++;
     final roll = BossFinisherRewards.rollBonus(widget.boss.id, _random);
     _totals = _totals.addRoll(roll);
+    if (roll.grantsReward) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.finisherBonus);
+    }
     _addFloater(mid, roll.message, isReward: roll.grantsReward);
   }
 

@@ -2,10 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/animal_sprite_theme.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
+import '../utils/cinematic_sound_guard.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'audio_scope.dart';
 import 'boss_cinematic_ui.dart';
 import 'boss_sprite.dart';
 import 'rotten_shell_cinematic_background.dart';
@@ -48,6 +51,7 @@ class _RottenShellDefeatAnimationState extends State<RottenShellDefeatAnimation>
   late final List<_SmokePuff> _smokePuffs;
   late final List<_EggShardVisual> _eggShards;
   late final List<_SuctionParticle> _suctionParticles;
+  late final CinematicSoundGuard _soundGuard;
   var _completed = false;
 
   @override
@@ -59,6 +63,7 @@ class _RottenShellDefeatAnimationState extends State<RottenShellDefeatAnimation>
       math.max(widget.eggShardReward, 10),
     );
     _suctionParticles = _SuctionParticle.generate(20);
+    _soundGuard = CinematicSoundGuard();
     _controller = AnimationController(
       vsync: this,
       duration: RottenShellDefeatAnimation.duration,
@@ -106,6 +111,22 @@ class _RottenShellDefeatAnimationState extends State<RottenShellDefeatAnimation>
     return base * compress;
   }
 
+  void _playPhaseSounds(double t) {
+    final audio = AudioScope.maybeOf(context);
+    if (audio == null) return;
+    _soundGuard.maybeAt(t, 'cracks', 1000, () => audio.playSfx(Sfx.golemCrack));
+    _soundGuard.maybeAt(t, 'core', 3000, () => audio.playSfx(Sfx.rottenPulse));
+    _soundGuard.maybeAt(t, 'meltdown', 5500, () => audio.playSfx(Sfx.rottenPulse));
+    _soundGuard.maybeAt(t, 'collapse', 7500, () => audio.playSfx(Sfx.rottenCollapse));
+    _soundGuard.maybeAt(t, 'explosion', 9200, () => audio.playSfx(Sfx.rottenExplosion));
+    _soundGuard.maybeAt(t, 'harvest', 10200, () {
+      audio.playSfx(Sfx.rottenShardHarvest);
+      if (widget.eggShardReward > 0) {
+        audio.playSfx(Sfx.eggShardReward);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRetro =
@@ -116,6 +137,7 @@ class _RottenShellDefeatAnimationState extends State<RottenShellDefeatAnimation>
       animation: _controller,
       builder: (context, _) {
         final t = _timeMs();
+        _playPhaseSounds(t);
 
         final pauseZoom = Curves.easeOutCubic.transform(_phase(0, 1000));
         final zoomScale = (0.84 + pauseZoom * 0.48) * _sizeBoost;

@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
+import '../utils/cinematic_sound_guard.dart';
+import 'audio_scope.dart';
 import '../models/boss_battle.dart';
 import 'boss_cinematic_ui.dart';
 import 'boss_sprite.dart';
@@ -61,6 +64,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   late final List<_DarkFeather> _feathers;
   late final List<_ShadowEmber> _embers;
   late final List<_SmokePuff> _smokePuffs;
+  late final CinematicSoundGuard _soundGuard;
   var _completed = false;
 
   @override
@@ -69,6 +73,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
     _feathers = _DarkFeather.generate(44);
     _embers = _ShadowEmber.generate(18);
     _smokePuffs = _SmokePuff.generate(16);
+    _soundGuard = CinematicSoundGuard();
     _controller = AnimationController(
       vsync: this,
       duration: ShadowPhoenixDefeatAnimation.duration,
@@ -105,6 +110,14 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
   }
 
   double _timeMs() => _controller.value * _totalMs;
+
+  void _playPhaseSounds(double t) {
+    final audio = AudioScope.maybeOf(context);
+    if (audio == null) return;
+    _soundGuard.maybeAt(t, 'flap', _flapStartMs, () => audio.playSfx(Sfx.phoenixFlap));
+    _soundGuard.maybeAt(t, 'impact', _impactMs, () => audio.playSfx(Sfx.phoenixImpact));
+    _soundGuard.maybeAt(t, 'laugh', _laughStartMs, () => audio.playSfx(Sfx.phoenixLaugh));
+  }
 
   /// 0 = wide grin, 1 = open laughing mouth; pulses ~3.5 times during laugh phase.
   double _mouthLaughOpen(double t) {
@@ -242,6 +255,7 @@ class _ShadowPhoenixDefeatAnimationState extends State<ShadowPhoenixDefeatAnimat
       animation: _controller,
       builder: (context, _) {
         final t = _timeMs();
+        _playPhaseSounds(t);
         final zoomPhase = Curves.easeOutCubic.transform(_phase(0, 1000));
         final zoomScale = 0.88 + zoomPhase * 0.48;
         final darken = (0.26 + zoomPhase * 0.28).clamp(0.0, 0.58);

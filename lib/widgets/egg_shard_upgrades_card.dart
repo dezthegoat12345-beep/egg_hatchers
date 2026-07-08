@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../models/background_theme.dart';
 import '../utils/egg_shard_logic.dart';
 import '../utils/snackbar_utils.dart';
+import 'audio_scope.dart';
 
 /// Egg Shard limit-break upgrades on the Battles screen.
 class EggShardUpgradesCard extends StatelessWidget {
@@ -135,6 +137,7 @@ class EggShardUpgradesCard extends StatelessWidget {
 
   void _purchase(BuildContext context, bool success, String message) {
     if (!success) {
+      AudioScope.maybeOf(context)?.playSfx(Sfx.errorLocked);
       showGameSnackBar(
         context,
         message: 'Not enough Egg Shards.',
@@ -142,6 +145,7 @@ class EggShardUpgradesCard extends StatelessWidget {
       );
       return;
     }
+    AudioScope.maybeOf(context)?.playSfx(Sfx.purchase);
     showGameSnackBar(
       context,
       message: message,

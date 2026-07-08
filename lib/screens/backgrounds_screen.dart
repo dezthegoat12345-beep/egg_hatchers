@@ -10,8 +10,10 @@ import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/audio_settings_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
+import '../widgets/audio_scope.dart';
 import '../widgets/retro_pixel_animal_sprite.dart';
 import 'custom_sprites_screen.dart';
 
@@ -101,6 +103,11 @@ class BackgroundsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 12),
+                  AudioSettingsCard(
+                    theme: selected,
+                    audio: AudioScope.of(context),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'Animal Style',
                     style: GameTheme.sectionTitle(selected, size: 18),

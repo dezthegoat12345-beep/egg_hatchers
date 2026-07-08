@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
+import '../utils/cinematic_sound_guard.dart';
+import 'audio_scope.dart';
 import '../models/boss_battle.dart';
 import 'boss_cinematic_ui.dart';
 import 'boss_sprite.dart';
@@ -47,6 +50,7 @@ class _SlimeKingDefeatAnimationState extends State<SlimeKingDefeatAnimation>
   late final AnimationController _controller;
   late final List<_RoyalGooParticle> _gooParticles;
   late final List<_GoldSparkle> _sparkles;
+  late final CinematicSoundGuard _soundGuard;
   var _completed = false;
 
   @override
@@ -54,6 +58,7 @@ class _SlimeKingDefeatAnimationState extends State<SlimeKingDefeatAnimation>
     super.initState();
     _gooParticles = _RoyalGooParticle.generate(64);
     _sparkles = _GoldSparkle.generate(28);
+    _soundGuard = CinematicSoundGuard();
     _controller = AnimationController(
       vsync: this,
       duration: SlimeKingDefeatAnimation.duration,
@@ -91,12 +96,20 @@ class _SlimeKingDefeatAnimationState extends State<SlimeKingDefeatAnimation>
 
   double _timeMs() => _controller.value * _totalMs;
 
+  void _playPhaseSounds(double t) {
+    final audio = AudioScope.maybeOf(context);
+    if (audio == null) return;
+    _soundGuard.maybeAt(t, 'crown', _crownPopMs, () => audio.playSfx(Sfx.royalPop));
+    _soundGuard.maybeAt(t, 'explosion', _explosionStartMs, () => audio.playSfx(Sfx.royalPop));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         final t = _timeMs();
+        _playPhaseSounds(t);
         final zoomPhase = Curves.easeOutCubic.transform(_phase(0, 1000));
         final zoomScale = 0.86 + zoomPhase * 0.54;
         final darken = (0.28 + zoomPhase * 0.3).clamp(0.0, 0.62);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'models/background_theme.dart';
 import 'screens/hatchery_screen.dart';
+import 'services/audio_service.dart';
 import 'services/custom_egg_service.dart';
 import 'services/custom_sprite_service.dart';
 import 'services/game_service.dart';
@@ -10,6 +11,7 @@ import 'services/sprite_rating_service.dart';
 import 'services/sprite_reference_overlay_service.dart';
 import 'widgets/animal_sprite_theme_scope.dart';
 import 'widgets/app_theme_background.dart';
+import 'widgets/audio_scope.dart';
 import 'widgets/tutorial_host.dart';
 import 'navigation/app_page_route.dart';
 import 'widgets/game_background.dart';
@@ -35,6 +37,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
   final SpriteRatingService _spriteRating = SpriteRatingService();
   final SpriteReferenceOverlayService _referenceOverlay =
       SpriteReferenceOverlayService();
+  final AudioService _audio = AudioService();
 
   @override
   void initState() {
@@ -47,6 +50,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _customEggs.addListener(_onGameChanged);
     _spriteRating.addListener(_onGameChanged);
     _referenceOverlay.addListener(_onGameChanged);
+    _audio.addListener(_onGameChanged);
   }
 
   Future<void> _initialize() async {
@@ -57,6 +61,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _customEggs.initialize(),
       _spriteRating.initialize(),
       _referenceOverlay.initialize(),
+      _audio.initialize(),
     ]);
     if (mounted) setState(() {});
   }
@@ -82,6 +87,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
     _customEggs.removeListener(_onGameChanged);
     _spriteRating.removeListener(_onGameChanged);
     _referenceOverlay.removeListener(_onGameChanged);
+    _audio.removeListener(_onGameChanged);
+    _audio.dispose();
     _game.dispose();
     super.dispose();
   }
@@ -92,7 +99,8 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       _customSprites.isInitialized &&
       _customEggs.isInitialized &&
       _spriteRating.isInitialized &&
-      _referenceOverlay.isInitialized;
+      _referenceOverlay.isInitialized &&
+      _audio.isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -125,12 +133,18 @@ class _EggHatchersAppState extends State<EggHatchersApp>
         }
         return AppThemeBackground(
           theme: theme,
-          child: AnimalSpriteThemeScope(
-            theme: _preferences.animalSpriteTheme,
-            child: TutorialHost(
-              game: _game,
-              theme: theme,
-              child: content,
+          child: AudioScope(
+            audio: _audio,
+            child: AudioUnlockListener(
+              audio: _audio,
+              child: AnimalSpriteThemeScope(
+                theme: _preferences.animalSpriteTheme,
+                child: TutorialHost(
+                  game: _game,
+                  theme: theme,
+                  child: content,
+                ),
+              ),
             ),
           ),
         );

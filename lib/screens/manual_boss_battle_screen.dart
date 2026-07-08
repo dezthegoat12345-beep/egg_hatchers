@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../data/audio_assets.dart';
 import '../data/game_data.dart';
 import '../models/boss_reward_grant.dart';
 import '../models/background_theme.dart';
@@ -12,6 +13,7 @@ import '../models/custom_sprite_data.dart';
 import '../models/finisher_reward.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
+import '../services/audio_service.dart';
 import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../services/preferences_service.dart';
@@ -19,7 +21,9 @@ import '../theme/game_theme.dart';
 import '../utils/battle_power_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/boss_battle_logic.dart';
+import '../utils/egg_shard_logic.dart';
 import '../utils/format_utils.dart';
+import '../widgets/audio_scope.dart';
 import '../widgets/boss_battle_background.dart';
 import '../widgets/boss_defeat_animation.dart';
 import '../widgets/boss_finisher_slash_overlay.dart';
@@ -195,7 +199,16 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _resetBattleState();
     _ticker = createTicker(_onTick);
     _ticker.start();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final track = boss.id == EggShardLogic.rottenShellBossId
+          ? MusicTrack.finalBoss
+          : MusicTrack.bossBattle;
+      AudioScope.of(context).playMusic(track);
+    });
   }
+
+  AudioService get _audio => AudioScope.of(context);
 
   void _initFighterInfo() {
     final animal = GameData.animalById(widget.fighter.animalId)!;
@@ -282,6 +295,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
   @override
   void dispose() {
+    final audio = AudioScope.maybeOf(context);
+    audio?.playMusic(MusicTrack.hatchery);
     _ticker.dispose();
     super.dispose();
   }
@@ -437,6 +452,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _bossProjectiles.add(
       _FallingProjectile(x: x, y: _bossSpawnY),
     );
+    _audio.playSfx(Sfx.bossProjectile);
   }
 
   void _updateBossProjectiles(double dt) {
@@ -499,6 +515,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_missCount >= _requiredMisses) {
       _shieldActive = false;
       _shieldFlash = 0.35;
+      _audio.playSfx(Sfx.shieldBreak);
     }
   }
 
@@ -513,6 +530,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_gameOver) return;
     _livesLostThisBattle++;
     _lives = max(0, _lives - 1);
+    _audio.playSfx(Sfx.playerHit);
     _floatingDamages.add(
       _FloatingDamage(
         x: _playerX,
@@ -529,6 +547,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_gameOver) return;
     _bossLives = max(0, _bossLives - 1);
     _bossHitsLanded++;
+    _audio.playSfx(Sfx.bossHit);
     _floatingDamages.add(
       _FloatingDamage(
         x: _bossX,
@@ -553,6 +572,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       _bossSpeedBannerIsRage = true;
       _bossSpeedBannerRemaining = 2.0;
       _shieldFlash = 0.45;
+      _audio.playSfx(Sfx.rageMode);
     } else {
       _bossSpeedBannerIsRage = false;
       _bossSpeedBannerRemaining = 1.8;
@@ -569,6 +589,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     );
     _eggCooldownRemaining =
         BossBattleLogic.manualEggCooldown.inMilliseconds / 1000;
+    _audio.playSfx(Sfx.playerShoot);
   }
 
   void _endBattle({required bool won}) {
@@ -580,6 +601,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _activeEgg = null;
     _floatingDamages.clear();
     _applyRewardsOnce();
+    _audio.playSfx(won ? Sfx.victory : Sfx.defeat);
 
     if (won) {
       setState(() => _showFinisherSlash = true);
@@ -663,6 +685,14 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 
     final rewardMultiplier =
         _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
+
+    if (_won) {
+      final coins = boss.coinReward * rewardMultiplier + _finisherBonusCoins;
+      final tokens = boss.battleTokenReward * rewardMultiplier + _finisherBonusTokens;
+      if (coins > 0) _audio.playSfx(Sfx.coinReward);
+      if (tokens > 0) _audio.playSfx(Sfx.tokenReward);
+      if (_victoryEggShardReward > 0) _audio.playSfx(Sfx.eggShardReward);
+    }
 
     await showDialog<void>(
       context: context,
