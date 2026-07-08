@@ -2,7 +2,7 @@
 class AudioAssets {
   AudioAssets._();
 
-  static const musicHatchery = 'sounds/music/hatchery_loop.wav';
+  static const musicHatchery = 'sounds/music/hatchery_chill_loop.mp3';
   static const musicBossBattle = 'sounds/music/boss_battle_loop.wav';
   static const musicFinalBoss = 'sounds/music/final_boss_loop.wav';
 
