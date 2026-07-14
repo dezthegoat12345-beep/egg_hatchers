@@ -28,7 +28,7 @@ class BossFightIntroAnimation extends StatefulWidget {
     this.audio,
   });
 
-  static const introDuration = Duration(milliseconds: 3000);
+  static const entranceDuration = Duration(milliseconds: 3000);
 
   final String fighterName;
   final String fighterAnimalId;
@@ -56,13 +56,34 @@ class BossFightIntroAnimation extends StatefulWidget {
       _BossFightIntroAnimationState();
 }
 
-class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
-    with SingleTickerProviderStateMixin {
-  static const _skipAfterFraction = 0.2; // 0.6s of 3.0s
+class _IntroPanelLayout {
+  const _IntroPanelLayout._();
 
-  late final AnimationController _controller;
+  static Offset playerCenter(Size size, double spriteSize) {
+    final pad = spriteSize * 0.55 + 12;
+    return Offset(
+      (size.width * 0.33).clamp(pad, size.width * 0.42),
+      (size.height * 0.70).clamp(size.height * 0.58, size.height - pad - 48),
+    );
+  }
+
+  static Offset bossCenter(Size size, double spriteSize) {
+    final pad = spriteSize * 0.55 + 12;
+    return Offset(
+      (size.width * 0.67).clamp(size.width * 0.58, size.width - pad),
+      (size.height * 0.30).clamp(pad + 8, size.height * 0.42),
+    );
+  }
+}
+
+class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
+    with TickerProviderStateMixin {
+  late final AnimationController _entranceController;
+  late final AnimationController _idleController;
+  late final AnimationController _promptFadeController;
   late final List<_LightningArc> _arcs;
-  var _completed = false;
+  var _didComplete = false;
+  var _readyToStart = false;
   var _slashSfxPlayed = false;
   var _vsSfxPlayed = false;
 
@@ -70,21 +91,33 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
   void initState() {
     super.initState();
     _arcs = _generateArcs(Random(1337), 9);
-    _controller = AnimationController(
+    _entranceController = AnimationController(
       vsync: this,
-      duration: BossFightIntroAnimation.introDuration,
-    )
-      ..addListener(_onTick)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _finishOnce();
-        }
-      })
-      ..forward();
+      duration: BossFightIntroAnimation.entranceDuration,
+    )..addListener(_onEntranceTick);
+
+    _idleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+
+    _promptFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    _entranceController.addStatusListener((status) {
+      if (status != AnimationStatus.completed || !mounted) return;
+      setState(() => _readyToStart = true);
+      _idleController.repeat(reverse: true);
+      _promptFadeController.forward();
+    });
+
+    _entranceController.forward();
   }
 
-  void _onTick() {
-    final t = _controller.value;
+  void _onEntranceTick() {
+    final t = _entranceController.value;
     if (!_slashSfxPlayed && t >= 0.02) {
       _slashSfxPlayed = true;
       widget.audio?.playSfx(Sfx.shieldBreak, volumeScale: 0.35);
@@ -96,21 +129,25 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
   }
 
   void _finishOnce() {
-    if (_completed) return;
-    _completed = true;
-    _controller.stop();
+    if (_didComplete) return;
+    _didComplete = true;
+    _entranceController.stop();
+    _idleController.stop();
+    _promptFadeController.stop();
     widget.onComplete();
   }
 
-  void _trySkip() {
-    if (_controller.value >= _skipAfterFraction) {
-      _finishOnce();
-    }
+  void _onTap() {
+    if (!_readyToStart) return;
+    widget.audio?.playSfx(Sfx.buttonTap);
+    _finishOnce();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _entranceController.dispose();
+    _idleController.dispose();
+    _promptFadeController.dispose();
     super.dispose();
   }
 
@@ -124,108 +161,142 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
       color: Colors.black.withValues(alpha: 0.92),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _trySkip,
+        onTap: _onTap,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final size = Size(constraints.maxWidth, constraints.maxHeight);
-            return AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                final t = retroPixel ? _pixelStep(_controller.value, 24) : _controller.value;
-                final lineT = _segment(t, 0, 0.133, Curves.easeOut);
-                final slideT = _segment(t, 0.133, 0.4, Curves.easeOutCubic);
-                final nameT = _segment(t, 0.25, 0.45, Curves.easeOut);
-                final holdT = t.clamp(0.4, 0.733);
-                final fadeT = _segment(t, 0.733, 1.0, Curves.easeIn);
-                final vsPulseT = _segment(t, 0.35, 0.55, Curves.elasticOut);
-                final flicker = 0.65 +
-                    0.35 *
-                        sin(t * pi * 18 + _controller.value * 40).abs();
-                final overallOpacity = (1 - fadeT).clamp(0.0, 1.0);
+            final playerSpriteSize = min(size.width * 0.26, 92.0);
+            final bossSpriteSize = min(size.width * 0.28, 100.0);
 
-                final playerCenter = Offset(size.width * 0.28, size.height * 0.68);
-                final bossCenter = Offset(size.width * 0.72, size.height * 0.32);
+            return AnimatedBuilder(
+              animation: Listenable.merge([
+                _entranceController,
+                _idleController,
+                _promptFadeController,
+              ]),
+              builder: (context, _) {
+                final entranceT = retroPixel
+                    ? _pixelStep(_entranceController.value, 24)
+                    : _entranceController.value;
+                final idleT = _idleController.value;
+                final entranceDone = _entranceController.isCompleted;
+
+                final lineT = _segment(entranceT, 0, 0.133, Curves.easeOut);
+                final slideT = _segment(entranceT, 0.133, 0.4, Curves.easeOutCubic);
+                final nameT = _segment(entranceT, 0.25, 0.45, Curves.easeOut);
+                final vsPulseT = _segment(entranceT, 0.35, 0.55, Curves.elasticOut);
+
+                final animTime = entranceDone
+                    ? 0.733 + idleT * 0.5
+                    : entranceT.clamp(0.0, 0.733);
+                final flicker = 0.65 +
+                    0.35 * sin(animTime * pi * 18 + idleT * 40).abs();
+                final lightingPulse = 0.82 + 0.18 * sin(idleT * pi * 2);
+
+                final playerTarget =
+                    _IntroPanelLayout.playerCenter(size, playerSpriteSize);
+                final bossTarget =
+                    _IntroPanelLayout.bossCenter(size, bossSpriteSize);
+
                 final playerSlide = Offset(
-                  ui.lerpDouble(-size.width * 0.4, playerCenter.dx, slideT)!,
-                  ui.lerpDouble(size.height * 0.2, playerCenter.dy, slideT)!,
+                  ui.lerpDouble(-size.width * 0.35, playerTarget.dx, slideT)!,
+                  ui.lerpDouble(size.height * 0.18, playerTarget.dy, slideT)!,
                 );
                 final bossSlide = Offset(
-                  ui.lerpDouble(size.width * 1.15, bossCenter.dx, slideT)!,
-                  ui.lerpDouble(-size.height * 0.15, bossCenter.dy, slideT)!,
+                  ui.lerpDouble(size.width * 1.1, bossTarget.dx, slideT)!,
+                  ui.lerpDouble(-size.height * 0.12, bossTarget.dy, slideT)!,
                 );
 
-                final bounce = holdT > 0.4 && holdT < 0.733
-                    ? sin((holdT - 0.4) * pi * 6) * 4
-                    : 0.0;
-                final vsScale = (0.4 + vsPulseT * 0.65) *
-                    (1 + (holdT > 0.35 ? sin(t * pi * 8) * 0.06 : 0));
+                final bounce = entranceDone
+                    ? sin(idleT * pi * 2) * 3.5
+                    : (entranceT > 0.4 && entranceT < 0.733
+                        ? sin((entranceT - 0.4) * pi * 6) * 4
+                        : 0.0);
 
-                return Opacity(
-                  opacity: overallOpacity,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CustomPaint(
-                        painter: _IntroSplitBackgroundPainter(
-                          progress: lineT,
-                          flicker: flicker,
-                          retroPixel: retroPixel,
-                        ),
-                        size: size,
+                final vsScale = (0.4 + vsPulseT * 0.65) *
+                    (1 +
+                        (animTime > 0.35
+                            ? sin(animTime * pi * 8 + idleT * pi) * 0.06
+                            : 0));
+
+                final promptOpacity = _promptFadeController.value;
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CustomPaint(
+                      painter: _IntroSplitBackgroundPainter(
+                        progress: lineT,
+                        flicker: flicker,
+                        retroPixel: retroPixel,
                       ),
-                      CustomPaint(
-                        painter: _ElectricDiagonalPainter(
-                          progress: lineT,
-                          flicker: flicker,
-                          arcs: _arcs,
-                          time: t,
-                          retroPixel: retroPixel,
-                        ),
-                        size: size,
+                      size: size,
+                    ),
+                    CustomPaint(
+                      painter: _PanelLightingPainter(
+                        playerCenter: playerSlide + Offset(0, bounce),
+                        bossCenter: bossSlide + Offset(0, -bounce * 0.5),
+                        playerRadius: playerSpriteSize * 1.35,
+                        bossRadius: bossSpriteSize * 1.4,
+                        pulse: lightingPulse,
+                        reveal: max(lineT, slideT),
                       ),
-                      _FighterSide(
-                        center: playerSlide + Offset(0, bounce),
-                        name: widget.fighterName,
-                        nameOpacity: nameT,
-                        spriteSize: min(size.width * 0.28, 96),
-                        child: GameSprite(
-                          customSprite: widget.fighterCustomSprite,
-                          animalId: widget.fighterAnimalId,
-                          spritePath: widget.fighterSpritePath,
-                          fallbackEmoji: widget.fighterEmoji,
-                          size: min(size.width * 0.28, 96),
-                          semanticLabel: widget.fighterName,
-                        ),
+                      size: size,
+                    ),
+                    _CenteredFighterSide(
+                      center: playerSlide + Offset(0, bounce),
+                      spriteSize: playerSpriteSize,
+                      name: widget.fighterName,
+                      nameOpacity: nameT,
+                      promptOpacity: promptOpacity,
+                      showPrompt: _readyToStart,
+                      child: GameSprite(
+                        customSprite: widget.fighterCustomSprite,
+                        animalId: widget.fighterAnimalId,
+                        spritePath: widget.fighterSpritePath,
+                        fallbackEmoji: widget.fighterEmoji,
+                        size: playerSpriteSize,
+                        semanticLabel: widget.fighterName,
                       ),
-                      _FighterSide(
-                        center: bossSlide + Offset(0, -bounce * 0.5),
-                        name: widget.boss.name,
-                        subtitle: modeLabel,
-                        nameOpacity: nameT,
-                        alignRight: true,
-                        spriteSize: min(size.width * 0.32, 112),
-                        child: BossSprite(
-                          bossId: widget.boss.id,
-                          spritePath: widget.boss.spritePath,
-                          fallbackEmoji: widget.boss.emoji,
-                          size: min(size.width * 0.32, 112),
-                          semanticLabel: widget.boss.name,
-                        ),
+                    ),
+                    _CenteredFighterSide(
+                      center: bossSlide + Offset(0, -bounce * 0.5),
+                      spriteSize: bossSpriteSize,
+                      name: widget.boss.name,
+                      subtitle: modeLabel,
+                      nameOpacity: nameT,
+                      child: BossSprite(
+                        bossId: widget.boss.id,
+                        spritePath: widget.boss.spritePath,
+                        fallbackEmoji: widget.boss.emoji,
+                        size: bossSpriteSize,
+                        semanticLabel: widget.boss.name,
                       ),
-                      Center(
-                        child: Transform.scale(
-                          scale: vsScale,
-                          child: Opacity(
-                            opacity: (lineT * 0.35 + vsPulseT * 0.65).clamp(0, 1),
-                            child: _VsLabel(
-                              flicker: flicker,
-                              retroPixel: retroPixel,
-                            ),
+                    ),
+                    CustomPaint(
+                      painter: _ElectricDiagonalPainter(
+                        progress: lineT,
+                        flicker: flicker,
+                        arcs: _arcs,
+                        time: animTime,
+                        retroPixel: retroPixel,
+                      ),
+                      size: size,
+                    ),
+                    Center(
+                      child: Transform.scale(
+                        scale: vsScale,
+                        child: Opacity(
+                          opacity:
+                              (lineT * 0.35 + vsPulseT * 0.65).clamp(0, 1),
+                          child: _VsLabel(
+                            flicker: flicker,
+                            retroPixel: retroPixel,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               },
             );
@@ -251,55 +322,60 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
   }
 }
 
-class _FighterSide extends StatelessWidget {
-  const _FighterSide({
+class _CenteredFighterSide extends StatelessWidget {
+  const _CenteredFighterSide({
     required this.center,
+    required this.spriteSize,
     required this.name,
     required this.nameOpacity,
-    required this.spriteSize,
     required this.child,
     this.subtitle,
-    this.alignRight = false,
+    this.promptOpacity = 0,
+    this.showPrompt = false,
   });
 
   final Offset center;
+  final double spriteSize;
   final String name;
   final String? subtitle;
   final double nameOpacity;
-  final double spriteSize;
+  final double promptOpacity;
+  final bool showPrompt;
   final Widget child;
-  final bool alignRight;
 
   @override
   Widget build(BuildContext context) {
+    final labelWidth = spriteSize * 2.6;
     return Positioned(
-      left: center.dx - spriteSize / 2,
+      left: center.dx - labelWidth / 2,
       top: center.dy - spriteSize / 2,
-      width: spriteSize + 120,
+      width: labelWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          child,
+          SizedBox(
+            width: spriteSize,
+            height: spriteSize,
+            child: Center(child: child),
+          ),
           const SizedBox(height: 8),
           Opacity(
             opacity: nameOpacity.clamp(0, 1),
             child: Transform.translate(
               offset: Offset(0, (1 - nameOpacity) * 12),
               child: Column(
-                crossAxisAlignment:
-                    alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: alignRight ? TextAlign.right : TextAlign.left,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 18,
+                      fontSize: 17,
                       shadows: [
                         Shadow(color: Colors.black87, blurRadius: 6),
                       ],
@@ -311,6 +387,7 @@ class _FighterSide extends StatelessWidget {
                       subtitle!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontWeight: FontWeight.w700,
@@ -319,6 +396,28 @@ class _FighterSide extends StatelessWidget {
                         shadows: const [
                           Shadow(color: Colors.black87, blurRadius: 4),
                         ],
+                      ),
+                    ),
+                  ],
+                  if (showPrompt) ...[
+                    const SizedBox(height: 10),
+                    Opacity(
+                      opacity: promptOpacity.clamp(0, 1),
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - promptOpacity) * 8),
+                        child: Text(
+                          'Click to start',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            letterSpacing: 0.6,
+                            shadows: const [
+                              Shadow(color: Colors.black87, blurRadius: 5),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -390,6 +489,88 @@ List<_LightningArc> _generateArcs(Random random, int count) {
       thickness: 1.2 + random.nextDouble() * 2.2,
     );
   });
+}
+
+class _PanelLightingPainter extends CustomPainter {
+  _PanelLightingPainter({
+    required this.playerCenter,
+    required this.bossCenter,
+    required this.playerRadius,
+    required this.bossRadius,
+    required this.pulse,
+    required this.reveal,
+  });
+
+  final Offset playerCenter;
+  final Offset bossCenter;
+  final double playerRadius;
+  final double bossRadius;
+  final double pulse;
+  final double reveal;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || reveal <= 0) return;
+
+    final playerPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(0, size.height)
+      ..lineTo(size.width, size.height)
+      ..close();
+
+    final bossPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+
+    canvas.save();
+    canvas.clipPath(playerPath);
+    _drawSpotlight(
+      canvas,
+      center: playerCenter,
+      radius: playerRadius * pulse,
+      inner: const Color(0xFFFF6D00).withValues(alpha: 0.55 * reveal),
+      outer: const Color(0xFFBF360C).withValues(alpha: 0.08 * reveal),
+    );
+    canvas.restore();
+
+    canvas.save();
+    canvas.clipPath(bossPath);
+    _drawSpotlight(
+      canvas,
+      center: bossCenter,
+      radius: bossRadius * pulse,
+      inner: const Color(0xFF1565C0).withValues(alpha: 0.62 * reveal),
+      outer: const Color(0xFF0D47A1).withValues(alpha: 0.06 * reveal),
+    );
+    canvas.restore();
+  }
+
+  void _drawSpotlight(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required Color inner,
+    required Color outer,
+  }) {
+    final paint = Paint()
+      ..shader = ui.Gradient.radial(
+        center,
+        radius,
+        [inner, outer, Colors.transparent],
+        [0, 0.55, 1],
+      );
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PanelLightingPainter oldDelegate) {
+    return oldDelegate.playerCenter != playerCenter ||
+        oldDelegate.bossCenter != bossCenter ||
+        oldDelegate.pulse != pulse ||
+        oldDelegate.reveal != reveal;
+  }
 }
 
 class _IntroSplitBackgroundPainter extends CustomPainter {
