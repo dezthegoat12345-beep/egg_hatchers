@@ -5,6 +5,7 @@ import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 
 class DailyRewardCard extends StatelessWidget {
   const DailyRewardCard({
@@ -23,6 +24,9 @@ class DailyRewardCard extends StatelessWidget {
     if (!game.claimDailyReward()) return;
 
     if (!context.mounted) return;
+
+    UiSound.confirm(context);
+    UiSound.rewardTriumph(context);
 
     final parts = <String>[];
     if (reward.coins > 0) {

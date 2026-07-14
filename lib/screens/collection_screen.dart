@@ -7,6 +7,7 @@ import '../services/preferences_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
@@ -42,12 +43,14 @@ class CollectionScreen extends StatelessWidget {
       isProtected: isProtected,
     );
     if (newLevel != null) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: '$displayName upgraded to Level $newLevel!',
         backgroundColor: Colors.teal.shade400,
       );
     } else {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough coins to upgrade $displayName.',
@@ -71,6 +74,7 @@ class CollectionScreen extends StatelessWidget {
           : isSecretReward
               ? 'Secret reward animals cannot be sold.'
               : 'Protected animals cannot be sold.';
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: message,
@@ -86,6 +90,7 @@ class CollectionScreen extends StatelessWidget {
       isProtected: isProtected,
     );
     if (coins != null && context.mounted) {
+      UiSound.rewardTriumph(context);
       showGameSnackBar(
         context,
         message: 'Sold $displayName for ${formatCoins(coins)} coins.',
@@ -111,6 +116,7 @@ class CollectionScreen extends StatelessWidget {
           : isSecretReward
               ? 'Secret reward animals cannot be sold.'
               : 'Protected animals cannot be sold.';
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: message,
@@ -171,6 +177,7 @@ class CollectionScreen extends StatelessWidget {
       isProtected: isProtected,
     );
     if (coins != null && context.mounted) {
+      UiSound.rewardTriumph(context);
       showGameSnackBar(
         context,
         message: 'Sold $displayName for ${formatCoins(coins)} coins.',

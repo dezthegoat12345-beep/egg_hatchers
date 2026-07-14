@@ -10,6 +10,7 @@ import '../theme/game_theme.dart';
 import '../navigation/app_page_route.dart';
 import '../utils/quest_logic.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
 import '../widgets/daily_quest_card.dart';
@@ -33,6 +34,9 @@ class QuestsScreen extends StatelessWidget {
   void _claimQuest(BuildContext context, Quest quest) {
     final reward = game.claimQuest(quest.id);
     if (reward == null || !context.mounted) return;
+
+    UiSound.confirm(context);
+    UiSound.rewardTriumph(context);
 
     if (quest.showsSecretHintOnClaim) {
       _showSecretHintDialog(context);
@@ -95,6 +99,9 @@ class QuestsScreen extends StatelessWidget {
 
   void _claimDailyQuest(BuildContext context, DailyQuestProgress quest) {
     if (!game.claimDailyQuest(quest.id) || !context.mounted) return;
+
+    UiSound.confirm(context);
+    UiSound.rewardTriumph(context);
 
     if (quest.rewardCoins > 0) {
       showGameSnackBar(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/background_theme.dart';
 import '../theme/game_theme.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/app_theme_background.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/themed_route_transition_screen.dart';
@@ -105,6 +106,7 @@ Future<T?> pushAppRoute<T>(
   RouteSettings? settings,
   bool instantTransition = false,
 }) {
+  UiSound.click(context);
   return Navigator.of(context).push<T>(
     appPageRoute<T>(
       builder: builder,
@@ -210,6 +212,7 @@ Future<T?> openWithThemedTransition<T>(
   Duration duration = kMainThemedPreNavDuration,
   RouteSettings? settings,
 }) {
+  UiSound.click(context);
   return Navigator.of(context).push<T>(
     appPageRoute<T>(
       settings: settings,
@@ -316,6 +319,7 @@ Future<void> returnToRouteWithTransition(
   bool popUntilFirst = false,
   Duration duration = kReturnToHatcheryPreNavDuration,
 }) {
+  UiSound.click(context);
   final navigator = Navigator.of(context);
   if (!navigator.canPop()) return Future.value();
 
@@ -421,8 +425,10 @@ class ReturnToCustomSpritesBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return BackButton(
       color: color,
-      onPressed: () =>
-          returnToCustomSpritesWithTransition(context, theme: theme),
+      onPressed: () {
+        UiSound.click(context);
+        returnToCustomSpritesWithTransition(context, theme: theme);
+      },
     );
   }
 }

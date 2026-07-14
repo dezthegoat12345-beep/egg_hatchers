@@ -7,14 +7,14 @@ class AudioAssets {
   static const musicFinalBoss = 'sounds/music/final_boss_loop.wav';
 
   static const sfxEggCrack = 'sounds/sfx/egg_crack_realistic.wav';
-  static const sfxHatchReveal = 'sounds/sfx/hatch_reveal.wav';
-  static const sfxRareChime = 'sounds/sfx/rare_chime.wav';
-  static const sfxCoinReward = 'sounds/sfx/coin_reward.wav';
-  static const sfxTokenReward = 'sounds/sfx/token_reward.wav';
-  static const sfxEggShardReward = 'sounds/sfx/egg_shard_reward.wav';
-  static const sfxButtonTap = 'sounds/sfx/button_tap.wav';
-  static const sfxPurchase = 'sounds/sfx/purchase.wav';
-  static const sfxErrorLocked = 'sounds/sfx/error_locked.wav';
+  static const sfxHatchReveal = 'sounds/sfx/reward_triumph.wav';
+  static const sfxRareChime = 'sounds/sfx/reward_big_triumph.wav';
+  static const sfxCoinReward = 'sounds/sfx/reward_triumph.wav';
+  static const sfxTokenReward = 'sounds/sfx/reward_triumph.wav';
+  static const sfxEggShardReward = 'sounds/sfx/reward_big_triumph.wav';
+  static const sfxButtonTap = 'sounds/sfx/ui_click_soft.wav';
+  static const sfxPurchase = 'sounds/sfx/ui_confirm_soft.wav';
+  static const sfxErrorLocked = 'sounds/sfx/ui_locked_soft.wav';
   static const sfxPlayerShoot = 'sounds/sfx/player_shoot.wav';
   static const sfxBossProjectile = 'sounds/sfx/boss_projectile.wav';
   static const sfxPlayerHit = 'sounds/sfx/player_hit.wav';
@@ -24,7 +24,7 @@ class AudioAssets {
   static const sfxVictory = 'sounds/sfx/victory.wav';
   static const sfxDefeat = 'sounds/sfx/defeat.wav';
   static const sfxFinisherSlash = 'sounds/sfx/finisher_slash.wav';
-  static const sfxFinisherBonus = 'sounds/sfx/finisher_bonus.wav';
+  static const sfxFinisherBonus = 'sounds/sfx/reward_triumph.wav';
   static const sfxSlimePop = 'sounds/sfx/slime_pop.wav';
   static const sfxGolemCrack = 'sounds/sfx/golem_crack.wav';
   static const sfxFeatherBurst = 'sounds/sfx/feather_burst.wav';

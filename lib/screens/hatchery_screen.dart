@@ -12,6 +12,7 @@ import '../data/audio_assets.dart';
 import '../navigation/app_page_route.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/audio_scope.dart';
 import '../widgets/auto_battle_notification_listener.dart';
 import '../services/tutorial_service.dart';
@@ -257,12 +258,14 @@ class _HatcheryScreenState extends State<HatcheryScreen> {
     );
     if (newLevel != null) {
       TutorialService.instance.notifyAnimalUpgraded();
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: '$displayName upgraded to Level $newLevel!',
         backgroundColor: Colors.teal.shade400,
       );
     } else {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough coins to upgrade $displayName.',

@@ -702,9 +702,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_won) {
       final coins = boss.coinReward * rewardMultiplier + _finisherBonusCoins;
       final tokens = boss.battleTokenReward * rewardMultiplier + _finisherBonusTokens;
-      if (coins > 0) _audio.playSfx(Sfx.coinReward);
-      if (tokens > 0) _audio.playSfx(Sfx.tokenReward);
-      if (_victoryEggShardReward > 0) _audio.playSfx(Sfx.eggShardReward);
+      if (_victoryEggShardReward > 0 || _earnedRewardGrant != null) {
+        _audio.playSfx(Sfx.eggShardReward);
+      } else if (coins > 0 || tokens > 0) {
+        _audio.playSfx(Sfx.coinReward);
+      }
     }
 
     await showDialog<void>(

@@ -6,6 +6,7 @@ import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/rebirth_logic.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 
 /// Hatchery panel for rebirth status and confirmation.
 class RebirthPanel extends StatefulWidget {
@@ -30,6 +31,7 @@ class _RebirthPanelState extends State<RebirthPanel> {
 
   Future<void> _onRebirthPressed(BuildContext context) async {
     if (game.hasActiveAutoBattle) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Finish auto battle before rebirthing.',
@@ -39,6 +41,7 @@ class _RebirthPanelState extends State<RebirthPanel> {
     }
 
     if (!game.canRebirth) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message:
@@ -66,6 +69,8 @@ class _RebirthPanelState extends State<RebirthPanel> {
       if (confirmed == true) {
         final success = game.performRebirth();
         if (success && context.mounted) {
+          UiSound.confirm(context);
+          UiSound.rewardBigTriumph(context);
           showGameSnackBar(
             context,
             message: 'Rebirth complete! Permanent income boost increased.',

@@ -17,6 +17,7 @@ import '../utils/boss_battle_logic.dart';
 import '../utils/egg_shard_logic.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
 import '../widgets/coin_header.dart';
@@ -45,6 +46,7 @@ class BattlesScreen extends StatelessWidget {
     if (game.bossMutationUnlocked) return;
 
     if (!game.canUnlockBossMutation()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough Battle Tokens.',
@@ -54,6 +56,8 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (game.unlockBossMutation() && context.mounted) {
+      UiSound.confirm(context);
+      UiSound.rewardBigTriumph(context);
       showGameSnackBar(
         context,
         message: 'Boss Mutation unlocked!',
@@ -64,6 +68,7 @@ class BattlesScreen extends StatelessWidget {
 
   Future<void> _applyBossMutation(BuildContext context, BackgroundTheme theme) async {
     if (!game.canApplyBossMutation()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough Battle Tokens.',
@@ -76,6 +81,7 @@ class BattlesScreen extends StatelessWidget {
     if (target == null || !context.mounted) return;
 
     if (target.mutationId == 'boss') {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'That animal already has Boss Mutation.',
@@ -85,6 +91,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (!game.applyBossMutation(target)) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Could not apply Boss Mutation.',
@@ -94,6 +101,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Boss Mutation applied!',
@@ -103,9 +111,13 @@ class BattlesScreen extends StatelessWidget {
   }
 
   Future<void> _upgradeBattleHoming(BuildContext context) async {
-    if (game.battleHomingLevel >= game.battleHomingMaxLevel) return;
+    if (game.battleHomingLevel >= game.battleHomingMaxLevel) {
+      UiSound.locked(context);
+      return;
+    }
 
     if (game.battleTokens < game.battleHomingUpgradeCost()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough Battle Tokens.',
@@ -115,6 +127,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (game.upgradeBattleHoming() && context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Egg Homing upgraded!',
@@ -124,9 +137,13 @@ class BattlesScreen extends StatelessWidget {
   }
 
   Future<void> _upgradeBattleShotSpeed(BuildContext context) async {
-    if (game.battleShotSpeedLevel >= game.battleShotSpeedMaxLevel) return;
+    if (game.battleShotSpeedLevel >= game.battleShotSpeedMaxLevel) {
+      UiSound.locked(context);
+      return;
+    }
 
     if (game.battleTokens < game.battleShotSpeedUpgradeCost()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough Battle Tokens.',
@@ -136,6 +153,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (game.upgradeBattleShotSpeed() && context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Egg Speed upgraded!',
@@ -146,10 +164,12 @@ class BattlesScreen extends StatelessWidget {
 
   Future<void> _upgradeBattleExtraLife(BuildContext context) async {
     if (game.battleExtraLifeLevel >= game.battleExtraLifeMaxLevel) {
+      UiSound.locked(context);
       return;
     }
 
     if (game.battleTokens < game.battleExtraLifeUpgradeCost()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough Battle Tokens.',
@@ -159,6 +179,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (game.upgradeBattleExtraLife() && context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Extra Life upgraded!',

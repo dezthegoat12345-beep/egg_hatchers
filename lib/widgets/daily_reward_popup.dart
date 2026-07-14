@@ -5,6 +5,7 @@ import '../services/game_service.dart';
 import '../services/tutorial_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
+import '../utils/ui_sound.dart';
 import '../utils/snackbar_utils.dart';
 
 /// Centered daily reward modal shown after tutorial and on eligible launches.
@@ -35,6 +36,9 @@ class DailyRewardPopup {
         onClaim: () {
           final reward = game.upcomingDailyReward;
           if (!game.claimDailyReward()) return;
+
+          UiSound.confirm(context);
+          UiSound.rewardTriumph(context);
 
           Navigator.pop(dialogContext);
           if (!context.mounted) return;

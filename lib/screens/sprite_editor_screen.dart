@@ -13,6 +13,7 @@ import '../navigation/app_page_route.dart';
 import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../utils/sprite_rating_logic.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/custom_sprite_preview.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
@@ -372,6 +373,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       message: '${widget.animal.name} sprite saved!',
       backgroundColor: widget.theme.primaryColor,
     );
+    UiSound.confirm(context);
   }
 
   Future<void> _reset() async {

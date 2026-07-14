@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../utils/ui_sound.dart';
+
 /// Logical max width for centered phone-style app content on wide screens.
 const double kPhoneMaxContentWidth = 430.0;
 
@@ -193,7 +195,10 @@ class CompactAppBarIconAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: onPressed,
+      onPressed: () {
+        UiSound.click(context);
+        onPressed();
+      },
       tooltip: tooltip,
       icon: Icon(icon),
     );

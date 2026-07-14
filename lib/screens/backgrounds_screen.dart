@@ -10,6 +10,7 @@ import '../services/sprite_rating_service.dart';
 import '../services/sprite_reference_overlay_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 import '../widgets/audio_settings_card.dart';
 import '../widgets/game_background.dart';
 import '../widgets/phone_width_layout.dart';
@@ -35,8 +36,10 @@ class BackgroundsScreen extends StatelessWidget {
   final SpriteReferenceOverlayService referenceOverlay;
 
   Future<void> _selectTheme(BuildContext context, BackgroundTheme theme) async {
+    UiSound.click(context);
     await preferences.setBackgroundTheme(theme);
     if (context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Background changed to ${theme.name}!',
@@ -49,8 +52,10 @@ class BackgroundsScreen extends StatelessWidget {
     BuildContext context,
     AnimalSpriteTheme theme,
   ) async {
+    UiSound.click(context);
     await preferences.setAnimalSpriteTheme(theme);
     if (context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Animal style changed to ${theme.name}!',
