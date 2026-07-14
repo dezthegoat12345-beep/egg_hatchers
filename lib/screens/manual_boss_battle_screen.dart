@@ -26,6 +26,7 @@ import '../utils/format_utils.dart';
 import '../widgets/audio_scope.dart';
 import '../widgets/boss_battle_background.dart';
 import '../widgets/boss_defeat_animation.dart';
+import '../widgets/boss_fight_intro_animation.dart';
 import '../widgets/boss_finisher_slash_overlay.dart';
 import '../widgets/boss_last_life_glow.dart';
 import '../widgets/boss_projectile_widget.dart';
@@ -35,6 +36,11 @@ import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
 
 /// Top-view dodge boss fight: move side-to-side, break shield, shoot eggs.
+enum _ManualBattlePhase {
+  intro,
+  playing,
+}
+
 class ManualBossBattleScreen extends StatefulWidget {
   const ManualBossBattleScreen({
     super.key,
@@ -112,6 +118,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   var _showVictoryAnimation = false;
   var _showFinisherSlash = false;
   var _finisherRewardsApplied = false;
+  var _phase = _ManualBattlePhase.intro;
   var _finisherBonusCoins = 0;
   var _finisherBonusTokens = 0;
   var _victoryCoinReward = 0;
@@ -204,9 +211,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     super.initState();
     _random = Random();
     _initFighterInfo();
-    _resetBattleState();
     _ticker = createTicker(_onTick);
-    _ticker.start();
+    _resetBattleState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final track = boss.id == EggShardLogic.rottenShellBossId
@@ -274,6 +280,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _earnedRewardAnimalName = null;
     _earnedRewardGrant = null;
     _lastTickElapsed = null;
+    _phase = _ManualBattlePhase.intro;
+    _ticker.stop();
     _bossProjectiles.clear();
     _activeEgg = null;
     _floatingDamages.clear();
@@ -307,6 +315,15 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
         (_bossAimTargetX * 0.35 + newTarget * 0.65).clamp(minBx, maxBx);
   }
 
+  void _onIntroComplete() {
+    if (!mounted || _phase != _ManualBattlePhase.intro) return;
+    setState(() {
+      _phase = _ManualBattlePhase.playing;
+      _lastTickElapsed = null;
+    });
+    _ticker.start();
+  }
+
   @override
   void dispose() {
     _restoreHatcheryMusic();
@@ -315,7 +332,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _onTick(Duration elapsed) {
-    if (!mounted || _gameOver) return;
+    if (!mounted || _gameOver || _phase != _ManualBattlePhase.playing) return;
 
     if (_isPaused) {
       _lastTickElapsed = elapsed;
@@ -333,7 +350,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _pauseBattle() {
-    if (_gameOver || _isPaused) return;
+    if (_gameOver || _isPaused || _phase != _ManualBattlePhase.playing) return;
     setState(() {
       _isPaused = true;
       _moveLeft = false;
@@ -593,7 +610,13 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _shootEgg() {
-    if (_gameOver || _isPaused || _shieldActive || _activeEgg != null) return;
+    if (_phase != _ManualBattlePhase.playing ||
+        _gameOver ||
+        _isPaused ||
+        _shieldActive ||
+        _activeEgg != null) {
+      return;
+    }
     if (_eggCooldownRemaining > 0) return;
 
     _activeEgg = _EggProjectile(
@@ -747,7 +770,6 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
           setState(() {
             _resetBattleState();
             _resultDialogShown = false;
-            _ticker.start();
           });
         },
       ),
@@ -755,7 +777,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (_gameOver || _isPaused || _showVictoryAnimation || _showFinisherSlash) {
+    if (_phase != _ManualBattlePhase.playing ||
+        _gameOver ||
+        _isPaused ||
+        _showVictoryAnimation ||
+        _showFinisherSlash) {
       return KeyEventResult.ignored;
     }
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -785,13 +811,18 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   }
 
   void _onArenaPointerDown(double localX) {
-    if (_gameOver || _isPaused) return;
+    if (_phase != _ManualBattlePhase.playing || _gameOver || _isPaused) return;
     _pointerActive = true;
     _updateTargetX(localX);
   }
 
   void _onArenaPointerMove(double localX) {
-    if (_gameOver || _isPaused || !_pointerActive) return;
+    if (_phase != _ManualBattlePhase.playing ||
+        _gameOver ||
+        _isPaused ||
+        !_pointerActive) {
+      return;
+    }
     _updateTargetX(localX);
   }
 
@@ -858,7 +889,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                             shieldFlash: _shieldFlash,
                             missCount: _missCount,
                             requiredMisses: _requiredMisses,
-                            showPauseButton: !_gameOver &&
+                            showPauseButton: _phase == _ManualBattlePhase.playing &&
+                                !_gameOver &&
                                 !_isPaused &&
                                 !_showVictoryAnimation &&
                                 !_showFinisherSlash,
@@ -935,7 +967,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                           _ShootRow(
                             theme: currentTheme,
                             shieldActive: _shieldActive,
-                            canShoot: !_gameOver &&
+                            canShoot: _phase == _ManualBattlePhase.playing &&
+                                !_gameOver &&
                                 !_isPaused &&
                                 !_showVictoryAnimation &&
                                 !_showFinisherSlash &&
@@ -948,6 +981,20 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
                         ],
                       ),
                     ),
+                    if (_phase == _ManualBattlePhase.intro)
+                      Positioned.fill(
+                        child: BossFightIntroAnimation(
+                          fighterName: _fighterName,
+                          fighterAnimalId: _fighterAnimalId,
+                          fighterSpritePath: _fighterSpritePath,
+                          fighterEmoji: _fighterEmoji,
+                          fighterCustomSprite: _fighterCustomSprite,
+                          boss: boss,
+                          mode: _mode,
+                          audio: _audioService,
+                          onComplete: _onIntroComplete,
+                        ),
+                      ),
                     if (_isPaused)
                       Positioned.fill(
                         child: Padding(
