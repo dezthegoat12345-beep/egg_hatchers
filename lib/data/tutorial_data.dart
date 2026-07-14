@@ -77,6 +77,16 @@ class TutorialData {
       requiredRoute: kHatcheryRouteName,
     ),
     GuidedTutorialStep(
+      id: 'fusion',
+      text:
+          'Fusion lets you combine 3 matching animals with the same mutation to make a stronger mutation!\n\nTry collecting duplicates, then come back here to fuse them.',
+      targetId: TutorialTargetIds.fusionSection,
+      fallbackText:
+          'Fusion lets you combine 3 matching animals with the same mutation to make a stronger mutation! Try collecting duplicates, then come back here to fuse them.',
+      manualNext: true,
+      requiredRoute: kCollectionRouteName,
+    ),
+    GuidedTutorialStep(
       id: 'collectionBack',
       text: returnToHatcheryText,
       targetId: TutorialTargetIds.screenBackButton,
@@ -158,6 +168,7 @@ class TutorialTargetIds {
   static const animalsSection = 'animalsSection';
   static const upgradeButton = 'upgradeButton';
   static const collectionButton = 'collectionButton';
+  static const fusionSection = 'fusionSection';
   static const questsButton = 'questsButton';
   static const battlesButton = 'battlesButton';
   static const battlesExplainSection = 'battlesExplainSection';

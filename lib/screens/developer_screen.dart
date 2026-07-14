@@ -617,6 +617,27 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
+                label: '+3 Chickens (fusion test)',
+                onPressed: () {
+                  game.devAddFusionTestAnimals();
+                  _showMessage('Added 3 Normal Chickens for fusion testing.');
+                },
+              ),
+              _QuickButton(
+                label: '+3 Golden Chickens (fusion test)',
+                onPressed: () {
+                  game.devAddFusionTestAnimals(mutationId: 'golden');
+                  _showMessage('Added 3 Golden Chickens for fusion testing.');
+                },
+              ),
+              _QuickButton(
+                label: 'Reset fusion test chickens',
+                onPressed: () {
+                  game.devResetFusionTestAnimals();
+                  _showMessage('Removed fusion-test Normal/Golden Chickens.');
+                },
+              ),
+              _QuickButton(
                 label: 'Reset Battle quest stats',
                 onPressed: () {
                   game.devResetBattleQuestStats();

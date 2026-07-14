@@ -11,6 +11,7 @@ import '../utils/ui_sound.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/tutorial_screen_bindings.dart';
 import '../widgets/tutorial_targets.dart';
+import '../widgets/animal_fusion_panel.dart';
 import '../widgets/coin_header.dart';
 import '../widgets/game_background.dart';
 import '../widgets/owned_animal_list.dart';
@@ -226,6 +227,12 @@ class CollectionScreen extends StatelessWidget {
                     theme: bg,
                   ),
                   const SizedBox(height: 18),
+                  AnimalFusionPanel(
+                    game: game,
+                    theme: bg,
+                    customSprites: customSprites,
+                    tutorialSectionKey: TutorialTargets.fusionSection,
+                  ),
                   Expanded(
                     child: game.ownedAnimals.isEmpty
                         ? _EmptyCollection(theme: bg)

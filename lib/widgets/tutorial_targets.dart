@@ -18,6 +18,7 @@ class TutorialTargets {
       GlobalKey(debugLabel: 'tutorialUpgrade');
   static final GlobalKey collectionButton =
       GlobalKey(debugLabel: 'tutorialCollection');
+  static final GlobalKey fusionSection = GlobalKey(debugLabel: 'tutorialFusion');
   static final GlobalKey questsButton = GlobalKey(debugLabel: 'tutorialQuests');
   static final GlobalKey battlesButton =
       GlobalKey(debugLabel: 'tutorialBattles');
@@ -40,6 +41,8 @@ class TutorialTargets {
         return upgradeButton;
       case TutorialTargetIds.collectionButton:
         return collectionButton;
+      case TutorialTargetIds.fusionSection:
+        return fusionSection;
       case TutorialTargetIds.questsButton:
         return questsButton;
       case TutorialTargetIds.battlesButton:

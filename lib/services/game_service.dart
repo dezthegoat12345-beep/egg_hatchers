@@ -19,6 +19,7 @@ import '../models/boss_reward_grant.dart';
 import '../models/daily_quest_progress.dart';
 import '../utils/daily_system_logic.dart';
 import '../utils/custom_egg_logic.dart';
+import '../utils/animal_fusion_logic.dart';
 import '../utils/battle_upgrade_logic.dart';
 import '../utils/luck_logic.dart';
 import '../models/mutation.dart';
@@ -1765,6 +1766,129 @@ class GameService extends ChangeNotifier {
     notifyListeners();
     save();
     return true;
+  }
+
+  bool canFuseAnimals(OwnedAnimal source) =>
+      AnimalFusionLogic.canFuseStack(
+        source,
+        inBattle: isOwnedStackAutoBattling(source),
+      );
+
+  /// Combines 3 copies of the same animal/mutation into one upgraded mutation.
+  AnimalFusionOutcome? fuseAnimals(OwnedAnimal source, {Random? random}) {
+    if (!canFuseAnimals(source)) return null;
+
+    final sourceIndex = _indexOfOwnedStack(
+      _state.ownedAnimals,
+      source.animalId,
+      source.mutationId,
+      isProtected: source.isProtected,
+    );
+    if (sourceIndex < 0) return null;
+
+    final stack = _state.ownedAnimals[sourceIndex];
+    if (stack.quantity < AnimalFusionLogic.inputQuantity) return null;
+
+    final animal = GameData.animalById(stack.animalId);
+    if (animal == null) return null;
+
+    final rng = random ?? Random();
+    final resultMutationId =
+        AnimalFusionLogic.resolveResultMutation(stack.mutationId, rng);
+    final wasLucky =
+        AnimalFusionLogic.wasLuckyFusion(stack.mutationId, resultMutationId);
+    final resultMutation =
+        GameData.mutationById(resultMutationId) ?? GameData.mutations.first;
+
+    final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final remaining = stack.quantity - AnimalFusionLogic.inputQuantity;
+    if (remaining <= 0) {
+      updated.removeAt(sourceIndex);
+    } else {
+      updated[sourceIndex] = stack.copyWith(quantity: remaining);
+    }
+
+    final outputIndex = _indexOfOwnedStack(
+      updated,
+      stack.animalId,
+      resultMutationId,
+      isProtected: false,
+    );
+    if (outputIndex >= 0) {
+      final outputStack = updated[outputIndex];
+      updated[outputIndex] = outputStack.copyWith(
+        quantity: outputStack.quantity + 1,
+        sourceEggId: _mergeSourceEggId(outputStack.sourceEggId, stack.sourceEggId),
+      );
+    } else {
+      updated.add(
+        OwnedAnimal(
+          animalId: stack.animalId,
+          quantity: 1,
+          level: 1,
+          mutationId: resultMutationId,
+          sourceEggId: stack.sourceEggId,
+        ),
+      );
+    }
+
+    _state = _state.copyWith(ownedAnimals: updated);
+    notifyListeners();
+    save();
+
+    return AnimalFusionOutcome(
+      animalId: stack.animalId,
+      inputMutationId: stack.mutationId,
+      resultMutationId: resultMutationId,
+      wasLucky: wasLucky,
+      displayName: resultMutation.fullName(animal),
+    );
+  }
+
+  void devAddFusionTestAnimals({
+    String animalId = 'chicken',
+    String mutationId = 'none',
+    int quantity = 3,
+  }) {
+    final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
+    final existingIndex = _indexOfOwnedStack(
+      updated,
+      animalId,
+      mutationId,
+      isProtected: false,
+    );
+    if (existingIndex >= 0) {
+      final existing = updated[existingIndex];
+      updated[existingIndex] =
+          existing.copyWith(quantity: existing.quantity + quantity);
+    } else {
+      updated.add(
+        OwnedAnimal(
+          animalId: animalId,
+          quantity: quantity,
+          mutationId: mutationId,
+        ),
+      );
+    }
+    _state = _state.copyWith(ownedAnimals: updated);
+    notifyListeners();
+    save();
+  }
+
+  void devResetFusionTestAnimals({String animalId = 'chicken'}) {
+    final updated = _state.ownedAnimals
+        .where(
+          (owned) =>
+              owned.animalId != animalId ||
+              owned.isProtected ||
+              owned.isEliteReward ||
+              owned.isSecretReward ||
+              (owned.mutationId != 'none' && owned.mutationId != 'golden'),
+        )
+        .toList();
+    _state = _state.copyWith(ownedAnimals: updated);
+    notifyListeners();
+    save();
   }
 
   int battleHomingUpgradeCost() =>
