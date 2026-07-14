@@ -25,7 +25,6 @@ class DailyRewardCard extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    UiSound.confirm(context);
     UiSound.rewardTriumph(context);
 
     final parts = <String>[];

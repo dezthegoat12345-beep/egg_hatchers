@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
 import '../models/egg.dart';
 import '../models/hatch_result.dart';
@@ -134,10 +133,9 @@ class _HatchDialogState extends State<HatchDialog>
     // Stage 4: reveal result
     setState(() => _stage = _HatchStage.revealed);
     final audio = AudioScope.maybeOf(context);
-    audio?.playSfx(Sfx.hatchReveal);
-    if (widget.result.animal.rarity.sortOrder >= 4) {
-      audio?.playSfx(Sfx.rareChime);
-    }
+    await audio?.playHatchReveal(
+      bigReward: widget.result.animal.rarity.sortOrder >= 4,
+    );
     await _revealController.forward();
   }
 

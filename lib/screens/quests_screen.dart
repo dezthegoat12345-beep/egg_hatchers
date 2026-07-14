@@ -35,7 +35,6 @@ class QuestsScreen extends StatelessWidget {
     final reward = game.claimQuest(quest.id);
     if (reward == null || !context.mounted) return;
 
-    UiSound.confirm(context);
     UiSound.rewardTriumph(context);
 
     if (quest.showsSecretHintOnClaim) {
@@ -100,7 +99,6 @@ class QuestsScreen extends StatelessWidget {
   void _claimDailyQuest(BuildContext context, DailyQuestProgress quest) {
     if (!game.claimDailyQuest(quest.id) || !context.mounted) return;
 
-    UiSound.confirm(context);
     UiSound.rewardTriumph(context);
 
     if (quest.rewardCoins > 0) {

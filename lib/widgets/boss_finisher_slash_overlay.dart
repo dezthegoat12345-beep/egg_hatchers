@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../data/boss_finisher_rewards.dart';
-import '../data/audio_assets.dart';
 import '../models/background_theme.dart';
 import '../models/boss_battle.dart';
 import '../models/finisher_reward.dart';
@@ -119,7 +118,7 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
 
     final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
     _slashes.add(_SlashVisual(start: start, end: end));
-    AudioScope.maybeOf(context)?.playSfx(Sfx.finisherSlash);
+    AudioScope.maybeOf(context)?.playFinisherSlash();
 
     final elapsedMs = _elapsed * 1000;
     final maxRolls = BossFinisherRewards.maxBonusRolls(widget.boss);
@@ -147,7 +146,7 @@ class _BossFinisherSlashOverlayState extends State<BossFinisherSlashOverlay>
     final roll = BossFinisherRewards.rollBonus(widget.boss.id, _random);
     _totals = _totals.addRoll(roll);
     if (roll.grantsReward) {
-      AudioScope.maybeOf(context)?.playSfx(Sfx.finisherBonus);
+      AudioScope.maybeOf(context)?.playRewardTriumph();
     }
     _addFloater(mid, roll.message, isReward: roll.grantsReward);
   }

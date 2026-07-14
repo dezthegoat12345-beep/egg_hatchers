@@ -37,7 +37,6 @@ class DailyRewardPopup {
           final reward = game.upcomingDailyReward;
           if (!game.claimDailyReward()) return;
 
-          UiSound.confirm(context);
           UiSound.rewardTriumph(context);
 
           Navigator.pop(dialogContext);

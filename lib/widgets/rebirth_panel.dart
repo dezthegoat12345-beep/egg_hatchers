@@ -69,7 +69,6 @@ class _RebirthPanelState extends State<RebirthPanel> {
       if (confirmed == true) {
         final success = game.performRebirth();
         if (success && context.mounted) {
-          UiSound.confirm(context);
           UiSound.rewardBigTriumph(context);
           showGameSnackBar(
             context,

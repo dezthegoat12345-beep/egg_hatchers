@@ -13,6 +13,11 @@ class AudioService extends ChangeNotifier {
   static const _musicVolumeKey = 'audioMusicVolume';
   static const _sfxVolumeKey = 'audioSfxVolume';
 
+  static const rewardTriumphCooldownMs = 700;
+  static const rewardBigCooldownMs = 1200;
+  static const assetPathCooldownMs = 100;
+  static const rewardRecentGapMs = 2000;
+
   final AudioPlayer _musicPlayer = AudioPlayer(playerId: 'music');
   final List<AudioPlayer> _sfxPlayers = List.generate(
     4,
@@ -29,6 +34,9 @@ class AudioService extends ChangeNotifier {
   MusicTrack? _pendingTrack;
   var _sfxRoundRobin = 0;
   final Map<Sfx, DateTime> _lastSfxPlayed = {};
+  final Map<String, DateTime> _lastAssetPathPlayed = {};
+  DateTime? _lastRewardTriumphPlayed;
+  DateTime? _lastRewardBigPlayed;
 
   bool get isInitialized => _isInitialized;
   bool get musicEnabled => _musicEnabled;
@@ -151,16 +159,47 @@ class AudioService extends ChangeNotifier {
 
   Future<void> stopMusic() => _stopMusic();
 
+  /// True if a reward-tier SFX played within [withinMs].
+  bool rewardPlayedRecently({int withinMs = rewardRecentGapMs}) {
+    final now = DateTime.now();
+    if (_lastRewardTriumphPlayed != null &&
+        now.difference(_lastRewardTriumphPlayed!).inMilliseconds < withinMs) {
+      return true;
+    }
+    if (_lastRewardBigPlayed != null &&
+        now.difference(_lastRewardBigPlayed!).inMilliseconds < withinMs) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> playRewardTriumph() => playSfx(Sfx.coinReward);
+
+  Future<void> playBigRewardTriumph() => playSfx(Sfx.eggShardReward);
+
+  Future<void> playFinisherSlash() =>
+      playSfx(Sfx.finisherSlash, volumeScale: 0.42);
+
+  Future<void> playHatchReveal({required bool bigReward}) {
+    if (bigReward) return playSfx(Sfx.rareChime);
+    return playSfx(Sfx.hatchReveal);
+  }
+
   Future<void> playSfx(Sfx sfx, {double volumeScale = 1.0}) async {
     if (!_sfxEnabled || !_userUnlocked) return;
     if (!_canPlaySfx(sfx)) return;
+    if (!_canPlayAssetPath(sfx.assetPath)) return;
+    if (!_canPlayRewardFamily(sfx.assetPath)) return;
 
     final player = _sfxPlayers[_sfxRoundRobin++ % _sfxPlayers.length];
     try {
       await player.stop();
       await player.setVolume((_sfxVolume * volumeScale).clamp(0.0, 1.0));
       await player.play(AssetSource(sfx.assetPath));
-      _lastSfxPlayed[sfx] = DateTime.now();
+      _recordSfxPlayed(sfx);
+      if (kDebugMode) {
+        debugPrint('[SFX] ${sfx.name} → ${sfx.assetPath}');
+      }
     } catch (e) {
       debugPrint('SFX play failed (${sfx.name}): $e');
     }
@@ -174,6 +213,52 @@ class AudioService extends ChangeNotifier {
     final last = _lastSfxPlayed[sfx];
     if (last == null) return true;
     return DateTime.now().difference(last).inMilliseconds >= sfx.cooldownMs;
+  }
+
+  bool _canPlayAssetPath(String assetPath) {
+    final last = _lastAssetPathPlayed[assetPath];
+    if (last == null) return true;
+    return DateTime.now().difference(last).inMilliseconds >= assetPathCooldownMs;
+  }
+
+  bool _canPlayRewardFamily(String assetPath) {
+    if (_isRewardBigAsset(assetPath)) {
+      final last = _lastRewardBigPlayed;
+      if (last == null) return true;
+      return DateTime.now().difference(last).inMilliseconds >=
+          rewardBigCooldownMs;
+    }
+    if (_isRewardTriumphAsset(assetPath)) {
+      final last = _lastRewardTriumphPlayed;
+      if (last == null) return true;
+      return DateTime.now().difference(last).inMilliseconds >=
+          rewardTriumphCooldownMs;
+    }
+    return true;
+  }
+
+  bool _isRewardTriumphAsset(String path) {
+    return path == AudioAssets.sfxCoinReward ||
+        path == AudioAssets.sfxTokenReward ||
+        path == AudioAssets.sfxHatchReveal ||
+        path == AudioAssets.sfxFinisherBonus;
+  }
+
+  bool _isRewardBigAsset(String path) {
+    return path == AudioAssets.sfxEggShardReward ||
+        path == AudioAssets.sfxRareChime ||
+        path == AudioAssets.sfxVictory;
+  }
+
+  void _recordSfxPlayed(Sfx sfx) {
+    final now = DateTime.now();
+    _lastSfxPlayed[sfx] = now;
+    _lastAssetPathPlayed[sfx.assetPath] = now;
+    if (_isRewardBigAsset(sfx.assetPath)) {
+      _lastRewardBigPlayed = now;
+    } else if (_isRewardTriumphAsset(sfx.assetPath)) {
+      _lastRewardTriumphPlayed = now;
+    }
   }
 
   Future<bool> _tryPlayMusicAsset(String assetPath) async {

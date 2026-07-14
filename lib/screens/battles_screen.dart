@@ -56,7 +56,6 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (game.unlockBossMutation() && context.mounted) {
-      UiSound.confirm(context);
       UiSound.rewardBigTriumph(context);
       showGameSnackBar(
         context,
@@ -398,6 +397,7 @@ class BattlesScreen extends StatelessWidget {
     ManualBattleMode mode = ManualBattleMode.normal,
   }) async {
     if (game.ownedAnimals.isEmpty) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Hatch an animal before battling.',
@@ -407,6 +407,7 @@ class BattlesScreen extends StatelessWidget {
     }
 
     if (mode == ManualBattleMode.hard && !game.isHardPhaseUnlocked(boss.id)) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message:
@@ -418,6 +419,7 @@ class BattlesScreen extends StatelessWidget {
 
     if (mode == ManualBattleMode.nightmare &&
         !game.isNightmareUnlocked(boss.id)) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message:

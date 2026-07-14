@@ -346,6 +346,7 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
       message: 'Sprite rated! +${formatCoins(granted)} coins',
       backgroundColor: widget.theme.secondaryColor,
     );
+    UiSound.rewardTriumph(context);
   }
 
   Future<void> _save() async {

@@ -125,9 +125,8 @@ class _RottenShellDefeatAnimationState extends State<RottenShellDefeatAnimation>
       audio.playSfx(Sfx.rottenExplosion);
     });
     _soundGuard.maybeAt(t, 'harvest', 10200, () {
-      audio.playSfx(Sfx.rottenShardHarvest);
       if (widget.eggShardReward > 0) {
-        audio.playSfx(Sfx.eggShardReward);
+        audio.playBigRewardTriumph();
       }
     });
   }

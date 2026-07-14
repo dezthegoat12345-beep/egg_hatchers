@@ -20,10 +20,10 @@ abstract final class UiSound {
   }
 
   static void rewardTriumph(BuildContext context) {
-    AudioScope.maybeOf(context)?.playSfx(Sfx.coinReward);
+    AudioScope.maybeOf(context)?.playRewardTriumph();
   }
 
   static void rewardBigTriumph(BuildContext context) {
-    AudioScope.maybeOf(context)?.playSfx(Sfx.eggShardReward);
+    AudioScope.maybeOf(context)?.playBigRewardTriumph();
   }
 }

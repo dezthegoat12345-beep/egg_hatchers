@@ -7,6 +7,7 @@ import '../theme/game_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/luck_logic.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/ui_sound.dart';
 
 /// Hatchery panel for upgrading Luck and viewing mutation odds.
 class LuckPanel extends StatelessWidget {
@@ -20,9 +21,13 @@ class LuckPanel extends StatelessWidget {
   final BackgroundTheme theme;
 
   void _upgrade(BuildContext context) {
-    if (game.isLuckMaxed) return;
+    if (game.isLuckMaxed) {
+      UiSound.locked(context);
+      return;
+    }
 
     if (!game.canAffordLuckUpgrade()) {
+      UiSound.locked(context);
       showGameSnackBar(
         context,
         message: 'Not enough coins to upgrade Luck.',
@@ -33,6 +38,7 @@ class LuckPanel extends StatelessWidget {
 
     final newLevel = game.upgradeLuck();
     if (newLevel != null && context.mounted) {
+      UiSound.confirm(context);
       showGameSnackBar(
         context,
         message: 'Luck upgraded to Level $newLevel!',

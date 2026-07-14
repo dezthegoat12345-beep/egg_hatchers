@@ -104,7 +104,7 @@ class _SlimeBossDefeatAnimationState extends State<SlimeBossDefeatAnimation>
     if (audio == null) return;
     _soundGuard.maybeAt(t, 'pop', _explosionStartMs, () => audio.playSfx(Sfx.slimePop));
     if (widget.coinReward > 0) {
-      _soundGuard.maybeAt(t, 'coins', 9000, () => audio.playSfx(Sfx.coinReward));
+      _soundGuard.maybeAt(t, 'coins', 9000, () => audio.playRewardTriumph());
     }
   }
 

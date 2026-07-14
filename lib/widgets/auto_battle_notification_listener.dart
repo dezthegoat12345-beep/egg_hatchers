@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/background_theme.dart';
 import '../services/game_service.dart';
 import '../utils/snackbar_utils.dart';
+import '../widgets/audio_scope.dart';
 
 /// Shows snackbars when a background auto battle completes.
 class AutoBattleNotificationListener extends StatefulWidget {
@@ -45,6 +46,11 @@ class _AutoBattleNotificationListenerState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (summary.battlesWon > 0 &&
+          (summary.totalCoinsEarned > 0 ||
+              summary.totalBattleTokensEarned > 0)) {
+        AudioScope.maybeOf(context)?.playRewardTriumph();
+      }
       showGameSnackBar(
         context,
         message: summary.notificationMessage,

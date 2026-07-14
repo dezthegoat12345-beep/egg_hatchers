@@ -21,9 +21,9 @@ class AudioAssets {
   static const sfxBossHit = 'sounds/sfx/boss_hit.wav';
   static const sfxShieldBreak = 'sounds/sfx/shield_break.wav';
   static const sfxRageMode = 'sounds/sfx/rage_mode.wav';
-  static const sfxVictory = 'sounds/sfx/victory.wav';
-  static const sfxDefeat = 'sounds/sfx/defeat.wav';
-  static const sfxFinisherSlash = 'sounds/sfx/finisher_slash.wav';
+  static const sfxVictory = 'sounds/sfx/reward_big_triumph.wav';
+  static const sfxDefeat = 'sounds/sfx/ui_locked_soft.wav';
+  static const sfxFinisherSlash = 'sounds/sfx/ui_click_soft.wav';
   static const sfxFinisherBonus = 'sounds/sfx/reward_triumph.wav';
   static const sfxSlimePop = 'sounds/sfx/slime_pop.wav';
   static const sfxGolemCrack = 'sounds/sfx/golem_crack.wav';
@@ -50,11 +50,11 @@ enum MusicTrack {
 
 enum Sfx {
   eggCrack(AudioAssets.sfxEggCrack, cooldownMs: 80),
-  hatchReveal(AudioAssets.sfxHatchReveal, cooldownMs: 0),
-  rareChime(AudioAssets.sfxRareChime, cooldownMs: 0),
-  coinReward(AudioAssets.sfxCoinReward, cooldownMs: 200),
-  tokenReward(AudioAssets.sfxTokenReward, cooldownMs: 200),
-  eggShardReward(AudioAssets.sfxEggShardReward, cooldownMs: 200),
+  hatchReveal(AudioAssets.sfxHatchReveal, cooldownMs: 700),
+  rareChime(AudioAssets.sfxRareChime, cooldownMs: 1200),
+  coinReward(AudioAssets.sfxCoinReward, cooldownMs: 700),
+  tokenReward(AudioAssets.sfxTokenReward, cooldownMs: 700),
+  eggShardReward(AudioAssets.sfxEggShardReward, cooldownMs: 1200),
   buttonTap(AudioAssets.sfxButtonTap, cooldownMs: 80),
   purchase(AudioAssets.sfxPurchase, cooldownMs: 0),
   errorLocked(AudioAssets.sfxErrorLocked, cooldownMs: 250),
@@ -64,10 +64,10 @@ enum Sfx {
   bossHit(AudioAssets.sfxBossHit, cooldownMs: 120),
   shieldBreak(AudioAssets.sfxShieldBreak, cooldownMs: 0),
   rageMode(AudioAssets.sfxRageMode, cooldownMs: 0),
-  victory(AudioAssets.sfxVictory, cooldownMs: 0),
-  defeat(AudioAssets.sfxDefeat, cooldownMs: 0),
-  finisherSlash(AudioAssets.sfxFinisherSlash, cooldownMs: 90),
-  finisherBonus(AudioAssets.sfxFinisherBonus, cooldownMs: 200),
+  victory(AudioAssets.sfxVictory, cooldownMs: 1200),
+  defeat(AudioAssets.sfxDefeat, cooldownMs: 250),
+  finisherSlash(AudioAssets.sfxFinisherSlash, cooldownMs: 180),
+  finisherBonus(AudioAssets.sfxFinisherBonus, cooldownMs: 700),
   slimePop(AudioAssets.sfxSlimePop, cooldownMs: 0),
   golemCrack(AudioAssets.sfxGolemCrack, cooldownMs: 0),
   featherBurst(AudioAssets.sfxFeatherBurst, cooldownMs: 0),

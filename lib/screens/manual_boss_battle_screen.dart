@@ -614,7 +614,9 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _activeEgg = null;
     _floatingDamages.clear();
     _applyRewardsOnce();
-    _audio.playSfx(won ? Sfx.victory : Sfx.defeat);
+    if (!won) {
+      _audio.playSfx(Sfx.defeat);
+    }
 
     if (won) {
       setState(() => _showFinisherSlash = true);
@@ -702,10 +704,12 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_won) {
       final coins = boss.coinReward * rewardMultiplier + _finisherBonusCoins;
       final tokens = boss.battleTokenReward * rewardMultiplier + _finisherBonusTokens;
-      if (_victoryEggShardReward > 0 || _earnedRewardGrant != null) {
-        _audio.playSfx(Sfx.eggShardReward);
-      } else if (coins > 0 || tokens > 0) {
-        _audio.playSfx(Sfx.coinReward);
+      if (!_audio.rewardPlayedRecently()) {
+        if (_victoryEggShardReward > 0 || _earnedRewardGrant != null) {
+          _audio.playBigRewardTriumph();
+        } else if (coins > 0 || tokens > 0) {
+          _audio.playRewardTriumph();
+        }
       }
     }
 
