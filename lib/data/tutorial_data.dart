@@ -79,10 +79,14 @@ class TutorialData {
     GuidedTutorialStep(
       id: 'fusion',
       text:
-          'Fusion lets you combine 3 matching animals with the same mutation to make a stronger mutation!\n\nTry collecting duplicates, then come back here to fuse them.',
+          'Fusion lets you combine 2 matching animals with the same mutation to make a stronger mutation!\n\n'
+          'Fusion has an 80% success chance. If it fails, both animals are lost.\n\n'
+          'Try collecting duplicates, then come back here to fuse them.',
       targetId: TutorialTargetIds.fusionSection,
       fallbackText:
-          'Fusion lets you combine 3 matching animals with the same mutation to make a stronger mutation! Try collecting duplicates, then come back here to fuse them.',
+          'Fusion lets you combine 2 matching animals with the same mutation to make a stronger mutation! '
+          'Fusion has an 80% success chance, and failed fusions lose both animals. '
+          'Try collecting duplicates, then come back here to fuse them.',
       manualNext: true,
       requiredRoute: kCollectionRouteName,
     ),

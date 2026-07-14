@@ -1,14 +1,17 @@
 import 'dart:math';
 
 import '../data/game_data.dart';
+import '../models/animal.dart';
 import '../models/mutation.dart';
 import '../models/owned_animal.dart';
 
-/// Rules for Animal Fusion v1 — combine 3 same animal/mutation stacks.
+/// Rules for Animal Fusion — combine 2 same animal/mutation stacks at risk.
 abstract final class AnimalFusionLogic {
   AnimalFusionLogic._();
 
-  static const inputQuantity = 3;
+  static const inputQuantity = 2;
+  static const successChance = 0.80;
+  static const failureChance = 0.20;
   static const luckyJumpChance = 0.10;
 
   /// Fusion ladder excluding Boss Mutation.
@@ -46,6 +49,19 @@ abstract final class AnimalFusionLogic {
     return resultIndex - inputIndex >= 2;
   }
 
+  static FusionRoll rollFusion(String inputMutationId, Random random) {
+    if (random.nextDouble() >= successChance) {
+      return const FusionRoll(succeeded: false);
+    }
+
+    final resultMutationId = resolveResultMutation(inputMutationId, random);
+    return FusionRoll(
+      succeeded: true,
+      resultMutationId: resultMutationId,
+      wasLucky: wasLuckyFusion(inputMutationId, resultMutationId),
+    );
+  }
+
   static String primaryResultMutationId(String inputMutationId) =>
       nextMutationId(inputMutationId) ?? inputMutationId;
 
@@ -56,22 +72,17 @@ abstract final class AnimalFusionLogic {
     return nextMutationId(inputMutationId, jump: 2);
   }
 
-  static String chanceDescription(String mutationId) {
+  static String successResultLabel(String mutationId, Animal animal) {
     final primaryId = primaryResultMutationId(mutationId);
-    final primary = mutationFor(primaryId);
-    if (primary == null) return '';
+    return mutationFor(primaryId)?.fullName(animal) ?? animal.name;
+  }
 
+  static String? luckyResultLabel(String mutationId, Animal animal) {
     final luckyId = luckyResultMutationId(mutationId);
-    if (luckyId == null || luckyId == primaryId) {
-      return '100% ${primary.displayName}';
+    if (luckyId == null || luckyId == primaryResultMutationId(mutationId)) {
+      return null;
     }
-
-    final lucky = mutationFor(luckyId);
-    if (lucky == null) return '100% ${primary.displayName}';
-
-    final luckyPct = (luckyJumpChance * 100).round();
-    final normalPct = 100 - luckyPct;
-    return '$normalPct% ${primary.displayName}, $luckyPct% ${lucky.displayName}';
+    return mutationFor(luckyId)?.fullName(animal);
   }
 
   static String? blockReasonText(OwnedAnimal owned, {required bool inBattle}) {
@@ -82,7 +93,7 @@ abstract final class AnimalFusionLogic {
     if (inBattle) return 'In battle';
     if (!fusionLadder.contains(owned.mutationId)) return 'Cannot fuse';
     if (owned.mutationId == fusionLadder.last) return 'Max mutation';
-    if (owned.quantity < inputQuantity) return 'Need 3';
+    if (owned.quantity < inputQuantity) return 'Need 2';
     return null;
   }
 
@@ -98,19 +109,36 @@ abstract final class AnimalFusionLogic {
   }
 }
 
-/// Outcome of a successful fusion.
+/// Result of rolling fusion odds after consuming inputs.
+class FusionRoll {
+  const FusionRoll({
+    required this.succeeded,
+    this.resultMutationId,
+    this.wasLucky = false,
+  });
+
+  final bool succeeded;
+  final String? resultMutationId;
+  final bool wasLucky;
+}
+
+/// Outcome of a confirmed fusion attempt.
 class AnimalFusionOutcome {
   const AnimalFusionOutcome({
     required this.animalId,
     required this.inputMutationId,
-    required this.resultMutationId,
-    required this.wasLucky,
-    required this.displayName,
+    required this.succeeded,
+    required this.inputDisplayName,
+    this.resultMutationId,
+    this.wasLucky = false,
+    this.displayName,
   });
 
   final String animalId;
   final String inputMutationId;
-  final String resultMutationId;
+  final bool succeeded;
+  final String inputDisplayName;
+  final String? resultMutationId;
   final bool wasLucky;
-  final String displayName;
+  final String? displayName;
 }

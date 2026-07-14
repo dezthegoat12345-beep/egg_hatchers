@@ -10,56 +10,40 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AnimalFusionLogic', () {
-    test('resolveResultMutation advances one step by default', () {
+    test('rollFusion fails 20% of the time', () {
       expect(
-        AnimalFusionLogic.resolveResultMutation('none', _fixedRandom(0.5)),
-        'golden',
-      );
-      expect(
-        AnimalFusionLogic.resolveResultMutation('golden', _fixedRandom(0.5)),
-        'rainbow',
-      );
-      expect(
-        AnimalFusionLogic.resolveResultMutation('rainbow', _fixedRandom(0.5)),
-        'shadow',
-      );
-    });
-
-    test('resolveResultMutation can lucky jump two steps', () {
-      expect(
-        AnimalFusionLogic.resolveResultMutation('none', _fixedRandom(0.05)),
-        'rainbow',
-      );
-      expect(
-        AnimalFusionLogic.wasLuckyFusion('none', 'rainbow'),
-        isTrue,
-      );
-    });
-
-    test('rainbow lucky jump still caps at shadow', () {
-      expect(
-        AnimalFusionLogic.resolveResultMutation('rainbow', _fixedRandom(0.05)),
-        'shadow',
-      );
-      expect(
-        AnimalFusionLogic.wasLuckyFusion('rainbow', 'shadow'),
+        AnimalFusionLogic.rollFusion('none', _valuesRandom([0.85])).succeeded,
         isFalse,
       );
     });
 
-    test('chanceDescription matches ladder', () {
-      expect(
-        AnimalFusionLogic.chanceDescription('none'),
-        '90% Golden, 10% Rainbow',
+    test('rollFusion succeeds and upgrades one step by default', () {
+      final roll = AnimalFusionLogic.rollFusion(
+        'none',
+        _valuesRandom([0.5, 0.5]),
       );
-      expect(
-        AnimalFusionLogic.chanceDescription('golden'),
-        '90% Rainbow, 10% Shadow',
+      expect(roll.succeeded, isTrue);
+      expect(roll.resultMutationId, 'golden');
+      expect(roll.wasLucky, isFalse);
+    });
+
+    test('rollFusion can lucky jump two steps on success', () {
+      final roll = AnimalFusionLogic.rollFusion(
+        'none',
+        _valuesRandom([0.5, 0.05]),
       );
-      expect(
-        AnimalFusionLogic.chanceDescription('rainbow'),
-        '100% Shadow',
+      expect(roll.succeeded, isTrue);
+      expect(roll.resultMutationId, 'rainbow');
+      expect(roll.wasLucky, isTrue);
+    });
+
+    test('rainbow success still caps at shadow', () {
+      final roll = AnimalFusionLogic.rollFusion(
+        'rainbow',
+        _valuesRandom([0.5, 0.05]),
       );
+      expect(roll.resultMutationId, 'shadow');
+      expect(roll.wasLucky, isFalse);
     });
 
     test('protected and boss stacks cannot fuse', () {
@@ -95,6 +79,18 @@ void main() {
         isFalse,
       );
     });
+
+    test('need 2 animals to fuse', () {
+      const stack = OwnedAnimal(
+        animalId: 'chicken',
+        quantity: 1,
+        mutationId: 'none',
+      );
+      expect(
+        AnimalFusionLogic.blockReasonText(stack, inBattle: false),
+        'Need 2',
+      );
+    });
   });
 
   group('GameService fuseAnimals', () {
@@ -105,7 +101,7 @@ void main() {
       game = GameService();
       await game.initialize();
       game.devSetOwnedAnimalsForTesting(const [
-        OwnedAnimal(animalId: 'chicken', quantity: 3, mutationId: 'none'),
+        OwnedAnimal(animalId: 'chicken', quantity: 2, mutationId: 'none'),
       ]);
     });
 
@@ -113,38 +109,57 @@ void main() {
       game.dispose();
     });
 
-    test('consumes 3 normal chickens and creates golden chicken', () {
+    test('consumes 2 normal chickens and creates golden chicken on success', () {
       final source = game.ownedAnimals.first;
-      final outcome = game.fuseAnimals(source, random: _fixedRandom(0.5));
+      final outcome = game.fuseAnimals(
+        source,
+        random: _valuesRandom([0.5, 0.5]),
+      );
 
       expect(outcome, isNotNull);
-      expect(outcome!.resultMutationId, 'golden');
+      expect(outcome!.succeeded, isTrue);
+      expect(outcome.resultMutationId, 'golden');
       expect(outcome.wasLucky, isFalse);
       expect(game.ownedAnimals, hasLength(1));
       expect(game.ownedAnimals.first.mutationId, 'golden');
       expect(game.ownedAnimals.first.quantity, 1);
+      expect(game.questProgress.totalFusionAttempts, 1);
+      expect(game.questProgress.totalSuccessfulFusions, 1);
     });
 
-    test('lucky fusion creates rainbow from 3 normal', () {
-      game.devSetOwnedAnimalsForTesting(const [
-        OwnedAnimal(animalId: 'chicken', quantity: 3, mutationId: 'none'),
-      ]);
+    test('failure removes both chickens with no output', () {
       final outcome = game.fuseAnimals(
         game.ownedAnimals.first,
-        random: _fixedRandom(0.05),
+        random: _valuesRandom([0.9]),
+      );
+
+      expect(outcome?.succeeded, isFalse);
+      expect(game.ownedAnimals, isEmpty);
+      expect(game.questProgress.totalFailedFusions, 1);
+      expect(game.questProgress.totalSuccessfulFusions, 0);
+    });
+
+    test('lucky fusion creates rainbow from 2 normal', () {
+      final outcome = game.fuseAnimals(
+        game.ownedAnimals.first,
+        random: _valuesRandom([0.5, 0.05]),
       );
 
       expect(outcome?.resultMutationId, 'rainbow');
       expect(outcome?.wasLucky, isTrue);
+      expect(game.questProgress.totalLuckyFusions, 1);
     });
 
     test('merges into existing output stack', () {
       game.devSetOwnedAnimalsForTesting(const [
-        OwnedAnimal(animalId: 'chicken', quantity: 3, mutationId: 'none'),
+        OwnedAnimal(animalId: 'chicken', quantity: 2, mutationId: 'none'),
         OwnedAnimal(animalId: 'chicken', quantity: 2, mutationId: 'golden'),
       ]);
 
-      game.fuseAnimals(game.ownedAnimals.first, random: _fixedRandom(0.5));
+      game.fuseAnimals(
+        game.ownedAnimals.first,
+        random: _valuesRandom([0.5, 0.5]),
+      );
 
       final golden = game.ownedAnimal('chicken', mutationId: 'golden');
       expect(golden?.quantity, 3);
@@ -152,27 +167,21 @@ void main() {
   });
 }
 
-/// Returns a Random whose first double is [value] in [0, 1).
-Random _fixedRandom(double value) {
-  return _SeededRandom(value);
-}
+Random _valuesRandom(List<double> values) => _SeededRandom(values);
 
 class _SeededRandom implements Random {
-  _SeededRandom(this._next);
+  _SeededRandom(this._values);
 
-  final double _next;
-  var _used = false;
+  final List<double> _values;
+  var _index = 0;
 
   @override
   int nextInt(int max) => (nextDouble() * max).floor();
 
   @override
   double nextDouble() {
-    if (!_used) {
-      _used = true;
-      return _next;
-    }
-    return 0.5;
+    if (_index >= _values.length) return 0.5;
+    return _values[_index++];
   }
 
   @override

@@ -17,6 +17,10 @@ class DailySystemLogic {
   static const claimQuestRewardType = 'claimQuestReward';
   static const buyEggsType = 'buyEggs';
   static const buyBattleUpgradeType = 'buyBattleUpgrade';
+  static const attemptFusionType = 'attemptFusion';
+  static const successfulFusionType = 'successfulFusion';
+  static const luckyFusionType = 'luckyFusion';
+  static const failedFusionType = 'failedFusion';
 
   static const _questPool = <_DailyQuestDefinition>[
     _DailyQuestDefinition(
@@ -112,6 +116,22 @@ class DailySystemLogic {
       group: 'battleUpgrade',
       type: buyBattleUpgradeType,
       title: 'Buy 1 battle upgrade',
+      target: 1,
+      rewardBattleTokens: 20,
+    ),
+    _DailyQuestDefinition(
+      id: 'try_fusion_1',
+      group: 'fusionAttempt',
+      type: attemptFusionType,
+      title: 'Try Fusion',
+      target: 1,
+      rewardCoins: 1500,
+    ),
+    _DailyQuestDefinition(
+      id: 'complete_fusion_1',
+      group: 'fusionSuccess',
+      type: successfulFusionType,
+      title: 'Complete a Fusion',
       target: 1,
       rewardBattleTokens: 20,
     ),

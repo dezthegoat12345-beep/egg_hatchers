@@ -1774,7 +1774,7 @@ class GameService extends ChangeNotifier {
         inBattle: isOwnedStackAutoBattling(source),
       );
 
-  /// Combines 3 copies of the same animal/mutation into one upgraded mutation.
+  /// Combines 2 copies of the same animal/mutation with an 80% success chance.
   AnimalFusionOutcome? fuseAnimals(OwnedAnimal source, {Random? random}) {
     if (!canFuseAnimals(source)) return null;
 
@@ -1792,13 +1792,12 @@ class GameService extends ChangeNotifier {
     final animal = GameData.animalById(stack.animalId);
     if (animal == null) return null;
 
+    final inputMutation =
+        GameData.mutationById(stack.mutationId) ?? GameData.mutations.first;
+    final inputDisplayName = inputMutation.fullName(animal);
+
     final rng = random ?? Random();
-    final resultMutationId =
-        AnimalFusionLogic.resolveResultMutation(stack.mutationId, rng);
-    final wasLucky =
-        AnimalFusionLogic.wasLuckyFusion(stack.mutationId, resultMutationId);
-    final resultMutation =
-        GameData.mutationById(resultMutationId) ?? GameData.mutations.first;
+    final roll = AnimalFusionLogic.rollFusion(stack.mutationId, rng);
 
     final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
     final remaining = stack.quantity - AnimalFusionLogic.inputQuantity;
@@ -1808,47 +1807,94 @@ class GameService extends ChangeNotifier {
       updated[sourceIndex] = stack.copyWith(quantity: remaining);
     }
 
-    final outputIndex = _indexOfOwnedStack(
-      updated,
-      stack.animalId,
-      resultMutationId,
-      isProtected: false,
-    );
-    if (outputIndex >= 0) {
-      final outputStack = updated[outputIndex];
-      updated[outputIndex] = outputStack.copyWith(
-        quantity: outputStack.quantity + 1,
-        sourceEggId: _mergeSourceEggId(outputStack.sourceEggId, stack.sourceEggId),
+    String? resultMutationId;
+    String? displayName;
+    var wasLucky = false;
+
+    if (roll.succeeded && roll.resultMutationId != null) {
+      final outputMutationId = roll.resultMutationId!;
+      wasLucky = roll.wasLucky;
+      final resultMutation =
+          GameData.mutationById(outputMutationId) ?? GameData.mutations.first;
+      displayName = resultMutation.fullName(animal);
+      resultMutationId = outputMutationId;
+
+      final outputIndex = _indexOfOwnedStack(
+        updated,
+        stack.animalId,
+        outputMutationId,
+        isProtected: false,
       );
+      if (outputIndex >= 0) {
+        final outputStack = updated[outputIndex];
+        updated[outputIndex] = outputStack.copyWith(
+          quantity: outputStack.quantity + 1,
+          sourceEggId:
+              _mergeSourceEggId(outputStack.sourceEggId, stack.sourceEggId),
+        );
+      } else {
+        updated.add(
+          OwnedAnimal(
+            animalId: stack.animalId,
+            quantity: 1,
+            level: 1,
+            mutationId: outputMutationId,
+            sourceEggId: stack.sourceEggId,
+          ),
+        );
+      }
+    }
+
+    var progress = _state.questProgress.copyWith(
+      totalFusionAttempts: _state.questProgress.totalFusionAttempts + 1,
+    );
+    if (roll.succeeded) {
+      progress = progress.copyWith(
+        totalSuccessfulFusions: progress.totalSuccessfulFusions + 1,
+      );
+      if (wasLucky) {
+        progress = progress.copyWith(
+          totalLuckyFusions: progress.totalLuckyFusions + 1,
+        );
+      }
     } else {
-      updated.add(
-        OwnedAnimal(
-          animalId: stack.animalId,
-          quantity: 1,
-          level: 1,
-          mutationId: resultMutationId,
-          sourceEggId: stack.sourceEggId,
-        ),
+      progress = progress.copyWith(
+        totalFailedFusions: progress.totalFailedFusions + 1,
       );
     }
 
-    _state = _state.copyWith(ownedAnimals: updated);
+    _state = _state.copyWith(
+      ownedAnimals: updated,
+      questProgress: progress,
+    );
+    _incrementDailyQuest(DailySystemLogic.attemptFusionType);
+    if (roll.succeeded) {
+      _incrementDailyQuest(DailySystemLogic.successfulFusionType);
+      if (wasLucky) {
+        _incrementDailyQuest(DailySystemLogic.luckyFusionType);
+      }
+    } else {
+      _incrementDailyQuest(DailySystemLogic.failedFusionType);
+    }
+    _refreshQuestNotifications();
     notifyListeners();
     save();
 
     return AnimalFusionOutcome(
       animalId: stack.animalId,
       inputMutationId: stack.mutationId,
+      succeeded: roll.succeeded,
+      inputDisplayName: inputDisplayName,
       resultMutationId: resultMutationId,
       wasLucky: wasLucky,
-      displayName: resultMutation.fullName(animal),
+      displayName: displayName,
     );
   }
 
   void devAddFusionTestAnimals({
     String animalId = 'chicken',
     String mutationId = 'none',
-    int quantity = 3,
+    int quantity = 2,
   }) {
     final updated = List<OwnedAnimal>.from(_state.ownedAnimals);
     final existingIndex = _indexOfOwnedStack(

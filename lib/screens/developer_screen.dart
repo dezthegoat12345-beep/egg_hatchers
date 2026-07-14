@@ -617,17 +617,17 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                 },
               ),
               _QuickButton(
-                label: '+3 Chickens (fusion test)',
+                label: '+2 Chickens (fusion test)',
                 onPressed: () {
                   game.devAddFusionTestAnimals();
-                  _showMessage('Added 3 Normal Chickens for fusion testing.');
+                  _showMessage('Added 2 Normal Chickens for fusion testing.');
                 },
               ),
               _QuickButton(
-                label: '+3 Golden Chickens (fusion test)',
+                label: '+2 Golden Chickens (fusion test)',
                 onPressed: () {
                   game.devAddFusionTestAnimals(mutationId: 'golden');
-                  _showMessage('Added 3 Golden Chickens for fusion testing.');
+                  _showMessage('Added 2 Golden Chickens for fusion testing.');
                 },
               ),
               _QuickButton(

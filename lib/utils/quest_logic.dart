@@ -63,6 +63,14 @@ class QuestLogic {
         return progress.totalBossEggsHatched;
       case QuestMetric.totalBossMutationsApplied:
         return progress.totalBossMutationsApplied;
+      case QuestMetric.totalFusionAttempts:
+        return progress.totalFusionAttempts;
+      case QuestMetric.totalSuccessfulFusions:
+        return progress.totalSuccessfulFusions;
+      case QuestMetric.totalLuckyFusions:
+        return progress.totalLuckyFusions;
+      case QuestMetric.totalFailedFusions:
+        return progress.totalFailedFusions;
       case QuestMetric.bossMutationUnlocked:
         return state.bossMutationUnlocked ? 1 : 0;
       case QuestMetric.luckLevel:

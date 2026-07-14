@@ -27,6 +27,10 @@ class QuestProgress {
     this.totalBattleTokensEarned = 0,
     this.totalBossEggsHatched = 0,
     this.totalBossMutationsApplied = 0,
+    this.totalFusionAttempts = 0,
+    this.totalSuccessfulFusions = 0,
+    this.totalLuckyFusions = 0,
+    this.totalFailedFusions = 0,
     this.perfectRatedSpriteKeys = const [],
     this.questCountedRatedSpriteKeys = const [],
     this.claimedQuestIds = const [],
@@ -59,6 +63,10 @@ class QuestProgress {
   final int totalBattleTokensEarned;
   final int totalBossEggsHatched;
   final int totalBossMutationsApplied;
+  final int totalFusionAttempts;
+  final int totalSuccessfulFusions;
+  final int totalLuckyFusions;
+  final int totalFailedFusions;
 
   /// Tracks sprite versions already counted toward perfect rating quests.
   final List<String> perfectRatedSpriteKeys;
@@ -102,6 +110,10 @@ class QuestProgress {
     int? totalBattleTokensEarned,
     int? totalBossEggsHatched,
     int? totalBossMutationsApplied,
+    int? totalFusionAttempts,
+    int? totalSuccessfulFusions,
+    int? totalLuckyFusions,
+    int? totalFailedFusions,
     List<String>? perfectRatedSpriteKeys,
     List<String>? questCountedRatedSpriteKeys,
     List<String>? claimedQuestIds,
@@ -147,6 +159,11 @@ class QuestProgress {
           totalBossEggsHatched ?? this.totalBossEggsHatched,
       totalBossMutationsApplied:
           totalBossMutationsApplied ?? this.totalBossMutationsApplied,
+      totalFusionAttempts: totalFusionAttempts ?? this.totalFusionAttempts,
+      totalSuccessfulFusions:
+          totalSuccessfulFusions ?? this.totalSuccessfulFusions,
+      totalLuckyFusions: totalLuckyFusions ?? this.totalLuckyFusions,
+      totalFailedFusions: totalFailedFusions ?? this.totalFailedFusions,
       perfectRatedSpriteKeys:
           perfectRatedSpriteKeys ?? this.perfectRatedSpriteKeys,
       questCountedRatedSpriteKeys: questCountedRatedSpriteKeys ??
@@ -184,6 +201,10 @@ class QuestProgress {
         'totalBattleTokensEarned': totalBattleTokensEarned,
         'totalBossEggsHatched': totalBossEggsHatched,
         'totalBossMutationsApplied': totalBossMutationsApplied,
+        'totalFusionAttempts': totalFusionAttempts,
+        'totalSuccessfulFusions': totalSuccessfulFusions,
+        'totalLuckyFusions': totalLuckyFusions,
+        'totalFailedFusions': totalFailedFusions,
         'perfectRatedSpriteKeys': perfectRatedSpriteKeys,
         'questCountedRatedSpriteKeys': questCountedRatedSpriteKeys,
         'claimedQuestIds': claimedQuestIds,
@@ -224,6 +245,10 @@ class QuestProgress {
       totalBossEggsHatched: json['totalBossEggsHatched'] as int? ?? 0,
       totalBossMutationsApplied:
           json['totalBossMutationsApplied'] as int? ?? 0,
+      totalFusionAttempts: json['totalFusionAttempts'] as int? ?? 0,
+      totalSuccessfulFusions: json['totalSuccessfulFusions'] as int? ?? 0,
+      totalLuckyFusions: json['totalLuckyFusions'] as int? ?? 0,
+      totalFailedFusions: json['totalFailedFusions'] as int? ?? 0,
       perfectRatedSpriteKeys:
           (json['perfectRatedSpriteKeys'] as List<dynamic>?)
                   ?.map((key) => key as String)

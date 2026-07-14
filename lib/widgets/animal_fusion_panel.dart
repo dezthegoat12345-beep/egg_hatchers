@@ -43,9 +43,11 @@ class AnimalFusionPanel extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Fuse 3 of the same animal with the same mutation.\n\n'
-          'Fusion creates 1 animal with the next mutation.\n\n'
-          'There is a rare chance to jump up two mutation levels.\n\n'
+          'Fuse 2 matching animals with the same mutation.\n\n'
+          'Fusion has an 80% success chance.\n\n'
+          'If it fails, both animals are lost.\n\n'
+          'Successful fusion upgrades the mutation.\n\n'
+          'Sometimes Fusion jumps ahead two mutation levels.\n\n'
           'Shadow and Boss Mutation animals cannot be fused.\n\n'
           'Elite, Secret Reward, and battling animals are protected.',
           style: TextStyle(
@@ -90,15 +92,13 @@ class AnimalFusionPanel extends StatelessWidget {
     if (animal == null) return;
 
     final inputName = inputMutation.fullName(animal);
-    final primaryResultId =
-        AnimalFusionLogic.primaryResultMutationId(owned.mutationId);
-    final primaryMutation =
-        GameData.mutationById(primaryResultId) ?? GameData.mutations.first;
-    final primaryName = primaryMutation.fullName(animal);
-    final luckyId = AnimalFusionLogic.luckyResultMutationId(owned.mutationId);
-    final luckyMutation =
-        luckyId == null ? null : GameData.mutationById(luckyId);
-    final luckyName = luckyMutation?.fullName(animal);
+    final primaryName = AnimalFusionLogic.successResultLabel(
+      owned.mutationId,
+      animal,
+    );
+    final luckyName = AnimalFusionLogic.luckyResultLabel(owned.mutationId, animal);
+    final successPct = (AnimalFusionLogic.successChance * 100).round();
+    final failPct = (AnimalFusionLogic.failureChance * 100).round();
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -108,7 +108,7 @@ class AnimalFusionPanel extends StatelessWidget {
           borderRadius: BorderRadius.circular(GameTheme.cardRadius),
         ),
         title: Text(
-          'Fuse 3 $inputName?',
+          'Fuse 2 $inputName?',
           style: TextStyle(
             color: theme.cardTextPrimaryColor,
             fontWeight: FontWeight.bold,
@@ -119,21 +119,29 @@ class AnimalFusionPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Consumes 3 $inputName.',
+              'Consumes 2 $inputName.',
               style: TextStyle(color: theme.cardTextSecondaryColor),
             ),
             const SizedBox(height: 8),
             Text(
-              'Result: $primaryName',
+              '$successPct% chance: $primaryName',
               style: TextStyle(
                 color: theme.cardTextPrimaryColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            if (luckyName != null && luckyName != primaryName) ...[
+            const SizedBox(height: 6),
+            Text(
+              '$failPct% chance: Fusion fails and both are lost.',
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (luckyName != null) ...[
               const SizedBox(height: 6),
               Text(
-                'Rare chance: $luckyName!',
+                'Rare lucky chance: $luckyName!',
                 style: TextStyle(
                   color: Colors.amber.shade700,
                   fontWeight: FontWeight.w700,
@@ -168,21 +176,32 @@ class AnimalFusionPanel extends StatelessWidget {
     final outcome = game.fuseAnimals(owned);
     if (outcome == null || !context.mounted) return;
 
-    if (outcome.wasLucky) {
-      UiSound.rewardBigTriumph(context);
+    if (outcome.succeeded) {
+      if (outcome.wasLucky) {
+        UiSound.rewardBigTriumph(context);
+      } else {
+        UiSound.rewardTriumph(context);
+      }
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => _FusionResultDialog(
+          theme: theme,
+          customSprites: customSprites,
+          outcome: outcome,
+        ),
+      );
     } else {
-      UiSound.rewardTriumph(context);
+      UiSound.locked(context);
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => _FusionFailureDialog(
+          theme: theme,
+          inputDisplayName: outcome.inputDisplayName,
+        ),
+      );
     }
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => _FusionResultDialog(
-        theme: theme,
-        customSprites: customSprites,
-        outcome: outcome,
-      ),
-    );
   }
 
   @override
@@ -224,7 +243,7 @@ class AnimalFusionPanel extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'Fuse 3 → 1',
+                'Fuse 2 → 1',
                 style: TextStyle(
                   color: theme.cardTextSecondaryColor,
                   fontWeight: FontWeight.w600,
@@ -235,7 +254,7 @@ class AnimalFusionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Fuse 3 matching animals with the same mutation to upgrade them.',
+            'Fuse 2 matching animals with the same mutation to upgrade them.',
             style: TextStyle(
               color: theme.cardTextSecondaryColor,
               fontSize: 13,
@@ -245,7 +264,8 @@ class AnimalFusionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Normal → Golden → Rainbow → Shadow\nRare chance to jump ahead!',
+            '80% success · 20% fail · Rare lucky upgrade chance!\n'
+            'Normal → Golden → Rainbow → Shadow',
             style: TextStyle(
               color: theme.cardTextSecondaryColor,
               fontSize: 12,
@@ -316,12 +336,10 @@ class _FusionRow extends StatelessWidget {
     final canFuse = AnimalFusionLogic.canFuseStack(owned, inBattle: inBattle);
     final blockReason =
         AnimalFusionLogic.blockReasonText(owned, inBattle: inBattle);
-    final primaryResultId =
-        AnimalFusionLogic.primaryResultMutationId(owned.mutationId);
-    final resultMutation =
-        GameData.mutationById(primaryResultId) ?? GameData.mutations.first;
-    final resultName = resultMutation.fullName(animal);
-    final chanceText = AnimalFusionLogic.chanceDescription(owned.mutationId);
+    final successName =
+        AnimalFusionLogic.successResultLabel(owned.mutationId, animal);
+    final luckyName =
+        AnimalFusionLogic.luckyResultLabel(owned.mutationId, animal);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -367,15 +385,46 @@ class _FusionRow extends StatelessWidget {
                   ),
                 ),
                 if (owned.mutationId != 'shadow' && owned.mutationId != 'boss')
-                  Text(
-                    '→ $resultName · $chanceText',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: theme.cardTextSecondaryColor,
-                      fontSize: 11,
-                      height: 1.25,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '80% success · 20% fail',
+                        style: TextStyle(
+                          color: theme.cardTextSecondaryColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Success: $successName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.cardTextSecondaryColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (luckyName != null)
+                        Text(
+                          'Lucky: $luckyName',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.amber.shade700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      Text(
+                        'Fail: lose both',
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 if (blockReason != null)
                   Text(
@@ -398,10 +447,115 @@ class _FusionRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               minimumSize: const Size(0, 36),
             ),
-            child: const Text('Fuse 3'),
+            child: const Text('Fuse 2'),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FusionFailureDialog extends StatefulWidget {
+  const _FusionFailureDialog({
+    required this.theme,
+    required this.inputDisplayName,
+  });
+
+  final BackgroundTheme theme;
+  final String inputDisplayName;
+
+  @override
+  State<_FusionFailureDialog> createState() => _FusionFailureDialogState();
+}
+
+class _FusionFailureDialogState extends State<_FusionFailureDialog>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: widget.theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GameTheme.cardRadius),
+      ),
+      title: Text(
+        'Fusion failed!',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.red.shade700,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      content: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final pulse = 0.7 + sin(_controller.value * pi * 2) * 0.15;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Opacity(
+                opacity: (1 - _controller.value * 0.35).clamp(0.4, 1.0),
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey.shade700.withValues(alpha: 0.35 * pulse),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.shade900.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 52,
+                    color: Colors.red.shade300.withValues(alpha: pulse),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Both ${widget.inputDisplayName}s were lost.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: widget.theme.cardTextPrimaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.grey.shade700,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('OK'),
+        ),
+      ],
     );
   }
 }
@@ -452,12 +606,12 @@ class _FusionResultDialogState extends State<_FusionResultDialog>
   @override
   Widget build(BuildContext context) {
     final animal = GameData.animalById(widget.outcome.animalId);
-    if (animal == null) {
-      return AlertDialog(content: Text(widget.outcome.displayName));
+    if (animal == null || widget.outcome.displayName == null) {
+      return AlertDialog(content: Text(widget.outcome.displayName ?? 'Fusion'));
     }
 
     final mutation =
-        GameData.mutationById(widget.outcome.resultMutationId) ??
+        GameData.mutationById(widget.outcome.resultMutationId!) ??
             GameData.mutations.first;
     final glow = _glowColor();
     final lucky = widget.outcome.wasLucky;
