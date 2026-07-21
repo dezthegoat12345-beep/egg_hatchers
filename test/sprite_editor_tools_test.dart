@@ -63,12 +63,7 @@ void main() {
       0xFF6D4C41,
     ];
 
-    const animalAccents = <int>[
-      0xFFFF5722,
-      0xFF66BB6A,
-      0xFFB3E5FC,
-      0xFF37474F,
-    ];
+    const animalAccents = <int>[0xFFFF5722, 0xFF66BB6A, 0xFFB3E5FC, 0xFF37474F];
 
     expect(SpritePalette.colors.length, greaterThan(legacyColors.length));
     for (final color in legacyColors) {
@@ -80,7 +75,13 @@ void main() {
 
     final saved = CustomSpriteData(
       pixels: [
-        for (var i = 0; i < CustomSpriteData.cellCount; i++)
+        for (
+          var i = 0;
+          i <
+              CustomSpriteData.defaultGridSize *
+                  CustomSpriteData.defaultGridSize;
+          i++
+        )
           i.isEven ? legacyColors[i % legacyColors.length] : null,
       ],
     );

@@ -43,8 +43,8 @@ import 'sprite_reference_overlay_service.dart';
 /// Central game logic: coins, hatching, mutations, idle income, and saving.
 class GameService extends ChangeNotifier {
   GameService({SaveService? saveService, Random? random})
-      : _saveService = saveService ?? SaveService(),
-        _random = random ?? Random();
+    : _saveService = saveService ?? SaveService(),
+      _random = random ?? Random();
 
   final SaveService _saveService;
   final Random _random;
@@ -76,7 +76,8 @@ class GameService extends ChangeNotifier {
     int masteryLevel = 0,
   }) {
     final mutation = _mutationFor(owned);
-    final base = animal.coinsPerSecond *
+    final base =
+        animal.coinsPerSecond *
         mutation.incomeMultiplier *
         owned.quantity *
         owned.level;
@@ -233,9 +234,9 @@ class GameService extends ChangeNotifier {
   double get incomeMultiplier =>
       RebirthLogic.incomeMultiplier(_state.rebirthLevel);
   bool get canRebirth => RebirthLogic.canRebirth(
-        lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
-        rebirthLevel: _state.rebirthLevel,
-      );
+    lifetimeCoinsEarned: _state.lifetimeCoinsEarned,
+    rebirthLevel: _state.rebirthLevel,
+  );
   int get rebirthRequirement =>
       RebirthLogic.nextRebirthRequirement(_state.rebirthLevel);
   bool get secretSpaceEggClaimed => _state.secretSpaceEggClaimed;
@@ -311,7 +312,8 @@ class GameService extends ChangeNotifier {
   bool get hasForcedNextHatch => _forcedHatchQueue.isNotEmpty;
 
   bool get isForcedTripleHatch =>
-      _forcedHatchMode == ForcedHatchMode.triple && _forcedHatchQueue.length >= 3;
+      _forcedHatchMode == ForcedHatchMode.triple &&
+      _forcedHatchQueue.length >= 3;
 
   List<ForcedHatchResult> get forcedHatchQueue =>
       List<ForcedHatchResult>.unmodifiable(_forcedHatchQueue);
@@ -435,8 +437,9 @@ class GameService extends ChangeNotifier {
     final newlyCompleted = QuestLogic.newlyCompletedUnnotified(_state);
     if (newlyCompleted.isEmpty) return;
 
-    _pendingQuestNotification =
-        QuestLogic.completionNotificationMessage(newlyCompleted);
+    _pendingQuestNotification = QuestLogic.completionNotificationMessage(
+      newlyCompleted,
+    );
     if (deferDisplay) {
       _questNotificationDeferred = true;
     }
@@ -593,9 +596,7 @@ class GameService extends ChangeNotifier {
     if (!canBuyEgg(egg)) return false;
 
     if (egg.usesBattleTokens) {
-      _state = _state.copyWith(
-        battleTokens: _state.battleTokens - egg.cost,
-      );
+      _state = _state.copyWith(battleTokens: _state.battleTokens - egg.cost);
     } else {
       _state = _state.copyWith(coins: _state.coins - egg.cost);
     }
@@ -637,9 +638,7 @@ class GameService extends ChangeNotifier {
   }
 
   void setLifetimeCoinsEarned(int amount) {
-    _state = _state.copyWith(
-      lifetimeCoinsEarned: amount < 0 ? 0 : amount,
-    );
+    _state = _state.copyWith(lifetimeCoinsEarned: amount < 0 ? 0 : amount);
     _refreshQuestNotifications();
     notifyListeners();
     save();
@@ -794,10 +793,7 @@ class GameService extends ChangeNotifier {
     if (quest.showsSecretHintOnClaim) {
       _state = _state.copyWith(
         questProgress: _state.questProgress.copyWith(
-          claimedQuestIds: [
-            ..._state.questProgress.claimedQuestIds,
-            questId,
-          ],
+          claimedQuestIds: [..._state.questProgress.claimedQuestIds, questId],
         ),
       );
       _incrementDailyQuest(DailySystemLogic.claimQuestRewardType);
@@ -810,10 +806,7 @@ class GameService extends ChangeNotifier {
       coins: _state.coins + quest.rewardCoins,
       battleTokens: _state.battleTokens + quest.rewardBattleTokens,
       questProgress: _state.questProgress.copyWith(
-        claimedQuestIds: [
-          ..._state.questProgress.claimedQuestIds,
-          questId,
-        ],
+        claimedQuestIds: [..._state.questProgress.claimedQuestIds, questId],
       ),
     );
     _incrementDailyQuest(DailySystemLogic.claimQuestRewardType);
@@ -907,8 +900,8 @@ class GameService extends ChangeNotifier {
     if (quest.rewardBattleTokens > 0) {
       tokens += quest.rewardBattleTokens;
       progress = progress.copyWith(
-        totalBattleTokensEarned: progress.totalBattleTokensEarned +
-            quest.rewardBattleTokens,
+        totalBattleTokensEarned:
+            progress.totalBattleTokensEarned + quest.rewardBattleTokens,
       );
     }
 
@@ -997,12 +990,11 @@ class GameService extends ChangeNotifier {
         battle.isProtected == isProtected;
   }
 
-  bool isOwnedStackAutoBattling(OwnedAnimal owned) =>
-      isStackAutoBattling(
-        animalId: owned.animalId,
-        mutationId: owned.mutationId,
-        isProtected: owned.isProtected,
-      );
+  bool isOwnedStackAutoBattling(OwnedAnimal owned) => isStackAutoBattling(
+    animalId: owned.animalId,
+    mutationId: owned.mutationId,
+    isProtected: owned.isProtected,
+  );
 
   Duration? timeUntilNextAutoBattleFight() {
     final battle = _state.activeAutoBattle;
@@ -1377,11 +1369,7 @@ class GameService extends ChangeNotifier {
 
     final updatedAnimals = List<OwnedAnimal>.from(_state.ownedAnimals);
     final existingIndex = isElite
-        ? _indexOfEliteRewardStack(
-            updatedAnimals,
-            animalId,
-            mutation.id,
-          )
+        ? _indexOfEliteRewardStack(updatedAnimals, animalId, mutation.id)
         : _indexOfOwnedStack(
             updatedAnimals,
             animalId,
@@ -1437,6 +1425,7 @@ class GameService extends ChangeNotifier {
     }
     return -1;
   }
+
   /// Applies win rewards and records battle quest progress after animation.
   BossRewardGrant? applyBossBattleRewards(
     String bossId,
@@ -1517,17 +1506,13 @@ class GameService extends ChangeNotifier {
   }
 
   /// Applies finisher slash bonus coins/tokens once after the 5-second slash window.
-  void applyManualFinisherBonus({
-    required int coins,
-    required int tokens,
-  }) {
+  void applyManualFinisherBonus({required int coins, required int tokens}) {
     if (coins <= 0 && tokens <= 0) return;
 
     var progress = _state.questProgress;
     if (tokens > 0) {
       progress = progress.copyWith(
-        totalBattleTokensEarned:
-            progress.totalBattleTokensEarned + tokens,
+        totalBattleTokensEarned: progress.totalBattleTokensEarned + tokens,
       );
     }
 
@@ -1553,13 +1538,9 @@ class GameService extends ChangeNotifier {
     );
     switch (bossId) {
       case 'slime_boss':
-        progress = progress.copyWith(
-          slimeBossWins: progress.slimeBossWins + 1,
-        );
+        progress = progress.copyWith(slimeBossWins: progress.slimeBossWins + 1);
       case 'egg_golem':
-        progress = progress.copyWith(
-          eggGolemWins: progress.eggGolemWins + 1,
-        );
+        progress = progress.copyWith(eggGolemWins: progress.eggGolemWins + 1);
       case 'shadow_rooster':
         progress = progress.copyWith(
           shadowRoosterWins: progress.shadowRoosterWins + 1,
@@ -1637,8 +1618,8 @@ class GameService extends ChangeNotifier {
     save();
   }
 
-  void devRerollDailyQuests() {
-    _rerollDailyQuestsForToday();
+  void devRerollDailyQuests({int? rerollSalt}) {
+    _rerollDailyQuestsForToday(rerollSalt: rerollSalt);
     notifyListeners();
     save();
   }
@@ -1647,9 +1628,7 @@ class GameService extends ChangeNotifier {
     _refreshDailyQuestsIfNeeded();
     _state = _state.copyWith(
       dailyQuests: _state.dailyQuests
-          .map(
-            (quest) => quest.copyWith(progress: quest.target),
-          )
+          .map((quest) => quest.copyWith(progress: quest.target))
           .toList(),
     );
     notifyListeners();
@@ -1673,8 +1652,9 @@ class GameService extends ChangeNotifier {
     );
     if (existingIndex >= 0) {
       final existing = updated[existingIndex];
-      updated[existingIndex] =
-          existing.copyWith(quantity: existing.quantity + 1);
+      updated[existingIndex] = existing.copyWith(
+        quantity: existing.quantity + 1,
+      );
     } else {
       updated.add(
         OwnedAnimal(animalId: animalId, quantity: 1, mutationId: 'boss'),
@@ -1738,8 +1718,7 @@ class GameService extends ChangeNotifier {
     );
     if (bossIndex >= 0) {
       final bossStack = updated[bossIndex];
-      updated[bossIndex] =
-          bossStack.copyWith(quantity: bossStack.quantity + 1);
+      updated[bossIndex] = bossStack.copyWith(quantity: bossStack.quantity + 1);
     } else {
       updated.add(
         OwnedAnimal(
@@ -1768,11 +1747,10 @@ class GameService extends ChangeNotifier {
     return true;
   }
 
-  bool canFuseAnimals(OwnedAnimal source) =>
-      AnimalFusionLogic.canFuseStack(
-        source,
-        inBattle: isOwnedStackAutoBattling(source),
-      );
+  bool canFuseAnimals(OwnedAnimal source) => AnimalFusionLogic.canFuseStack(
+    source,
+    inBattle: isOwnedStackAutoBattling(source),
+  );
 
   /// Combines 2 copies of the same animal/mutation with an 80% success chance.
   AnimalFusionOutcome? fuseAnimals(OwnedAnimal source, {Random? random}) {
@@ -1829,8 +1807,10 @@ class GameService extends ChangeNotifier {
         final outputStack = updated[outputIndex];
         updated[outputIndex] = outputStack.copyWith(
           quantity: outputStack.quantity + 1,
-          sourceEggId:
-              _mergeSourceEggId(outputStack.sourceEggId, stack.sourceEggId),
+          sourceEggId: _mergeSourceEggId(
+            outputStack.sourceEggId,
+            stack.sourceEggId,
+          ),
         );
       } else {
         updated.add(
@@ -1863,10 +1843,7 @@ class GameService extends ChangeNotifier {
       );
     }
 
-    _state = _state.copyWith(
-      ownedAnimals: updated,
-      questProgress: progress,
-    );
+    _state = _state.copyWith(ownedAnimals: updated, questProgress: progress);
     _incrementDailyQuest(DailySystemLogic.attemptFusionType);
     if (roll.succeeded) {
       _incrementDailyQuest(DailySystemLogic.successfulFusionType);
@@ -1905,8 +1882,9 @@ class GameService extends ChangeNotifier {
     );
     if (existingIndex >= 0) {
       final existing = updated[existingIndex];
-      updated[existingIndex] =
-          existing.copyWith(quantity: existing.quantity + quantity);
+      updated[existingIndex] = existing.copyWith(
+        quantity: existing.quantity + quantity,
+      );
     } else {
       updated.add(
         OwnedAnimal(
@@ -2058,10 +2036,7 @@ class GameService extends ChangeNotifier {
     for (final id in EggShardLogic.prerequisiteBossIds) {
       wins[id] = max(wins[id] ?? 0, 1);
     }
-    _state = _state.copyWith(
-      bossWins: wins,
-      shadowPhoenixFlawlessWin: true,
-    );
+    _state = _state.copyWith(bossWins: wins, shadowPhoenixFlawlessWin: true);
     notifyListeners();
     save();
   }
@@ -2157,10 +2132,7 @@ class GameService extends ChangeNotifier {
   }
 
   /// One-time reference overlay unlock cost for an animal.
-  int referenceOverlayCostForAnimal(
-    String animalId, {
-    int? displayedReward,
-  }) {
+  int referenceOverlayCostForAnimal(String animalId, {int? displayedReward}) {
     return SpriteRatingLogic.referenceOverlayCostForAnimal(
       animalId: animalId,
       currentCoins: _state.coins,
@@ -2168,10 +2140,7 @@ class GameService extends ChangeNotifier {
     );
   }
 
-  bool canAffordReferenceOverlay(
-    String animalId, {
-    int? displayedReward,
-  }) {
+  bool canAffordReferenceOverlay(String animalId, {int? displayedReward}) {
     final cost = referenceOverlayCostForAnimal(
       animalId,
       displayedReward: displayedReward,
@@ -2284,8 +2253,7 @@ class GameService extends ChangeNotifier {
   void recordCustomEggCreated() {
     _state = _state.copyWith(
       questProgress: _state.questProgress.copyWith(
-        totalCustomEggsCreated:
-            _state.questProgress.totalCustomEggsCreated + 1,
+        totalCustomEggsCreated: _state.questProgress.totalCustomEggsCreated + 1,
       ),
     );
     _refreshQuestNotifications();
@@ -2309,8 +2277,7 @@ class GameService extends ChangeNotifier {
     if (count <= 0) return;
     final updated = Map<String, EggMasteryProgress>.from(_state.eggMastery);
     for (final egg in [...GameData.eggs, ...GameData.battleEggs]) {
-      final current =
-          updated[egg.id] ?? EggMasteryProgress(eggId: egg.id);
+      final current = updated[egg.id] ?? EggMasteryProgress(eggId: egg.id);
       updated[egg.id] = current
           .copyWith(hatchCount: current.hatchCount + count)
           .normalized();
@@ -2383,9 +2350,7 @@ class GameService extends ChangeNotifier {
 
     for (final animal in GameData.animals) {
       if (ownedIds.contains(animal.id)) continue;
-      updatedAnimals.add(
-        OwnedAnimal(animalId: animal.id, quantity: 1),
-      );
+      updatedAnimals.add(OwnedAnimal(animalId: animal.id, quantity: 1));
       ownedIds.add(animal.id);
     }
 
@@ -2463,13 +2428,9 @@ class GameService extends ChangeNotifier {
     );
     switch (bossId) {
       case 'slime_boss':
-        progress = progress.copyWith(
-          slimeBossWins: progress.slimeBossWins + 1,
-        );
+        progress = progress.copyWith(slimeBossWins: progress.slimeBossWins + 1);
       case 'egg_golem':
-        progress = progress.copyWith(
-          eggGolemWins: progress.eggGolemWins + 1,
-        );
+        progress = progress.copyWith(eggGolemWins: progress.eggGolemWins + 1);
       case 'shadow_rooster':
         progress = progress.copyWith(
           shadowRoosterWins: progress.shadowRoosterWins + 1,
@@ -2537,10 +2498,7 @@ class GameService extends ChangeNotifier {
     save();
   }
 
-  void devGrantEliteBossAnimal(
-    String animalId, {
-    String? mutationId,
-  }) {
+  void devGrantEliteBossAnimal(String animalId, {String? mutationId}) {
     grantBossRewardAnimal(animalId, mutationId: mutationId);
     notifyListeners();
     save();
@@ -2630,10 +2588,8 @@ class GameService extends ChangeNotifier {
     _forcedHatchQueue = results
         .take(3)
         .map(
-          (r) => ForcedHatchResult(
-            animalId: r.animalId,
-            mutationId: r.mutationId,
-          ),
+          (r) =>
+              ForcedHatchResult(animalId: r.animalId, mutationId: r.mutationId),
         )
         .toList();
     _forcedHatchMode = _forcedHatchQueue.length >= 3
@@ -2758,9 +2714,7 @@ class GameService extends ChangeNotifier {
       );
     } else {
       final String animalId;
-      if (customEgg != null &&
-          customEgg.isValid &&
-          customEgg.id == egg.id) {
+      if (customEgg != null && customEgg.isValid && customEgg.id == egg.id) {
         animalId = CustomEggLogic.weightedRandomAnimal(
           customEgg,
           _random,
@@ -2793,11 +2747,9 @@ class GameService extends ChangeNotifier {
       final existing = updatedAnimals[existingIndex];
       updatedAnimals[existingIndex] = existing.copyWith(
         quantity: existing.quantity + 1,
-        sourceEggId: _mergeSourceEggId(
-          existing.sourceEggId,
-          hatchSourceEggId,
-        ),
-        clearSourceEggId: existing.sourceEggId != null &&
+        sourceEggId: _mergeSourceEggId(existing.sourceEggId, hatchSourceEggId),
+        clearSourceEggId:
+            existing.sourceEggId != null &&
             hatchSourceEggId != null &&
             existing.sourceEggId != hatchSourceEggId,
       );
@@ -2855,8 +2807,7 @@ class GameService extends ChangeNotifier {
 
     if (isCustomEgg) {
       progress = progress.copyWith(
-        totalCustomEggHatches:
-            progress.totalCustomEggHatches + results.length,
+        totalCustomEggHatches: progress.totalCustomEggHatches + results.length,
       );
       if (isTripleHatch) {
         progress = progress.copyWith(
@@ -2888,8 +2839,7 @@ class GameService extends ChangeNotifier {
 
     if (eggId == 'boss_egg') {
       progress = progress.copyWith(
-        totalBossEggsHatched:
-            progress.totalBossEggsHatched + results.length,
+        totalBossEggsHatched: progress.totalBossEggsHatched + results.length,
       );
     }
 
@@ -2916,8 +2866,8 @@ class GameService extends ChangeNotifier {
     final egg = GameData.eggById(eggId);
     if (egg == null) return;
 
-    final current = _state.eggMastery[eggId] ??
-        EggMasteryProgress(eggId: eggId);
+    final current =
+        _state.eggMastery[eggId] ?? EggMasteryProgress(eggId: eggId);
     final previousLevel = current.masteryLevel;
     final updated = current
         .copyWith(hatchCount: current.hatchCount + hatchCount)
@@ -2928,9 +2878,11 @@ class GameService extends ChangeNotifier {
     _state = _state.copyWith(eggMastery: updatedMap);
 
     if (updated.masteryLevel > previousLevel) {
-      for (var level = previousLevel + 1;
-          level <= updated.masteryLevel;
-          level++) {
+      for (
+        var level = previousLevel + 1;
+        level <= updated.masteryLevel;
+        level++
+      ) {
         _pendingMasteryNotifications.add(
           EggMasteryLogic.levelUpMessage(egg.name, level),
         );

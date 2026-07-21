@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/data/quest_data.dart';
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/models/player_state.dart';

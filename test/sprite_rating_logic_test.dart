@@ -16,7 +16,13 @@ void main() {
   test('sprite hash is stable for identical grids', () {
     final sprite = CustomSpriteData(
       pixels: [
-        for (var i = 0; i < CustomSpriteData.cellCount; i++)
+        for (
+          var i = 0;
+          i <
+              CustomSpriteData.defaultGridSize *
+                  CustomSpriteData.defaultGridSize;
+          i++
+        )
           i.isEven ? 0xFFE53935 : null,
       ],
     );
@@ -38,9 +44,7 @@ void main() {
       pixels: [
         for (var y = 0; y < 16; y++)
           for (var x = 0; x < 16; x++)
-            (x >= 4 && x <= 11 && y >= 4 && y <= 11)
-                ? 0xFFFFFFFF
-                : null,
+            (x >= 4 && x <= 11 && y >= 4 && y <= 11) ? 0xFFFFFFFF : null,
       ],
     );
 
@@ -54,7 +58,10 @@ void main() {
     final reference = SpriteReferenceData.referenceFor('chicken')!;
     final blank = CustomSpriteData.empty();
 
-    expect(SpriteRatingLogic.displayScore(blank, reference), lessThanOrEqualTo(1));
+    expect(
+      SpriteRatingLogic.displayScore(blank, reference),
+      lessThanOrEqualTo(1),
+    );
   });
 
   test('matching reference scores higher than random scribble', () {
@@ -62,7 +69,13 @@ void main() {
     final match = reference;
     final random = CustomSpriteData(
       pixels: [
-        for (var i = 0; i < CustomSpriteData.cellCount; i++)
+        for (
+          var i = 0;
+          i <
+              CustomSpriteData.defaultGridSize *
+                  CustomSpriteData.defaultGridSize;
+          i++
+        )
           i % 3 == 0 ? 0xFF1E88E5 : null,
       ],
     );
@@ -235,31 +248,34 @@ void main() {
     }
   });
 
-  test('reference overlay cost scales with visible reward not theoretical max', () {
-    const animalId = 'galaxy_dragon';
-    const currentCoins = 250;
-    const displayedReward = 25000;
+  test(
+    'reference overlay cost scales with visible reward not theoretical max',
+    () {
+      const animalId = 'galaxy_dragon';
+      const currentCoins = 250;
+      const displayedReward = 25000;
 
-    final perfectReward = SpriteRatingLogic.calculateReward(
-      animalId: animalId,
-      score: 10,
-      currentCoins: currentCoins,
-    );
-    final maxReward = SpriteRatingLogic.maxRatingRewardForAnimal(animalId);
-    final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(
-      animalId: animalId,
-      currentCoins: currentCoins,
-      displayedReward: displayedReward,
-    );
+      final perfectReward = SpriteRatingLogic.calculateReward(
+        animalId: animalId,
+        score: 10,
+        currentCoins: currentCoins,
+      );
+      final maxReward = SpriteRatingLogic.maxRatingRewardForAnimal(animalId);
+      final cost = SpriteRatingLogic.referenceOverlayCostForAnimal(
+        animalId: animalId,
+        currentCoins: currentCoins,
+        displayedReward: displayedReward,
+      );
 
-    expect(perfectReward, displayedReward);
-    expect(maxReward, 1_000_000);
-    expect(cost, 6250);
-    expect(cost, lessThan(displayedReward));
-    expect(cost, lessThan(displayedReward ~/ 2));
-    expect(maxReward * 0.25, 250_000);
-    expect(cost, lessThan(maxReward * 0.25));
-  });
+      expect(perfectReward, displayedReward);
+      expect(maxReward, 1_000_000);
+      expect(cost, 6250);
+      expect(cost, lessThan(displayedReward));
+      expect(cost, lessThan(displayedReward ~/ 2));
+      expect(maxReward * 0.25, 250_000);
+      expect(cost, lessThan(maxReward * 0.25));
+    },
+  );
 
   test('reference overlay cost respects displayed reward caps', () {
     const currentCoins = 500_000;
@@ -275,27 +291,28 @@ void main() {
     expect(cost, lessThanOrEqualTo(displayedReward));
   });
 
-  test('unlocking reference overlay subtracts coins without lifetime earnings',
-      () async {
-    SharedPreferences.setMockInitialValues({});
-    final game = GameService();
-    final overlay = SpriteReferenceOverlayService();
-    await Future.wait([game.initialize(), overlay.initialize()]);
+  test(
+    'unlocking reference overlay subtracts coins without lifetime earnings',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService();
+      final overlay = SpriteReferenceOverlayService();
+      await Future.wait([game.initialize(), overlay.initialize()]);
 
-    final cost = game.referenceOverlayCostForAnimal('chicken');
-    game.setCoins(cost + 50);
-    game.setLifetimeCoinsEarned(5000);
-    final lifetimeBefore = game.lifetimeCoinsEarned;
-    final coinsBefore = game.coins;
+      final cost = game.referenceOverlayCostForAnimal('chicken');
+      game.setCoins(cost + 50);
+      game.setLifetimeCoinsEarned(5000);
+      final lifetimeBefore = game.lifetimeCoinsEarned;
+      final coinsBefore = game.coins;
 
-    final unlocked =
-        await game.unlockReferenceOverlay('chicken', overlay);
+      final unlocked = await game.unlockReferenceOverlay('chicken', overlay);
 
-    expect(unlocked, isTrue);
-    expect(overlay.isUnlocked('chicken'), isTrue);
-    expect(game.coins, coinsBefore - cost);
-    expect(game.lifetimeCoinsEarned, lifetimeBefore);
-  });
+      expect(unlocked, isTrue);
+      expect(overlay.isUnlocked('chicken'), isTrue);
+      expect(game.coins, coinsBefore - cost);
+      expect(game.lifetimeCoinsEarned, lifetimeBefore);
+    },
+  );
 
   test('reference overlay unlock is blocked when coins are too low', () async {
     SharedPreferences.setMockInitialValues({});
@@ -306,8 +323,7 @@ void main() {
     final cost = game.referenceOverlayCostForAnimal('chicken');
     game.setCoins(cost - 1);
 
-    final unlocked =
-        await game.unlockReferenceOverlay('chicken', overlay);
+    final unlocked = await game.unlockReferenceOverlay('chicken', overlay);
 
     expect(unlocked, isFalse);
     expect(overlay.isUnlocked('chicken'), isFalse);
@@ -321,10 +337,7 @@ void main() {
     await Future.wait([game.initialize(), overlay.initialize()]);
 
     game.setCoins(10000);
-    expect(
-      await game.unlockReferenceOverlay('fox', overlay),
-      isTrue,
-    );
+    expect(await game.unlockReferenceOverlay('fox', overlay), isTrue);
 
     final reloaded = SpriteReferenceOverlayService();
     await reloaded.initialize();
@@ -341,10 +354,7 @@ void main() {
 
     game.setCoins(10000);
     game.setLifetimeCoinsEarned(1000000);
-    expect(
-      await game.unlockReferenceOverlay('dragon', overlay),
-      isTrue,
-    );
+    expect(await game.unlockReferenceOverlay('dragon', overlay), isTrue);
     expect(game.performRebirth(), isTrue);
 
     expect(overlay.isUnlocked('dragon'), isTrue);

@@ -8,24 +8,43 @@ class TutorialTargets {
   TutorialTargets._();
 
   static final GlobalKey shopButton = GlobalKey(debugLabel: 'tutorialShop');
-  static final GlobalKey basicEggBuyButton =
-      GlobalKey(debugLabel: 'tutorialBasicEggBuy');
-  static final GlobalKey screenBackButton =
-      GlobalKey(debugLabel: 'tutorialScreenBack');
-  static final GlobalKey animalsSection =
-      GlobalKey(debugLabel: 'tutorialAnimals');
-  static final GlobalKey upgradeButton =
-      GlobalKey(debugLabel: 'tutorialUpgrade');
-  static final GlobalKey collectionButton =
-      GlobalKey(debugLabel: 'tutorialCollection');
-  static final GlobalKey fusionSection = GlobalKey(debugLabel: 'tutorialFusion');
+  static final GlobalKey basicEggBuyButton = GlobalKey(
+    debugLabel: 'tutorialBasicEggBuy',
+  );
+  static final GlobalKey screenBackButton = GlobalKey(
+    debugLabel: 'tutorialScreenBack',
+  );
+  static final GlobalKey animalsSection = GlobalKey(
+    debugLabel: 'tutorialAnimals',
+  );
+  static final GlobalKey upgradeButton = GlobalKey(
+    debugLabel: 'tutorialUpgrade',
+  );
+  static final GlobalKey collectionButton = GlobalKey(
+    debugLabel: 'tutorialCollection',
+  );
+  static final GlobalKey fusionSection = GlobalKey(
+    debugLabel: 'tutorialFusion',
+  );
   static final GlobalKey questsButton = GlobalKey(debugLabel: 'tutorialQuests');
-  static final GlobalKey battlesButton =
-      GlobalKey(debugLabel: 'tutorialBattles');
-  static final GlobalKey battlesExplainSection =
-      GlobalKey(debugLabel: 'tutorialBattlesExplain');
-  static final GlobalKey rebirthPanel =
-      GlobalKey(debugLabel: 'tutorialRebirth');
+  static final GlobalKey battlesButton = GlobalKey(
+    debugLabel: 'tutorialBattles',
+  );
+  static final GlobalKey battlesExplainSection = GlobalKey(
+    debugLabel: 'tutorialBattlesExplain',
+  );
+  static final GlobalKey rebirthPanel = GlobalKey(
+    debugLabel: 'tutorialRebirth',
+  );
+  static final GlobalKey secretStatsSection = GlobalKey(
+    debugLabel: 'tutorialSecretStats',
+  );
+  static final GlobalKey secretLateGameGuide = GlobalKey(
+    debugLabel: 'tutorialSecretLateGame',
+  );
+  static final GlobalKey secretRottenShellGuide = GlobalKey(
+    debugLabel: 'tutorialSecretRottenShell',
+  );
 
   static GlobalKey? keyFor(String? targetId) {
     switch (targetId) {
@@ -51,6 +70,12 @@ class TutorialTargets {
         return battlesExplainSection;
       case TutorialTargetIds.rebirthPanel:
         return rebirthPanel;
+      case TutorialTargetIds.secretStatsSection:
+        return secretStatsSection;
+      case TutorialTargetIds.secretLateGameGuide:
+        return secretLateGameGuide;
+      case TutorialTargetIds.secretRottenShellGuide:
+        return secretRottenShellGuide;
       default:
         return null;
     }

@@ -10,7 +10,6 @@ class RetroPixelNative64Extended {
   static const _w = RetroPixelPalette.offWhite;
   static const _g = RetroPixelPalette.lightGray;
   static const _dg = RetroPixelPalette.darkGray;
-  static const _p = RetroPixelPalette.earPink;
   static const _pk = RetroPixelPalette.pink;
   static const _r = RetroPixelPalette.red;
   static const _o = RetroPixelPalette.orange;

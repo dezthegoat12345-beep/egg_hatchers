@@ -135,42 +135,50 @@ void main() {
       expect(game.claimDailyReward(), isFalse);
     });
 
-    test('shouldAutoShowDailyRewardPopup respects tutorial and dismiss', () async {
-      SharedPreferences.setMockInitialValues({});
-      final game = GameService();
-      await game.initialize();
+    test(
+      'shouldAutoShowDailyRewardPopup respects tutorial and dismiss',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final game = GameService();
+        await game.initialize();
 
-      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+        expect(game.shouldAutoShowDailyRewardPopup, isFalse);
 
-      game.completeTutorial();
-      expect(game.shouldAutoShowDailyRewardPopup, isTrue);
+        game.completeTutorial();
+        expect(game.shouldAutoShowDailyRewardPopup, isTrue);
 
-      game.dismissDailyRewardPopup();
-      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+        game.dismissDailyRewardPopup();
+        expect(game.shouldAutoShowDailyRewardPopup, isFalse);
 
-      game.resetDailyRewardPopupSessionGuard();
-      expect(game.shouldAutoShowDailyRewardPopup, isFalse);
+        game.resetDailyRewardPopupSessionGuard();
+        expect(game.shouldAutoShowDailyRewardPopup, isFalse);
 
-      game.devResetDailyRewardClaim();
-      game.completeTutorial();
-      expect(game.shouldAutoShowDailyRewardPopup, isTrue);
-    });
+        game.devResetDailyRewardClaim();
+        game.completeTutorial();
+        expect(game.shouldAutoShowDailyRewardPopup, isTrue);
+      },
+    );
 
     test('daily quest progress increments on hatch count', () async {
       SharedPreferences.setMockInitialValues({});
       final game = GameService();
       await game.initialize();
 
+      final hatchSalt = Iterable<int>.generate(100).firstWhere(
+        (salt) => DailySystemLogic.generateDailyQuests(
+          DailySystemLogic.todayKey(),
+          rerollSalt: salt,
+        ).any((q) => q.type == DailySystemLogic.hatchEggsType),
+        orElse: () => throw StateError('No hatch quest reroll found'),
+      );
+      game.devRerollDailyQuests(rerollSalt: hatchSalt);
       final hatchQuest = game.dailyQuests.firstWhere(
         (q) => q.type == DailySystemLogic.hatchEggsType,
-        orElse: () => throw StateError('No hatch quest today'),
       );
       expect(hatchQuest.progress, 0);
 
       game.hatchEgg(GameData.eggs.first);
-      final updated = game.dailyQuests.firstWhere(
-        (q) => q.id == hatchQuest.id,
-      );
+      final updated = game.dailyQuests.firstWhere((q) => q.id == hatchQuest.id);
       expect(updated.progress, 1);
     });
 

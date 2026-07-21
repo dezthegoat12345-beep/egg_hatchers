@@ -7,7 +7,6 @@ class RetroPixelBossProjectiles {
   RetroPixelBossProjectiles._();
 
   static const _k = RetroPixelPalette.black;
-  static const _g = RetroPixelPalette.slimeGreen;
   static const _y = RetroPixelPalette.yellow;
   static const _l = RetroPixelPalette.blue;
   static const _p = RetroPixelPalette.purple;
@@ -64,25 +63,26 @@ class RetroPixelBossProjectiles {
     '....KK....',
   ]);
 
-  static final _royalSlime = _projectile10([
-    '..........',
-    '..KKYYKK..',
-    '.KGGGGGGK.',
-    'KGGGGGGGGK',
-    'KGGwGGGGGK',
-    'KGGGGGGGGK',
-    '.KGGGGGGK.',
-    '..KGGGGK..',
-    '...KKKK...',
-    '..........',
-  ]).withPatches({
-    (8, 0): _y,
-    (9, 0): _y,
-    (10, 0): _y,
-    (8, 1): _k,
-    (9, 1): _k,
-    (10, 1): _k,
-  });
+  static final _royalSlime =
+      _projectile10([
+        '..........',
+        '..KKYYKK..',
+        '.KGGGGGGK.',
+        'KGGGGGGGGK',
+        'KGGwGGGGGK',
+        'KGGGGGGGGK',
+        '.KGGGGGGK.',
+        '..KGGGGK..',
+        '...KKKK...',
+        '..........',
+      ]).withPatches({
+        (8, 0): _y,
+        (9, 0): _y,
+        (10, 0): _y,
+        (8, 1): _k,
+        (9, 1): _k,
+        (10, 1): _k,
+      });
 
   static final _guardianShard = _projectile10([
     '..........',
@@ -95,11 +95,7 @@ class RetroPixelBossProjectiles {
     '...KBBK...',
     '....KK....',
     '..........',
-  ]).withPatches({
-    (8, 6): _l,
-    (10, 8): _l,
-    (8, 10): _l,
-  });
+  ]).withPatches({(8, 6): _l, (10, 8): _l, (8, 10): _l});
 
   static final _phoenixFlame = _projectile10([
     '..........',
@@ -125,11 +121,7 @@ class RetroPixelBossProjectiles {
     '..KGGGGK..',
     '...KKKK...',
     '..........',
-  ]).withPatches({
-    (8, 2): _y,
-    (10, 4): _p,
-    (6, 6): _p,
-  });
+  ]).withPatches({(8, 2): _y, (10, 4): _p, (6, 6): _p});
 
   /// 10×10 base patterns upscaled to 20×20 for sharper pixel projectiles.
   static RetroPixelSpriteDefinition _projectile10(List<String> rows) =>

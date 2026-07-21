@@ -16,6 +16,13 @@ class TutorialData {
   static const returnToHatcheryText = 'Tap back to return to the Hatchery!';
   static const returnToHatcheryFallbackLabel = 'Return to Hatchery';
 
+  static const advancedSecretWelcomeTitle = 'Secret Hatchery Guide';
+
+  static const advancedSecretFinishButtonLabel = 'Got It';
+
+  static const advancedSecretFinishText =
+      'You have the late-game map now. Push rebirths, climb boss modes, and come back to the Secret Hatchery when you need the path again.';
+
   static const steps = <GuidedTutorialStep>[
     GuidedTutorialStep(
       id: 'shop',
@@ -160,6 +167,40 @@ class TutorialData {
       requiredRoute: kHatcheryRouteName,
     ),
   ];
+
+  static const advancedSecretSteps = <GuidedTutorialStep>[
+    GuidedTutorialStep(
+      id: 'secretStats',
+      text:
+          'This secret panel tracks your late-game basics: Rebirth Level and Collection progress.',
+      targetId: TutorialTargetIds.secretStatsSection,
+      manualNext: true,
+      requiredRoute: kSecretToolsRouteName,
+    ),
+    GuidedTutorialStep(
+      id: 'secretLateGameGuide',
+      text:
+          'Higher rebirths unlock the deepest eggs. Ancient starts at Rebirth 1, Royal at 2, Celestial at 3, and Void at 5.',
+      targetId: TutorialTargetIds.secretLateGameGuide,
+      manualNext: true,
+      requiredRoute: kSecretToolsRouteName,
+    ),
+    GuidedTutorialStep(
+      id: 'secretRottenShellGuide',
+      text:
+          'The Rotten Shell unlocks after every earlier boss has been defeated at least once and Shadow Phoenix has been beaten flawlessly.',
+      targetId: TutorialTargetIds.secretRottenShellGuide,
+      manualNext: true,
+      requiredRoute: kSecretToolsRouteName,
+    ),
+    GuidedTutorialStep(
+      id: 'advancedSecretFinish',
+      text: advancedSecretFinishText,
+      manualNext: true,
+      isFinish: true,
+      requiredRoute: kSecretToolsRouteName,
+    ),
+  ];
 }
 
 /// Global tutorial target identifiers.
@@ -177,7 +218,12 @@ class TutorialTargetIds {
   static const battlesButton = 'battlesButton';
   static const battlesExplainSection = 'battlesExplainSection';
   static const rebirthPanel = 'rebirthPanel';
+  static const secretStatsSection = 'secretStatsSection';
+  static const secretLateGameGuide = 'secretLateGameGuide';
+  static const secretRottenShellGuide = 'secretRottenShellGuide';
 }
+
+enum TutorialFlow { basics, advancedSecret }
 
 enum TutorialAction { eggPurchased, animalUpgraded }
 

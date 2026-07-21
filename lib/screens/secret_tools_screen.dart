@@ -9,11 +9,14 @@ import '../services/custom_sprite_service.dart';
 import '../services/game_service.dart';
 import '../theme/game_theme.dart';
 import '../utils/collection_quest_logic.dart';
+import '../utils/egg_shard_logic.dart';
+import '../utils/format_utils.dart';
 import '../utils/snackbar_utils.dart';
 import '../widgets/game_background.dart';
 import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
 import '../widgets/tutorial_overlay.dart';
+import '../widgets/tutorial_targets.dart';
 import 'developer_screen.dart';
 
 /// Player-facing secret screen unlocked by tapping the Hatchery coin 3 times.
@@ -60,19 +63,14 @@ class SecretToolsScreen extends StatelessWidget {
       return;
     }
 
-    showGameSnackBar(
-      context,
-      message: 'Secret Reward Badge applied to $name!',
-    );
+    showGameSnackBar(context, message: 'Secret Reward Badge applied to $name!');
   }
 
   Future<OwnedAnimal?> _pickSecretRewardTarget(BuildContext context) {
-    final candidates = game.ownedAnimals
-        .where((owned) => owned.quantity > 0)
-        .toList()
-      ..sort(
-        (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
-      );
+    final candidates =
+        game.ownedAnimals.where((owned) => owned.quantity > 0).toList()..sort(
+          (a, b) => GameData.compareOwnedAnimals(a.animalId, b.animalId),
+        );
 
     return showModalBottomSheet<OwnedAnimal>(
       context: context,
@@ -138,7 +136,8 @@ class SecretToolsScreen extends StatelessWidget {
                         final owned = candidates[index];
                         final animal = GameData.animalById(owned.animalId);
                         if (animal == null) return const SizedBox.shrink();
-                        final mutation = GameData.mutationById(owned.mutationId) ??
+                        final mutation =
+                            GameData.mutationById(owned.mutationId) ??
                             GameData.mutations.first;
                         final alreadyBadged =
                             owned.isSecretReward || owned.isEliteReward;
@@ -150,8 +149,9 @@ class SecretToolsScreen extends StatelessWidget {
                             side: BorderSide(color: theme.cardBorderColor),
                           ),
                           leading: GameAnimalPortrait(
-                            customSprite:
-                                customSprites.getDisplaySprite(animal.id),
+                            customSprite: customSprites.getDisplaySprite(
+                              animal.id,
+                            ),
                             animalId: animal.id,
                             spritePath: animal.spritePath,
                             fallbackEmoji: mutation.displayEmoji(animal),
@@ -201,10 +201,18 @@ class SecretToolsScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: game,
       builder: (context, _) {
-        final collected = CollectionQuestLogic.collectedBaseAnimalCount(game.state);
+        final collected = CollectionQuestLogic.collectedBaseAnimalCount(
+          game.state,
+        );
         final total = CollectionQuestLogic.totalBaseAnimalCount;
         final claimed = game.secretRewardBadgeClaimed;
         final hasAnimals = game.ownedAnimals.isNotEmpty;
+        final rottenPrerequisites = EggShardLogic.defeatedPrerequisiteCount(
+          game.state,
+        );
+        final rottenPrerequisiteTotal =
+            EggShardLogic.prerequisiteBossIds.length;
+        final rottenUnlocked = EggShardLogic.isRottenShellUnlocked(game.state);
 
         return ReturnToHatcheryPopScope(
           theme: theme,
@@ -258,6 +266,7 @@ class SecretToolsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Container(
+                      key: TutorialTargets.secretStatsSection,
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
                       decoration: GameTheme.panelDecoration(theme),
@@ -281,6 +290,77 @@ class SecretToolsScreen extends StatelessWidget {
                             icon: '🐾',
                             label: 'Collection',
                             value: '$collected / $total animals',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      key: TutorialTargets.secretLateGameGuide,
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: GameTheme.panelDecoration(theme),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Late-game path',
+                            style: GameTheme.sectionTitle(theme, size: 16),
+                          ),
+                          const SizedBox(height: 10),
+                          _StatRow(
+                            theme: theme,
+                            icon: 'R',
+                            label: 'Next rebirth',
+                            value:
+                                '${formatCoins(game.lifetimeCoinsEarned)} / ${formatCoins(game.rebirthRequirement)}',
+                          ),
+                          const SizedBox(height: 8),
+                          _StatRow(
+                            theme: theme,
+                            icon: 'E',
+                            label: 'Rebirth eggs',
+                            value: '1 Ancient / 2 Royal / 3 Celestial / 5 Void',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      key: TutorialTargets.secretRottenShellGuide,
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: GameTheme.panelDecoration(theme),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Rotten Shell',
+                            style: GameTheme.sectionTitle(theme, size: 16),
+                          ),
+                          const SizedBox(height: 10),
+                          _StatRow(
+                            theme: theme,
+                            icon: 'B',
+                            label: 'Bosses defeated',
+                            value:
+                                '$rottenPrerequisites / $rottenPrerequisiteTotal',
+                          ),
+                          const SizedBox(height: 8),
+                          _StatRow(
+                            theme: theme,
+                            icon: 'F',
+                            label: 'Flawless Shadow Phoenix',
+                            value: game.shadowPhoenixFlawlessWin
+                                ? 'Done'
+                                : 'Needed',
+                          ),
+                          const SizedBox(height: 8),
+                          _StatRow(
+                            theme: theme,
+                            icon: 'S',
+                            label: 'Status',
+                            value: rottenUnlocked ? 'Unlocked' : 'Locked',
                           ),
                         ],
                       ),
@@ -317,14 +397,14 @@ class SecretToolsScreen extends StatelessWidget {
                               claimed
                                   ? 'Secret Reward Badge used'
                                   : hasAnimals
-                                      ? 'Use Badge'
-                                      : 'Choose Animal',
+                                  ? 'Use Badge'
+                                  : 'Choose Animal',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: theme.secondaryColor,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor:
-                                  theme.panelAccentColor.withValues(alpha: 0.35),
+                              disabledBackgroundColor: theme.panelAccentColor
+                                  .withValues(alpha: 0.35),
                               disabledForegroundColor:
                                   theme.cardTextSecondaryColor,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -358,7 +438,7 @@ class SecretToolsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Replay the basics anytime.',
+                            'Follow the late-game path from rebirths to Rotten Shell.',
                             style: TextStyle(
                               color: theme.cardTextSecondaryColor,
                               fontSize: 14,
@@ -368,15 +448,17 @@ class SecretToolsScreen extends StatelessWidget {
                           const SizedBox(height: 14),
                           OutlinedButton.icon(
                             onPressed: () {
-                              TutorialOverlay.show(
+                              TutorialOverlay.showAdvancedSecret(
                                 context,
                                 game: game,
                                 theme: theme,
-                                isReplay: true,
                               );
                             },
-                            icon: const Icon(Icons.school_outlined, size: 18),
-                            label: const Text('Replay Tutorial'),
+                            icon: const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 18,
+                            ),
+                            label: const Text('Advanced Tutorial'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: theme.cardTextPrimaryColor,
                               side: BorderSide(
@@ -408,7 +490,9 @@ class SecretToolsScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: theme.cardTextSecondaryColor,
                           side: BorderSide(
-                            color: theme.panelAccentColor.withValues(alpha: 0.5),
+                            color: theme.panelAccentColor.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -447,18 +531,20 @@ class _StatRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              color: theme.cardTextSecondaryColor,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: theme.cardTextSecondaryColor, fontSize: 14),
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            color: theme.cardTextPrimaryColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.cardTextPrimaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
       ],

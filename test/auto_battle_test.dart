@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:egg_hatchers/data/boss_data.dart';
-import 'package:egg_hatchers/data/game_data.dart';
 import 'package:egg_hatchers/models/player_state.dart';
 import 'package:egg_hatchers/models/owned_animal.dart';
 import 'package:egg_hatchers/services/game_service.dart';
@@ -27,7 +26,10 @@ void main() {
       maxDefeats: 5,
     );
 
-    expect(result.maxAnimalHp, BossBattleLogic.maxAnimalHpFor(result.battlePower));
+    expect(
+      result.maxAnimalHp,
+      BossBattleLogic.maxAnimalHpFor(result.battlePower),
+    );
 
     if (result.roundSummaries.length > 1) {
       final first = result.roundSummaries.first;
@@ -93,36 +95,39 @@ void main() {
     game.dispose();
   });
 
-  test('devAdvanceActiveAutoBattleFight grants rewards for one fight', () async {
-    SharedPreferences.setMockInitialValues({});
-    final game = GameService(random: Random(1));
-    await game.initialize();
-    game.devCollectAllAnimals();
+  test(
+    'devAdvanceActiveAutoBattleFight grants rewards for one fight',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final game = GameService(random: Random(1));
+      await game.initialize();
+      game.devCollectAllAnimals();
 
-    final beforeLifetime = game.lifetimeCoinsEarned;
-    final beforeCoins = game.coins;
-    final beforeTokens = game.battleTokens;
+      final beforeLifetime = game.lifetimeCoinsEarned;
+      final beforeCoins = game.coins;
+      final beforeTokens = game.battleTokens;
 
-    game.startActiveAutoBattle(
-      bossId: 'slime_boss',
-      animalId: 'nebula_hydra',
-      mutationId: 'none',
-      isProtected: false,
-    );
+      game.startActiveAutoBattle(
+        bossId: 'slime_boss',
+        animalId: 'nebula_hydra',
+        mutationId: 'none',
+        isProtected: false,
+      );
 
-    game.devAdvanceActiveAutoBattleFight();
+      game.devAdvanceActiveAutoBattleFight();
 
-    final battle = game.activeAutoBattle;
-    if (battle != null && battle.battlesWon > 0) {
-      expect(game.coins, greaterThan(beforeCoins));
-      expect(game.battleTokens, greaterThan(beforeTokens));
-      expect(game.lifetimeCoinsEarned, beforeLifetime);
-      expect(game.questProgress.totalBossBattlesStarted, 1);
-      expect(game.questProgress.totalBossBattlesWon, 1);
-    }
+      final battle = game.activeAutoBattle;
+      if (battle != null && battle.battlesWon > 0) {
+        expect(game.coins, greaterThan(beforeCoins));
+        expect(game.battleTokens, greaterThan(beforeTokens));
+        expect(game.lifetimeCoinsEarned, beforeLifetime);
+        expect(game.questProgress.totalBossBattlesStarted, 1);
+        expect(game.questProgress.totalBossBattlesWon, 1);
+      }
 
-    game.dispose();
-  });
+      game.dispose();
+    },
+  );
 
   test('cannot sell battling stack', () async {
     SharedPreferences.setMockInitialValues({});
@@ -138,10 +143,7 @@ void main() {
       isProtected: false,
     );
 
-    expect(
-      game.canSellOwnedAnimal('chicken', 'none'),
-      isFalse,
-    );
+    expect(game.canSellOwnedAnimal('chicken', 'none'), isFalse);
 
     game.dispose();
   });

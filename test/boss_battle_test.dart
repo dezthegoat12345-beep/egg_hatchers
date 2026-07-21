@@ -25,14 +25,8 @@ void main() {
       mutationId: 'golden',
     );
 
-    expect(
-      BattlePowerLogic.battlePowerForOwnedAnimal(normalChicken),
-      3,
-    );
-    expect(
-      BattlePowerLogic.battlePowerForOwnedAnimal(goldenChicken),
-      6,
-    );
+    expect(BattlePowerLogic.battlePowerForOwnedAnimal(normalChicken), 3);
+    expect(BattlePowerLogic.battlePowerForOwnedAnimal(goldenChicken), 6);
   });
 
   test('battle power minimum is 1', () {
@@ -127,7 +121,7 @@ void main() {
     expect(game.coins, beforeCoins);
     expect(game.battleTokens, beforeTokens);
 
-    expect(game.applyBossBattleRewards('slime_boss', result), isTrue);
+    expect(game.applyBossBattleRewards('slime_boss', result), isNull);
     expect(game.coins, beforeCoins + 2500);
     expect(game.battleTokens, beforeTokens + 1);
     expect(game.lifetimeCoinsEarned, beforeLifetime);

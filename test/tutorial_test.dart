@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:egg_hatchers/data/tutorial_data.dart';
 import 'package:egg_hatchers/models/player_state.dart';
+import 'package:egg_hatchers/navigation/app_page_route.dart';
 import 'package:egg_hatchers/services/game_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -116,5 +117,22 @@ void main() {
     expect(game.tutorialVersionCompleted, 0);
 
     game.dispose();
+  });
+
+  test('advanced secret tutorial covers late-game unlock guidance', () {
+    final targetIds = TutorialData.advancedSecretSteps
+        .map((step) => step.targetId)
+        .toList();
+
+    expect(targetIds, contains(TutorialTargetIds.secretStatsSection));
+    expect(targetIds, contains(TutorialTargetIds.secretLateGameGuide));
+    expect(targetIds, contains(TutorialTargetIds.secretRottenShellGuide));
+    expect(TutorialData.advancedSecretSteps.last.isFinish, isTrue);
+    expect(
+      TutorialData.advancedSecretSteps.every(
+        (step) => step.requiredRoute == kSecretToolsRouteName,
+      ),
+      isTrue,
+    );
   });
 }

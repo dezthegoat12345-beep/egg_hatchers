@@ -25,16 +25,16 @@ enum ReferenceOverlayStrength {
   high;
 
   double get opacity => switch (this) {
-        ReferenceOverlayStrength.low => 0.20,
-        ReferenceOverlayStrength.medium => 0.30,
-        ReferenceOverlayStrength.high => 0.45,
-      };
+    ReferenceOverlayStrength.low => 0.20,
+    ReferenceOverlayStrength.medium => 0.30,
+    ReferenceOverlayStrength.high => 0.45,
+  };
 
   String get label => switch (this) {
-        ReferenceOverlayStrength.low => 'Low',
-        ReferenceOverlayStrength.medium => 'Medium',
-        ReferenceOverlayStrength.high => 'High',
-      };
+    ReferenceOverlayStrength.low => 'Low',
+    ReferenceOverlayStrength.medium => 'Medium',
+    ReferenceOverlayStrength.high => 'High',
+  };
 }
 
 /// Simple 16×16 pixel editor for one animal sprite.
@@ -82,7 +82,8 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _data = widget.customSprites.getSprite(widget.animal.id) ??
+    _data =
+        widget.customSprites.getSprite(widget.animal.id) ??
         CustomSpriteData.empty();
     _canvasSize = _data.size;
   }
@@ -428,31 +429,31 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     return ReturnToCustomSpritesPopScope(
       theme: theme,
       child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: PhoneWidthAppBar.widget(
-        titleWidget: Text(
-          '✏️ ${widget.animal.name}',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        backgroundColor: Colors.transparent,
+        appBar: PhoneWidthAppBar.widget(
+          titleWidget: Text(
+            '✏️ ${widget.animal.name}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          backgroundColor: theme.appBarColor,
+          foregroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          leading: ReturnToCustomSpritesBackButton(
+            theme: theme,
+            color: Colors.white,
+          ),
         ),
-        backgroundColor: theme.appBarColor,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        leading: ReturnToCustomSpritesBackButton(
-          theme: theme,
-          color: Colors.white,
+        body: ListenableBuilder(
+          listenable: Listenable.merge([
+            widget.game,
+            widget.spriteRating,
+            widget.referenceOverlay,
+          ]),
+          builder: (context, _) {
+            return _buildBody(theme);
+          },
         ),
       ),
-      body: ListenableBuilder(
-        listenable: Listenable.merge([
-          widget.game,
-          widget.spriteRating,
-          widget.referenceOverlay,
-        ]),
-        builder: (context, _) {
-          return _buildBody(theme);
-        },
-      ),
-    ),
     );
   }
 
@@ -463,17 +464,20 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
     final savedHash = saved != null
         ? SpriteRatingLogic.computeSpriteHash(saved)
         : null;
-    final alreadyClaimed = savedHash != null &&
+    final alreadyClaimed =
+        savedHash != null &&
         widget.spriteRating.isClaimed(widget.animal.id, savedHash);
-    final canClaim = hasReference &&
+    final canClaim =
+        hasReference &&
         _ratedScore != null &&
         _ratedScore! >= 1 &&
         !_hasUnsavedChanges &&
         saved != null &&
         saved.hasVisiblePixels &&
         !alreadyClaimed;
-    final overlayUnlocked =
-        widget.referenceOverlay.isUnlocked(widget.animal.id);
+    final overlayUnlocked = widget.referenceOverlay.isUnlocked(
+      widget.animal.id,
+    );
     final overlayCost = widget.game.referenceOverlayCostForAnimal(
       widget.animal.id,
       displayedReward: _ratedReward,
@@ -487,251 +491,244 @@ class _SpriteEditorScreenState extends State<SpriteEditorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                      Container(
-                        decoration: GameTheme.cardDecoration(theme),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Tap or drag to draw. Use pencil, fill, eraser, '
-                              'or eyedropper. Undo and redo your changes.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.cardTextSecondaryColor,
-                              ),
+              Container(
+                decoration: GameTheme.cardDecoration(theme),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text(
+                      'Tap or drag to draw. Use pencil, fill, eraser, '
+                      'or eyedropper. Undo and redo your changes.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: theme.cardTextSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _ToolsPanel(
+                      theme: theme,
+                      tool: _tool,
+                      brushSize: _brushSize,
+                      showGrid: _showGrid,
+                      showBrushSize: _showsBrushSize,
+                      canUndo: _canUndo,
+                      canRedo: _canRedo,
+                      onToolSelected: _selectTool,
+                      onBrushSizeSelected: (size) =>
+                          setState(() => _brushSize = size),
+                      onShowGridChanged: (value) =>
+                          setState(() => _showGrid = value),
+                      onUndo: _undo,
+                      onRedo: _redo,
+                    ),
+                    if (_maxCanvasSize > CustomSpriteData.defaultGridSize) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Canvas:',
+                            style: TextStyle(
+                              color: theme.cardTextSecondaryColor,
                             ),
-                            const SizedBox(height: 14),
-                            _ToolsPanel(
-                              theme: theme,
-                              tool: _tool,
-                              brushSize: _brushSize,
-                              showGrid: _showGrid,
-                              showBrushSize: _showsBrushSize,
-                              canUndo: _canUndo,
-                              canRedo: _canRedo,
-                              onToolSelected: _selectTool,
-                              onBrushSizeSelected: (size) =>
-                                  setState(() => _brushSize = size),
-                              onShowGridChanged: (value) =>
-                                  setState(() => _showGrid = value),
-                              onUndo: _undo,
-                              onRedo: _redo,
-                            ),
-                            if (_maxCanvasSize >
-                                CustomSpriteData.defaultGridSize) ...[
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Canvas:',
-                                    style: TextStyle(
-                                      color: theme.cardTextSecondaryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  DropdownButton<int>(
-                                    value: _canvasSize,
-                                    items: [
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButton<int>(
+                            value: _canvasSize,
+                            items:
+                                [
                                       CustomSpriteData.defaultGridSize,
                                       if (_maxCanvasSize >=
                                           CustomSpriteData.expandedGridSize)
                                         CustomSpriteData.expandedGridSize,
                                     ]
-                                        .map(
-                                          (size) => DropdownMenuItem(
-                                            value: size,
-                                            child: Text('${size}×$size'),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: _data.hasVisiblePixels
-                                        ? null
-                                        : (value) {
-                                            if (value == null) return;
-                                            setState(() {
-                                              _canvasSize = value;
-                                              _data = _emptyCanvas();
-                                              _clearHistory();
-                                            });
-                                          },
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 14),
-                            PixelSpriteEditor(
-                              data: _data,
-                              selectedColor: _selectedColor,
-                              tool: _tool,
-                              brushSize: _brushSize,
-                              showGrid: _showGrid,
-                              onStrokeStart: _onStrokeStart,
-                              onChanged: _onEditorChanged,
-                              onColorPicked: _onColorPicked,
-                              canvasSize: 240,
-                              themeColor: theme.primaryColor,
-                              referenceOverlay: ratingReference,
-                              showReferenceOverlay: hasReference &&
-                                  overlayUnlocked &&
-                                  _showReferenceOverlay,
-                              overlayOpacity: _overlayStrength.opacity,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _ReferencePreviewsPanel(
-                        theme: theme,
-                        animal: widget.animal,
-                        customData: _data,
-                        ratingReference: ratingReference,
-                        hasReference: hasReference,
-                      ),
-                      const SizedBox(height: 16),
-                      _ReferenceToolsPanel(
-                        theme: theme,
-                        hasReference: hasReference,
-                        overlayUnlocked: overlayUnlocked,
-                        overlayCost: overlayCost,
-                        showReferenceOverlay: _showReferenceOverlay,
-                        overlayStrength: _overlayStrength,
-                        onUnlockOverlay: hasReference && !overlayUnlocked
-                            ? _unlockReferenceOverlay
-                            : null,
-                        onShowOverlayChanged: hasReference && overlayUnlocked
-                            ? (value) =>
-                                setState(() => _showReferenceOverlay = value)
-                            : null,
-                        onOverlayStrengthChanged:
-                            hasReference && overlayUnlocked
-                                ? (value) =>
-                                    setState(() => _overlayStrength = value)
-                                : null,
-                      ),
-                      const SizedBox(height: 16),
-                      _RatingCard(
-                        theme: theme,
-                        hasReference: hasReference,
-                        customData: _data,
-                        ratingReference: ratingReference,
-                        ratedScore: _ratedScore,
-                        ratedReward: _ratedReward,
-                        ratingAlreadyCounted:
-                            _ratingAlreadyCountedForCurrentDrawing,
-                        alreadyClaimed: alreadyClaimed,
-                        hasUnsavedChanges: _hasUnsavedChanges,
-                        canClaim: canClaim,
-                        onRate: _rateSprite,
-                        onClaim: _claimReward,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: GameTheme.cardDecoration(theme),
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Palette',
-                              style: GameTheme.sectionTitle(theme, size: 15),
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _PaletteSwatch(
-                                  label: 'Eraser',
-                                  color: Colors.transparent,
-                                  isSelected: _tool == SpriteEditorTool.eraser,
-                                  onTap: () => _selectTool(SpriteEditorTool.eraser),
-                                  showEraserIcon: true,
-                                  theme: theme,
-                                ),
-                              ],
-                            ),
-                            for (final group in SpritePalette.groups) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                group.name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                  color: theme.cardTextSecondaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  for (final entry in group.entries)
-                                    _PaletteSwatch(
-                                      label: entry.label,
-                                      color: Color(entry.color),
-                                      isSelected:
-                                          _tool != SpriteEditorTool.eraser &&
-                                              _selectedColor == entry.color,
-                                      onTap: () {
-                                        _selectTool(SpriteEditorTool.pencil);
-                                        _selectColor(entry.color);
-                                      },
-                                      theme: theme,
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed:
-                                  _data.hasVisiblePixels ? _confirmClear : null,
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 48),
-                                foregroundColor: theme.cardTextPrimaryColor,
-                                side: BorderSide(color: theme.cardBorderColor),
-                              ),
-                              child: const Text('Clear'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _reset,
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 48),
-                                foregroundColor: theme.cardTextPrimaryColor,
-                                side: BorderSide(color: theme.cardBorderColor),
-                              ),
-                              child: const Text('Reset'),
-                            ),
+                                    .map(
+                                      (size) => DropdownMenuItem(
+                                        value: size,
+                                        child: Text('$size x $size'),
+                                      ),
+                                    )
+                                    .toList(),
+                            onChanged: _data.hasVisiblePixels
+                                ? null
+                                : (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _canvasSize = value;
+                                      _data = _emptyCanvas();
+                                      _clearHistory();
+                                    });
+                                  },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      FilledButton(
-                        onPressed: _save,
-                        style: GameTheme.filledButton(
-                          theme,
-                          color: theme.primaryColor,
-                          height: 52,
+                    ],
+                    const SizedBox(height: 14),
+                    PixelSpriteEditor(
+                      data: _data,
+                      selectedColor: _selectedColor,
+                      tool: _tool,
+                      brushSize: _brushSize,
+                      showGrid: _showGrid,
+                      onStrokeStart: _onStrokeStart,
+                      onChanged: _onEditorChanged,
+                      onColorPicked: _onColorPicked,
+                      canvasSize: 240,
+                      themeColor: theme.primaryColor,
+                      referenceOverlay: ratingReference,
+                      showReferenceOverlay:
+                          hasReference &&
+                          overlayUnlocked &&
+                          _showReferenceOverlay,
+                      overlayOpacity: _overlayStrength.opacity,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _ReferencePreviewsPanel(
+                theme: theme,
+                animal: widget.animal,
+                customData: _data,
+                ratingReference: ratingReference,
+                hasReference: hasReference,
+              ),
+              const SizedBox(height: 16),
+              _ReferenceToolsPanel(
+                theme: theme,
+                hasReference: hasReference,
+                overlayUnlocked: overlayUnlocked,
+                overlayCost: overlayCost,
+                showReferenceOverlay: _showReferenceOverlay,
+                overlayStrength: _overlayStrength,
+                onUnlockOverlay: hasReference && !overlayUnlocked
+                    ? _unlockReferenceOverlay
+                    : null,
+                onShowOverlayChanged: hasReference && overlayUnlocked
+                    ? (value) => setState(() => _showReferenceOverlay = value)
+                    : null,
+                onOverlayStrengthChanged: hasReference && overlayUnlocked
+                    ? (value) => setState(() => _overlayStrength = value)
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              _RatingCard(
+                theme: theme,
+                hasReference: hasReference,
+                customData: _data,
+                ratingReference: ratingReference,
+                ratedScore: _ratedScore,
+                ratedReward: _ratedReward,
+                ratingAlreadyCounted: _ratingAlreadyCountedForCurrentDrawing,
+                alreadyClaimed: alreadyClaimed,
+                hasUnsavedChanges: _hasUnsavedChanges,
+                canClaim: canClaim,
+                onRate: _rateSprite,
+                onClaim: _claimReward,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: GameTheme.cardDecoration(theme),
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Palette',
+                      style: GameTheme.sectionTitle(theme, size: 15),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _PaletteSwatch(
+                          label: 'Eraser',
+                          color: Colors.transparent,
+                          isSelected: _tool == SpriteEditorTool.eraser,
+                          onTap: () => _selectTool(SpriteEditorTool.eraser),
+                          showEraserIcon: true,
+                          theme: theme,
                         ),
-                        child: const Text(
-                          'Save Sprite',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      ],
+                    ),
+                    for (final group in SpritePalette.groups) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        group.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                          color: theme.cardTextSecondaryColor,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final entry in group.entries)
+                            _PaletteSwatch(
+                              label: entry.label,
+                              color: Color(entry.color),
+                              isSelected:
+                                  _tool != SpriteEditorTool.eraser &&
+                                  _selectedColor == entry.color,
+                              onTap: () {
+                                _selectTool(SpriteEditorTool.pencil);
+                                _selectColor(entry.color);
+                              },
+                              theme: theme,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _data.hasVisiblePixels ? _confirmClear : null,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        foregroundColor: theme.cardTextPrimaryColor,
+                        side: BorderSide(color: theme.cardBorderColor),
+                      ),
+                      child: const Text('Clear'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _reset,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        foregroundColor: theme.cardTextPrimaryColor,
+                        side: BorderSide(color: theme.cardBorderColor),
+                      ),
+                      child: const Text('Reset'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              FilledButton(
+                onPressed: _save,
+                style: GameTheme.filledButton(
+                  theme,
+                  color: theme.primaryColor,
+                  height: 52,
+                ),
+                child: const Text(
+                  'Save Sprite',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         ),
@@ -859,10 +856,7 @@ class _EmptyPreviewFrame extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          color: theme.cardTextSecondaryColor,
-        ),
+        style: TextStyle(fontSize: 11, color: theme.cardTextSecondaryColor),
       ),
     );
   }
@@ -1173,13 +1167,12 @@ class _RatingCard extends StatelessWidget {
                   color: theme.secondaryColor,
                 ),
               )
-            else if (hasUnsavedChanges && ratedScore != null && ratedScore! >= 1)
+            else if (hasUnsavedChanges &&
+                ratedScore != null &&
+                ratedScore! >= 1)
               Text(
                 'Save your sprite before claiming a reward.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.orange.shade700,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.orange.shade700),
               ),
             const SizedBox(height: 12),
             FilledButton(

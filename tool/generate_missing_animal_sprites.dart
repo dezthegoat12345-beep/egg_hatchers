@@ -73,14 +73,21 @@ void main() {
 
 img.Image _canvas() => img.Image(width: 128, height: 128, numChannels: 4);
 
-img.ColorRgba8 _c(int r, int g, int b, [int a = 255]) => img.ColorRgba8(r, g, b, a);
+img.ColorRgba8 _c(int r, int g, int b, [int a = 255]) =>
+    img.ColorRgba8(r, g, b, a);
 
 void _set(img.Image image, int x, int y, img.ColorRgba8 color) {
   if (x < 0 || y < 0 || x >= image.width || y >= image.height) return;
   image.setPixel(x, y, color);
 }
 
-void _fillCircle(img.Image image, int cx, int cy, int radius, img.ColorRgba8 color) {
+void _fillCircle(
+  img.Image image,
+  int cx,
+  int cy,
+  int radius,
+  img.ColorRgba8 color,
+) {
   for (var y = cy - radius; y <= cy + radius; y++) {
     for (var x = cx - radius; x <= cx + radius; x++) {
       final dx = x - cx;
@@ -195,8 +202,24 @@ void _drawOutlinedBody(
 
 void _drawWhiskers(img.Image image, int cx, int cy) {
   for (final dy in [-3, 0, 3]) {
-    _fillRoundedRect(image, cx - 24, cy + dy, cx - 12, cy + dy + 2, 1, _c(70, 70, 70));
-    _fillRoundedRect(image, cx + 12, cy + dy, cx + 24, cy + dy + 2, 1, _c(70, 70, 70));
+    _fillRoundedRect(
+      image,
+      cx - 24,
+      cy + dy,
+      cx - 12,
+      cy + dy + 2,
+      1,
+      _c(70, 70, 70),
+    );
+    _fillRoundedRect(
+      image,
+      cx + 12,
+      cy + dy,
+      cx + 24,
+      cy + dy + 2,
+      1,
+      _c(70, 70, 70),
+    );
   }
 }
 
@@ -208,18 +231,15 @@ void _drawLegSegment(
   int width,
   img.ColorRgba8 color,
 ) {
-  _fillRoundedRect(image, x - width ~/ 2, topY, x + width ~/ 2, bottomY, 1, color);
-}
-
-void _drawFoot(
-  img.Image image,
-  int x,
-  int y,
-  int rx,
-  int ry,
-  img.ColorRgba8 color,
-) {
-  _fillEllipse(image, x, y, rx, ry, color);
+  _fillRoundedRect(
+    image,
+    x - width ~/ 2,
+    topY,
+    x + width ~/ 2,
+    bottomY,
+    1,
+    color,
+  );
 }
 
 void _drawPaws(
@@ -325,7 +345,13 @@ img.Image _drawMouse() {
   }
   _drawLegSegment(image, 48, 88, 98, 3, _c(130, 130, 130));
   _drawLegSegment(image, 80, 88, 98, 3, _c(130, 130, 130));
-  _drawPaws(image, [(46, 104), (50, 104), (78, 104), (82, 104)], _c(120, 120, 120), rx: 5, ry: 3);
+  _drawPaws(
+    image,
+    [(46, 104), (50, 104), (78, 104), (82, 104)],
+    _c(120, 120, 120),
+    rx: 5,
+    ry: 3,
+  );
   return image;
 }
 
@@ -456,9 +482,33 @@ img.Image _drawDeer() {
   _drawEyes(image, 64, 48, 8, 5);
   _fillEllipse(image, 64, 58, 6, 4, _c(80, 50, 30));
   for (final dx in [-18, 18]) {
-    _fillRoundedRect(image, 64 + dx - 3, 16, 64 + dx + 3, 34, 2, _c(215, 185, 142));
-    _fillRoundedRect(image, 64 + dx - 8, 22, 64 + dx - 2, 26, 2, _c(215, 185, 142));
-    _fillRoundedRect(image, 64 + dx + 2, 22, 64 + dx + 8, 26, 2, _c(215, 185, 142));
+    _fillRoundedRect(
+      image,
+      64 + dx - 3,
+      16,
+      64 + dx + 3,
+      34,
+      2,
+      _c(215, 185, 142),
+    );
+    _fillRoundedRect(
+      image,
+      64 + dx - 8,
+      22,
+      64 + dx - 2,
+      26,
+      2,
+      _c(215, 185, 142),
+    );
+    _fillRoundedRect(
+      image,
+      64 + dx + 2,
+      22,
+      64 + dx + 8,
+      26,
+      2,
+      _c(215, 185, 142),
+    );
   }
   _fillEllipse(image, 98, 66, 6, 4, _c(181, 122, 69));
   _drawHooves(image, [(48, 108), (80, 108)], _c(181, 122, 69), _c(80, 50, 30));
@@ -538,7 +588,12 @@ img.Image _drawPig() {
       _c(255, 170, 190),
     );
   }
-  _drawHooves(image, [(48, 108), (80, 108)], _c(255, 182, 193), _c(180, 100, 120));
+  _drawHooves(
+    image,
+    [(48, 108), (80, 108)],
+    _c(255, 182, 193),
+    _c(180, 100, 120),
+  );
   return image;
 }
 
@@ -588,7 +643,12 @@ img.Image _drawHorse() {
   _drawLegSegment(image, 80, 86, 104, 4, _c(120, 70, 35));
   _drawLegSegment(image, 54, 88, 106, 3, _c(120, 70, 35));
   _drawLegSegment(image, 74, 88, 106, 3, _c(120, 70, 35));
-  _drawHooves(image, [(48, 110), (54, 112), (74, 112), (80, 110)], _c(120, 70, 35), _c(50, 30, 20));
+  _drawHooves(
+    image,
+    [(48, 110), (54, 112), (74, 112), (80, 110)],
+    _c(120, 70, 35),
+    _c(50, 30, 20),
+  );
   return image;
 }
 
@@ -994,7 +1054,12 @@ img.Image _drawMoonCat() {
   for (var i = 0; i < 10; i++) {
     _fillCircle(image, 98 + i, 62 + (i % 2), 3, _c(144, 164, 174));
   }
-  _drawHooves(image, [(48, 108), (80, 108)], _c(144, 164, 174), _c(80, 90, 100));
+  _drawHooves(
+    image,
+    [(48, 108), (80, 108)],
+    _c(144, 164, 174),
+    _c(80, 90, 100),
+  );
   return image;
 }
 
@@ -1017,9 +1082,24 @@ img.Image _drawScarabBeetle() {
   _fillEllipse(image, 64, 58, 6, 5, _c(255, 224, 130));
   _drawEyes(image, 64, 48, 8, 4);
   for (final dx in [-10, 10]) {
-    _fillRoundedRect(image, 64 + dx - 2, 28, 64 + dx + 2, 42, 1, _c(78, 52, 46));
+    _fillRoundedRect(
+      image,
+      64 + dx - 2,
+      28,
+      64 + dx + 2,
+      42,
+      1,
+      _c(78, 52, 46),
+    );
   }
-  for (final pos in [(44, 88), (54, 92), (64, 94), (74, 92), (84, 88), (50, 96)]) {
+  for (final pos in [
+    (44, 88),
+    (54, 92),
+    (64, 94),
+    (74, 92),
+    (84, 88),
+    (50, 96),
+  ]) {
     _drawLegSegment(image, pos.$1, pos.$2 - 6, pos.$2, 2, _c(78, 52, 46));
     _fillCircle(image, pos.$1, pos.$2 + 1, 2, _c(62, 39, 35));
   }
@@ -1070,7 +1150,12 @@ img.Image _drawGemDragon() {
   for (var i = 0; i < 10; i++) {
     _fillCircle(image, 98 + i, 58 - i, 4, _c(171, 71, 188));
   }
-  _drawHooves(image, [(48, 108), (80, 108)], _c(171, 71, 188), _c(126, 87, 194));
+  _drawHooves(
+    image,
+    [(48, 108), (80, 108)],
+    _c(171, 71, 188),
+    _c(126, 87, 194),
+  );
   return image;
 }
 
@@ -1122,7 +1207,12 @@ img.Image _drawUnicorn() {
   for (final x in [48, 54, 74, 80]) {
     _drawLegSegment(image, x, 86, 102, 3, _c(255, 240, 250));
   }
-  _drawHooves(image, [(48, 108), (54, 110), (74, 110), (80, 108)], _c(255, 240, 250), _c(200, 180, 200));
+  _drawHooves(
+    image,
+    [(48, 108), (54, 110), (74, 110), (80, 108)],
+    _c(255, 240, 250),
+    _c(200, 180, 200),
+  );
   return image;
 }
 
@@ -1167,7 +1257,12 @@ img.Image _drawPolarBear() {
   _drawEyes(image, 64, 56, 10, 6);
   _fillEllipse(image, 64, 68, 10, 7, _c(180, 200, 220));
   _fillCircle(image, 64, 64, 4, _c(120, 140, 160));
-  _drawHooves(image, [(48, 108), (80, 108)], _c(255, 255, 255), _c(180, 200, 215));
+  _drawHooves(
+    image,
+    [(48, 108), (80, 108)],
+    _c(255, 255, 255),
+    _c(180, 200, 215),
+  );
   return image;
 }
 
@@ -1212,7 +1307,12 @@ img.Image _drawTriceratops() {
   _drawLegSegment(image, 84, 90, 104, 5, _c(255, 167, 38));
   _drawLegSegment(image, 52, 92, 106, 4, _c(255, 167, 38));
   _drawLegSegment(image, 76, 92, 106, 4, _c(255, 167, 38));
-  _drawHooves(image, [(44, 108), (52, 110), (76, 110), (84, 108)], _c(255, 167, 38), _c(180, 100, 20));
+  _drawHooves(
+    image,
+    [(44, 108), (52, 110), (76, 110), (84, 108)],
+    _c(255, 167, 38),
+    _c(180, 100, 20),
+  );
   return image;
 }
 
@@ -1232,7 +1332,15 @@ img.Image _drawTRex() {
   _drawEyes(image, 64, 38, 8, 5);
   _fillEllipse(image, 64, 50, 14, 8, _c(46, 125, 50));
   for (final dx in [-4, 4]) {
-    _fillRoundedRect(image, 64 + dx - 1, 50, 64 + dx + 1, 58, 1, _c(255, 255, 240));
+    _fillRoundedRect(
+      image,
+      64 + dx - 1,
+      50,
+      64 + dx + 1,
+      58,
+      1,
+      _c(255, 255, 240),
+    );
   }
   _fillEllipse(image, 38, 70, 6, 10, _c(67, 160, 71));
   _fillEllipse(image, 90, 70, 6, 10, _c(67, 160, 71));
@@ -1262,14 +1370,27 @@ img.Image _drawFossilDragon() {
   _drawEyes(image, 64, 38, 7, 4);
   _fillEllipse(image, 64, 52, 10, 6, _c(188, 170, 140));
   for (var i = 0; i < 5; i++) {
-    _fillRoundedRect(image, 52 + i * 6, 74, 56 + i * 6, 82, 1, _c(141, 110, 99));
+    _fillRoundedRect(
+      image,
+      52 + i * 6,
+      74,
+      56 + i * 6,
+      82,
+      1,
+      _c(141, 110, 99),
+    );
   }
   _fillEllipse(image, 52, 28, 5, 10, _c(188, 170, 140));
   _fillEllipse(image, 76, 28, 5, 10, _c(188, 170, 140));
   for (var i = 0; i < 10; i++) {
     _fillCircle(image, 98 + i, 58 - i, 4, _c(188, 170, 140));
   }
-  _drawHooves(image, [(48, 108), (80, 108)], _c(188, 170, 140), _c(109, 76, 65));
+  _drawHooves(
+    image,
+    [(48, 108), (80, 108)],
+    _c(188, 170, 140),
+    _c(109, 76, 65),
+  );
   return image;
 }
 
@@ -1293,7 +1414,15 @@ img.Image _drawAlienSlime() {
   _fillCircle(image, 48, 48, 5, _c(129, 199, 132, 180));
   _fillCircle(image, 80, 52, 4, _c(129, 199, 132, 180));
   for (final dx in [-14, 14]) {
-    _fillRoundedRect(image, 64 + dx - 2, 24, 64 + dx + 2, 40, 2, _c(156, 39, 176));
+    _fillRoundedRect(
+      image,
+      64 + dx - 2,
+      24,
+      64 + dx + 2,
+      40,
+      2,
+      _c(156, 39, 176),
+    );
     _fillCircle(image, 64 + dx, 22, 4, _c(186, 104, 200));
   }
   _fillEllipse(image, 52, 98, 8, 5, _c(76, 175, 80));

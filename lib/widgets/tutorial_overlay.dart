@@ -125,8 +125,9 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
           step.targetId,
           overlayContext: context,
         );
-        final retryVisible =
-            retry != null && viewport.overlaps(retry) ? retry : null;
+        final retryVisible = retry != null && viewport.overlaps(retry)
+            ? retry
+            : null;
         if (retryVisible != null && retryVisible != _targetRect) {
           TutorialTargets.debugLogMeasure(
             stepId: step.id,
@@ -207,10 +208,7 @@ class _TutorialSpotlightOverlayState extends State<TutorialSpotlightOverlay> {
 }
 
 class _WelcomeOverlay extends StatelessWidget {
-  const _WelcomeOverlay({
-    required this.service,
-    required this.theme,
-  });
+  const _WelcomeOverlay({required this.service, required this.theme});
 
   final TutorialService service;
   final BackgroundTheme theme;
@@ -233,7 +231,7 @@ class _WelcomeOverlay extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      TutorialData.welcomeTitle,
+                      service.welcomeTitle,
                       textAlign: TextAlign.center,
                       style: GameTheme.sectionTitle(theme, size: 22),
                     ),
@@ -245,9 +243,9 @@ class _WelcomeOverlay extends StatelessWidget {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
-                        'Tutorial',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      child: Text(
+                        service.startButtonLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -314,9 +312,7 @@ class _FallbackCardOverlay extends StatelessWidget {
                   isFinish: isFinish,
                   onNext: () => service.advanceNext(force: true),
                   onSkip: service.skipTutorial,
-                  nextLabel: isFinish
-                      ? TutorialData.finishButtonLabel
-                      : 'Next',
+                  nextLabel: isFinish ? service.finishButtonLabel : 'Next',
                   showReturnToHatchery: showReturnToHatchery,
                   onReturnToHatchery: onReturnToHatchery,
                 ),
@@ -404,8 +400,7 @@ class _SpotlightLayer extends StatelessWidget {
             isFinish: isFinish,
             onNext: () => service.advanceNext(force: true),
             onSkip: service.skipTutorial,
-            nextLabel:
-                isFinish ? TutorialData.finishButtonLabel : 'Next',
+            nextLabel: isFinish ? service.finishButtonLabel : 'Next',
             arrowDirection: calloutPlacement.arrowDirection,
           ),
         ),
@@ -541,8 +536,10 @@ class _CalloutPlacement {
     final candidates = <_CalloutPlacement>[];
 
     final centerX = hole.center.dx;
-    final centeredLeft = (centerX - calloutWidth / 2)
-        .clamp(margin, layerSize.width - calloutWidth - margin);
+    final centeredLeft = (centerX - calloutWidth / 2).clamp(
+      margin,
+      layerSize.width - calloutWidth - margin,
+    );
 
     final belowTop = hole.bottom + margin;
     if (belowTop + estimatedHeight <= layerSize.height - margin) {
@@ -574,8 +571,10 @@ class _CalloutPlacement {
       candidates.add(
         _CalloutPlacement(
           left: margin,
-          top: (hole.center.dy - estimatedHeight / 2)
-              .clamp(margin, layerSize.height - estimatedHeight - margin),
+          top: (hole.center.dy - estimatedHeight / 2).clamp(
+            margin,
+            layerSize.height - estimatedHeight - margin,
+          ),
           width: calloutWidth,
           arrowDirection: _ArrowDirection.right,
           estimatedHeight: estimatedHeight,
@@ -585,8 +584,10 @@ class _CalloutPlacement {
       candidates.add(
         _CalloutPlacement(
           left: layerSize.width - calloutWidth - margin,
-          top: (hole.center.dy - estimatedHeight / 2)
-              .clamp(margin, layerSize.height - estimatedHeight - margin),
+          top: (hole.center.dy - estimatedHeight / 2).clamp(
+            margin,
+            layerSize.height - estimatedHeight - margin,
+          ),
           width: calloutWidth,
           arrowDirection: _ArrowDirection.left,
           estimatedHeight: estimatedHeight,
@@ -742,10 +743,7 @@ class _CalloutCard extends StatelessWidget {
 }
 
 class _ArrowPointer extends StatelessWidget {
-  const _ArrowPointer({
-    required this.direction,
-    required this.theme,
-  });
+  const _ArrowPointer({required this.direction, required this.theme});
 
   final _ArrowDirection direction;
   final BackgroundTheme theme;
@@ -771,11 +769,7 @@ class _ArrowPointer extends StatelessWidget {
       size: 40,
       color: _arrowColor,
       shadows: const [
-        Shadow(
-          color: Colors.black54,
-          blurRadius: 4,
-          offset: Offset(0, 1),
-        ),
+        Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 1)),
       ],
     );
   }
@@ -793,5 +787,14 @@ class TutorialOverlay {
   }) {
     TutorialService.instance.attach(game: game, theme: theme);
     TutorialService.instance.showWelcome(isReplay: isReplay);
+  }
+
+  static void showAdvancedSecret(
+    BuildContext context, {
+    required GameService game,
+    required BackgroundTheme theme,
+  }) {
+    TutorialService.instance.attach(game: game, theme: theme);
+    TutorialService.instance.showAdvancedSecretWelcome();
   }
 }

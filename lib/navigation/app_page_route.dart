@@ -22,10 +22,12 @@ Route<T> appPageRoute<T>({
   return PageRouteBuilder<T>(
     settings: settings,
     opaque: true,
-    transitionDuration:
-        instantTransition ? Duration.zero : kAppRouteForwardDuration,
-    reverseTransitionDuration:
-        instantTransition ? Duration.zero : kAppRouteReverseDuration,
+    transitionDuration: instantTransition
+        ? Duration.zero
+        : kAppRouteForwardDuration,
+    reverseTransitionDuration: instantTransition
+        ? Duration.zero
+        : kAppRouteReverseDuration,
     pageBuilder: (context, animation, secondaryAnimation) {
       return builder(context);
     },
@@ -84,10 +86,7 @@ Route<T> appPageRoute<T>({
               position: slide,
               child: FadeTransition(
                 opacity: fade,
-                child: ScaleTransition(
-                  scale: scale,
-                  child: child,
-                ),
+                child: ScaleTransition(scale: scale, child: child),
               ),
             ),
           ),
@@ -147,6 +146,7 @@ const String kQuestsRouteName = '/quests';
 const String kBattlesRouteName = '/battles';
 const String kCustomSpritesRouteName = '/custom-sprites';
 const String kSecretToolsRouteName = '/secret-tools';
+const String kSettingsRouteName = '/settings';
 
 /// Tracks the navigator's top route name for duplicate-route guards.
 class AppNavigationTracker extends NavigatorObserver {

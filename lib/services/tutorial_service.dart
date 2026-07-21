@@ -17,6 +17,7 @@ class TutorialService extends ChangeNotifier {
   GameService? _game;
   BackgroundTheme? _theme;
   TutorialPhase _phase = TutorialPhase.inactive;
+  TutorialFlow _flow = TutorialFlow.basics;
   var _stepIndex = 0;
   var _isReplay = false;
   var _pausedForDialog = false;
@@ -30,22 +31,40 @@ class TutorialService extends ChangeNotifier {
   bool get isReplay => _isReplay;
   bool get pausedForDialog => _pausedForDialog;
   int get stepIndex => _stepIndex;
+  TutorialFlow get flow => _flow;
+
+  List<GuidedTutorialStep> get _steps => switch (_flow) {
+    TutorialFlow.basics => TutorialData.steps,
+    TutorialFlow.advancedSecret => TutorialData.advancedSecretSteps,
+  };
+
+  String get welcomeTitle => switch (_flow) {
+    TutorialFlow.basics => TutorialData.welcomeTitle,
+    TutorialFlow.advancedSecret => TutorialData.advancedSecretWelcomeTitle,
+  };
+
+  String get startButtonLabel => switch (_flow) {
+    TutorialFlow.basics => 'Tutorial',
+    TutorialFlow.advancedSecret => 'Advanced Tutorial',
+  };
+
+  String get finishButtonLabel => switch (_flow) {
+    TutorialFlow.basics => TutorialData.finishButtonLabel,
+    TutorialFlow.advancedSecret => TutorialData.advancedSecretFinishButtonLabel,
+  };
 
   GuidedTutorialStep? get currentStep {
     if (_phase != TutorialPhase.guided) return null;
-    if (_stepIndex < 0 || _stepIndex >= TutorialData.steps.length) {
+    if (_stepIndex < 0 || _stepIndex >= _steps.length) {
       return null;
     }
-    return TutorialData.steps[_stepIndex];
+    return _steps[_stepIndex];
   }
 
   BackgroundTheme? get theme => _theme;
   GameService? get game => _game;
 
-  void attach({
-    required GameService game,
-    required BackgroundTheme theme,
-  }) {
+  void attach({required GameService game, required BackgroundTheme theme}) {
     _game = game;
     _theme = theme;
   }
@@ -58,15 +77,20 @@ class TutorialService extends ChangeNotifier {
   void maybeAutoStartWelcome(GameService game) {
     if (_phase != TutorialPhase.inactive) return;
     if (!game.shouldAutoStartTutorial) return;
-    _beginWelcome(isReplay: false);
+    _beginWelcome(isReplay: false, flow: TutorialFlow.basics);
   }
 
   void showWelcome({required bool isReplay}) {
-    _beginWelcome(isReplay: isReplay);
+    _beginWelcome(isReplay: isReplay, flow: TutorialFlow.basics);
   }
 
-  void _beginWelcome({required bool isReplay}) {
+  void showAdvancedSecretWelcome() {
+    _beginWelcome(isReplay: true, flow: TutorialFlow.advancedSecret);
+  }
+
+  void _beginWelcome({required bool isReplay, required TutorialFlow flow}) {
     _isReplay = isReplay;
+    _flow = flow;
     _phase = TutorialPhase.welcome;
     _stepIndex = 0;
     _pausedForDialog = false;
@@ -88,7 +112,7 @@ class TutorialService extends ChangeNotifier {
   }
 
   void completeTutorial() {
-    if (!_isReplay && _game != null) {
+    if (_flow == TutorialFlow.basics && !_isReplay && _game != null) {
       _game!.completeTutorial();
     }
     _close();
@@ -96,6 +120,7 @@ class TutorialService extends ChangeNotifier {
 
   void _close() {
     _phase = TutorialPhase.inactive;
+    _flow = TutorialFlow.basics;
     _stepIndex = 0;
     _isReplay = false;
     _pausedForDialog = false;
@@ -134,7 +159,8 @@ class TutorialService extends ChangeNotifier {
     final step = currentStep;
     if (step == null) return;
 
-    if (step.advanceOnRoute != null && _routeMatches(step.advanceOnRoute, routeName)) {
+    if (step.advanceOnRoute != null &&
+        _routeMatches(step.advanceOnRoute, routeName)) {
       _advanceAfterAction();
       return;
     }
@@ -235,15 +261,23 @@ class TutorialService extends ChangeNotifier {
     return false;
   }
 
-  bool showReturnToHatcheryButton(GuidedTutorialStep step, {required bool targetFound}) {
+  bool showReturnToHatcheryButton(
+    GuidedTutorialStep step, {
+    required bool targetFound,
+  }) {
     return step.isBackStep && !targetFound;
   }
 
   void invokeReturnToHatcheryFallback() {
-    TutorialTargetRegistry.handlerFor(TutorialTargetIds.screenBackButton)?.call();
+    TutorialTargetRegistry.handlerFor(
+      TutorialTargetIds.screenBackButton,
+    )?.call();
   }
 
-  bool allowsProxyTargetTap(GuidedTutorialStep step, {required bool targetFound}) {
+  bool allowsProxyTargetTap(
+    GuidedTutorialStep step, {
+    required bool targetFound,
+  }) {
     if (!step.requiresTargetTap) return false;
     if (isFallbackMode(step, targetFound: targetFound)) return false;
     return TutorialTargetRegistry.handlerFor(step.targetId) != null;
@@ -275,6 +309,6 @@ class TutorialService extends ChangeNotifier {
   }
 
   void devStartTutorialNow() {
-    _beginWelcome(isReplay: true);
+    _beginWelcome(isReplay: true, flow: TutorialFlow.basics);
   }
 }
