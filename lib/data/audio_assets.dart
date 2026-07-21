@@ -7,24 +7,22 @@ class AudioAssets {
   static const musicFinalBoss = 'sounds/music/final_boss_music.mp3';
 
   static const sfxEggCrack = 'sounds/sfx/egg_shell_crack_dry.wav';
-  static const sfxHatchReveal = 'sounds/sfx/reward_triumph.wav';
-  static const sfxRareChime = 'sounds/sfx/reward_big_triumph.wav';
-  static const sfxCoinReward = 'sounds/sfx/reward_triumph.wav';
-  static const sfxTokenReward = 'sounds/sfx/reward_triumph.wav';
-  static const sfxEggShardReward = 'sounds/sfx/reward_big_triumph.wav';
-  static const sfxButtonTap = 'sounds/sfx/ui_click_soft.wav';
-  static const sfxPurchase = 'sounds/sfx/ui_confirm_soft.wav';
-  static const sfxErrorLocked = 'sounds/sfx/ui_locked_soft.wav';
+  static const sfxHatchReveal = 'sounds/sfx/hatch_reveal.wav';
+  static const sfxRareChime = 'sounds/sfx/rare_chime.wav';
+  static const sfxCoinReward = 'sounds/sfx/coin_reward.wav';
+  static const sfxTokenReward = 'sounds/sfx/token_reward.wav';
+  static const sfxEggShardReward = 'sounds/sfx/egg_shard_reward.wav';
+  static const sfxPurchase = 'sounds/sfx/purchase.wav';
+  static const sfxErrorLocked = 'sounds/sfx/error_locked.wav';
   static const sfxPlayerShoot = 'sounds/sfx/player_shoot.wav';
-  static const sfxBossProjectile = 'sounds/sfx/boss_projectile.wav';
   static const sfxPlayerHit = 'sounds/sfx/player_hit.wav';
   static const sfxBossHit = 'sounds/sfx/boss_hit.wav';
   static const sfxShieldBreak = 'sounds/sfx/shield_break.wav';
   static const sfxRageMode = 'sounds/sfx/rage_mode.wav';
-  static const sfxVictory = 'sounds/sfx/reward_big_triumph.wav';
-  static const sfxDefeat = 'sounds/sfx/ui_locked_soft.wav';
-  static const sfxFinisherSlash = 'sounds/sfx/ui_click_soft.wav';
-  static const sfxFinisherBonus = 'sounds/sfx/reward_triumph.wav';
+  static const sfxVictory = 'sounds/sfx/victory.wav';
+  static const sfxDefeat = 'sounds/sfx/defeat.wav';
+  static const sfxFinisherSlash = 'sounds/sfx/finisher_slash.wav';
+  static const sfxFinisherBonus = 'sounds/sfx/finisher_bonus.wav';
   static const sfxSlimePop = 'sounds/sfx/slime_pop.wav';
   static const sfxGolemCrack = 'sounds/sfx/golem_crack.wav';
   static const sfxFeatherBurst = 'sounds/sfx/feather_burst.wav';
@@ -55,11 +53,9 @@ enum Sfx {
   coinReward(AudioAssets.sfxCoinReward, cooldownMs: 700),
   tokenReward(AudioAssets.sfxTokenReward, cooldownMs: 700),
   eggShardReward(AudioAssets.sfxEggShardReward, cooldownMs: 1200),
-  buttonTap(AudioAssets.sfxButtonTap, cooldownMs: 80),
   purchase(AudioAssets.sfxPurchase, cooldownMs: 0),
   errorLocked(AudioAssets.sfxErrorLocked, cooldownMs: 250),
   playerShoot(AudioAssets.sfxPlayerShoot, cooldownMs: 120),
-  bossProjectile(AudioAssets.sfxBossProjectile, cooldownMs: 140),
   playerHit(AudioAssets.sfxPlayerHit, cooldownMs: 0),
   bossHit(AudioAssets.sfxBossHit, cooldownMs: 120),
   shieldBreak(AudioAssets.sfxShieldBreak, cooldownMs: 0),

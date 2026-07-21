@@ -7,9 +7,8 @@ import '../widgets/audio_scope.dart';
 abstract final class UiSound {
   UiSound._();
 
-  static void click(BuildContext context) {
-    AudioScope.maybeOf(context)?.playSfx(Sfx.buttonTap);
-  }
+  /// Routine navigation taps are intentionally silent.
+  static void click(BuildContext context) {}
 
   static void confirm(BuildContext context) {
     AudioScope.maybeOf(context)?.playSfx(Sfx.purchase);

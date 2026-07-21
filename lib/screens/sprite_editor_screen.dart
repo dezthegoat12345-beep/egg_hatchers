@@ -996,26 +996,29 @@ class _ReferenceToolsPanel extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  'Show Reference Overlay',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.cardTextPrimaryColor,
+              Material(
+                color: Colors.transparent,
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    'Show Reference Overlay',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.cardTextPrimaryColor,
+                    ),
                   ),
-                ),
-                subtitle: Text(
-                  'Faint rating reference behind your drawing canvas.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.cardTextSecondaryColor,
+                  subtitle: Text(
+                    'Faint rating reference behind your drawing canvas.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.cardTextSecondaryColor,
+                    ),
                   ),
+                  value: showReferenceOverlay,
+                  activeThumbColor: theme.primaryColor,
+                  onChanged: onShowOverlayChanged,
                 ),
-                value: showReferenceOverlay,
-                activeThumbColor: theme.primaryColor,
-                onChanged: onShowOverlayChanged,
               ),
               if (showReferenceOverlay) ...[
                 const SizedBox(height: 8),
@@ -1343,19 +1346,22 @@ class _ToolsPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            'Show Grid',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: theme.cardTextPrimaryColor,
+        Material(
+          color: Colors.transparent,
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'Show Grid',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: theme.cardTextPrimaryColor,
+              ),
             ),
+            value: showGrid,
+            activeThumbColor: theme.primaryColor,
+            onChanged: onShowGridChanged,
           ),
-          value: showGrid,
-          activeThumbColor: theme.primaryColor,
-          onChanged: onShowGridChanged,
         ),
       ],
     );

@@ -36,10 +36,7 @@ import '../widgets/game_sprite.dart';
 import '../widgets/phone_width_layout.dart';
 
 /// Top-view dodge boss fight: move side-to-side, break shield, shoot eggs.
-enum _ManualBattlePhase {
-  intro,
-  playing,
-}
+enum _ManualBattlePhase { intro, playing }
 
 class ManualBossBattleScreen extends StatefulWidget {
   const ManualBossBattleScreen({
@@ -140,27 +137,24 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   BossBattleDefinition get boss => widget.boss;
   ManualBattleMode get _mode => widget.mode;
 
-  double get _eggSpeed => BattleUpgradeLogic.manualEggSpeed(
-        widget.game.battleShotSpeedLevel,
-      );
+  double get _eggSpeed =>
+      BattleUpgradeLogic.manualEggSpeed(widget.game.battleShotSpeedLevel);
 
-  double get _eggHomingLerp => BattleUpgradeLogic.manualEggHomingLerp(
-        widget.game.battleHomingLevel,
-      );
+  double get _eggHomingLerp =>
+      BattleUpgradeLogic.manualEggHomingLerp(widget.game.battleHomingLevel);
 
-  double get _eggMaxHomingSpeed => BattleUpgradeLogic.manualEggMaxHomingSpeed(
-        widget.game.battleHomingLevel,
-      );
+  double get _eggMaxHomingSpeed =>
+      BattleUpgradeLogic.manualEggMaxHomingSpeed(widget.game.battleHomingLevel);
 
   int get _maxPlayerLives => BattleUpgradeLogic.manualBattleStartingLives(
-        widget.game.battleExtraLifeLevel,
-      );
+    widget.game.battleExtraLifeLevel,
+  );
 
   int get _requiredMisses => BossBattleLogic.manualRequiredMisses(
-        _successfulEggHits,
-        mode: _mode,
-        boss: boss,
-      );
+    _successfulEggHits,
+    mode: _mode,
+    boss: boss,
+  );
 
   double get _projectileSpeedMultiplier =>
       BossBattleLogic.manualProjectileSpeedMultiplier(
@@ -190,11 +184,11 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       _rageModeSpeedScale;
 
   double get _rageModeSpeedScale => BossBattleLogic.rageModeSpeedScale(
-        boss: boss,
-        livesRemaining: _bossLives,
-        maxLives: _bossMaxLives,
-        rageModeActive: _rageModeActive,
-      );
+    boss: boss,
+    livesRemaining: _bossLives,
+    maxLives: _bossMaxLives,
+    rageModeActive: _rageModeActive,
+  );
 
   double get _bossCenterY => _bossTop + _bossSize / 2;
 
@@ -233,13 +227,13 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   void _initFighterInfo() {
     final animal = GameData.animalById(widget.fighter.animalId)!;
     _fighterMutation =
-        GameData.mutationById(widget.fighter.mutationId) ?? GameData.mutations.first;
+        GameData.mutationById(widget.fighter.mutationId) ??
+        GameData.mutations.first;
     _fighterName = _fighterMutation.fullName(animal);
     _fighterAnimalId = animal.id;
     _fighterSpritePath = animal.spritePath;
     _fighterEmoji = _fighterMutation.displayEmoji(animal);
-    _fighterCustomSprite =
-        widget.customSprites.getDisplaySprite(animal.id);
+    _fighterCustomSprite = widget.customSprites.getDisplaySprite(animal.id);
     _battlePower = BattlePowerLogic.battlePowerForOwnedAnimal(widget.fighter);
   }
 
@@ -300,7 +294,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   void _recalculateBossAimTarget() {
     final minBx = _bossMinX();
     final maxBx = _bossMaxX();
-    final aimError = (_random.nextDouble() * 2 - 1) *
+    final aimError =
+        (_random.nextDouble() * 2 - 1) *
         BossBattleLogic.manualAimErrorMax(boss, mode: _mode);
     final newTarget = BossBattleLogic.manualBossAimTarget(
       boss: boss,
@@ -311,8 +306,10 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       aimError: aimError,
       mode: _mode,
     );
-    _bossAimTargetX =
-        (_bossAimTargetX * 0.35 + newTarget * 0.65).clamp(minBx, maxBx);
+    _bossAimTargetX = (_bossAimTargetX * 0.35 + newTarget * 0.65).clamp(
+      minBx,
+      maxBx,
+    );
   }
 
   void _onIntroComplete() {
@@ -439,8 +436,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _spawnAccumulator += dt * 1000;
     final interval = _currentProjectileIntervalMs;
     while (_spawnAccumulator >= interval &&
-        _bossProjectiles.length <
-            BossBattleLogic.manualMaxBossProjectiles) {
+        _bossProjectiles.length < BossBattleLogic.manualMaxBossProjectiles) {
       _spawnAccumulator -= interval;
       _spawnBossProjectile();
     }
@@ -479,10 +475,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
   void _spawnBossProjectile() {
     final spread = 24.0 * (_random.nextDouble() * 2 - 1);
     final x = (_bossX + spread).clamp(16.0, _arenaWidth - 16.0).toDouble();
-    _bossProjectiles.add(
-      _FallingProjectile(x: x, y: _bossSpawnY),
-    );
-    _audio.playSfx(Sfx.bossProjectile);
+    _bossProjectiles.add(_FallingProjectile(x: x, y: _bossSpawnY));
   }
 
   void _updateBossProjectiles(double dt) {
@@ -493,7 +486,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       final p = _bossProjectiles[i];
       p.y += boss.projectileSpeed * _projectileSpeedMultiplier * dt;
 
-      final hitPlayer = (p.x - _playerX).abs() < _playerHitRadius + _projectileRadius &&
+      final hitPlayer =
+          (p.x - _playerX).abs() < _playerHitRadius + _projectileRadius &&
           (p.y - playerY).abs() < _playerHitRadius + _projectileRadius;
 
       if (hitPlayer) {
@@ -522,7 +516,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
       egg.x += homingStep;
     }
 
-    final hitBoss = egg.y <= _bossCenterY + _bossSize / 2 &&
+    final hitBoss =
+        egg.y <= _bossCenterY + _bossSize / 2 &&
         (egg.x - _bossX).abs() < _bossHitHalfWidth + _projectileRadius;
 
     if (hitBoss) {
@@ -579,11 +574,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     _bossHitsLanded++;
     _audio.playSfx(Sfx.bossHit);
     _floatingDamages.add(
-      _FloatingDamage(
-        x: _bossX,
-        y: _bossTop + 8,
-        label: 'CRACK!',
-      ),
+      _FloatingDamage(x: _bossX, y: _bossTop + 8, label: 'CRACK!'),
     );
     if (_bossLives <= 0) {
       _endBattle(won: true);
@@ -591,7 +582,8 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     }
     _regenerateShieldAfterHit();
 
-    final enteringRage = !_rageModeActive &&
+    final enteringRage =
+        !_rageModeActive &&
         BossBattleLogic.showManualLastLifeGlow(
           boss,
           livesRemaining: _bossLives,
@@ -683,15 +675,17 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_rewardsApplied) return;
     _rewardsApplied = true;
 
-    final rewardMultiplier =
-        _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
+    final rewardMultiplier = _won
+        ? BossBattleLogic.manualRewardMultiplier(_mode)
+        : 1;
     final coinReward = _won ? boss.coinReward * rewardMultiplier : 0;
     final tokenReward = _won ? boss.battleTokenReward * rewardMultiplier : 0;
 
     _victoryCoinReward = coinReward;
     _victoryTokenReward = tokenReward;
-    _victoryEggShardReward =
-        _won && boss.eggShardReward > 0 ? boss.eggShardReward : 0;
+    _victoryEggShardReward = _won && boss.eggShardReward > 0
+        ? boss.eggShardReward
+        : 0;
 
     final result = BossBattleResult(
       won: _won,
@@ -721,12 +715,14 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
     if (_resultDialogShown || !mounted) return;
     _resultDialogShown = true;
 
-    final rewardMultiplier =
-        _won ? BossBattleLogic.manualRewardMultiplier(_mode) : 1;
+    final rewardMultiplier = _won
+        ? BossBattleLogic.manualRewardMultiplier(_mode)
+        : 1;
 
     if (_won) {
       final coins = boss.coinReward * rewardMultiplier + _finisherBonusCoins;
-      final tokens = boss.battleTokenReward * rewardMultiplier + _finisherBonusTokens;
+      final tokens =
+          boss.battleTokenReward * rewardMultiplier + _finisherBonusTokens;
       if (!_audio.rewardPlayedRecently()) {
         if (_victoryEggShardReward > 0 || _earnedRewardGrant != null) {
           _audio.playBigRewardTriumph();
@@ -852,193 +848,198 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
               if (didPop) _restoreHatcheryMusic();
             },
             child: Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: PhoneWidthAppBar(
-              title: boss.name,
-              titleStyle:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              backgroundColor: currentTheme.appBarColor,
-              foregroundColor: Colors.white,
-            ),
-            body: GameBackground(
-              theme: currentTheme,
-              child: PhoneWidthLayout(
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_mode != ManualBattleMode.normal)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _ModeBadge(
-                                theme: currentTheme,
-                                mode: _mode,
+              backgroundColor: Colors.transparent,
+              appBar: PhoneWidthAppBar(
+                title: boss.name,
+                titleStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+                backgroundColor: currentTheme.appBarColor,
+                foregroundColor: Colors.white,
+              ),
+              body: GameBackground(
+                theme: currentTheme,
+                child: PhoneWidthLayout(
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_mode != ManualBattleMode.normal)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _ModeBadge(
+                                  theme: currentTheme,
+                                  mode: _mode,
+                                ),
+                              ),
+                            _BattleHeader(
+                              theme: currentTheme,
+                              boss: boss,
+                              bossLives: _bossLives,
+                              bossMaxLives: _bossMaxLives,
+                              lives: _lives,
+                              maxPlayerLives: _maxPlayerLives,
+                              shieldActive: _shieldActive,
+                              shieldFlash: _shieldFlash,
+                              missCount: _missCount,
+                              requiredMisses: _requiredMisses,
+                              showPauseButton:
+                                  _phase == _ManualBattlePhase.playing &&
+                                  !_gameOver &&
+                                  !_isPaused &&
+                                  !_showVictoryAnimation &&
+                                  !_showFinisherSlash,
+                              onPause: _pauseBattle,
+                            ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  _arenaWidth = constraints.maxWidth;
+                                  _arenaHeight = constraints.maxHeight;
+                                  if (_playerX == 0 || _playerX > _arenaWidth) {
+                                    _playerX = _arenaWidth / 2;
+                                  }
+                                  if (_bossX == 0 || _bossX > _arenaWidth) {
+                                    _bossX = _arenaWidth / 2;
+                                  }
+                                  return _Arena(
+                                    theme: currentTheme,
+                                    boss: boss,
+                                    showBattleBackgrounds: widget
+                                        .preferences
+                                        .showBattleBackgrounds,
+                                    arenaWidth: _arenaWidth,
+                                    arenaHeight: _arenaHeight,
+                                    playerX: _playerX,
+                                    bossX: _bossX,
+                                    bossTop: _bossTop,
+                                    bossLives: _bossLives,
+                                    bossMaxLives: _bossMaxLives,
+                                    bossSpeedBannerRemaining:
+                                        _bossSpeedBannerRemaining,
+                                    bossSpeedBannerIsRage:
+                                        _bossSpeedBannerIsRage,
+                                    playerSize: _playerSize,
+                                    bossSize: _bossSize,
+                                    fighterCustomSprite: _fighterCustomSprite,
+                                    fighterAnimalId: _fighterAnimalId,
+                                    fighterSpritePath: _fighterSpritePath,
+                                    fighterEmoji: _fighterEmoji,
+                                    fighterMutation: _fighterMutation,
+                                    fighterName: _fighterName,
+                                    bossProjectiles: _bossProjectiles,
+                                    activeEgg: _activeEgg,
+                                    floatingDamages: _floatingDamages,
+                                    shieldActive: _shieldActive,
+                                    shieldFlash: _shieldFlash,
+                                    onPointerDown: _onArenaPointerDown,
+                                    onPointerMove: _onArenaPointerMove,
+                                    onPointerRelease: _onArenaPointerRelease,
+                                  );
+                                },
                               ),
                             ),
-                          _BattleHeader(
-                            theme: currentTheme,
-                            boss: boss,
-                            bossLives: _bossLives,
-                            bossMaxLives: _bossMaxLives,
-                            lives: _lives,
-                            maxPlayerLives: _maxPlayerLives,
-                            shieldActive: _shieldActive,
-                            shieldFlash: _shieldFlash,
-                            missCount: _missCount,
-                            requiredMisses: _requiredMisses,
-                            showPauseButton: _phase == _ManualBattlePhase.playing &&
-                                !_gameOver &&
-                                !_isPaused &&
-                                !_showVictoryAnimation &&
-                                !_showFinisherSlash,
-                            onPause: _pauseBattle,
-                          ),
-                          const SizedBox(height: 12),
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                _arenaWidth = constraints.maxWidth;
-                                _arenaHeight = constraints.maxHeight;
-                                if (_playerX == 0 ||
-                                    _playerX > _arenaWidth) {
-                                  _playerX = _arenaWidth / 2;
-                                }
-                                if (_bossX == 0 || _bossX > _arenaWidth) {
-                                  _bossX = _arenaWidth / 2;
-                                }
-                                return _Arena(
-                                  theme: currentTheme,
-                                  boss: boss,
-                                  showBattleBackgrounds:
-                                      widget.preferences.showBattleBackgrounds,
-                                  arenaWidth: _arenaWidth,
-                                  arenaHeight: _arenaHeight,
-                                  playerX: _playerX,
-                                  bossX: _bossX,
-                                  bossTop: _bossTop,
-                                  bossLives: _bossLives,
-                                  bossMaxLives: _bossMaxLives,
-                                  bossSpeedBannerRemaining:
-                                      _bossSpeedBannerRemaining,
-                                  bossSpeedBannerIsRage: _bossSpeedBannerIsRage,
-                                  playerSize: _playerSize,
-                                  bossSize: _bossSize,
-                                  fighterCustomSprite: _fighterCustomSprite,
-                                  fighterAnimalId: _fighterAnimalId,
-                                  fighterSpritePath: _fighterSpritePath,
-                                  fighterEmoji: _fighterEmoji,
-                                  fighterMutation: _fighterMutation,
-                                  fighterName: _fighterName,
-                                  bossProjectiles: _bossProjectiles,
-                                  activeEgg: _activeEgg,
-                                  floatingDamages: _floatingDamages,
-                                  shieldActive: _shieldActive,
-                                  shieldFlash: _shieldFlash,
-                                  onPointerDown: _onArenaPointerDown,
-                                  onPointerMove: _onArenaPointerMove,
-                                  onPointerRelease: _onArenaPointerRelease,
-                                );
-                              },
+                            const SizedBox(height: 8),
+                            Text(
+                              'Hold and drag to dodge.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: currentTheme.cardTextSecondaryColor,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Hold and drag to dodge.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: currentTheme.cardTextSecondaryColor,
+                            const SizedBox(height: 4),
+                            Text(
+                              'Harder bosses aim better.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: currentTheme.cardTextSecondaryColor,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Harder bosses aim better.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: currentTheme.cardTextSecondaryColor,
+                            const SizedBox(height: 10),
+                            _ShootRow(
+                              theme: currentTheme,
+                              shieldActive: _shieldActive,
+                              canShoot:
+                                  _phase == _ManualBattlePhase.playing &&
+                                  !_gameOver &&
+                                  !_isPaused &&
+                                  !_showVictoryAnimation &&
+                                  !_showFinisherSlash &&
+                                  !_shieldActive &&
+                                  _activeEgg == null &&
+                                  _eggCooldownRemaining <= 0,
+                              eggOnCooldown: _eggCooldownRemaining > 0,
+                              onShootEgg: _shootEgg,
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          _ShootRow(
-                            theme: currentTheme,
-                            shieldActive: _shieldActive,
-                            canShoot: _phase == _ManualBattlePhase.playing &&
-                                !_gameOver &&
-                                !_isPaused &&
-                                !_showVictoryAnimation &&
-                                !_showFinisherSlash &&
-                                !_shieldActive &&
-                                _activeEgg == null &&
-                                _eggCooldownRemaining <= 0,
-                            eggOnCooldown: _eggCooldownRemaining > 0,
-                            onShootEgg: _shootEgg,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_phase == _ManualBattlePhase.intro)
-                      Positioned.fill(
-                        child: BossFightIntroAnimation(
-                          fighterName: _fighterName,
-                          fighterAnimalId: _fighterAnimalId,
-                          fighterSpritePath: _fighterSpritePath,
-                          fighterEmoji: _fighterEmoji,
-                          fighterCustomSprite: _fighterCustomSprite,
-                          boss: boss,
-                          mode: _mode,
-                          audio: _audioService,
-                          onComplete: _onIntroComplete,
+                          ],
                         ),
                       ),
-                    if (_isPaused)
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                          child: _PauseOverlay(
+                      if (_phase == _ManualBattlePhase.intro)
+                        Positioned.fill(
+                          child: BossFightIntroAnimation(
+                            fighterName: _fighterName,
+                            fighterAnimalId: _fighterAnimalId,
+                            fighterSpritePath: _fighterSpritePath,
+                            fighterEmoji: _fighterEmoji,
+                            fighterCustomSprite: _fighterCustomSprite,
+                            boss: boss,
+                            mode: _mode,
+                            audio: _audioService,
+                            onComplete: _onIntroComplete,
+                          ),
+                        ),
+                      if (_isPaused)
+                        Positioned.fill(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                            child: _PauseOverlay(
+                              theme: currentTheme,
+                              onResume: _resumeBattle,
+                              onQuit: _confirmQuitBattle,
+                              showBattleBackgrounds:
+                                  widget.preferences.showBattleBackgrounds,
+                              onToggleBattleBackgrounds:
+                                  widget.preferences.setShowBattleBackgrounds,
+                            ),
+                          ),
+                        ),
+                      if (_showFinisherSlash)
+                        Positioned.fill(
+                          child: BossFinisherSlashOverlay(
+                            boss: boss,
                             theme: currentTheme,
-                            onResume: _resumeBattle,
-                            onQuit: _confirmQuitBattle,
                             showBattleBackgrounds:
                                 widget.preferences.showBattleBackgrounds,
-                            onToggleBattleBackgrounds:
-                                widget.preferences.setShowBattleBackgrounds,
+                            onComplete: _onFinisherSlashComplete,
                           ),
                         ),
-                      ),
-                    if (_showFinisherSlash)
-                      Positioned.fill(
-                        child: BossFinisherSlashOverlay(
-                          boss: boss,
-                          theme: currentTheme,
-                          showBattleBackgrounds:
-                              widget.preferences.showBattleBackgrounds,
-                          onComplete: _onFinisherSlashComplete,
+                      if (_showVictoryAnimation)
+                        Positioned.fill(
+                          child: BossDefeatAnimation(
+                            theme: currentTheme,
+                            boss: boss,
+                            mode: _mode,
+                            coinReward: _victoryCoinReward,
+                            tokenReward: _victoryTokenReward,
+                            animalRewardName: _earnedRewardAnimalName,
+                            showBattleBackgrounds:
+                                widget.preferences.showBattleBackgrounds,
+                            onComplete: _onVictoryAnimationComplete,
+                          ),
                         ),
-                      ),
-                    if (_showVictoryAnimation)
-                      Positioned.fill(
-                        child: BossDefeatAnimation(
-                          theme: currentTheme,
-                          boss: boss,
-                          mode: _mode,
-                          coinReward: _victoryCoinReward,
-                          tokenReward: _victoryTokenReward,
-                          animalRewardName: _earnedRewardAnimalName,
-                          showBattleBackgrounds:
-                              widget.preferences.showBattleBackgrounds,
-                          onComplete: _onVictoryAnimationComplete,
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           ),
         );
       },
@@ -1047,10 +1048,7 @@ class _ManualBossBattleScreenState extends State<ManualBossBattleScreen>
 }
 
 class _ModeBadge extends StatelessWidget {
-  const _ModeBadge({
-    required this.theme,
-    required this.mode,
-  });
+  const _ModeBadge({required this.theme, required this.mode});
 
   final BackgroundTheme theme;
   final ManualBattleMode mode;
@@ -1059,15 +1057,15 @@ class _ModeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color, rewardLabel) = switch (mode) {
       ManualBattleMode.hard => (
-          'Hard Phase',
-          Colors.deepOrange.shade700,
-          '2× rewards',
-        ),
+        'Hard Phase',
+        Colors.deepOrange.shade700,
+        '2× rewards',
+      ),
       ManualBattleMode.nightmare => (
-          'Nightmare Mode',
-          Colors.purple.shade800,
-          '3× rewards',
-        ),
+        'Nightmare Mode',
+        Colors.purple.shade800,
+        '3× rewards',
+      ),
       ManualBattleMode.normal => ('', Colors.grey, ''),
     };
 
@@ -1311,7 +1309,9 @@ class _PauseOverlay extends StatelessWidget {
                   ),
                   Switch.adaptive(
                     value: showBattleBackgrounds,
-                    activeTrackColor: theme.primaryColor.withValues(alpha: 0.45),
+                    activeTrackColor: theme.primaryColor.withValues(
+                      alpha: 0.45,
+                    ),
                     activeThumbColor: theme.primaryColor,
                     onChanged: onToggleBattleBackgrounds,
                   ),
@@ -1417,177 +1417,179 @@ class _Arena extends StatelessWidget {
       onPanEnd: (_) => onPointerRelease(),
       onPanCancel: () => onPointerRelease(),
       child: Container(
-      decoration: BoxDecoration(
-        color: showBattleBackgrounds
-            ? Colors.transparent
-            : theme.panelColor.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.cardBorderColor),
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Stack(
-        children: [
-          if (showBattleBackgrounds)
-            Positioned.fill(
-              child: BossBattleBackground(bossId: boss.id),
-            ),
-          if (showBattleBackgrounds)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.08),
+        decoration: BoxDecoration(
+          color: showBattleBackgrounds
+              ? Colors.transparent
+              : theme.panelColor.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: theme.cardBorderColor),
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: Stack(
+          children: [
+            if (showBattleBackgrounds)
+              Positioned.fill(child: BossBattleBackground(bossId: boss.id)),
+            if (showBattleBackgrounds)
+              Positioned.fill(
+                child: ColoredBox(color: Colors.black.withValues(alpha: 0.08)),
               ),
-            ),
-          if (shieldActive && shieldFlash <= 0)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.secondaryColor.withValues(alpha: 0.35),
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          if (shieldFlash > 0)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color: Colors.white.withValues(alpha: 0.12 * shieldFlash / 0.35),
-                ),
-              ),
-            ),
-          Positioned(
-            left: bossLeft,
-            top: bossTop,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                BossLastLifeGlow(
-                  boss: boss,
-                  bossLivesRemaining: bossLives,
-                  bossMaxLives: bossMaxLives,
-                  size: bossSize,
-                  child: BossSprite(
-                    spritePath: boss.spritePath,
-                    fallbackEmoji: boss.emoji,
-                    bossId: boss.id,
-                    size: bossSize,
-                    semanticLabel: boss.name,
-                  ),
-                ),
-                if (shieldActive)
-                  Container(
-                    width: bossSize + 12,
-                    height: bossSize + 12,
+            if (shieldActive && shieldFlash <= 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
                       border: Border.all(
-                        color: theme.secondaryColor.withValues(alpha: 0.7),
+                        color: theme.secondaryColor.withValues(alpha: 0.35),
                         width: 2,
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          if (bossSpeedBannerRemaining > 0)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: bossTop + bossSize + 4,
-              child: IgnorePointer(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      bossSpeedBannerIsRage ? 'Rage Mode!' : 'Boss speed increased!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: bossSpeedBannerIsRage
-                            ? Colors.red.shade400
-                            : Colors.orange.shade300,
-                        fontSize: bossSpeedBannerIsRage ? 14 : 12,
-                        fontWeight: FontWeight.bold,
-                        shadows: const [
-                          Shadow(color: Colors.black54, blurRadius: 4),
-                        ],
-                      ),
+                ),
+              ),
+            if (shieldFlash > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: Colors.white.withValues(
+                      alpha: 0.12 * shieldFlash / 0.35,
                     ),
-                    if (bossSpeedBannerIsRage)
-                      Text(
-                        'The boss is faster!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.red.shade200,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(color: Colors.black54, blurRadius: 3),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          for (final p in bossProjectiles)
-            Positioned(
-              left: p.x - 11,
-              top: p.y - 12,
-              child: BossProjectileWidget(bossId: boss.id, size: 22),
-            ),
-          if (activeEgg != null)
-            Positioned(
-              left: activeEgg!.x - 12,
-              top: activeEgg!.y - 12,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade200,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.brown.shade400, width: 2),
-                ),
-                child: const Center(
-                  child: Text('🥚', style: TextStyle(fontSize: 14)),
-                ),
-              ),
-            ),
-          Positioned(
-            left: playerX - playerSize / 2,
-            top: playerY,
-            child: GameAnimalPortrait(
-              customSprite: fighterCustomSprite,
-              animalId: fighterAnimalId,
-              spritePath: fighterSpritePath,
-              fallbackEmoji: fighterEmoji,
-              size: playerSize,
-              mutation: fighterMutation,
-              semanticLabel: fighterName,
-            ),
-          ),
-          for (final d in floatingDamages)
-            Positioned(
-              left: d.x - 24,
-              top: d.y - d.age * 28,
-              child: Opacity(
-                opacity: (1 - d.age / 0.9).clamp(0.0, 1.0),
-                child: Text(
-                  d.displayText,
-                  style: TextStyle(
-                    color: Colors.red.shade300,
-                    fontSize: d.label != null ? 13 : 14,
-                    fontWeight: FontWeight.bold,
-                    shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
                   ),
                 ),
               ),
+            Positioned(
+              left: bossLeft,
+              top: bossTop,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  BossLastLifeGlow(
+                    boss: boss,
+                    bossLivesRemaining: bossLives,
+                    bossMaxLives: bossMaxLives,
+                    size: bossSize,
+                    child: BossSprite(
+                      spritePath: boss.spritePath,
+                      fallbackEmoji: boss.emoji,
+                      bossId: boss.id,
+                      size: bossSize,
+                      semanticLabel: boss.name,
+                    ),
+                  ),
+                  if (shieldActive)
+                    Container(
+                      width: bossSize + 12,
+                      height: bossSize + 12,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.secondaryColor.withValues(alpha: 0.7),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-        ],
-      ),
+            if (bossSpeedBannerRemaining > 0)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: bossTop + bossSize + 4,
+                child: IgnorePointer(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        bossSpeedBannerIsRage
+                            ? 'Rage Mode!'
+                            : 'Boss speed increased!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: bossSpeedBannerIsRage
+                              ? Colors.red.shade400
+                              : Colors.orange.shade300,
+                          fontSize: bossSpeedBannerIsRage ? 14 : 12,
+                          fontWeight: FontWeight.bold,
+                          shadows: const [
+                            Shadow(color: Colors.black54, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                      if (bossSpeedBannerIsRage)
+                        Text(
+                          'The boss is faster!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.red.shade200,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            shadows: const [
+                              Shadow(color: Colors.black54, blurRadius: 3),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            for (final p in bossProjectiles)
+              Positioned(
+                left: p.x - 11,
+                top: p.y - 12,
+                child: BossProjectileWidget(bossId: boss.id, size: 22),
+              ),
+            if (activeEgg != null)
+              Positioned(
+                left: activeEgg!.x - 12,
+                top: activeEgg!.y - 12,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade200,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.brown.shade400, width: 2),
+                  ),
+                  child: const Center(
+                    child: Text('🥚', style: TextStyle(fontSize: 14)),
+                  ),
+                ),
+              ),
+            Positioned(
+              left: playerX - playerSize / 2,
+              top: playerY,
+              child: GameAnimalPortrait(
+                customSprite: fighterCustomSprite,
+                animalId: fighterAnimalId,
+                spritePath: fighterSpritePath,
+                fallbackEmoji: fighterEmoji,
+                size: playerSize,
+                mutation: fighterMutation,
+                semanticLabel: fighterName,
+              ),
+            ),
+            for (final d in floatingDamages)
+              Positioned(
+                left: d.x - 24,
+                top: d.y - d.age * 28,
+                child: Opacity(
+                  opacity: (1 - d.age / 0.9).clamp(0.0, 1.0),
+                  child: Text(
+                    d.displayText,
+                    style: TextStyle(
+                      color: Colors.red.shade300,
+                      fontSize: d.label != null ? 13 : 14,
+                      fontWeight: FontWeight.bold,
+                      shadows: const [
+                        Shadow(color: Colors.black54, blurRadius: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1900,12 +1902,8 @@ class _EggProjectile {
 }
 
 class _FloatingDamage {
-  _FloatingDamage({
-    required this.x,
-    required this.y,
-    this.amount,
-    this.label,
-  }) : assert(amount != null || label != null);
+  _FloatingDamage({required this.x, required this.y, this.amount, this.label})
+    : assert(amount != null || label != null);
 
   final double x;
   final double y;
@@ -1913,6 +1911,5 @@ class _FloatingDamage {
   final String? label;
   double age = 0;
 
-  String get displayText =>
-      label ?? '-${formatCoins(amount!)}';
+  String get displayText => label ?? '-${formatCoins(amount!)}';
 }

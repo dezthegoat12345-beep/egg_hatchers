@@ -37,7 +37,10 @@ class CustomSpritesScreen extends StatelessWidget {
   final SpriteReferenceOverlayService referenceOverlay;
   final bool returnToHatcheryOnBack;
 
-  Future<void> _confirmResetAll(BuildContext context, BackgroundTheme theme) async {
+  Future<void> _confirmResetAll(
+    BuildContext context,
+    BackgroundTheme theme,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -111,15 +114,15 @@ class CustomSpritesScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           appBar: PhoneWidthAppBar(
             title: '🎨 Custom Animals',
-            titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+            titleStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
             backgroundColor: theme.appBarColor,
             foregroundColor: Colors.white,
             automaticallyImplyLeading: !returnToHatcheryOnBack,
             leading: returnToHatcheryOnBack
-                ? ReturnToHatcheryBackButton(
-                    theme: theme,
-                    color: Colors.white,
-                  )
+                ? ReturnToHatcheryBackButton(theme: theme, color: Colors.white)
                 : null,
           ),
           body: GameBackground(
@@ -151,29 +154,32 @@ class CustomSpritesScreen extends StatelessWidget {
                         horizontal: 14,
                         vertical: 8,
                       ),
-                      child: SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          'Show Custom Animals',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: theme.cardTextPrimaryColor,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'Show Custom Animals',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: theme.cardTextPrimaryColor,
+                            ),
                           ),
-                        ),
-                        subtitle: Text(
-                          customSprites.showCustomSprites
-                              ? 'Custom art appears in the game'
-                              : 'Custom art is hidden (still saved)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.cardTextSecondaryColor,
+                          subtitle: Text(
+                            customSprites.showCustomSprites
+                                ? 'Custom art appears in the game'
+                                : 'Custom art is hidden (still saved)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.cardTextSecondaryColor,
+                            ),
                           ),
+                          value: customSprites.showCustomSprites,
+                          activeThumbColor: theme.primaryColor,
+                          onChanged: (value) =>
+                              customSprites.setShowCustomSprites(value),
                         ),
-                        value: customSprites.showCustomSprites,
-                        activeThumbColor: theme.primaryColor,
-                        onChanged: (value) =>
-                            customSprites.setShowCustomSprites(value),
                       ),
                     ),
                   ),
@@ -221,7 +227,9 @@ class CustomSpritesScreen extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 48),
                       side: BorderSide(color: Colors.red.shade300),
-                      backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+                      backgroundColor: Colors.red.shade50.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -232,10 +240,7 @@ class CustomSpritesScreen extends StatelessWidget {
         );
 
         if (returnToHatcheryOnBack) {
-          return ReturnToHatcheryPopScope(
-            theme: theme,
-            child: scaffold,
-          );
+          return ReturnToHatcheryPopScope(theme: theme, child: scaffold);
         }
         return scaffold;
       },
@@ -340,8 +345,9 @@ class _AnimalSpriteTile extends StatelessWidget {
                         color: hasCustom
                             ? theme.primaryColor
                             : theme.cardTextSecondaryColor,
-                        fontWeight:
-                            hasCustom ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: hasCustom
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],

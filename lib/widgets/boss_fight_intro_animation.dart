@@ -139,7 +139,6 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
 
   void _onTap() {
     if (!_readyToStart) return;
-    widget.audio?.playSfx(Sfx.buttonTap);
     _finishOnce();
   }
 
@@ -153,9 +152,13 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
 
   @override
   Widget build(BuildContext context) {
-    final retroPixel = AnimalSpriteThemeScope.of(context).id ==
+    final retroPixel =
+        AnimalSpriteThemeScope.of(context).id ==
         AnimalSpriteThemes.retroPixel.id;
-    final modeLabel = BossFightIntroAnimation.modeLabel(widget.boss, widget.mode);
+    final modeLabel = BossFightIntroAnimation.modeLabel(
+      widget.boss,
+      widget.mode,
+    );
 
     return Material(
       color: Colors.black.withValues(alpha: 0.92),
@@ -182,21 +185,35 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
                 final entranceDone = _entranceController.isCompleted;
 
                 final lineT = _segment(entranceT, 0, 0.133, Curves.easeOut);
-                final slideT = _segment(entranceT, 0.133, 0.4, Curves.easeOutCubic);
+                final slideT = _segment(
+                  entranceT,
+                  0.133,
+                  0.4,
+                  Curves.easeOutCubic,
+                );
                 final nameT = _segment(entranceT, 0.25, 0.45, Curves.easeOut);
-                final vsPulseT = _segment(entranceT, 0.35, 0.55, Curves.elasticOut);
+                final vsPulseT = _segment(
+                  entranceT,
+                  0.35,
+                  0.55,
+                  Curves.elasticOut,
+                );
 
                 final animTime = entranceDone
                     ? 0.733 + idleT * 0.5
                     : entranceT.clamp(0.0, 0.733);
-                final flicker = 0.65 +
-                    0.35 * sin(animTime * pi * 18 + idleT * 40).abs();
+                final flicker =
+                    0.65 + 0.35 * sin(animTime * pi * 18 + idleT * 40).abs();
                 final lightingPulse = 0.82 + 0.18 * sin(idleT * pi * 2);
 
-                final playerTarget =
-                    _IntroPanelLayout.playerCenter(size, playerSpriteSize);
-                final bossTarget =
-                    _IntroPanelLayout.bossCenter(size, bossSpriteSize);
+                final playerTarget = _IntroPanelLayout.playerCenter(
+                  size,
+                  playerSpriteSize,
+                );
+                final bossTarget = _IntroPanelLayout.bossCenter(
+                  size,
+                  bossSpriteSize,
+                );
 
                 final playerSlide = Offset(
                   ui.lerpDouble(-size.width * 0.35, playerTarget.dx, slideT)!,
@@ -210,10 +227,11 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
                 final bounce = entranceDone
                     ? sin(idleT * pi * 2) * 3.5
                     : (entranceT > 0.4 && entranceT < 0.733
-                        ? sin((entranceT - 0.4) * pi * 6) * 4
-                        : 0.0);
+                          ? sin((entranceT - 0.4) * pi * 6) * 4
+                          : 0.0);
 
-                final vsScale = (0.4 + vsPulseT * 0.65) *
+                final vsScale =
+                    (0.4 + vsPulseT * 0.65) *
                     (1 +
                         (animTime > 0.35
                             ? sin(animTime * pi * 8 + idleT * pi) * 0.06
@@ -287,8 +305,7 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
                       child: Transform.scale(
                         scale: vsScale,
                         child: Opacity(
-                          opacity:
-                              (lineT * 0.35 + vsPulseT * 0.65).clamp(0, 1),
+                          opacity: (lineT * 0.35 + vsPulseT * 0.65).clamp(0, 1),
                           child: _VsLabel(
                             flicker: flicker,
                             retroPixel: retroPixel,
@@ -306,12 +323,7 @@ class _BossFightIntroAnimationState extends State<BossFightIntroAnimation>
     );
   }
 
-  static double _segment(
-    double t,
-    double start,
-    double end,
-    Curve curve,
-  ) {
+  static double _segment(double t, double start, double end, Curve curve) {
     if (t <= start) return 0;
     if (t >= end) return 1;
     return curve.transform((t - start) / (end - start));
@@ -376,9 +388,7 @@ class _CenteredFighterSide extends StatelessWidget {
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
                       fontSize: 17,
-                      shadows: [
-                        Shadow(color: Colors.black87, blurRadius: 6),
-                      ],
+                      shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -432,10 +442,7 @@ class _CenteredFighterSide extends StatelessWidget {
 }
 
 class _VsLabel extends StatelessWidget {
-  const _VsLabel({
-    required this.flicker,
-    required this.retroPixel,
-  });
+  const _VsLabel({required this.flicker, required this.retroPixel});
 
   final double flicker;
   final bool retroPixel;
@@ -605,7 +612,11 @@ class _IntroSplitBackgroundPainter extends CustomPainter {
         Offset(0, size.height),
         Offset(size.width * 0.5, size.height * 0.5),
         [
-          Color.lerp(const Color(0xFFFF6D00), const Color(0xFFFF9100), flicker)!,
+          Color.lerp(
+            const Color(0xFFFF6D00),
+            const Color(0xFFFF9100),
+            flicker,
+          )!,
           const Color(0xFFE65100),
         ],
       );
@@ -615,7 +626,11 @@ class _IntroSplitBackgroundPainter extends CustomPainter {
         Offset(size.width, 0),
         Offset(size.width * 0.5, size.height * 0.5),
         [
-          Color.lerp(const Color(0xFF1A1028), const Color(0xFF311B92), flicker * 0.35)!,
+          Color.lerp(
+            const Color(0xFF1A1028),
+            const Color(0xFF311B92),
+            flicker * 0.35,
+          )!,
           const Color(0xFF0D0612),
         ],
       );
@@ -635,7 +650,12 @@ class _IntroSplitBackgroundPainter extends CustomPainter {
     }
   }
 
-  void _drawSpeedLines(Canvas canvas, Size size, Path playerPath, double reveal) {
+  void _drawSpeedLines(
+    Canvas canvas,
+    Size size,
+    Path playerPath,
+    double reveal,
+  ) {
     final linePaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.06)
       ..strokeWidth = 2;
@@ -730,8 +750,7 @@ class _ElectricDiagonalPainter extends CustomPainter {
         const Color(0xFFFFF59D),
         const Color(0xFF81D4FA),
         flicker * 0.6,
-      )!
-          .withValues(alpha: 0.35 * flicker)
+      )!.withValues(alpha: 0.35 * flicker)
       ..strokeWidth = retroPixel ? 14 : 18
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
@@ -784,7 +803,8 @@ class _ElectricDiagonalPainter extends CustomPainter {
     for (var i = 1; i <= segments; i++) {
       final t = ui.lerpDouble(startT, endT, i / segments)!;
       final base = start + unit * (length * t);
-      final wave = sin(jitterSeed + i * 1.7 + time * 24) *
+      final wave =
+          sin(jitterSeed + i * 1.7 + time * 24) *
           (8 + thickness * 3) *
           (0.5 + flicker * 0.5);
       final point = base + normal * wave;
@@ -796,8 +816,7 @@ class _ElectricDiagonalPainter extends CustomPainter {
         const Color(0xFFFFEB3B),
         const Color(0xFF4FC3F7),
         (sin(jitterSeed) + 1) * 0.25,
-      )!
-          .withValues(alpha: 0.55 * flicker)
+      )!.withValues(alpha: 0.55 * flicker)
       ..strokeWidth = thickness + 2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round

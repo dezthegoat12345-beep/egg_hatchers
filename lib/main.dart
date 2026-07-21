@@ -14,7 +14,6 @@ import 'widgets/app_theme_background.dart';
 import 'widgets/audio_scope.dart';
 import 'widgets/tutorial_host.dart';
 import 'navigation/app_page_route.dart';
-import 'widgets/game_background.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,10 +125,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
       builder: (context, child) {
         final content = child ?? const SizedBox.shrink();
         if (!_isReady) {
-          return AppThemeBackground(
-            theme: theme,
-            child: content,
-          );
+          return AppThemeBackground(theme: theme, child: content);
         }
         return AppThemeBackground(
           theme: theme,
@@ -139,11 +135,7 @@ class _EggHatchersAppState extends State<EggHatchersApp>
               audio: _audio,
               child: AnimalSpriteThemeScope(
                 theme: _preferences.animalSpriteTheme,
-                child: TutorialHost(
-                  game: _game,
-                  theme: theme,
-                  child: content,
-                ),
+                child: TutorialHost(game: _game, theme: theme, child: content),
               ),
             ),
           ),
@@ -168,30 +160,44 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = BackgroundThemes.defaultTheme;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldColor,
-      body: GameBackground(
-        theme: theme,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🐣', style: TextStyle(fontSize: 72)),
-              const SizedBox(height: 16),
-              Text(
-                'Egg Hatchers',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textPrimaryColor,
+      backgroundColor: const Color(0xFF000823),
+      body: ColoredBox(
+        color: const Color(0xFF000823),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final logoSize = (constraints.biggest.shortestSide * 0.72).clamp(
+              180.0,
+              440.0,
+            );
+
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/ui/app_logo.png',
+                      width: logoSize,
+                      height: logoSize,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      semanticLabel: 'Egg Hatchers',
+                    ),
+                    const SizedBox(height: 24),
+                    const SizedBox.square(
+                      dimension: 30,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFFC247),
+                        strokeWidth: 3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              CircularProgressIndicator(color: theme.primaryColor),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

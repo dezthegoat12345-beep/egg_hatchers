@@ -18,28 +18,60 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Egg Hatchers - a colorful idle animal collection game.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="egg_hatchers">
+  <meta name="apple-mobile-web-app-title" content="Egg Hatchers">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>egg_hatchers</title>
+  <title>Egg Hatchers</title>
   <link rel="manifest" href="manifest.json">
   <style>
     html, body {
-      background-color: #0D1B2A;
+      background-color: #000823;
       margin: 0;
       height: 100%;
+      overflow: hidden;
+    }
+    #app-loading {
+      align-items: center;
+      background: #000823;
+      display: flex;
+      flex-direction: column;
+      inset: 0;
+      justify-content: center;
+      position: fixed;
+      z-index: 9999;
+    }
+    #app-loading img {
+      height: min(72vw, 58vh, 440px);
+      object-fit: contain;
+      width: min(72vw, 58vh, 440px);
+    }
+    #app-loading-spinner {
+      animation: app-loading-spin 0.9s linear infinite;
+      border: 3px solid rgba(255, 255, 255, 0.22);
+      border-radius: 50%;
+      border-top-color: #ffc247;
+      height: 24px;
+      margin-top: 24px;
+      width: 24px;
+    }
+    @keyframes app-loading-spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
+  <div id="app-loading" role="status" aria-label="Loading Egg Hatchers">
+    <img src="icons/Icon-512.png" alt="Egg Hatchers">
+    <div id="app-loading-spinner"></div>
+  </div>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -48,6 +80,11 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('app-loading')?.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
