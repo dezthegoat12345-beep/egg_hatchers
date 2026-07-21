@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/realistic_animal_sprites.dart';
 import '../models/animal_sprite_theme.dart';
 import '../models/background_theme.dart';
 import '../navigation/app_page_route.dart';
@@ -75,104 +76,108 @@ class BackgroundsScreen extends StatelessWidget {
         return ReturnToHatcheryPopScope(
           theme: selected,
           child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: PhoneWidthAppBar(
-            title: '🎨 Backgrounds',
-            titleStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-            backgroundColor: selected.appBarColor,
-            foregroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-            leading: ReturnToHatcheryBackButton(
-              theme: selected,
-              color: Colors.white,
+            backgroundColor: Colors.transparent,
+            appBar: PhoneWidthAppBar(
+              title: '🎨 Backgrounds',
+              titleStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+              ),
+              backgroundColor: selected.appBarColor,
+              foregroundColor: Colors.white,
+              automaticallyImplyLeading: false,
+              leading: ReturnToHatcheryBackButton(
+                theme: selected,
+                color: Colors.white,
+              ),
             ),
-          ),
-          body: GameBackground(
-            theme: selected,
-            child: PhoneWidthLayout(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  Text(
-                    'Pick a cozy background for your hatchery!',
-                    style: GameTheme.sectionTitle(selected, size: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  for (final theme in BackgroundThemes.all) ...[
-                    _ThemeOptionCard(
-                      activeTheme: selected,
-                      theme: theme,
-                      isSelected: theme.id == selected.id,
-                      onTap: () => _selectTheme(context, theme),
+            body: GameBackground(
+              theme: selected,
+              child: PhoneWidthLayout(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    Text(
+                      'Pick a cozy background for your hatchery!',
+                      style: GameTheme.sectionTitle(selected, size: 16),
                     ),
+                    const SizedBox(height: 16),
+                    for (final theme in BackgroundThemes.all) ...[
+                      _ThemeOptionCard(
+                        activeTheme: selected,
+                        theme: theme,
+                        isSelected: theme.id == selected.id,
+                        onTap: () => _selectTheme(context, theme),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     const SizedBox(height: 12),
-                  ],
-                  const SizedBox(height: 12),
-                  AudioSettingsCard(
-                    theme: selected,
-                    audio: AudioScope.of(context),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Animal Style',
-                    style: GameTheme.sectionTitle(selected, size: 18),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Choose how built-in animals look. Custom animals always override this.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: selected.cardTextSecondaryColor,
+                    AudioSettingsCard(
+                      theme: selected,
+                      audio: AudioScope.of(context),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  for (final animalTheme in AnimalSpriteThemes.all) ...[
-                    _AnimalSpriteThemeCard(
-                      activeTheme: selected,
-                      animalTheme: animalTheme,
-                      isSelected: animalTheme.id == selectedAnimalTheme.id,
-                      onTap: () =>
-                          _selectAnimalSpriteTheme(context, animalTheme),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Animal Style',
+                      style: GameTheme.sectionTitle(selected, size: 18),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => pushThemedAppRoute(
-                        context,
-                        theme: selected,
-                        settings:
-                            const RouteSettings(name: kCustomSpritesRouteName),
-                        builder: (_) => CustomSpritesScreen(
-                          preferences: preferences,
-                          customSprites: customSprites,
-                          game: game,
-                          spriteRating: spriteRating,
-                          referenceOverlay: referenceOverlay,
+                    const SizedBox(height: 6),
+                    Text(
+                      'Choose how built-in animals look. Custom animals always override this.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: selected.cardTextSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    for (final animalTheme in AnimalSpriteThemes.all) ...[
+                      _AnimalSpriteThemeCard(
+                        activeTheme: selected,
+                        animalTheme: animalTheme,
+                        isSelected: animalTheme.id == selectedAnimalTheme.id,
+                        onTap: () =>
+                            _selectAnimalSpriteTheme(context, animalTheme),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => pushThemedAppRoute(
+                          context,
+                          theme: selected,
+                          settings: const RouteSettings(
+                            name: kCustomSpritesRouteName,
+                          ),
+                          builder: (_) => CustomSpritesScreen(
+                            preferences: preferences,
+                            customSprites: customSprites,
+                            game: game,
+                            spriteRating: spriteRating,
+                            referenceOverlay: referenceOverlay,
+                          ),
+                        ),
+                        icon: const Icon(Icons.brush_rounded),
+                        label: const Text(
+                          'Custom Animals',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: GameTheme.filledButton(
+                          selected,
+                          color: selected.secondaryColor,
+                          height: 52,
                         ),
                       ),
-                      icon: const Icon(Icons.brush_rounded),
-                      label: const Text(
-                        'Custom Animals',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: GameTheme.filledButton(
-                        selected,
-                        color: selected.secondaryColor,
-                        height: 52,
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         );
       },
     );
@@ -230,15 +235,20 @@ class _AnimalSpriteThemeCard extends StatelessWidget {
                           size: previewSize,
                         )
                       : Image.asset(
-                          'assets/images/animals/chicken.png',
+                          animalTheme.id == AnimalSpriteThemes.realistic.id
+                              ? RealisticAnimalSprites.assetPathFor(
+                                  previewAnimalId,
+                                )!
+                              : 'assets/images/animals/chicken.png',
                           width: previewSize,
                           height: previewSize,
                           fit: BoxFit.contain,
-                          filterQuality: FilterQuality.none,
-                          errorBuilder: (_, _, _) => const Text(
-                            '🐔',
-                            style: TextStyle(fontSize: 32),
-                          ),
+                          filterQuality:
+                              animalTheme.id == AnimalSpriteThemes.realistic.id
+                              ? FilterQuality.high
+                              : FilterQuality.none,
+                          errorBuilder: (_, _, _) =>
+                              const Text('🐔', style: TextStyle(fontSize: 32)),
                         ),
                 ),
               ),
@@ -311,7 +321,9 @@ class _ThemeOptionCard extends StatelessWidget {
         child: Container(
           decoration: GameTheme.cardDecoration(
             activeTheme,
-            borderColor: isSelected ? theme.primaryColor : theme.cardBorderColor,
+            borderColor: isSelected
+                ? theme.primaryColor
+                : theme.cardBorderColor,
           ),
           padding: const EdgeInsets.all(16),
           child: Row(

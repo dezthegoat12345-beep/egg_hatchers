@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Dedicated ancient nest cavern backdrop for the Egg Guardian defeat cinematic.
@@ -15,6 +16,12 @@ class EggGuardianCinematicBackground extends StatelessWidget {
     final animalTheme = AnimalSpriteThemeScope.of(context);
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       return const RetroPixelBossBattleBackground(
+        bossId: 'egg_guardian',
+        showOverlay: false,
+      );
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return const RealisticBossBattleBackground(
         bossId: 'egg_guardian',
         showOverlay: false,
       );
@@ -63,7 +70,8 @@ class _EggGuardianCinematicPainter extends CustomPainter {
     );
 
     // Stalactites
-    final stalactite = Paint()..color = const Color(0xFF263238).withValues(alpha: 0.65);
+    final stalactite = Paint()
+      ..color = const Color(0xFF263238).withValues(alpha: 0.65);
     final random = math.Random(33);
     for (var i = 0; i < 9; i++) {
       final x = w * (0.06 + i * 0.105);
@@ -118,9 +126,21 @@ class _EggGuardianCinematicPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(w * 0.08, h * 0.38), Offset(w * 0.1, h * 0.52), runeBlue);
-    canvas.drawLine(Offset(w * 0.1, h * 0.52), Offset(w * 0.06, h * 0.62), runeGold);
-    canvas.drawLine(Offset(w * 0.92, h * 0.4), Offset(w * 0.88, h * 0.55), runeBlue);
+    canvas.drawLine(
+      Offset(w * 0.08, h * 0.38),
+      Offset(w * 0.1, h * 0.52),
+      runeBlue,
+    );
+    canvas.drawLine(
+      Offset(w * 0.1, h * 0.52),
+      Offset(w * 0.06, h * 0.62),
+      runeGold,
+    );
+    canvas.drawLine(
+      Offset(w * 0.92, h * 0.4),
+      Offset(w * 0.88, h * 0.55),
+      runeBlue,
+    );
     canvas.drawCircle(Offset(w * 0.09, h * 0.45), 4, runeGold);
 
     // Glowing egg nests (midground)
@@ -156,17 +176,21 @@ class _EggGuardianCinematicPainter extends CustomPainter {
       ..color = const Color(0xFF78909C).withValues(alpha: 0.35)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(w * 0.18, h * 0.84), Offset(w * 0.42, h * 0.87), floorCrack);
-    canvas.drawLine(Offset(w * 0.58, h * 0.85), Offset(w * 0.82, h * 0.88), floorCrack);
+    canvas.drawLine(
+      Offset(w * 0.18, h * 0.84),
+      Offset(w * 0.42, h * 0.87),
+      floorCrack,
+    );
+    canvas.drawLine(
+      Offset(w * 0.58, h * 0.85),
+      Offset(w * 0.82, h * 0.88),
+      floorCrack,
+    );
 
     // Circular nest/stone platform under boss
     final platform = Offset(w * 0.5, h * 0.73);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: platform,
-        width: w * 0.56,
-        height: h * 0.11,
-      ),
+      Rect.fromCenter(center: platform, width: w * 0.56, height: h * 0.11),
       Paint()..color = const Color(0xFF37474F).withValues(alpha: 0.7),
     );
     // Nest straw rings
@@ -186,11 +210,7 @@ class _EggGuardianCinematicPainter extends CustomPainter {
     }
     // Rune ring on platform
     canvas.drawOval(
-      Rect.fromCenter(
-        center: platform,
-        width: w * 0.4,
-        height: h * 0.065,
-      ),
+      Rect.fromCenter(center: platform, width: w * 0.4, height: h * 0.065),
       Paint()
         ..color = const Color(0xFF64B5F6).withValues(alpha: 0.4)
         ..style = PaintingStyle.stroke
@@ -238,10 +258,7 @@ class _EggGuardianCinematicPainter extends CustomPainter {
         ..shader = RadialGradient(
           center: Alignment.center,
           radius: 0.88,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.2),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.2)],
           stops: const [0.5, 1.0],
         ).createShader(rect),
     );

@@ -6,16 +6,13 @@ import '../data/retro_pixel_boss_projectiles.dart';
 import '../models/animal_sprite_theme.dart';
 import '../utils/boss_visual_config.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_projectile.dart';
 import 'retro_pixel_sprite.dart';
 import 'rotten_egg_projectile.dart';
 
 /// Boss-specific falling projectile visual (same hitbox as rotten egg).
 class BossProjectileWidget extends StatelessWidget {
-  const BossProjectileWidget({
-    super.key,
-    required this.bossId,
-    this.size = 22,
-  });
+  const BossProjectileWidget({super.key, required this.bossId, this.size = 22});
 
   final String bossId;
   final double size;
@@ -28,13 +25,14 @@ class BossProjectileWidget extends StatelessWidget {
     }
 
     final animalTheme = AnimalSpriteThemeScope.of(context);
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return RealisticBossProjectile(type: type, size: size);
+    }
+
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       final pixelArt = RetroPixelBossProjectiles.forType(type);
       if (pixelArt != null) {
-        return RetroPixelSprite(
-          definition: pixelArt,
-          size: size,
-        );
+        return RetroPixelSprite(definition: pixelArt, size: size);
       }
     }
 
@@ -85,15 +83,12 @@ class _BossProjectilePainter extends CustomPainter {
         height: size.height * 0.82,
       ),
       Paint()
-        ..shader = const RadialGradient(
-          colors: [
-            Color(0xFFDCEDC8),
-            Color(0xFF81C784),
-            Color(0xFF6A1B9A),
-          ],
-        ).createShader(
-          Rect.fromCircle(center: center, radius: size.width * 0.45),
-        ),
+        ..shader =
+            const RadialGradient(
+              colors: [Color(0xFFDCEDC8), Color(0xFF81C784), Color(0xFF6A1B9A)],
+            ).createShader(
+              Rect.fromCircle(center: center, radius: size.width * 0.45),
+            ),
     );
     final crack = Paint()
       ..color = const Color(0xFF1B5E20)
@@ -120,14 +115,14 @@ class _BossProjectilePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * 0.54);
     final paint = Paint()
       ..shader = RadialGradient(
-        colors: const [
-          Color(0xFFA5D6A7),
-          Color(0xFF66BB6A),
-          Color(0xFF388E3C),
-        ],
+        colors: const [Color(0xFFA5D6A7), Color(0xFF66BB6A), Color(0xFF388E3C)],
       ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.5));
     canvas.drawOval(
-      Rect.fromCenter(center: center, width: size.width * 0.82, height: size.height * 0.78),
+      Rect.fromCenter(
+        center: center,
+        width: size.width * 0.82,
+        height: size.height * 0.78,
+      ),
       paint,
     );
     canvas.drawCircle(
@@ -141,14 +136,14 @@ class _BossProjectilePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * 0.54);
     final shell = Paint()
       ..shader = RadialGradient(
-        colors: const [
-          Color(0xFFD7CCC8),
-          Color(0xFF8D6E63),
-          Color(0xFF5D4037),
-        ],
+        colors: const [Color(0xFFD7CCC8), Color(0xFF8D6E63), Color(0xFF5D4037)],
       ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.5));
     canvas.drawOval(
-      Rect.fromCenter(center: center, width: size.width * 0.78, height: size.height * 0.82),
+      Rect.fromCenter(
+        center: center,
+        width: size.width * 0.78,
+        height: size.height * 0.82,
+      ),
       shell,
     );
     final crack = Paint()
@@ -223,11 +218,18 @@ class _BossProjectilePainter extends CustomPainter {
     canvas.drawPath(
       shard,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: const [Color(0xFFFFF8E1), Color(0xFFFFD54F), Color(0xFF8D6E63)],
-        ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.4)),
+        ..shader =
+            LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: const [
+                Color(0xFFFFF8E1),
+                Color(0xFFFFD54F),
+                Color(0xFF8D6E63),
+              ],
+            ).createShader(
+              Rect.fromCircle(center: center, radius: size.width * 0.4),
+            ),
     );
     canvas.drawPath(
       shard,
@@ -242,11 +244,7 @@ class _BossProjectilePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * 0.56);
     final flame = Paint()
       ..shader = RadialGradient(
-        colors: const [
-          Color(0xFF64B5F6),
-          Color(0xFF1565C0),
-          Color(0xFF0D47A1),
-        ],
+        colors: const [Color(0xFF64B5F6), Color(0xFF1565C0), Color(0xFF0D47A1)],
       ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.5));
 
     for (var i = 0; i < 3; i++) {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/animal_sprite_theme.dart';
 import '../utils/boss_visual_config.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Full-arena boss-specific battle background for manual battles.
@@ -27,14 +28,18 @@ class BossBattleBackground extends StatelessWidget {
         showOverlay: showOverlay,
       );
     }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return RealisticBossBattleBackground(
+        bossId: bossId,
+        showOverlay: showOverlay,
+      );
+    }
 
     final type = BossVisualConfig.backgroundTypeForBossId(bossId);
     return Stack(
       fit: StackFit.expand,
       children: [
-        CustomPaint(
-          painter: _BossBattleBackgroundPainter(type: type),
-        ),
+        CustomPaint(painter: _BossBattleBackgroundPainter(type: type)),
         if (showOverlay)
           ColoredBox(
             color: Colors.black.withValues(alpha: _overlayAlpha(type)),
@@ -93,7 +98,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final puddle = Paint()..color = const Color(0xFF66BB6A).withValues(alpha: 0.45);
+    final puddle = Paint()
+      ..color = const Color(0xFF66BB6A).withValues(alpha: 0.45);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.28, size.height * 0.72),
@@ -111,7 +117,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       puddle,
     );
 
-    final bubble = Paint()..color = const Color(0xFFA5D6A7).withValues(alpha: 0.35);
+    final bubble = Paint()
+      ..color = const Color(0xFFA5D6A7).withValues(alpha: 0.35);
     for (var i = 0; i < 8; i++) {
       final x = size.width * (0.12 + i * 0.11);
       final y = size.height * (0.18 + (i % 3) * 0.12);
@@ -131,7 +138,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final stone = Paint()..color = const Color(0xFF8D6E63).withValues(alpha: 0.55);
+    final stone = Paint()
+      ..color = const Color(0xFF8D6E63).withValues(alpha: 0.55);
     for (var i = 0; i < 6; i++) {
       final x = size.width * (0.08 + i * 0.16);
       canvas.drawRRect(
@@ -153,7 +161,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       ..lineTo(size.width * 0.28, size.height * 0.62);
     canvas.drawPath(path, crack);
 
-    final eggGlow = Paint()..color = const Color(0xFFFFF8E1).withValues(alpha: 0.12);
+    final eggGlow = Paint()
+      ..color = const Color(0xFFFFF8E1).withValues(alpha: 0.12);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.78, size.height * 0.68),
@@ -176,26 +185,42 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final moon = Paint()..color = const Color(0xFFE8EAF6).withValues(alpha: 0.75);
+    final moon = Paint()
+      ..color = const Color(0xFFE8EAF6).withValues(alpha: 0.75);
     canvas.drawCircle(Offset(size.width * 0.82, size.height * 0.14), 18, moon);
 
-    final fence = Paint()..color = const Color(0xFF0D0D1A).withValues(alpha: 0.65);
+    final fence = Paint()
+      ..color = const Color(0xFF0D0D1A).withValues(alpha: 0.65);
     for (var i = 0; i < 7; i++) {
       canvas.drawRect(
-        Rect.fromLTWH(size.width * (0.08 + i * 0.13), size.height * 0.78, 8, 28),
+        Rect.fromLTWH(
+          size.width * (0.08 + i * 0.13),
+          size.height * 0.78,
+          8,
+          28,
+        ),
         fence,
       );
     }
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.06, size.height * 0.78, size.width * 0.88, 4),
+      Rect.fromLTWH(
+        size.width * 0.06,
+        size.height * 0.78,
+        size.width * 0.88,
+        4,
+      ),
       fence,
     );
 
-    final feather = Paint()..color = const Color(0xFF4527A0).withValues(alpha: 0.35);
+    final feather = Paint()
+      ..color = const Color(0xFF4527A0).withValues(alpha: 0.35);
     for (var i = 0; i < 5; i++) {
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(size.width * (0.15 + i * 0.17), size.height * (0.35 + (i % 2) * 0.08)),
+          center: Offset(
+            size.width * (0.15 + i * 0.17),
+            size.height * (0.35 + (i % 2) * 0.08),
+          ),
           width: 16,
           height: 8,
         ),
@@ -216,27 +241,37 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final pillar = Paint()..color = const Color(0xFF2E7D32).withValues(alpha: 0.7);
+    final pillar = Paint()
+      ..color = const Color(0xFF2E7D32).withValues(alpha: 0.7);
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.08, size.height * 0.22, 14, size.height * 0.58),
+      Rect.fromLTWH(
+        size.width * 0.08,
+        size.height * 0.22,
+        14,
+        size.height * 0.58,
+      ),
       pillar,
     );
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.84, size.height * 0.22, 14, size.height * 0.58),
+      Rect.fromLTWH(
+        size.width * 0.84,
+        size.height * 0.22,
+        14,
+        size.height * 0.58,
+      ),
       pillar,
     );
 
-    final gold = Paint()..color = const Color(0xFFFFD54F).withValues(alpha: 0.55);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * 0.18, size.width, 10),
-      gold,
-    );
+    final gold = Paint()
+      ..color = const Color(0xFFFFD54F).withValues(alpha: 0.55);
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.18, size.width, 10), gold);
     canvas.drawRect(
       Rect.fromLTWH(size.width * 0.2, size.height * 0.28, size.width * 0.6, 8),
       gold,
     );
 
-    final banner = Paint()..color = const Color(0xFF43A047).withValues(alpha: 0.5);
+    final banner = Paint()
+      ..color = const Color(0xFF43A047).withValues(alpha: 0.5);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -249,7 +284,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       banner,
     );
 
-    final throne = Paint()..color = const Color(0xFF1B5E20).withValues(alpha: 0.85);
+    final throne = Paint()
+      ..color = const Color(0xFF1B5E20).withValues(alpha: 0.85);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -262,7 +298,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       throne,
     );
 
-    final sparkle = Paint()..color = const Color(0xFFFFEB3B).withValues(alpha: 0.45);
+    final sparkle = Paint()
+      ..color = const Color(0xFFFFEB3B).withValues(alpha: 0.45);
     for (var i = 0; i < 6; i++) {
       final x = size.width * (0.25 + i * 0.1);
       canvas.drawCircle(Offset(x, size.height * 0.32), 2.5, sparkle);
@@ -281,7 +318,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final cave = Paint()..color = const Color(0xFF102027).withValues(alpha: 0.75);
+    final cave = Paint()
+      ..color = const Color(0xFF102027).withValues(alpha: 0.75);
     final cavePath = Path()
       ..moveTo(0, size.height * 0.35)
       ..quadraticBezierTo(
@@ -295,7 +333,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       ..close();
     canvas.drawPath(cavePath, cave);
 
-    final nest = Paint()..color = const Color(0xFF8D6E63).withValues(alpha: 0.55);
+    final nest = Paint()
+      ..color = const Color(0xFF8D6E63).withValues(alpha: 0.55);
     for (var i = 0; i < 3; i++) {
       canvas.drawOval(
         Rect.fromCenter(
@@ -307,7 +346,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       );
     }
 
-    final glow = Paint()..color = const Color(0xFF42A5F5).withValues(alpha: 0.35);
+    final glow = Paint()
+      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.35);
     for (var i = 0; i < 3; i++) {
       canvas.drawOval(
         Rect.fromCenter(
@@ -319,7 +359,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       );
     }
 
-    final gold = Paint()..color = const Color(0xFFFFD54F).withValues(alpha: 0.25);
+    final gold = Paint()
+      ..color = const Color(0xFFFFD54F).withValues(alpha: 0.25);
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.55), 6, gold);
   }
 
@@ -335,17 +376,29 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final ruin = Paint()..color = const Color(0xFF415A77).withValues(alpha: 0.45);
+    final ruin = Paint()
+      ..color = const Color(0xFF415A77).withValues(alpha: 0.45);
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.1, size.height * 0.62, 22, size.height * 0.28),
+      Rect.fromLTWH(
+        size.width * 0.1,
+        size.height * 0.62,
+        22,
+        size.height * 0.28,
+      ),
       ruin,
     );
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.78, size.height * 0.58, 18, size.height * 0.32),
+      Rect.fromLTWH(
+        size.width * 0.78,
+        size.height * 0.58,
+        18,
+        size.height * 0.32,
+      ),
       ruin,
     );
 
-    final ember = Paint()..color = const Color(0xFF1565C0).withValues(alpha: 0.5);
+    final ember = Paint()
+      ..color = const Color(0xFF1565C0).withValues(alpha: 0.5);
     final random = math.Random(7);
     for (var i = 0; i < 14; i++) {
       final x = size.width * random.nextDouble();
@@ -353,7 +406,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
       canvas.drawCircle(Offset(x, y), 2 + random.nextDouble() * 3, ember);
     }
 
-    final flame = Paint()..color = const Color(0xFF1E88E5).withValues(alpha: 0.2);
+    final flame = Paint()
+      ..color = const Color(0xFF1E88E5).withValues(alpha: 0.2);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.5, size.height * 0.82),
@@ -381,7 +435,8 @@ class _BossBattleBackgroundPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    final fog = Paint()..color = const Color(0xFF66BB6A).withValues(alpha: 0.25);
+    final fog = Paint()
+      ..color = const Color(0xFF66BB6A).withValues(alpha: 0.25);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.3, size.height * 0.65),

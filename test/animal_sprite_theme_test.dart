@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:egg_hatchers/data/game_data.dart';
+import 'package:egg_hatchers/data/realistic_animal_sprites.dart';
+import 'package:egg_hatchers/data/realistic_boss_background_assets.dart';
 import 'package:egg_hatchers/data/retro_pixel_animal_sprites.dart';
 import 'package:egg_hatchers/data/retro_pixel_boss_projectiles.dart';
 import 'package:egg_hatchers/data/retro_pixel_boss_sprites.dart';
@@ -17,7 +21,8 @@ bool _isPureUpscale(
   RetroPixelSpriteDefinition large,
   int factor,
 ) {
-  if (large.width != small.width * factor || large.height != small.height * factor) {
+  if (large.width != small.width * factor ||
+      large.height != small.height * factor) {
     return false;
   }
   for (var y = 0; y < small.height; y++) {
@@ -40,6 +45,90 @@ void main() {
     expect(AnimalSpriteThemes.byId(null).id, 'classic');
     expect(AnimalSpriteThemes.byId('unknown').id, 'classic');
     expect(AnimalSpriteThemes.byId('retroPixel').id, 'retroPixel');
+    expect(AnimalSpriteThemes.byId('realistic').id, 'realistic');
+  });
+
+  test('Realistic theme includes generated assets for every animal', () {
+    final expectedIds = GameData.animals.map((animal) => animal.id).toSet();
+
+    expect(RealisticAnimalSprites.supportedAnimalIds, expectedIds);
+    expect(RealisticAnimalSprites.hasSprite('mouse'), isTrue);
+
+    for (final animalId in expectedIds) {
+      expect(GameData.animalById(animalId), isNotNull, reason: animalId);
+      final assetPath = RealisticAnimalSprites.assetPathFor(animalId);
+      expect(assetPath, isNotNull, reason: animalId);
+      expect(File(assetPath!).existsSync(), isTrue, reason: assetPath);
+    }
+  });
+
+  test('Realistic theme includes generated backgrounds for every boss', () {
+    const bossIds = {
+      'slime_boss',
+      'egg_golem',
+      'shadow_rooster',
+      'night_rooster',
+      'night_crow',
+      'slime_king',
+      'egg_guardian',
+      'shadow_phoenix',
+      'rotten_shell',
+    };
+
+    for (final bossId in bossIds) {
+      final assetPath = RealisticBossBackgroundAssets.assetPathForBossId(
+        bossId,
+      );
+      expect(assetPath, isNotNull, reason: bossId);
+      expect(File(assetPath!).existsSync(), isTrue, reason: assetPath);
+    }
+
+    expect(
+      RealisticBossBackgroundAssets.assetPathForBossId('unknown_boss'),
+      isNull,
+    );
+  });
+
+  test('Realistic theme maps boss sprites to current animal art', () {
+    const expectedBossIds = {
+      'slime_boss',
+      'egg_golem',
+      'shadow_rooster',
+      'night_rooster',
+      'night_crow',
+      'slime_king',
+      'egg_guardian',
+      'shadow_phoenix',
+      'rotten_shell',
+    };
+
+    expect(RealisticAnimalSprites.supportedBossIds, expectedBossIds);
+    expect(
+      RealisticAnimalSprites.assetPathFor('slime_boss'),
+      RealisticAnimalSprites.assetPathFor('slime_pet'),
+    );
+    expect(
+      RealisticAnimalSprites.assetPathFor('egg_golem'),
+      RealisticAnimalSprites.assetPathFor('egg_golem_pet'),
+    );
+    expect(
+      RealisticAnimalSprites.assetPathFor('shadow_rooster'),
+      RealisticAnimalSprites.assetPathFor('night_rooster'),
+    );
+    expect(
+      RealisticAnimalSprites.assetPathFor('night_crow'),
+      RealisticAnimalSprites.assetPathFor('night_rooster'),
+    );
+    expect(
+      RealisticAnimalSprites.assetPathFor('rotten_shell'),
+      'assets/images/animal_themes/realistic/rotten_shell.png',
+    );
+
+    for (final bossId in expectedBossIds) {
+      final assetPath = RealisticAnimalSprites.assetPathFor(bossId);
+      expect(assetPath, isNotNull, reason: bossId);
+      expect(File(assetPath!).existsSync(), isTrue, reason: assetPath);
+    }
   });
 
   test('Retro Pixel covers every built-in animal', () {
@@ -143,18 +232,21 @@ void main() {
     expect(RetroPixelBossSprites.forBossId('unknown_boss'), isNull);
   });
 
-  test('RetroPixelSpriteDefinition supports per-sprite dimensions and scale', () {
-    final wide = RetroPixelSpriteDefinition(
-      width: 24,
-      height: 32,
-      pixels: List<int?>.filled(24 * 32, null),
-    );
-    expect(wide.cellCount, 768);
-    expect(wide.scale2x().width, 48);
-    expect(wide.scale(4).width, 96);
-    expect(wide.scaleToMinDimension(64).width, 96);
-    expect(wide.scaleToMinDimension(64).height, 128);
-  });
+  test(
+    'RetroPixelSpriteDefinition supports per-sprite dimensions and scale',
+    () {
+      final wide = RetroPixelSpriteDefinition(
+        width: 24,
+        height: 32,
+        pixels: List<int?>.filled(24 * 32, null),
+      );
+      expect(wide.cellCount, 768);
+      expect(wide.scale2x().width, 48);
+      expect(wide.scale(4).width, 96);
+      expect(wide.scaleToMinDimension(64).width, 96);
+      expect(wide.scaleToMinDimension(64).height, 128);
+    },
+  );
 
   test('unimplemented ids outside game data return null', () {
     expect(RetroPixelAnimalSprites.hasSprite('not_an_animal'), isFalse);

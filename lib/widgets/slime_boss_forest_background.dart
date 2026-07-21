@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Forest clearing backdrop for the Slime Boss defeat cinematic only.
@@ -19,10 +20,14 @@ class SlimeBossForestBackground extends StatelessWidget {
         showOverlay: false,
       );
     }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return const RealisticBossBattleBackground(
+        bossId: 'slime_boss',
+        showOverlay: false,
+      );
+    }
 
-    return const CustomPaint(
-      painter: _SlimeBossForestPainter(),
-    );
+    return const CustomPaint(painter: _SlimeBossForestPainter());
   }
 }
 
@@ -84,7 +89,8 @@ class _SlimeBossForestPainter extends CustomPainter {
   }
 
   void _paintFarHills(Canvas canvas, Size size) {
-    final hill = Paint()..color = const Color(0xFF558B2F).withValues(alpha: 0.35);
+    final hill = Paint()
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.35);
     final path = Path()
       ..moveTo(0, size.height * 0.42)
       ..quadraticBezierTo(
@@ -124,9 +130,10 @@ class _SlimeBossForestPainter extends CustomPainter {
       trunkPaint,
     );
 
-    final canopyPaint = Paint()..color = Color(tree.canopyColor).withValues(
-          alpha: tree.back ? 0.72 : 0.92,
-        );
+    final canopyPaint = Paint()
+      ..color = Color(
+        tree.canopyColor,
+      ).withValues(alpha: tree.back ? 0.72 : 0.92);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(baseX, baseY - trunkH * 0.82),
@@ -166,16 +173,17 @@ class _SlimeBossForestPainter extends CustomPainter {
     canvas.drawOval(
       Rect.fromCenter(center: center, width: patchW, height: patchH),
       Paint()
-        ..shader = RadialGradient(
-          colors: const [
-            Color(0xFF9CCC65),
-            Color(0xFF7CB342),
-            Color(0xFF558B2F),
-          ],
-          stops: const [0.2, 0.65, 1.0],
-        ).createShader(
-          Rect.fromCenter(center: center, width: patchW, height: patchH),
-        ),
+        ..shader =
+            RadialGradient(
+              colors: const [
+                Color(0xFF9CCC65),
+                Color(0xFF7CB342),
+                Color(0xFF558B2F),
+              ],
+              stops: const [0.2, 0.65, 1.0],
+            ).createShader(
+              Rect.fromCenter(center: center, width: patchW, height: patchH),
+            ),
     );
 
     final rim = Paint()
@@ -197,10 +205,12 @@ class _SlimeBossForestPainter extends CustomPainter {
       final distX = math.cos(angle) * patchW * 0.46;
       final distY = math.sin(angle) * patchH * 0.42;
       final start = center + Offset(distX * 0.88, distY * 0.88);
-      final tip = start + Offset(
-        math.cos(angle - math.pi / 2) * (6 + random.nextDouble() * 8),
-        math.sin(angle - math.pi / 2) * (6 + random.nextDouble() * 8),
-      );
+      final tip =
+          start +
+          Offset(
+            math.cos(angle - math.pi / 2) * (6 + random.nextDouble() * 8),
+            math.sin(angle - math.pi / 2) * (6 + random.nextDouble() * 8),
+          );
       canvas.drawLine(start, tip, blade);
     }
 
@@ -242,9 +252,14 @@ class _SlimeBossForestPainter extends CustomPainter {
 
     final flower = Paint()..color = const Color(0xFFFFF176);
     canvas.drawCircle(Offset(size.width * 0.82, size.height * 0.7), 4, flower);
-    canvas.drawCircle(Offset(size.width * 0.86, size.height * 0.72), 3.5, flower);
+    canvas.drawCircle(
+      Offset(size.width * 0.86, size.height * 0.72),
+      3.5,
+      flower,
+    );
 
-    final bush = Paint()..color = const Color(0xFF43A047).withValues(alpha: 0.65);
+    final bush = Paint()
+      ..color = const Color(0xFF43A047).withValues(alpha: 0.65);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.06, size.height * 0.66),

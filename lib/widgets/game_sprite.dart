@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/realistic_animal_sprites.dart';
 import '../data/retro_pixel_animal_sprites.dart';
 import '../models/animal_sprite_theme.dart';
 import '../models/custom_sprite_data.dart';
@@ -56,21 +57,49 @@ class GameSprite extends StatelessWidget {
       );
     }
 
+    if (theme.id == AnimalSpriteThemes.realistic.id && id != null) {
+      final realisticPath = RealisticAnimalSprites.assetPathFor(id);
+      if (realisticPath != null) {
+        return _assetImage(
+          realisticPath,
+          emojiSize,
+          filterQuality: FilterQuality.high,
+          errorFallback: (_) {
+            final classicPath = spritePath;
+            if (classicPath == null || classicPath.isEmpty) {
+              return _emojiFallback(emojiSize);
+            }
+            return _assetImage(classicPath, emojiSize);
+          },
+        );
+      }
+    }
+
     if (spritePath == null || spritePath!.isEmpty) {
       return _emojiFallback(emojiSize);
     }
 
+    return _assetImage(spritePath!, emojiSize);
+  }
+
+  Widget _assetImage(
+    String path,
+    double emojiSize, {
+    FilterQuality filterQuality = FilterQuality.none,
+    WidgetBuilder? errorFallback,
+  }) {
     return SizedBox(
       width: size,
       height: size,
       child: Image.asset(
-        spritePath!,
+        path,
         width: size,
         height: size,
         fit: fit,
-        filterQuality: FilterQuality.none,
+        filterQuality: filterQuality,
         semanticLabel: semanticLabel,
-        errorBuilder: (_, _, _) => _emojiFallback(emojiSize),
+        errorBuilder: (context, _, _) =>
+            errorFallback?.call(context) ?? _emojiFallback(emojiSize),
       ),
     );
   }
@@ -116,8 +145,7 @@ class GameAnimalPortrait extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeMutation = mutation;
-    final isMutated =
-        activeMutation != null && !activeMutation.isNormal;
+    final isMutated = activeMutation != null && !activeMutation.isNormal;
     final accent = isMutated
         ? GameTheme.mutationAccent(activeMutation.id)
         : null;

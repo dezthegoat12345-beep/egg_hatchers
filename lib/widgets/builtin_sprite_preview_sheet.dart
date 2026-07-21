@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../data/realistic_animal_sprites.dart';
 import '../data/retro_pixel_animal_sprites.dart';
 import '../models/animal.dart';
 import '../models/animal_sprite_theme.dart';
@@ -46,8 +47,7 @@ class _BuiltinSpritePreviewSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = preferences.selectedTheme;
-    final hasCustom =
-        customSprite != null && customSprite!.hasVisiblePixels;
+    final hasCustom = customSprite != null && customSprite!.hasVisiblePixels;
 
     return ListenableBuilder(
       listenable: preferences,
@@ -125,10 +125,7 @@ class _BuiltinSpritePreviewSheet extends StatelessWidget {
                   _PreviewPanel(
                     theme: theme,
                     label: 'Built-in Style',
-                    subtitle: preferences.animalSpriteTheme.id ==
-                            AnimalSpriteThemes.retroPixel.id
-                        ? 'Retro Pixel (crisp block scaling)'
-                        : 'Classic PNG',
+                    subtitle: _builtInSubtitle(preferences.animalSpriteTheme),
                     child: CustomSpritePreview(
                       animalId: animal.id,
                       spritePath: animal.spritePath,
@@ -168,6 +165,19 @@ class _BuiltinSpritePreviewSheet extends StatelessWidget {
       },
     );
   }
+
+  String _builtInSubtitle(AnimalSpriteTheme animalTheme) {
+    if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
+      return 'Retro Pixel (crisp block scaling)';
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      if (RealisticAnimalSprites.hasSprite(animal.id)) {
+        return 'Realistic generated icon';
+      }
+      return 'Classic PNG fallback';
+    }
+    return 'Classic PNG';
+  }
 }
 
 class _PreviewPanel extends StatelessWidget {
@@ -190,17 +200,11 @@ class _PreviewPanel extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Text(
-            label,
-            style: GameTheme.sectionTitle(theme, size: 15),
-          ),
+          Text(label, style: GameTheme.sectionTitle(theme, size: 15)),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.cardTextSecondaryColor,
-            ),
+            style: TextStyle(fontSize: 12, color: theme.cardTextSecondaryColor),
           ),
           const SizedBox(height: 16),
           Container(

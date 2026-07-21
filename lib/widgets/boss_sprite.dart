@@ -10,7 +10,7 @@ import 'rotten_shell_classic_sprite.dart';
 
 /// Boss portrait with PNG sprite and emoji fallback.
 ///
-/// When [bossId] is set and Animal Style is Retro Pixel, uses pixel boss art.
+/// When [bossId] is set, themed boss art can override the PNG sprite.
 class BossSprite extends StatelessWidget {
   const BossSprite({
     super.key,
@@ -29,9 +29,11 @@ class BossSprite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final animalTheme = bossId == null
+        ? null
+        : AnimalSpriteThemeScope.of(context);
     if (bossId != null) {
-      final animalTheme = AnimalSpriteThemeScope.of(context);
-      if (animalTheme.id == AnimalSpriteThemes.retroPixel.id &&
+      if (animalTheme!.id == AnimalSpriteThemes.retroPixel.id &&
           RetroPixelBossSprites.hasSprite(bossId!)) {
         return RetroPixelBossSprite(
           bossId: bossId!,
@@ -41,14 +43,13 @@ class BossSprite extends StatelessWidget {
       }
     }
 
-    if (bossId == EggShardLogic.rottenShellBossId) {
-      return RottenShellClassicSprite(
-        size: size,
-        semanticLabel: semanticLabel,
-      );
+    if (bossId == EggShardLogic.rottenShellBossId &&
+        animalTheme?.id != AnimalSpriteThemes.realistic.id) {
+      return RottenShellClassicSprite(size: size, semanticLabel: semanticLabel);
     }
 
     return GameSprite(
+      animalId: bossId,
       spritePath: spritePath,
       fallbackEmoji: fallbackEmoji,
       size: size,

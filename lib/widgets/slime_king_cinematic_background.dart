@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Dedicated royal slime palace backdrop for the Slime King defeat cinematic.
@@ -15,6 +16,12 @@ class SlimeKingCinematicBackground extends StatelessWidget {
     final animalTheme = AnimalSpriteThemeScope.of(context);
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       return const RetroPixelBossBattleBackground(
+        bossId: 'slime_king',
+        showOverlay: false,
+      );
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return const RealisticBossBattleBackground(
         bossId: 'slime_king',
         showOverlay: false,
       );
@@ -52,9 +59,13 @@ class _SlimeKingCinematicPainter extends CustomPainter {
     );
 
     // Side wall depth panels
-    final wallDepth = Paint()..color = const Color(0xFF14532D).withValues(alpha: 0.35);
+    final wallDepth = Paint()
+      ..color = const Color(0xFF14532D).withValues(alpha: 0.35);
     canvas.drawRect(Rect.fromLTWH(0, h * 0.12, w * 0.14, h * 0.72), wallDepth);
-    canvas.drawRect(Rect.fromLTWH(w * 0.86, h * 0.12, w * 0.14, h * 0.72), wallDepth);
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.86, h * 0.12, w * 0.14, h * 0.72),
+      wallDepth,
+    );
 
     // Palace arches (background)
     final arch = Paint()
@@ -64,7 +75,11 @@ class _SlimeKingCinematicPainter extends CustomPainter {
     for (var i = 0; i < 3; i++) {
       final cx = w * (0.22 + i * 0.28);
       canvas.drawArc(
-        Rect.fromCenter(center: Offset(cx, h * 0.18), width: w * 0.18, height: h * 0.14),
+        Rect.fromCenter(
+          center: Offset(cx, h * 0.18),
+          width: w * 0.18,
+          height: h * 0.14,
+        ),
         math.pi,
         math.pi,
         false,
@@ -83,7 +98,8 @@ class _SlimeKingCinematicPainter extends CustomPainter {
     _drawPillar(canvas, Offset(w * 0.72, h * 0.28), h * 0.42, slim: true);
 
     // Throne silhouette (midground, behind boss)
-    final throneBack = Paint()..color = const Color(0xFF0F3324).withValues(alpha: 0.82);
+    final throneBack = Paint()
+      ..color = const Color(0xFF0F3324).withValues(alpha: 0.82);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -132,39 +148,23 @@ class _SlimeKingCinematicPainter extends CustomPainter {
     // Royal circular slime carpet / platform
     final stageCenter = Offset(w * 0.5, h * 0.72);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: stageCenter,
-        width: w * 0.62,
-        height: h * 0.12,
-      ),
+      Rect.fromCenter(center: stageCenter, width: w * 0.62, height: h * 0.12),
       Paint()..color = const Color(0xFF2E7D32).withValues(alpha: 0.5),
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: stageCenter,
-        width: w * 0.52,
-        height: h * 0.095,
-      ),
+      Rect.fromCenter(center: stageCenter, width: w * 0.52, height: h * 0.095),
       Paint()..color = const Color(0xFF66BB6A).withValues(alpha: 0.4),
     );
     // Gold trim ring
     canvas.drawOval(
-      Rect.fromCenter(
-        center: stageCenter,
-        width: w * 0.54,
-        height: h * 0.098,
-      ),
+      Rect.fromCenter(center: stageCenter, width: w * 0.54, height: h * 0.098),
       Paint()
         ..color = const Color(0xFFFFD54F).withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5,
     );
     canvas.drawOval(
-      Rect.fromCenter(
-        center: stageCenter,
-        width: w * 0.38,
-        height: h * 0.065,
-      ),
+      Rect.fromCenter(center: stageCenter, width: w * 0.38, height: h * 0.065),
       Paint()..color = const Color(0xFF43A047).withValues(alpha: 0.35),
     );
 
@@ -197,7 +197,9 @@ class _SlimeKingCinematicPainter extends CustomPainter {
         Offset(x, y),
         1.2 + random.nextDouble() * 2,
         Paint()
-          ..color = const Color(0xFFFFEB3B).withValues(alpha: 0.15 + random.nextDouble() * 0.25),
+          ..color = const Color(
+            0xFFFFEB3B,
+          ).withValues(alpha: 0.15 + random.nextDouble() * 0.25),
       );
     }
 
@@ -208,23 +210,28 @@ class _SlimeKingCinematicPainter extends CustomPainter {
         ..shader = RadialGradient(
           center: Alignment.center,
           radius: 0.85,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.18),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.18)],
           stops: const [0.55, 1.0],
         ).createShader(rect),
     );
   }
 
-  void _drawPillar(Canvas canvas, Offset topLeft, double height, {bool slim = false}) {
+  void _drawPillar(
+    Canvas canvas,
+    Offset topLeft,
+    double height, {
+    bool slim = false,
+  }) {
     final width = slim ? 18.0 : 32.0;
     final pillar = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF2E7D32)],
-      ).createShader(Rect.fromLTWH(topLeft.dx - width / 2, topLeft.dy, width, height));
+      ..shader =
+          const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF2E7D32)],
+          ).createShader(
+            Rect.fromLTWH(topLeft.dx - width / 2, topLeft.dy, width, height),
+          );
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -236,7 +243,12 @@ class _SlimeKingCinematicPainter extends CustomPainter {
     // Gold cap
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(topLeft.dx - width / 2 - 2, topLeft.dy - 6, width + 4, 10),
+        Rect.fromLTWH(
+          topLeft.dx - width / 2 - 2,
+          topLeft.dy - 6,
+          width + 4,
+          10,
+        ),
         const Radius.circular(3),
       ),
       Paint()..color = const Color(0xFFFFD54F).withValues(alpha: 0.55),
@@ -254,7 +266,8 @@ class _SlimeKingCinematicPainter extends CustomPainter {
 
   void _drawBanner(Canvas canvas, Offset anchor, double length, bool leftSide) {
     final dir = leftSide ? 1.0 : -1.0;
-    final cloth = Paint()..color = const Color(0xFF388E3C).withValues(alpha: 0.55);
+    final cloth = Paint()
+      ..color = const Color(0xFF388E3C).withValues(alpha: 0.55);
     final path = Path()
       ..moveTo(anchor.dx, anchor.dy)
       ..quadraticBezierTo(

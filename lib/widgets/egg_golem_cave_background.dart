@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Ancient rocky egg cave / ruins backdrop for the Egg Golem defeat cinematic.
@@ -15,6 +16,12 @@ class EggGolemCaveBackground extends StatelessWidget {
     final animalTheme = AnimalSpriteThemeScope.of(context);
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       return const RetroPixelBossBattleBackground(
+        bossId: 'egg_golem',
+        showOverlay: false,
+      );
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return const RealisticBossBattleBackground(
         bossId: 'egg_golem',
         showOverlay: false,
       );
@@ -48,7 +55,8 @@ class _EggGolemCavePainter extends CustomPainter {
     );
 
     // Cave ceiling arch
-    final ceiling = Paint()..color = const Color(0xFF455A64).withValues(alpha: 0.5);
+    final ceiling = Paint()
+      ..color = const Color(0xFF455A64).withValues(alpha: 0.5);
     canvas.drawPath(
       Path()
         ..moveTo(0, size.height * 0.32)
@@ -65,25 +73,47 @@ class _EggGolemCavePainter extends CustomPainter {
     );
 
     // Side pillars
-    final pillar = Paint()..color = const Color(0xFF6D4C41).withValues(alpha: 0.5);
+    final pillar = Paint()
+      ..color = const Color(0xFF6D4C41).withValues(alpha: 0.5);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.04, size.height * 0.2, 28, size.height * 0.58),
+        Rect.fromLTWH(
+          size.width * 0.04,
+          size.height * 0.2,
+          28,
+          size.height * 0.58,
+        ),
         const Radius.circular(6),
       ),
       pillar,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.88, size.height * 0.18, 26, size.height * 0.6),
+        Rect.fromLTWH(
+          size.width * 0.88,
+          size.height * 0.18,
+          26,
+          size.height * 0.6,
+        ),
         const Radius.circular(6),
       ),
       pillar,
     );
 
     // Ancient egg statues (background)
-    _drawEggStatue(canvas, size, Offset(size.width * 0.14, size.height * 0.62), 0.55);
-    _drawEggStatue(canvas, size, Offset(size.width * 0.86, size.height * 0.58), 0.48, cracked: true);
+    _drawEggStatue(
+      canvas,
+      size,
+      Offset(size.width * 0.14, size.height * 0.62),
+      0.55,
+    );
+    _drawEggStatue(
+      canvas,
+      size,
+      Offset(size.width * 0.86, size.height * 0.58),
+      0.48,
+      cracked: true,
+    );
 
     // Glowing rune cracks on walls
     final runeGlow = Paint()
@@ -140,7 +170,8 @@ class _EggGolemCavePainter extends CustomPainter {
 
     // Scattered rubble on floor
     final random = math.Random(9);
-    final stone = Paint()..color = const Color(0xFF8D6E63).withValues(alpha: 0.45);
+    final stone = Paint()
+      ..color = const Color(0xFF8D6E63).withValues(alpha: 0.45);
     for (var i = 0; i < 12; i++) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(

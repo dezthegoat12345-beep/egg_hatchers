@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Moonlit farm roost backdrop for the base bird boss defeat cinematic.
@@ -15,6 +16,12 @@ class BirdRoostBackground extends StatelessWidget {
     final animalTheme = AnimalSpriteThemeScope.of(context);
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       return const RetroPixelBossBattleBackground(
+        bossId: 'shadow_rooster',
+        showOverlay: false,
+      );
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return const RealisticBossBattleBackground(
         bossId: 'shadow_rooster',
         showOverlay: false,
       );
@@ -57,12 +64,15 @@ class _BirdRoostPainter extends CustomPainter {
         Offset(x, y),
         r,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.25 + random.nextDouble() * 0.45),
+          ..color = Colors.white.withValues(
+            alpha: 0.25 + random.nextDouble() * 0.45,
+          ),
       );
     }
 
     // Drifting clouds
-    final cloud = Paint()..color = const Color(0xFF283593).withValues(alpha: 0.22);
+    final cloud = Paint()
+      ..color = const Color(0xFF283593).withValues(alpha: 0.22);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.25, size.height * 0.18),
@@ -99,7 +109,8 @@ class _BirdRoostPainter extends CustomPainter {
     );
 
     // Distant hills
-    final hill = Paint()..color = const Color(0xFF0D0D1A).withValues(alpha: 0.5);
+    final hill = Paint()
+      ..color = const Color(0xFF0D0D1A).withValues(alpha: 0.5);
     canvas.drawPath(
       Path()
         ..moveTo(0, size.height * 0.66)
@@ -117,9 +128,15 @@ class _BirdRoostPainter extends CustomPainter {
     );
 
     // Barn silhouette
-    final barn = Paint()..color = const Color(0xFF12122A).withValues(alpha: 0.82);
+    final barn = Paint()
+      ..color = const Color(0xFF12122A).withValues(alpha: 0.82);
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.6, size.height * 0.46, size.width * 0.3, size.height * 0.24),
+      Rect.fromLTWH(
+        size.width * 0.6,
+        size.height * 0.46,
+        size.width * 0.3,
+        size.height * 0.24,
+      ),
       barn,
     );
     canvas.drawPath(
@@ -133,9 +150,15 @@ class _BirdRoostPainter extends CustomPainter {
     );
 
     // Tree silhouettes
-    final tree = Paint()..color = const Color(0xFF0D0D1A).withValues(alpha: 0.7);
+    final tree = Paint()
+      ..color = const Color(0xFF0D0D1A).withValues(alpha: 0.7);
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.06, size.height * 0.4, 14, size.height * 0.3),
+      Rect.fromLTWH(
+        size.width * 0.06,
+        size.height * 0.4,
+        14,
+        size.height * 0.3,
+      ),
       tree,
     );
     canvas.drawOval(
@@ -147,7 +170,12 @@ class _BirdRoostPainter extends CustomPainter {
       tree,
     );
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.48, size.height * 0.44, 10, size.height * 0.22),
+      Rect.fromLTWH(
+        size.width * 0.48,
+        size.height * 0.44,
+        10,
+        size.height * 0.22,
+      ),
       tree,
     );
     canvas.drawOval(
@@ -160,7 +188,8 @@ class _BirdRoostPainter extends CustomPainter {
     );
 
     // Fence
-    final fence = Paint()..color = const Color(0xFF0A0A18).withValues(alpha: 0.75);
+    final fence = Paint()
+      ..color = const Color(0xFF0A0A18).withValues(alpha: 0.75);
     for (var i = 0; i < 10; i++) {
       canvas.drawRect(
         Rect.fromLTWH(
@@ -173,20 +202,35 @@ class _BirdRoostPainter extends CustomPainter {
       );
     }
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.01, size.height * 0.72, size.width * 0.98, 4),
+      Rect.fromLTWH(
+        size.width * 0.01,
+        size.height * 0.72,
+        size.width * 0.98,
+        4,
+      ),
       fence,
     );
 
     // Roost perch
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.16, size.height * 0.6, size.width * 0.24, 6),
+        Rect.fromLTWH(
+          size.width * 0.16,
+          size.height * 0.6,
+          size.width * 0.24,
+          6,
+        ),
         const Radius.circular(3),
       ),
       Paint()..color = const Color(0xFF4A148C).withValues(alpha: 0.55),
     );
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.24, size.height * 0.6, 5, size.height * 0.12),
+      Rect.fromLTWH(
+        size.width * 0.24,
+        size.height * 0.6,
+        5,
+        size.height * 0.12,
+      ),
       Paint()..color = const Color(0xFF311B92).withValues(alpha: 0.5),
     );
 

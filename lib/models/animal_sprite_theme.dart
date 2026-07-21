@@ -27,7 +27,13 @@ class AnimalSpriteThemes {
     description: 'Chunky pixel-art animals',
   );
 
-  static const all = [classic, retroPixel];
+  static const realistic = AnimalSpriteTheme(
+    id: 'realistic',
+    name: 'Realistic',
+    description: 'AI-painted realistic animal icons',
+  );
+
+  static const all = [classic, retroPixel, realistic];
 
   static const defaultTheme = classic;
 

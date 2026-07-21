@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/animal_sprite_theme.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Desert canyon backdrop for the Shadow Phoenix defeat cinematic.
@@ -21,6 +22,13 @@ class ShadowPhoenixCinematicBackground extends StatelessWidget {
     final animalTheme = AnimalSpriteThemeScope.of(context);
     if (animalTheme.id == AnimalSpriteThemes.retroPixel.id) {
       return RetroPixelBossBattleBackground(
+        bossId: 'shadow_phoenix',
+        showOverlay: false,
+        topViewPhase: topViewPhase,
+      );
+    }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return RealisticBossBattleBackground(
         bossId: 'shadow_phoenix',
         showOverlay: false,
         topViewPhase: topViewPhase,
@@ -54,15 +62,24 @@ class _DesertCanyonPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: [
             Color.lerp(const Color(0xFF1A1033), const Color(0xFF2D1B4E), tv)!,
-            Color.lerp(const Color(0xFF4A2C6A), const Color(0xFF6D4C41), tv * 0.35)!,
-            Color.lerp(const Color(0xFF8D6E63), const Color(0xFFBF8A5A), tv * 0.5)!,
+            Color.lerp(
+              const Color(0xFF4A2C6A),
+              const Color(0xFF6D4C41),
+              tv * 0.35,
+            )!,
+            Color.lerp(
+              const Color(0xFF8D6E63),
+              const Color(0xFFBF8A5A),
+              tv * 0.5,
+            )!,
             Color.lerp(const Color(0xFF5D4037), const Color(0xFF4E342E), tv)!,
           ],
         ).createShader(rect),
     );
 
     // Distant mesas
-    final mesa = Paint()..color = const Color(0xFF6D4C41).withValues(alpha: 0.55);
+    final mesa = Paint()
+      ..color = const Color(0xFF6D4C41).withValues(alpha: 0.55);
     canvas.drawPath(
       Path()
         ..moveTo(0, h * 0.42)
@@ -90,7 +107,9 @@ class _DesertCanyonPainter extends CustomPainter {
         Offset(random.nextDouble() * w, random.nextDouble() * h * 0.28),
         0.7 + random.nextDouble(),
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.15 + random.nextDouble() * 0.25),
+          ..color = Colors.white.withValues(
+            alpha: 0.15 + random.nextDouble() * 0.25,
+          ),
       );
     }
 
@@ -149,7 +168,12 @@ class _DesertCanyonPainter extends CustomPainter {
 
     // Canyon depth / shadow pit
     canvas.drawRect(
-      Rect.fromLTWH(w * 0.2, h * (0.4 + tv * 0.1), w * 0.6, h * (0.6 - tv * 0.08)),
+      Rect.fromLTWH(
+        w * 0.2,
+        h * (0.4 + tv * 0.1),
+        w * 0.6,
+        h * (0.6 - tv * 0.08),
+      ),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
@@ -166,7 +190,8 @@ class _DesertCanyonPainter extends CustomPainter {
     final floorY = h * (0.62 + tv * 0.1);
     canvas.drawRect(
       Rect.fromLTWH(w * 0.22, floorY, w * 0.56, h * 0.28),
-      Paint()..color = const Color(0xFFD7CCC8).withValues(alpha: 0.35 + tv * 0.35),
+      Paint()
+        ..color = const Color(0xFFD7CCC8).withValues(alpha: 0.35 + tv * 0.35),
     );
     canvas.drawOval(
       Rect.fromCenter(
@@ -174,7 +199,8 @@ class _DesertCanyonPainter extends CustomPainter {
         width: w * (0.38 + tv * 0.12),
         height: h * (0.07 + tv * 0.025),
       ),
-      Paint()..color = const Color(0xFFBCAAA4).withValues(alpha: 0.45 + tv * 0.25),
+      Paint()
+        ..color = const Color(0xFFBCAAA4).withValues(alpha: 0.45 + tv * 0.25),
     );
 
     // Impact target on sand
@@ -211,10 +237,7 @@ class _DesertCanyonPainter extends CustomPainter {
         ..shader = RadialGradient(
           center: Alignment(0, -0.05 + tv * 0.25),
           radius: 0.92,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.2),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.2)],
           stops: const [0.52, 1.0],
         ).createShader(rect),
     );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/animal_sprite_theme.dart';
 import '../utils/egg_shard_logic.dart';
 import 'animal_sprite_theme_scope.dart';
+import 'realistic_boss_battle_background.dart';
 import 'retro_pixel_boss_battle_background.dart';
 
 /// Corrupted nest backdrop for The Rotten Shell defeat cinematic.
@@ -33,11 +34,23 @@ class RottenShellCinematicBackground extends StatelessWidget {
         ],
       );
     }
+    if (animalTheme.id == AnimalSpriteThemes.realistic.id) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          const RealisticBossBattleBackground(
+            bossId: EggShardLogic.rottenShellBossId,
+            showOverlay: false,
+          ),
+          CustomPaint(
+            painter: _RetroVignettePainter(strength: vignetteStrength),
+          ),
+        ],
+      );
+    }
 
     return CustomPaint(
-      painter: _RottenShellCinematicPainter(
-        vignetteStrength: vignetteStrength,
-      ),
+      painter: _RottenShellCinematicPainter(vignetteStrength: vignetteStrength),
     );
   }
 }
@@ -175,7 +188,8 @@ class _RottenShellCinematicPainter extends CustomPainter {
     );
 
     // Subtle corruption speckles
-    final speckle = Paint()..color = const Color(0xFFAB47BC).withValues(alpha: 0.15);
+    final speckle = Paint()
+      ..color = const Color(0xFFAB47BC).withValues(alpha: 0.15);
     for (var i = 0; i < 12; i++) {
       final angle = i * math.pi * 2 / 12;
       canvas.drawCircle(

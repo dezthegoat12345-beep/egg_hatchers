@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/realistic_animal_sprites.dart';
 import '../models/animal_sprite_theme.dart';
 import '../models/background_theme.dart';
 import '../navigation/app_page_route.dart';
@@ -311,11 +312,18 @@ class _AnimalSpriteThemeCard extends StatelessWidget {
                           size: previewSize,
                         )
                       : Image.asset(
-                          'assets/images/animals/chicken.png',
+                          animalTheme.id == AnimalSpriteThemes.realistic.id
+                              ? RealisticAnimalSprites.assetPathFor(
+                                  previewAnimalId,
+                                )!
+                              : 'assets/images/animals/chicken.png',
                           width: previewSize,
                           height: previewSize,
                           fit: BoxFit.contain,
-                          filterQuality: FilterQuality.none,
+                          filterQuality:
+                              animalTheme.id == AnimalSpriteThemes.realistic.id
+                              ? FilterQuality.high
+                              : FilterQuality.none,
                           errorBuilder: (_, _, _) => const Text(
                             'Chicken',
                             style: TextStyle(fontSize: 10),
